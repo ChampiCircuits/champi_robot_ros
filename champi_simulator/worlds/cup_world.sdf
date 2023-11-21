@@ -72,13 +72,573 @@
     <include>
       <uri>model://table_2024</uri>
       <name>table_2024</name>
-      <pose>-4.2017185926792795e-21 -0.31179663538932806 0.093667507171630845 -1.570797382127836 2.6535968348931035e-06 -3.007494240137745e-12</pose>
+      <pose>-4.2017200000000002e-21 -0.31179699999999999 0.093667500000000001 -1.5707899999999997 5.3071900000000008e-06 1.0266600001620646e-12</pose>
     </include>
     <include>
       <uri>model://robot_1</uri>
       <name>robot_01</name>
-      <pose>-1.1854062080342511 0.37886640597957316 0.094217361173114703 0.00079262620135546122 2.4760193039921549e-09 3.6947461843927644e-09</pose>
+      <pose>-1.185406205992064 0.37886579837070422 0.094222338908338421 0.0007952798749946738 2.6560993586065369e-06 5.6507067702350683e-09</pose>
     </include>
+    <model name="pot">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>0.57988399999999996 -1.2515499999999999 0.092918600000000004 0.00079447399999999998 2.7442200000000009e-06 4.0890500000000025e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="pot_0">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>1.43926 -0.69024399999999997 0.093362500000000001 0.00079519300000000025 -1.0075100000000006e-05 0.015979</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="pot_1">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>1.4446300000000001 -0.76619199999999998 0.093302300000000005 0.00079451599999999978 2.7401600000000019e-06 4.1140400000000011e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="pot_2">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>-1.3736299999999999 0.013793400000000001 0.09393 0.00079447399999999977 2.7443400000000008e-06 4.0921700000000024e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="pot_3">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>-0.45374700000000001 0.64349699999999999 0.094428300000000007 0.00079439699999999996 2.7517299999999998e-06 4.0816600000000012e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="pot_4">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>0.55901900000000004 0.62567399999999995 0.094411499999999995 0.00079447399999999998 2.7443500000000015e-06 4.2062300000000013e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="pot_5">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>-1.4135899999999999 -0.71241699999999997 0.093352599999999994 0.00079450099999999997 2.7418500000000007e-06 4.1314800000000025e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="pot_6">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>1.3576299999999999 0.0580122 0.093958 0.00079447399999999998 2.7442300000000007e-06 4.0893000000000001e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="pot_7">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>1.39106 -0.62935200000000002 0.093410999999999994 0.00079505899999999954 5.3360999999999996e-06 -0.005842479999999998</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="pot_8">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>0.47201799999999999 0.63461100000000004 0.0944189 0.000794475 2.742750000000001e-06 -6.4634999999999996e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="plante_resistante">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>0.051843699231177862 0.090222334298900655 0.093987060581287016 0.00079494190477201053 4.9267236389854154e-06 4.1958138002391196e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="plante_resistante_0">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>0.5360249877201354 -0.5135078532540277 0.09350568303090441 0.00079372845569227087 3.3528047171043036e-06 -3.3334895280183363e-10</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="plante_resistante_1">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>-0.031958511820194206 -0.77270041218208285 0.093301025098565291 0.00079494198784842412 4.9268489274411535e-06 4.4814619807236384e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="plante_resistante_2">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>-0.014220199373024245 -0.87905322461761182 0.09321639473097329 0.00079490737803978413 4.9174090579615864e-06 4.6622523910964523e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="plante_resistante_3">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>0.10143369523048089 -0.80376534011715717 0.093275955077048875 0.00079484584579077636 4.9037374872210623e-06 3.8886816041258595e-08</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
+    <model name="plante_resistante_4">
+      <link name="link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>0.00049158045225543713 0.19259167942076436 0.094068491353683795 0.00079432785433283901 5.0440672280725914e-06 4.8303499620615308e-05</pose>
+      <static>false</static>
+      <self_collide>false</self_collide>
+    </model>
     <light name="sun" type="directional">
       <pose>0 0 10 0 0 0</pose>
       <cast_shadows>true</cast_shadows>
