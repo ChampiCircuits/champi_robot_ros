@@ -5,3 +5,9 @@
 - Ubuntu 22
 - ROS2 Iron
 - Gazebo Harmonic
+
+## Notes
+
+### setup.py deprecation warning
+
+Pas de solution pour le moment : https://github.com/ament/ament_cmake/issues/382
