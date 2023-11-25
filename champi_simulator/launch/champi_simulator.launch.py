@@ -44,7 +44,7 @@ def generate_launch_description():
     world_file = LaunchConfiguration('world_file')
     declare_world_file_cmd = DeclareLaunchArgument(
         'world_file',
-        default_value=os.path.join(champi_simulator_dir, 'worlds', 'cup_world.sdf'),
+        default_value=os.path.join(champi_simulator_dir, 'worlds', 'cup_world_objects.sdf'),
         description='Path to the world file'
     )
 
