@@ -22,7 +22,6 @@
   <depend>launch_ros</depend>
   <depend>ros2_control</depend>
   <depend>ros2_controllers</depend>
-  <depend>dynamixel_hardware</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
