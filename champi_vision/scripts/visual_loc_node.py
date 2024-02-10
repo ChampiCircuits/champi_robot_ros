@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import Image
 
 from cv_bridge import CvBridge
+from ament_index_python.packages import get_package_share_directory
 
 import cv2
 import numpy as np
@@ -28,7 +31,7 @@ class VisualLocalizationNode(Node):
         
         self.pos_cam_in_bird_view_pxls = np.array([927, 1462])
 
-        ref_img_path = os.path.dirname(__file__) + "/images/ref_img.png"
+        ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
         self.ref_img = self.load_ref_image(ref_img_path)
         self.pxl_to_m_ref = self.ref_img.shape[1]/3.0
 

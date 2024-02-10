@@ -19,8 +19,8 @@ def generate_launch_description():
             arguments=['0', '0', '0.395', '-1.509', '3.14159', '-1', 'base_link', 'camera']
         ),
         Node(
-            package='champi_visual_loc',
-            executable='visual_loc_node',
+            package='champi_vision',
+            executable='visual_loc_node.py',
             name='visual_loc_node',
             output='screen'
         ),
