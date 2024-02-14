@@ -2,8 +2,11 @@
 
 import rclpy
 from rclpy.node import Node
+import tf2_ros
+import tf2_geometry_msgs
 
 from sensor_msgs.msg import Image
+from sensor_msgs.msg import CameraInfo
 
 from cv_bridge import CvBridge
 from ament_index_python.packages import get_package_share_directory
@@ -14,11 +17,31 @@ import matplotlib.pyplot as plt
 import time
 import os
 
+from scipy.spatial.transform import Rotation as R
+
+import champi_vision.bird_view as bv
 
 class VisualLocalizationNode(Node):
 
     def __init__(self):
         super().__init__('visual_loc')
+
+
+        # handle camera info
+        self.camera_info = None
+        self.subscription_cam_info = self.create_subscription(
+            CameraInfo,
+            '/camera_info',
+            self.callback_cam_info,
+            10)
+
+
+        # transformation matrix between base_link and camera using tf2
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        self.bird_view = None
+
+        # other stuff
 
         self.cv_bridge = CvBridge()
 
@@ -47,13 +70,58 @@ class VisualLocalizationNode(Node):
 
         self.subscription = self.create_subscription(
             Image,
-            '/champi/sensors/camera_1',
+            '/image_raw',
             self.listener_callback,
             10)
         self.subscription  # prevent unused variable warning
 
 
+    def callback_cam_info(self, msg):
+        if self.camera_info is None:
+            self.camera_info = msg
+
+
     def listener_callback(self, msg):
+
+        # get camera info if not already
+        if self.camera_info is None:
+            self.get_logger().info("waiting for camera info...", once=True)
+            return
+        
+        self.get_logger().info("camera info received", once=True)
+
+
+        # initialize bird view if not already
+        if self.bird_view is None:
+            transform = None
+            try:
+                # get transform, which is what we need to wait for
+                transform = self.tf_buffer.lookup_transform('base_link', 'camera',rclpy.time.Time().to_msg()) # todo use camera info
+
+                # # unsubscribe from camera info (can't do that in the callback otherwise the nodes crashes)
+                # self.subscription_cam_info.destroy()
+
+                print("transform: ", transform.transform.translation)
+                print("rotation: ", transform.transform.rotation)
+
+                # compute transform between the 2 frames as 1 matrix
+                rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
+                rot = rot.as_matrix()
+                trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
+                transform_mtx = np.concatenate([rot, trans.reshape(3,1)], axis=1)
+                transform_mtx = np.concatenate([transform_mtx, np.array([[0,0,0,1]])], axis=0)
+
+                print("transform_mtx: ", transform_mtx)
+
+                # initialize bird view
+                self.init_bird_view(transform_mtx)
+ 
+            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                self.get_logger().info("waiting for tf2 transform...", once=True)
+                return
+        
+        self.get_logger().info("transform received", once=True)
+
         # convert to cv2
         cv_image = self.cv_bridge.imgmsg_to_cv2(msg, 'bgr8')
         cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
@@ -61,13 +129,15 @@ class VisualLocalizationNode(Node):
         self.curent_image = cv_image
 
         # get bird view
-        bird_view = self.get_bird_view()
+        bird_view_img = self.bird_view.project_img_to_bird(cv_image)
+
+        self.get_logger().info("size: " + str(bird_view_img.shape))
 
         # get homography
-        ok, M, matchesMask, kp1, kp2, good = self.get_homography_bird_to_ref(bird_view)
+        ok, M, matchesMask, kp1, kp2, good = self.get_homography_bird_to_ref(bird_view_img)
 
         if not ok:
-            print("no homography found")
+            self.get_logger().info("no homography found")
             return
 
         angle = self.get_angle(M)
@@ -78,12 +148,9 @@ class VisualLocalizationNode(Node):
 
         pos_cam_in_ref_m = pos_cam_in_ref_pxls / self.pxl_to_m_ref
 
-        print("pos / angle: ", pos_cam_in_ref_m, angle)
+        self.get_logger().info(f"angle: {angle}, pos: {pos_cam_in_ref_m}")
 
-        self.visualization(bird_view, M, good, kp2)
-
-
-        
+        self.visualization(bird_view_img, M, good, kp2)
 
         # if ok:
         #     # draw matches
@@ -103,7 +170,14 @@ class VisualLocalizationNode(Node):
         # cv2.waitKey(1)
 
 
+    def init_bird_view(self, transform):
 
+        K = np.array(self.camera_info.k).reshape(3,3)
+
+        print("K: ", K)
+        print("transform: ", transform)
+
+        self.bird_view = bv.BirdView(K, transform, (0, -0.5), (2.0, 0.5), resolution=500) 
 
 
     def get_bird_view(self):
@@ -173,7 +247,7 @@ class VisualLocalizationNode(Node):
             dst = cv2.perspectiveTransform(pts,M)
             ok = True
         else:
-            print( "Not enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT) )
+            self.get_logger().info("Not enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT))
             matchesMask = None
         
         return ok, M, matchesMask, kp1, self.ref_kp, good
