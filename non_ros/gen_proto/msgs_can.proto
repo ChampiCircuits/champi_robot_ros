@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package msgs_can;
+
+message BaseVel {
+  optional float x = 1;
+  optional float y = 2;
+  optional float theta = 3;
+}
+
+message HeartBeat {
+  optional int32 status = 1;
+}
