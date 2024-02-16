@@ -26,6 +26,9 @@ chmod +x gen.sh
 rm -R log build install # then recompile, and hope
 ```
 
+## Nice ressources
+
+* CAN cpp examples: https://github.com/craigpeacock/CAN-Examples/tree/master
 
 ## Notes
 
