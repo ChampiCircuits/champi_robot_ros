@@ -8,6 +8,10 @@
 #include <iostream>
 #include <string>
 
+#include <assert.h>
+#include <bitset>
+
+
 #include "champi_can/msgs_can.pb.h"
 
 using namespace std;
@@ -63,7 +67,7 @@ class CanInterface {
             perror("Write");
             return 1;
         }
-        
+        return 0;
     }
 
     int receive(canid_t& id, string& msg) {
@@ -116,12 +120,19 @@ class ChampiCanInterface {
         return can_interface_.open();
     }
 
+    /**
+     * @brief Just for test
+     * 
+     * @param id 
+     * @param msg 
+     * @return int 
+     */
     int send_simple(canid_t id, string msg) {
         
         unsigned long int msg_size = msg.size();
 
         unsigned char* ptr = (unsigned char*) &msg[0];
-
+        // todo check return value
         while(msg_size > 8) {
             can_interface_.send(id, ptr, 8);
             msg_size-=8;
@@ -130,13 +141,37 @@ class ChampiCanInterface {
         if(msg_size > 0) {
             can_interface_.send(id, ptr, msg_size);
         }
+
+        return 0;
     }
 
+    int send(canid_t id, string msg) {
+        
+        static unsigned char msg_number = 0;
 
+        unsigned long int msg_size = msg.size();
+        assert(msg_size <= 512);
+        uint16_t nb_frames = (uint16_t) msg_size / 6 + (msg_size % 6 > 0 ? 1 : 0);
 
+        cout << "msg_size: " << msg_size << endl;
+        cout << "nb_frames: " << nb_frames << endl;
 
+        for(uint16_t i=0; i<nb_frames; i++) {
+            
+            uint16_t msg_descriptor = msg_number << 12 | (nb_frames << 6) | i;
 
+            string msg_to_send = msg.substr(i*6, 6);
+            msg_to_send = string((char*)&msg_descriptor, 2) + msg_to_send;
 
+            can_interface_.send(id, msg_to_send);
+            
+        }
+
+        msg_number = (msg_number + 1) % 4; 
+
+        return 0;
+
+    }
 
     private:
     CanInterface can_interface_;
@@ -147,7 +182,7 @@ int main() {
     // compatible with the version of the headers we compiled against.
     // GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-    cout << "Hello, World!" << endl;
+    cout << "Hello, Wsqdqsorld!" << endl;
 
     // msgs_can::BaseVel base_vel_cmd;
 
@@ -194,9 +229,10 @@ int main() {
 
     canid_t id = 0x123;
 
-    string msg = "HelloPOISSON";
+    string msg = "123sdqsdqsDQ456";
 
-    champi_can_interface.send_simple(id, msg);
+    champi_can_interface.send(id, msg);
+
 
     return 0;
 }
