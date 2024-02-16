@@ -9,6 +9,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(Protobuf REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -46,7 +47,8 @@ install(
 # ================ COMPILE EXECUTABLES ========================
 
 add_executable(test_can_node src/test_can_node.cpp)
-ament_target_dependencies(test_can_node)
+# ament_target_dependencies(test_can_node Protobuf champi_can)
+target_link_libraries(test_can_node ${Protobuf_LIBRARIES} champi_can)
 
 install(TARGETS
 test_can_node
