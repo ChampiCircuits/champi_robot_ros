@@ -60,6 +60,18 @@ class CanInterface {
         return 0;
     }
 
+    int receive(canid_t& id, string& msg) {
+        struct can_frame frame;
+        int nbytes = read(s, &frame, sizeof(struct can_frame));
+        if (nbytes < 0) {
+            perror("Read");
+            return 1;
+        }
+        id = frame.can_id;
+        msg = string((char *)frame.data, frame.can_dlc);
+        return 0;
+    }
+
 
    private:
     int s;
@@ -118,6 +130,11 @@ int main() {
     string msg = "Hello";
 
     can_interface.send(id, msg);
+
+    canid_t id_rec;
+    string msg_rec;
+    
+    can_interface.receive(id_rec, msg_rec);
 
     return 0;
 }
