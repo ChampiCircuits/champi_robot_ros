@@ -16,6 +16,17 @@
 
 using namespace std;
 
+/*
+Test frames:
+cansend vcan0 123#C1.00.73.64.71.73.44.51
+cansend vcan0 123#C0.00.31.32.33.73.64.71
+cansend vcan0 123#C2.00.34.35.36
+
+cansend vcan0 123#40.20.66.73.64
+
+cansend vcan0 123#
+*/
+
 class MessageRecomposer {
 
 public:
@@ -42,7 +53,9 @@ public:
 
         decode_descriptor(frame, msg_number, msg_size, frame_index);
 
-        if(msg_number > msg_number_ || (msg_number_ == 3 && msg_number == 0)) {
+        // TODO check if the number follows the expected order (0 -> 1 -> 2 -> 3 -> 0 -> ...)
+        // But it's not that easy bc what if we miss an entire message ? we would loose the 3 messages that follow it
+        if(msg_number_ != msg_number) {
             // new message
             cout << "New message" << endl;
             msg_number_ = msg_number;
@@ -51,8 +64,6 @@ public:
                 frames_received_[i] = false;
             }
         }
-
-        // todo handle case of empty msg
 
         frames_received_[frame_index] = true;
         msg_parts[frame_index] = string((char*)frame.data+2, frame.can_dlc-2);
@@ -164,13 +175,6 @@ class CanInterface {
         memcpy(frame.data, msg, msg_size);
         frame.can_dlc = msg_size;
 
-
-        cout << "TEEEEEEEEST" << endl;
-        static MessageRecomposer message_reader(0x123);
-        message_reader.add_new_frame(frame);
-
-
-
         if (write(s, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
             perror("Write");
             return 1;
@@ -263,6 +267,13 @@ class ChampiCan {
             id = frame.can_id;
 
             if(message_recomposers_.find(id) != message_recomposers_.end()) {
+
+                // check for empty frame
+                if(frame.can_dlc == 0) {
+                    cout << "WARNING! Empty frame received for a frame with data expected. Discarding frame" << endl;
+                    continue;
+                }
+
                 message_recomposers_[id].add_new_frame(frame);
                 
                 if(message_recomposers_[id].got_new_full_msg()) {
