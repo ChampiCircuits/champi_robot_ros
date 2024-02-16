@@ -16,6 +16,107 @@
 
 using namespace std;
 
+class MessageRecomposer {
+
+public:
+    MessageRecomposer(int id_of_interest) :
+        id_of_interest_(id_of_interest),
+        msg_number_(-1),
+        n_frames_(-1),
+        full_msg_received_(false) {
+    }
+
+    // default constructor, do not use directly
+    MessageRecomposer() :
+        id_of_interest_(-1),
+        msg_number_(-1),
+        n_frames_(-1),
+        full_msg_received_(false) {
+    }
+
+    void add_new_frame(can_frame frame) {
+
+        int msg_number;
+        int msg_size;
+        int frame_index;
+
+        decode_descriptor(frame, msg_number, msg_size, frame_index);
+
+        if(msg_number > msg_number_ || (msg_number_ == 3 && msg_number == 0)) {
+            // new message
+            cout << "New message" << endl;
+            msg_number_ = msg_number;
+            n_frames_ = msg_size;
+            for(int i=0; i<n_frames_; i++) {
+                frames_received_[i] = false;
+            }
+        }
+
+        // todo handle case of empty msg
+
+        frames_received_[frame_index] = true;
+        msg_parts[frame_index] = string((char*)frame.data+2, frame.can_dlc-2);
+
+        for(int i=0; i<n_frames_; i++) {
+            cout << "Frame " << i << " received: " << frames_received_[i] << endl;
+        }
+
+        if(all_frames_received()) {
+            cout << "All frames received" << endl;
+            string full_msg;
+            for(int i=0; i<n_frames_; i++) {
+                full_msg += msg_parts[i];
+            }
+            full_msg_ = full_msg;
+            full_msg_received_ = true;
+            for(int i=0; i<n_frames_; i++) {
+                frames_received_[i] = false;
+            }
+        }
+        
+    }
+
+    bool all_frames_received() {
+        for(int i=0; i<n_frames_; i++) {
+            if(!frames_received_[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void decode_descriptor(can_frame frame, int &msg_number, int &msg_size, int &frame_index) {
+
+        uint16_t msg_descriptor = frame.data[1] << 8 | frame.data[0];
+
+        // todo mask the unused bits for safety (eg if error of transmission)
+
+        msg_number = (msg_descriptor >> 12);
+        msg_size = (msg_descriptor >> 6) & 0x3F;
+        frame_index = msg_descriptor & 0x3F;
+    }
+
+    bool got_new_full_msg() {
+        return full_msg_received_;
+    }
+
+    string get_full_msg() {
+        full_msg_received_ = false;
+        return full_msg_;
+    }
+
+private:
+    int id_of_interest_;
+    int msg_number_;
+    int n_frames_; // nb of frames needed to get the full message
+    bool frames_received_[64];
+    string msg_parts[64];
+
+    string full_msg_;
+    bool full_msg_received_;
+    
+};
+
 class CanInterface {
    public:
     CanInterface(string can_interface_name) :
@@ -63,6 +164,13 @@ class CanInterface {
         memcpy(frame.data, msg, msg_size);
         frame.can_dlc = msg_size;
 
+
+        cout << "TEEEEEEEEST" << endl;
+        static MessageRecomposer message_reader(0x123);
+        message_reader.add_new_frame(frame);
+
+
+
         if (write(s, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
             perror("Write");
             return 1;
@@ -70,15 +178,12 @@ class CanInterface {
         return 0;
     }
 
-    int receive(canid_t& id, string& msg) {
-        struct can_frame frame;
+    int receive(struct can_frame &frame) {
         int nbytes = read(s, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
             perror("Read");
             return 1;
         }
-        id = frame.can_id;
-        msg = string((char *)frame.data, frame.can_dlc);
         return 0;
     }
 
@@ -102,47 +207,28 @@ class CanInterface {
 
 };
 
-class ChampiCanInterface {
+
+
+class ChampiCan {
     /*
     Implements our champiprotocol !!
     */
 
     public:
-    ChampiCanInterface(string can_interface_name) :
+    ChampiCan(string can_interface_name, vector<int> ids_of_interest) :
         can_interface_(can_interface_name) {
+
+        for(int id : ids_of_interest) {
+            message_recomposers_[id] = MessageRecomposer(id);
+        }
     }
 
-    ~ChampiCanInterface() {
+    ~ChampiCan() {
 
     }
 
-    int open() {
+    int start() {
         return can_interface_.open();
-    }
-
-    /**
-     * @brief Just for test
-     * 
-     * @param id 
-     * @param msg 
-     * @return int 
-     */
-    int send_simple(canid_t id, string msg) {
-        
-        unsigned long int msg_size = msg.size();
-
-        unsigned char* ptr = (unsigned char*) &msg[0];
-        // todo check return value
-        while(msg_size > 8) {
-            can_interface_.send(id, ptr, 8);
-            msg_size-=8;
-            ptr += 8;
-        }
-        if(msg_size > 0) {
-            can_interface_.send(id, ptr, msg_size);
-        }
-
-        return 0;
     }
 
     int send(canid_t id, string msg) {
@@ -153,9 +239,6 @@ class ChampiCanInterface {
         assert(msg_size <= 512);
         uint16_t nb_frames = (uint16_t) msg_size / 6 + (msg_size % 6 > 0 ? 1 : 0);
 
-        cout << "msg_size: " << msg_size << endl;
-        cout << "nb_frames: " << nb_frames << endl;
-
         for(uint16_t i=0; i<nb_frames; i++) {
             
             uint16_t msg_descriptor = msg_number << 12 | (nb_frames << 6) | i;
@@ -164,17 +247,38 @@ class ChampiCanInterface {
             msg_to_send = string((char*)&msg_descriptor, 2) + msg_to_send;
 
             can_interface_.send(id, msg_to_send);
-            
         }
 
         msg_number = (msg_number + 1) % 4; 
 
         return 0;
-
     }
+
+    void receive_thread() {
+        canid_t id;
+        string msg;
+        while(true) {
+            struct can_frame frame;
+            can_interface_.receive(frame);
+            id = frame.can_id;
+
+            if(message_recomposers_.find(id) != message_recomposers_.end()) {
+                message_recomposers_[id].add_new_frame(frame);
+                
+                if(message_recomposers_[id].got_new_full_msg()) {
+                    msg = message_recomposers_[id].get_full_msg();
+                    cout << "Received message: " << msg << endl;
+                
+                }
+            }
+        }
+    }
+
+
 
     private:
     CanInterface can_interface_;
+    map<int, MessageRecomposer> message_recomposers_;
 };
 
 int main() {
@@ -223,15 +327,17 @@ int main() {
     
     // can_interface.receive(id_rec, msg_rec);
 
-    ChampiCanInterface champi_can_interface("vcan0");
+    ChampiCan champi_can_interface("vcan0", {0x123, 0x456});
 
-    champi_can_interface.open();
+    champi_can_interface.start();
 
     canid_t id = 0x123;
 
     string msg = "123sdqsdqsDQ456";
 
-    champi_can_interface.send(id, msg);
+    // champi_can_interface.send(id, msg);
+
+    champi_can_interface.receive_thread();
 
 
     return 0;
