@@ -46,18 +46,24 @@ class CanInterface {
 
     int send(canid_t id, string msg) {
         assert(msg.size() <= 8);
+        
+        unsigned char* ptr = (unsigned char*) &msg[0];
+        return send(id, ptr, msg.size());
+    }
+
+    int send(canid_t id, unsigned char* msg, int msg_size) {
+        assert(msg_size <= 8);
         struct can_frame frame;
         frame.can_id = id;
-        for (long unsigned int i = 0; i < msg.size(); i++) { // todo optimize with memcpy
-            frame.data[i] = msg[i];
-        }
-        frame.can_dlc = msg.size();
+ 
+        memcpy(frame.data, msg, msg_size);
+        frame.can_dlc = msg_size;
 
         if (write(s, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
             perror("Write");
             return 1;
         }
-        return 0;
+        
     }
 
     int receive(canid_t& id, string& msg) {
@@ -72,13 +78,6 @@ class CanInterface {
         return 0;
     }
 
-
-   private:
-    int s;
-    string can_interface_name_;
-    struct sockaddr_can addr;
-    struct ifreq ifr;
-
     int close_interface() {
         if (close(s) < 0) {
             perror("Close");
@@ -88,6 +87,59 @@ class CanInterface {
         }
         return 0;
     }
+
+
+   private:
+    int s;
+    string can_interface_name_;
+    struct sockaddr_can addr;
+    struct ifreq ifr;
+
+
+};
+
+class ChampiCanInterface {
+    /*
+    Implements our champiprotocol !!
+    */
+
+    public:
+    ChampiCanInterface(string can_interface_name) :
+        can_interface_(can_interface_name) {
+    }
+
+    ~ChampiCanInterface() {
+
+    }
+
+    int open() {
+        return can_interface_.open();
+    }
+
+    int send_simple(canid_t id, string msg) {
+        
+        unsigned long int msg_size = msg.size();
+
+        unsigned char* ptr = (unsigned char*) &msg[0];
+
+        while(msg_size > 8) {
+            can_interface_.send(id, ptr, 8);
+            msg_size-=8;
+            ptr += 8;
+        }
+        if(msg_size > 0) {
+            can_interface_.send(id, ptr, msg_size);
+        }
+    }
+
+
+
+
+
+
+
+    private:
+    CanInterface can_interface_;
 };
 
 int main() {
@@ -122,19 +174,29 @@ int main() {
 
     // Test send CAN
 
-    CanInterface can_interface("vcan0");
+    // CanInterface can_interface("vcan0");
 
-    can_interface.open();
+    // can_interface.open();
+
+    // canid_t id = 0x123;
+    // string msg = "Hello";
+
+    // can_interface.send(id, msg);
+
+    // canid_t id_rec;
+    // string msg_rec;
+    
+    // can_interface.receive(id_rec, msg_rec);
+
+    ChampiCanInterface champi_can_interface("vcan0");
+
+    champi_can_interface.open();
 
     canid_t id = 0x123;
-    string msg = "Hello";
 
-    can_interface.send(id, msg);
+    string msg = "HelloPOISSON";
 
-    canid_t id_rec;
-    string msg_rec;
-    
-    can_interface.receive(id_rec, msg_rec);
+    champi_can_interface.send_simple(id, msg);
 
     return 0;
 }
