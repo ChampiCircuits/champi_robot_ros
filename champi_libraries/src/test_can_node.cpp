@@ -7,9 +7,13 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <mutex>
+#include <thread>
+#include <map>
+#include <vector>
 
 #include <assert.h>
-#include <bitset>
+
 
 
 #include "champi_can/msgs_can.pb.h"
@@ -107,7 +111,7 @@ public:
         frame_index = msg_descriptor & 0x3F;
     }
 
-    bool got_new_full_msg() {
+    bool check_if_new_full_msg() {
         return full_msg_received_;
     }
 
@@ -125,7 +129,7 @@ private:
 
     string full_msg_;
     bool full_msg_received_;
-    
+
 };
 
 class CanInterface {
@@ -228,11 +232,20 @@ class ChampiCan {
     }
 
     ~ChampiCan() {
-
+        receive_thread_.join();
+        cout << "Receive thread joined" << endl;
+        // TODO understand why the receive thread is not joining
     }
 
     int start() {
-        return can_interface_.open();
+        int ret = can_interface_.open();
+        if(ret != 0) {
+            return ret;
+        }
+
+        receive_thread_ = thread(&ChampiCan::receive_thread_ftc, this);
+
+        return 0;
     }
 
     int send(canid_t id, string msg) {
@@ -258,13 +271,15 @@ class ChampiCan {
         return 0;
     }
 
-    void receive_thread() {
+    void receive_thread_ftc() {
         canid_t id;
         string msg;
         while(true) {
             struct can_frame frame;
             can_interface_.receive(frame);
             id = frame.can_id;
+
+            mtx_.lock();
 
             if(message_recomposers_.find(id) != message_recomposers_.end()) {
 
@@ -275,14 +290,33 @@ class ChampiCan {
                 }
 
                 message_recomposers_[id].add_new_frame(frame);
-                
-                if(message_recomposers_[id].got_new_full_msg()) {
-                    msg = message_recomposers_[id].get_full_msg();
-                    cout << "Received message: " << msg << endl;
-                
-                }
             }
+            mtx_.unlock();
         }
+    }
+
+    /**
+     * @brief Warning: Never, NEVER ask for an ID that is not in the list of ids_of_interest.
+     * 
+     * @param id 
+     * @return true 
+     * @return false 
+     */
+    bool check_if_new_full_msg(canid_t id) {
+        lock_guard<mutex> lock(mtx_);
+        return message_recomposers_[id].check_if_new_full_msg();
+    }
+
+    /**
+     * @brief Warning: Always check if the message is ready (check_if_new_full_msg) before calling this function.
+     * Will return the newest message received.
+     * 
+     * @param id 
+     * @return string 
+     */
+    string get_full_msg(canid_t id) {
+        lock_guard<mutex> lock(mtx_);
+        return message_recomposers_[id].get_full_msg();
     }
 
 
@@ -290,6 +324,9 @@ class ChampiCan {
     private:
     CanInterface can_interface_;
     map<int, MessageRecomposer> message_recomposers_;
+
+    thread receive_thread_;
+    mutex mtx_;
 };
 
 int main() {
@@ -344,11 +381,16 @@ int main() {
 
     canid_t id = 0x123;
 
-    string msg = "123sdqsdqsDQ456";
+    string msg = "123456789";
 
-    // champi_can_interface.send(id, msg);
+    while(true) {
+        if(champi_can_interface.check_if_new_full_msg(id)) {
+            cout << "New message received: " << champi_can_interface.get_full_msg(id) << endl;
+        }
+        champi_can_interface.send(id, msg);
 
-    champi_can_interface.receive_thread();
+        this_thread::sleep_for(chrono::milliseconds(1000));
+    }
 
 
     return 0;
