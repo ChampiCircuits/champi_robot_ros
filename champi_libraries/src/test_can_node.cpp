@@ -35,7 +35,7 @@ cansend vcan0 123#
 int main() {
     // Verify that the version of the library that we linked against is
     // compatible with the version of the headers we compiled against.
-    // GOOGLE_PROTOBUF_VERIFY_VERSION;
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     cout << "Hello, Wsqdqsorld!" << endl;
 
@@ -78,7 +78,7 @@ int main() {
     
     // can_interface.receive(id_rec, msg_rec);
 
-    ChampiCan champi_can_interface("vcan0", {0x123, 0x456});
+    ChampiCan champi_can_interface("can0", {0x123, 0x456});
 
     champi_can_interface.start();
 

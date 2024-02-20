@@ -47,7 +47,7 @@ class ChampiCan {
 
     int send(canid_t id, string msg) {
         
-        static unsigned char msg_number = 0;
+        static unsigned char msg_number = 0; // TODO how does this works ?? It should be uint16_t...
 
         unsigned long int msg_size = msg.size();
         assert(msg_size <= 512);
