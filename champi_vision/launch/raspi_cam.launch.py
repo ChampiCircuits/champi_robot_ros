@@ -7,7 +7,7 @@ import os
 
 def generate_launch_description():
 
-    calib_file = 'file://' + os.path.join(get_package_share_directory('champi_visual_loc'), 'calibration', 'raspi_cam_robotik.yaml')
+    calib_file = 'file://' + os.path.join(get_package_share_directory('champi_vision'), 'config', 'calib', 'raspi_cam_robotik.yaml')
 
     print(calib_file)
 

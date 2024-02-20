@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'holo_teleop_joy = dev_tools.holo_teleop_joy:main',
+            'camera_info_publisher = dev_tools.camera_info_publisher:main'
         ],
     },
 )
