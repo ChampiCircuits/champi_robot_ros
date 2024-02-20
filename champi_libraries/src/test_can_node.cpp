@@ -35,7 +35,7 @@ cansend vcan0 123#
 int main() {
     // Verify that the version of the library that we linked against is
     // compatible with the version of the headers we compiled against.
-    // GOOGLE_PROTOBUF_VERIFY_VERSION;
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     cout << "Hello, Wsqdqsorld!" << endl;
 

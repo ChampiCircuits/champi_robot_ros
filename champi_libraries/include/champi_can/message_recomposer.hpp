@@ -97,7 +97,7 @@ private:
     int msg_number_;
     int n_frames_; // nb of frames needed to get the full message
     bool frames_received_[64];
-    string msg_parts[64];
+    string msg_parts[64]; // TODO RAM usage could be optimized at the cost of CPU usage
 
     string full_msg_;
     bool full_msg_received_;
