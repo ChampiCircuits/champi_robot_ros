@@ -78,7 +78,7 @@ int main() {
     
     // can_interface.receive(id_rec, msg_rec);
 
-    ChampiCan champi_can_interface("vcan0", {0x123, 0x456});
+    ChampiCan champi_can_interface("can0", {0x123, 0x456});
 
     champi_can_interface.start();
 
