@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 
@@ -8,7 +10,7 @@ from geometry_msgs.msg import Twist
 class HoloTeleopJoy(Node):
 
     def __init__(self):
-        super().__init__('visual_loc')
+        super().__init__('holo_teleop_joy')
 
         self.subscription = self.create_subscription(
             Joy,

@@ -16,6 +16,8 @@ Avec des packages c++, on peut faire aussi des nodes python. Mais avec des packa
 - bug avec symlink-install qui ne marche pas pour les launch files et les fichiers de config.
 Regarder ce site pour savoir commment organiser un package c++ + python : https://roboticsbackend.com/ros2-package-for-both-python-and-cpp-nodes/
 
+**Attention!** Ne pas oublier le sheebang `#!/usr/bin/env python3` en haut des nodes python! Sinon cela fait des erreurs atroces :(
+
 ## How to
 
 ### Compile projects

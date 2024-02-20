@@ -29,7 +29,7 @@ class ChampiCan {
     }
 
     ~ChampiCan() {
-        receive_thread_.join();
+        std::terminate(); // quick fix. TODO use future instead of thread
         cout << "Receive thread joined" << endl;
         // TODO understand why the receive thread is not joining
     }
