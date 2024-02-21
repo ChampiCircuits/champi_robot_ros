@@ -14,20 +14,20 @@ class SimpleHoloBaseControlNode : public rclcpp::Node
 public:
     SimpleHoloBaseControlNode() : 
         Node("simple_holo_base_control_node"),
-        champi_can_interface_(this->declare_parameter("can_interface_name", "vcan0"), {(int) this->declare_parameter("id_send", 0x10)})
+        champi_can_interface_(this->declare_parameter("can_interface_name", "can0"), {(int) this->declare_parameter("id_send", 0x10)})
     {
 
         // Get parameters
         string topic_twist_in = this->declare_parameter("topic_twist_in", "cmd_vel");
         string can_interface_name = this->get_parameter("can_interface_name").as_string();
         int id_send_cmd = this->get_parameter("id_send").as_int();
-        int id_receive_vel = this->declare_parameter("id_receive", 0x11);
+        id_receive_vel_ = this->declare_parameter("id_receive", 0x11);
 
         // Print parameters
         RCLCPP_INFO(this->get_logger(), "Node started with the following parameters:");
         RCLCPP_INFO(this->get_logger(), "topic_twist_in: %s", topic_twist_in.c_str());
         RCLCPP_INFO(this->get_logger(), "id_send_cmd: %d", id_send_cmd);
-        RCLCPP_INFO(this->get_logger(), "id_receive_vel: %d", id_receive_vel);
+        RCLCPP_INFO(this->get_logger(), "id_receive_vel: %d", id_receive_vel_);
 
         champi_can_interface_.start();
         // Create Subscribers
@@ -44,6 +44,8 @@ private:
     // Variables
     ChampiCan champi_can_interface_;
 
+    int id_receive_vel_;
+
     // Callbacks
     void twist_in_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
     {
@@ -56,6 +58,17 @@ private:
         // Send message
         if(champi_can_interface_.send(0x10, base_vel_cmd.SerializeAsString()) != 0) {
             RCLCPP_ERROR(this->get_logger(), "Error sending message");
+        }
+
+
+        // Read incoming message if available
+        if(champi_can_interface_.check_if_new_full_msg(id_receive_vel_)) {
+            auto buffer = champi_can_interface_.get_full_msg(id_receive_vel_);
+
+            msgs_can::BaseVel current_vel;
+            current_vel.ParseFromString(buffer);
+
+            RCLCPP_INFO(this->get_logger(), "Current Vel: x: %f, y: %f, theta: %f", current_vel.x(), current_vel.y(), current_vel.theta());
         }
     }
 

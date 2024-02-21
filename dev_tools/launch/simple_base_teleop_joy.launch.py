@@ -36,7 +36,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        joy_node,
+        # joy_node,
         holo_teleop_joy_node,
         simple_holo_base_control_node,
     ])

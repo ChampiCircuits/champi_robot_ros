@@ -16,6 +16,10 @@
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
 
+  <depend>geometry_msgs</depend>
+  <depend>champi_libraries</depend>
+  <depend>joy</depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

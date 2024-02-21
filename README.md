@@ -20,11 +20,21 @@ Regarder ce site pour savoir commment organiser un package c++ + python : https:
 
 ## How to
 
-### Compile projects
+### Configuration du projet
+
+La première fois, se placer à la racine du workspace et lancer la commande suivante installer les packages ROS nécessaires:
+```bash
+rosdep install --from src --ignore-src
+```
+Et lancer le script `scripts/setup.sh` pour faire d'autres choses.
+
+### Compilation
 ```bash
 colcon build --symlink-install
 ```
 With `--symlink-install`, you can edit python files, launch files and config files without re-compiling.
+
+On peut aussi ajouter l'option `--packages-select mon_package` pour ne compiler que les package que l'on veut et ainsi réduire le temps de compilation.
 
 ### Generate protobuf files for the CAN Bus
 ```bash

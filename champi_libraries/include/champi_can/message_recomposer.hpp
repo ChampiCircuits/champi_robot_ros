@@ -33,7 +33,7 @@ public:
         // But it's not that easy bc what if we miss an entire message ? we would loose the 3 messages that follow it
         if(msg_number_ != msg_number) {
             // new message
-            cout << "New message" << endl;
+            // cout << "New message" << endl;
             msg_number_ = msg_number;
             n_frames_ = msg_size;
             for(int i=0; i<n_frames_; i++) {
@@ -44,12 +44,12 @@ public:
         frames_received_[frame_index] = true;
         msg_parts[frame_index] = string((char*)frame.data+2, frame.can_dlc-2);
 
-        for(int i=0; i<n_frames_; i++) {
-            cout << "Frame " << i << " received: " << frames_received_[i] << endl;
-        }
+        // for(int i=0; i<n_frames_; i++) {
+        //     cout << "Frame " << i << " received: " << frames_received_[i] << endl;
+        // }
 
         if(all_frames_received()) {
-            cout << "All frames received" << endl;
+            // cout << "All frames received" << endl;
             string full_msg;
             for(int i=0; i<n_frames_; i++) {
                 full_msg += msg_parts[i];

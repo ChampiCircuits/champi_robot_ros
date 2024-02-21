@@ -27,8 +27,8 @@ class HoloTeleopJoy(Node):
         self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
 
-        self.max_linear_speed = 0.5 # m/s
-        self.max_angular_speed = 1.0 # rad/s
+        self.max_linear_speed = 0.3 # m/s
+        self.max_angular_speed = 5.0 # rad/s
 
 
 
@@ -47,7 +47,7 @@ class HoloTeleopJoy(Node):
         twist = Twist()
         twist.linear.x = joy_msg.axes[1] * self.max_linear_speed
         twist.linear.y = - joy_msg.axes[0] * self.max_linear_speed
-        twist.angular.z = joy_msg.axes[2] * self.max_angular_speed
+        twist.angular.z = - joy_msg.axes[2] * self.max_angular_speed
 
         return twist
 
