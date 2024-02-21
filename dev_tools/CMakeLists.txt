@@ -12,12 +12,15 @@ find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(champi_libraries REQUIRED)
 find_package(Protobuf REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 
 add_executable(simple_holo_base_control_node src/simple_holo_base_control_node.cpp)
-ament_target_dependencies(simple_holo_base_control_node rclcpp geometry_msgs champi_libraries Protobuf)
+ament_target_dependencies(simple_holo_base_control_node rclcpp geometry_msgs champi_libraries Protobuf nav_msgs tf2 tf2_ros)
 
 
 if(BUILD_TESTING)
