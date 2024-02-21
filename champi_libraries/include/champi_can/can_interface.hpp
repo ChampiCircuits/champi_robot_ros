@@ -14,23 +14,39 @@
 #include <boost/asio.hpp>
 
 class CanInterface {
+    /**
+     * @brief Class to handle the CAN interface: open, send, receive and close the interface.
+     * 
+     */
    public:
+
+    /**
+     * @brief Construct a new Can Interface object
+     * 
+     * @param can_interface_name Name of the CAN interface to use. Example: "can0"
+     */
     CanInterface(std::string can_interface_name) :
         can_interface_name_(can_interface_name) {
     }
 
+    /**
+     * @brief Destructor. Closes the CAN socket.
+     * 
+     */
     ~CanInterface() {
         this->close_interface();
     }
 
+    /**
+     * @brief Configure and open the CAN socket. Must be called before sending or receiving frames.
+     * 
+     * @return int 0 if the interface was opened successfully, 1 otherwise.
+     */
     int open() {
         if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
             perror("Socket");
             return 1;
-        } else {
-            std::cout << "CAN Socket created" << std::endl;
         }
-
         strcpy(ifr.ifr_name, can_interface_name_.c_str());
         ioctl(s, SIOCGIFINDEX, &ifr);
 
@@ -45,15 +61,27 @@ class CanInterface {
         return 0;
     }
 
-    int send(canid_t id, std::string msg) {
-        assert(msg.size() <= 8);
-        
-        unsigned char* ptr = (unsigned char*) &msg[0];
-        return send(id, ptr, msg.size());
+    /**
+     * @brief Send a CAN frame
+     * 
+     * @param id ID of the frame to send.
+     * @param msg Message to send.
+     * @return int 0 if the frame was sent successfully, 1 otherwise.
+     */
+    int send(canid_t id, std::string msg) {        
+        return send(id, (unsigned char*) &msg[0], msg.size());
     }
 
+    /**
+     * @brief Send a CAN frame.
+     * 
+     * @param id ID of the frame to send.
+     * @param msg Message to send. 8 bytes maximum.
+     * @param msg_size Size of the message to send. Must be less or equal to 8.
+     * @return int 0 if the frame was sent successfully, 1 otherwise.
+     */
     int send(canid_t id, unsigned char* msg, int msg_size) {
-        assert(msg_size <= 8);
+        assert(msg_size <= 8); // I left it so we can't miss a problem in the code (TODO remove ?)
         struct can_frame frame;
         frame.can_id = id;
  
@@ -67,6 +95,13 @@ class CanInterface {
         return 0;
     }
 
+    /**
+     * @brief Receive a CAN frame. This function is blocking until a frame is received.
+     * When a frame is received, it is stored in the frame parameter.
+     * 
+     * @param frame (out) The frame to store the received frame.
+     * @return int 0 if the frame was read successfully, 1 otherwise.
+     */
     int receive(struct can_frame &frame) {
         int nbytes = read(s, &frame, sizeof(struct can_frame));
         if (nbytes < 0) {
@@ -76,6 +111,11 @@ class CanInterface {
         return 0;
     }
 
+    /**
+     * @brief Close the CAN socket. Must be called before the program ends for a clean exit.
+     * 
+     * @return int 0 if the socket was closed successfully, 1 otherwise.
+     */
     int close_interface() {
         if (close(s) < 0) {
             perror("Close");

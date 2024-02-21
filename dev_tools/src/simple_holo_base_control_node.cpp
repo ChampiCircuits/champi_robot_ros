@@ -17,7 +17,7 @@ class SimpleHoloBaseControlNode : public rclcpp::Node
 public:
     SimpleHoloBaseControlNode() : 
         Node("simple_holo_base_control_node"),
-        champi_can_interface_(this->declare_parameter("can_interface_name", "can0"), {(int) this->declare_parameter("id_send", 0x10)})
+        champi_can_interface_(this->declare_parameter("can_interface_name", "vcan0"), {(int) this->declare_parameter("id_send", 0x10)})
     {
 
         // Get parameters
@@ -37,7 +37,19 @@ public:
         // Initialize current_pose_
         current_pose_.x = 0.0;
 
-        champi_can_interface_.start();
+        // Start the CAN interface
+        int ret = champi_can_interface_.start();
+
+        if(ret == 0) {
+            RCLCPP_INFO(this->get_logger(), "CAN interface started successfully");
+
+        }
+        else {
+            RCLCPP_ERROR(this->get_logger(), "Error starting CAN interface");
+            // TODO handle error
+        }
+
+
         // Create Subscribers
         sub_twist_in_ = this->create_subscription<geometry_msgs::msg::Twist>(topic_twist_in, 10, std::bind(&SimpleHoloBaseControlNode::twist_in_callback, this, std::placeholders::_1));
     
@@ -82,6 +94,7 @@ private:
         // Send message
         if(champi_can_interface_.send(0x10, base_vel_cmd.SerializeAsString()) != 0) {
             RCLCPP_ERROR(this->get_logger(), "Error sending message");
+            // TODO send diagnostic
         }
 
 

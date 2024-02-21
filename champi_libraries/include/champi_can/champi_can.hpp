@@ -49,6 +49,8 @@ class ChampiCan {
         assert(msg_size <= 512);
         uint16_t nb_frames = (uint16_t) msg_size / 6 + (msg_size % 6 > 0 ? 1 : 0);
 
+        int ret;
+
         for(uint16_t i=0; i<nb_frames; i++) {
             
             uint16_t msg_descriptor = msg_number << 12 | (nb_frames << 6) | i;
@@ -56,7 +58,10 @@ class ChampiCan {
             std::string msg_to_send = msg.substr(i*6, 6);
             msg_to_send = std::string((char*)&msg_descriptor, 2) + msg_to_send;
 
-            can_interface_.send(id, msg_to_send);
+            ret = can_interface_.send(id, msg_to_send);
+            if(ret != 0) {
+                return ret;
+            }
         }
 
         msg_number = (msg_number + 1) % 4; 
