@@ -10,17 +10,13 @@
 #include "champi_can/can_interface.hpp"
 
 
-
-using namespace std; // TODO remove
-
-
 class ChampiCan {
     /*
     Implements our champiprotocol !!
     */
 
     public:
-    ChampiCan(string can_interface_name, vector<int> ids_of_interest) :
+    ChampiCan(std::string can_interface_name, std::vector<int> ids_of_interest) :
         can_interface_(can_interface_name) {
 
         for(int id : ids_of_interest) {
@@ -30,7 +26,7 @@ class ChampiCan {
 
     ~ChampiCan() {
         std::terminate(); // quick fix. TODO use future instead of thread
-        cout << "Receive thread joined" << endl;
+        std::cout << "Receive thread joined" << std::endl;
         // TODO understand why the receive thread is not joining
     }
 
@@ -40,12 +36,12 @@ class ChampiCan {
             return ret;
         }
 
-        receive_thread_ = thread(&ChampiCan::receive_thread_ftc, this);
+        receive_thread_ = std::thread(&ChampiCan::receive_thread_ftc, this);
 
         return 0;
     }
 
-    int send(canid_t id, string msg) {
+    int send(canid_t id, std::string msg) {
         
         static unsigned char msg_number = 0; // TODO how does this works ?? It should be uint16_t...
 
@@ -57,8 +53,8 @@ class ChampiCan {
             
             uint16_t msg_descriptor = msg_number << 12 | (nb_frames << 6) | i;
 
-            string msg_to_send = msg.substr(i*6, 6);
-            msg_to_send = string((char*)&msg_descriptor, 2) + msg_to_send;
+            std::string msg_to_send = msg.substr(i*6, 6);
+            msg_to_send = std::string((char*)&msg_descriptor, 2) + msg_to_send;
 
             can_interface_.send(id, msg_to_send);
         }
@@ -70,7 +66,7 @@ class ChampiCan {
 
     void receive_thread_ftc() {
         canid_t id;
-        string msg;
+        std::string msg;
         while(true) {
             struct can_frame frame;
             can_interface_.receive(frame);
@@ -82,7 +78,7 @@ class ChampiCan {
 
                 // check for empty frame
                 if(frame.can_dlc == 0) {
-                    cout << "WARNING! Empty frame received for a frame with data expected. Discarding frame" << endl;
+                    std::cout << "WARNING! Empty frame received for a frame with data expected. Discarding frame" << std::endl;
                     continue;
                 }
 
@@ -100,7 +96,7 @@ class ChampiCan {
      * @return false 
      */
     bool check_if_new_full_msg(canid_t id) {
-        lock_guard<mutex> lock(mtx_);
+        std::lock_guard<std::mutex> lock(mtx_);
         return message_recomposers_[id].check_if_new_full_msg();
     }
 
@@ -111,8 +107,8 @@ class ChampiCan {
      * @param id 
      * @return string 
      */
-    string get_full_msg(canid_t id) {
-        lock_guard<mutex> lock(mtx_);
+    std::string get_full_msg(canid_t id) {
+        std::lock_guard<std::mutex> lock(mtx_);
         return message_recomposers_[id].get_full_msg();
     }
 
@@ -120,8 +116,8 @@ class ChampiCan {
 
     private:
     CanInterface can_interface_;
-    map<int, MessageRecomposer> message_recomposers_;
+    std::map<int, MessageRecomposer> message_recomposers_;
 
-    thread receive_thread_;
-    mutex mtx_;
+    std::thread receive_thread_;
+    std::mutex mtx_;
 };

@@ -3,7 +3,7 @@
 <package format="3">
   <name>champi_simulator</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Gazebo simulation (Iron)? I might delete it.</description>
   <maintainer email="andrerusso02@gmail.com">arusso</maintainer>
   <license>TODO: License declaration</license>
 

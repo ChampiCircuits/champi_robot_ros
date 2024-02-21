@@ -13,12 +13,9 @@
 
 #include <boost/asio.hpp>
 
-
-using namespace std; // TODO remove
-
 class CanInterface {
    public:
-    CanInterface(string can_interface_name) :
+    CanInterface(std::string can_interface_name) :
         can_interface_name_(can_interface_name) {
     }
 
@@ -31,7 +28,7 @@ class CanInterface {
             perror("Socket");
             return 1;
         } else {
-            cout << "CAN Socket created" << endl;
+            std::cout << "CAN Socket created" << std::endl;
         }
 
         strcpy(ifr.ifr_name, can_interface_name_.c_str());
@@ -48,7 +45,7 @@ class CanInterface {
         return 0;
     }
 
-    int send(canid_t id, string msg) {
+    int send(canid_t id, std::string msg) {
         assert(msg.size() <= 8);
         
         unsigned char* ptr = (unsigned char*) &msg[0];
@@ -84,7 +81,7 @@ class CanInterface {
             perror("Close");
             return 1;
         } else {
-            cout << "CAN Socket closed" << endl;
+            std::cout << "CAN Socket closed" << std::endl;
         }
         return 0;
     }
@@ -92,7 +89,7 @@ class CanInterface {
 
    private:
     int s;
-    string can_interface_name_;
+    std::string can_interface_name_;
     struct sockaddr_can addr;
     struct ifreq ifr;
 

@@ -3,7 +3,7 @@
 <package format="3">
   <name>champi_libraries</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>A special bookstore were you can find rare mushroom species</description>
   <maintainer email="andrerusso02@gmail.com">arusso</maintainer>
   <license>TODO: License declaration</license>
 

@@ -1,8 +1,6 @@
 #include <linux/can.h>
 #include <iostream>
 
-using namespace std; // TODO remove
-
 class MessageRecomposer {
 
 public:
@@ -42,7 +40,7 @@ public:
         }
 
         frames_received_[frame_index] = true;
-        msg_parts[frame_index] = string((char*)frame.data+2, frame.can_dlc-2);
+        msg_parts[frame_index] = std::string((char*)frame.data+2, frame.can_dlc-2);
 
         // for(int i=0; i<n_frames_; i++) {
         //     cout << "Frame " << i << " received: " << frames_received_[i] << endl;
@@ -50,7 +48,7 @@ public:
 
         if(all_frames_received()) {
             // cout << "All frames received" << endl;
-            string full_msg;
+            std::string full_msg;
             for(int i=0; i<n_frames_; i++) {
                 full_msg += msg_parts[i];
             }
@@ -87,7 +85,7 @@ public:
         return full_msg_received_;
     }
 
-    string get_full_msg() {
+    std::string get_full_msg() {
         full_msg_received_ = false;
         return full_msg_;
     }
@@ -97,9 +95,9 @@ private:
     int msg_number_;
     int n_frames_; // nb of frames needed to get the full message
     bool frames_received_[64];
-    string msg_parts[64]; // TODO RAM usage could be optimized at the cost of CPU usage
+    std::string msg_parts[64]; // TODO RAM usage could be optimized at the cost of CPU usage
 
-    string full_msg_;
+    std::string full_msg_;
     bool full_msg_received_;
 
 };
