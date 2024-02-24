@@ -1,11 +1,11 @@
-from pid import PID
-import avoidance 
+from champi_navigation.pid import PID
+import champi_navigation.math_bind as math_bind 
 
 from typing import List
 from math import pi, sqrt
 from icecream import ic
-from skgeom import Point2, Polygon
-import math_bind
+from shapely import Point, Polygon
+
 
 class Robot_Kinematic_Model():
     def __init__(self, TABLE_WIDTH, TABLE_HEIGHT, FPS) -> None:
@@ -110,18 +110,18 @@ class Obstacle_static_model():
         self.center_y = center_y
         self.width = width
         self.height = height
-        self.polygon = Polygon([Point2(center_x+width/2,center_y+height/2),
-                               Point2(center_x+width/2,center_y-height/2),
-                               Point2(center_x-width/2,center_y-height/2),
-                               Point2(center_x-width/2,center_y+height/2)])
+        self.polygon = Polygon([Point(center_x+width/2,center_y+height/2),
+                               Point(center_x+width/2,center_y-height/2),
+                               Point(center_x-width/2,center_y-height/2),
+                               Point(center_x-width/2,center_y+height/2)])
         self.expanded_obstacle_poly = math_bind.expand(self.polygon, offset)
 
 class Table_static_model():
     def __init__(self, width, height, offset) -> None:
         self.width = width
         self.height = height
-        self.polygon = Polygon([Point2(0,0),
-                                Point2(width,0),
-                                Point2(width, height),
-                                Point2(0, height)])
+        self.polygon = Polygon([Point(0,0),
+                                Point(width,0),
+                                Point(width, height),
+                                Point(0, height)])
         self.expanded_poly = math_bind.expand(self.polygon, -offset)

@@ -8,12 +8,6 @@ import pygame_widgets as pw
 from pygame_widgets.button import Button
 from pygame_widgets.toggle import Toggle
 
-
-import rclpy
-from rclpy.node import Node
-
-
-
 # COLORS
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -29,12 +23,15 @@ TABLE_WIDTH, TABLE_HEIGHT = 300, 200  # Table size in cm
 FPS = 50
 
 
-class GuiNode(Node):
+class Gui():
 
-    def __init__(self):
-        super().__init__('holo_teleop_joy')
+    def __init__(self, robot, obstacle, table):
 
         pygame.init()
+
+        self.robot = robot
+        self.obstacle = obstacle
+        self.table = table
 
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Simulateur Robot Holonome")
@@ -54,10 +51,6 @@ class GuiNode(Node):
 
         self.waiting_for_release = False
         self.pos_waiting = []
-        
-        timer_period = 1/FPS
-        self.timer = self.create_timer(timer_period, self.update)
-
 
     # Fonction pour convertir les coordonnées réelles en coordonnées écran
     def real_to_screen(self, x, y):
@@ -85,29 +78,29 @@ class GuiNode(Node):
 
             # Coordonnées du centre de la roue
             centre_roue = (
-                screen_x + robot.robot_radius * cos(angle_roue),
-                screen_y + robot.robot_radius * sin(angle_roue)
+                screen_x + self.robot.robot_radius * cos(angle_roue),
+                screen_y + self.robot.robot_radius * sin(angle_roue)
             )
 
             # Coordonnées des coins de la roue
             coin1 = np.array([
-                centre_roue[0] + robot.wheel_width/2,
-                centre_roue[1] + robot.wheel_radius
+                centre_roue[0] + self.robot.wheel_width/2,
+                centre_roue[1] + self.robot.wheel_radius
             ])
 
             coin2 = np.array([
-                centre_roue[0] + robot.wheel_width/2,
-                centre_roue[1] - robot.wheel_radius
+                centre_roue[0] + self.robot.wheel_width/2,
+                centre_roue[1] - self.robot.wheel_radius
             ])
 
             coin3 = np.array([
-                centre_roue[0] - robot.wheel_width/2,
-                centre_roue[1] - robot.wheel_radius
+                centre_roue[0] - self.robot.wheel_width/2,
+                centre_roue[1] - self.robot.wheel_radius
             ])
 
             coin4 = np.array([
-                centre_roue[0] - robot.wheel_width/2,
-                centre_roue[1] + robot.wheel_radius
+                centre_roue[0] - self.robot.wheel_width/2,
+                centre_roue[1] + self.robot.wheel_radius
             ])
             # now we rotate each point around the center of the wheel
             coin1 = np.array([
@@ -155,17 +148,17 @@ class GuiNode(Node):
             self.screen.blit(text, textRect)
 
     def draw_poly(self, obstacle, color, width=1):
-        vertices = list(obstacle.vertices)
+        vertices = list(obstacle.exterior.coords)
         vertices.append(vertices[0])
         for i in range(len(vertices)-1):
-            A = self.real_to_screen(float(vertices[i].x()),float(vertices[i].y()))
-            B = self.real_to_screen(float(vertices[i+1].x()),float(vertices[i+1].y()))
+            A = self.real_to_screen(float(vertices[i][0]),float(vertices[i][1]))
+            B = self.real_to_screen(float(vertices[i+1][0]),float(vertices[i+1][1]))
             pygame.draw.line(self.screen, color, A, B, width)
 
     def draw_graph_and_path(self, dico_all_points):
         if self.toggle_graph.getValue()==True:
             # draw the graph
-            for A,B in robot.graph.items():
+            for A,B in self.robot.graph.items():
                 pointA = dico_all_points[A]
                 for b in B.keys():
                     pointB = dico_all_points[b]
@@ -182,8 +175,8 @@ class GuiNode(Node):
                 
         if self.toggle_path.getValue()==True:
             # draw path
-            if robot.path_nodes is not None:
-                nodes = robot.path_nodes
+            if self.robot.path_nodes is not None:
+                nodes = self.robot.path_nodes
                 for i in range(len(nodes)-1):
                     pygame.draw.line(self.screen, GREEN, 
                         self.real_to_screen(dico_all_points[nodes[i]][0],dico_all_points[nodes[i]][1]), 
@@ -191,35 +184,35 @@ class GuiNode(Node):
                         5)
 
         # draw the obstacle
-        # self.draw_poly(self.screen, obstacle.polygon, RED)    
-        # self.draw_poly(self.screen, obstacle.expanded_obstacle_poly, YELLOW)  
+        self.draw_poly(self.obstacle.polygon, RED)    
+        self.draw_poly(self.obstacle.expanded_obstacle_poly, YELLOW)  
 
     def draw(self):
         # drawings
         self.screen.fill(WHITE)
 
-        # self.draw_poly(self.screen, table.polygon, BLACK, 3)
-        # self.draw_poly(self.screen, table.expanded_poly, YELLOW)
+        self.draw_poly(self.table.polygon, BLACK, 3)
+        self.draw_poly(self.table.expanded_poly, YELLOW)
 
         # Dessiner les positions du robot
-        for pos in robot.robot_positions:
-            screen_x, screen_y = self.real_to_screen(pos[0], pos[1])
-            pygame.draw.circle(self.screen, BLUE, (screen_x, screen_y), 1)
+        # for pos in self.robot.robot_positions: TODO
+        #     screen_x, screen_y = self.real_to_screen(pos[0], pos[1])
+        #     pygame.draw.circle(self.screen, BLUE, (screen_x, screen_y), 1)
 
         # draw all next goals by a cross and an arrow
-        for i in range(len(robot.goals_positions)):
+        for i in range(len(self.robot.goals_positions)):
             screen_x, screen_y = self.real_to_screen(
-                robot.goals_positions[i][0], robot.goals_positions[i][1])
+                self.robot.goals_positions[i][0], self.robot.goals_positions[i][1])
             pygame.draw.line(self.screen, GREEN, (screen_x-5, screen_y-5),
                             (screen_x+5, screen_y+5), 2)
             pygame.draw.line(self.screen, GREEN, (screen_x+5, screen_y-5),
                             (screen_x-5, screen_y+5), 2)
             # arrow indicating the angle
             pygame.draw.line(self.screen, GREEN, (screen_x, screen_y),
-                            (screen_x+20*cos(robot.goals_positions[i][2]-pi/2),
-                                screen_y+20*sin(robot.goals_positions[i][2]-pi/2)), 2)
+                            (screen_x+20*cos(self.robot.goals_positions[i][2]-pi/2),
+                                screen_y+20*sin(self.robot.goals_positions[i][2]-pi/2)), 2)
             # text
-            angle = robot.goals_positions[i][2]*180/pi
+            angle = self.robot.goals_positions[i][2]*180/pi
             font = pygame.font.SysFont('Arial', 10)
             text = font.render(str(angle)+"°", True, BLACK)
             textRect = text.get_rect()
@@ -227,38 +220,38 @@ class GuiNode(Node):
             self.screen.blit(text, textRect)
 
         # Dessiner le robot à sa nouvelle position
-        screen_x, screen_y = self.real_to_screen(robot.pos[0], robot.pos[1])
+        screen_x, screen_y = self.real_to_screen(self.robot.pos[0], self.robot.pos[1])
         pygame.draw.circle(self.screen, BLACK, (screen_x, screen_y),
-                        robot.robot_radius, 1)
+                        self.robot.robot_radius, 1)
         pygame.draw.circle(self.screen, GREEN, (screen_x, screen_y), 1)
 
         # dessiner la direction du robot
         pygame.draw.line(self.screen, GREEN, (screen_x, screen_y),
-                        (screen_x+20*cos(-pi/2+robot.pos[2]), screen_y+20*sin(-pi/2+robot.pos[2])), 2)
+                        (screen_x+20*cos(-pi/2+self.robot.pos[2]), screen_y+20*sin(-pi/2+self.robot.pos[2])), 2)
 
-        self.draw_roues(self.screen, screen_x, screen_y, robot.pos[2])
+        self.draw_roues(screen_x, screen_y, self.robot.pos[2])
 
-        self.draw_graph_and_path(self.screen, robot.dico_all_points)
+        self.draw_graph_and_path(self.robot.dico_all_points)
 
         # print the speeds in the top left corner
         font = pygame.font.SysFont('Arial', 20)
         text = font.render(
-            "speed_x: " + str(round(robot.linear_speed[0], 2)) + " cm/s", True, BLACK)
+            "speed_x: " + str(round(self.robot.linear_speed[0], 2)) + " cm/s", True, BLACK)
         textRect = text.get_rect()
         textRect.topleft = (50, 30)
         self.screen.blit(text, textRect)
         text = font.render(
-            "speed_y: " + str(round(robot.linear_speed[1], 2)) + " cm/s", True, BLACK)
+            "speed_y: " + str(round(self.robot.linear_speed[1], 2)) + " cm/s", True, BLACK)
         textRect = text.get_rect()
         textRect.topleft = (50, 50)
         self.screen.blit(text, textRect)
         text = font.render(
-            "speed_theta: " + str(round(robot.angular_speed, 2)) + " rad/s", True, BLACK)
+            "speed_theta: " + str(round(self.robot.angular_speed, 2)) + " rad/s", True, BLACK)
         textRect = text.get_rect()
         textRect.topleft = (50, 70)
         self.screen.blit(text, textRect)
         text = font.render(
-            "theta: " + str(round(robot.pos[2], 2)) + " rad", True, BLACK)
+            "theta: " + str(round(self.robot.pos[2], 2)) + " rad", True, BLACK)
         textRect = text.get_rect()
         textRect.topleft = (50, 90)
         self.screen.blit(text, textRect)
@@ -282,7 +275,7 @@ class GuiNode(Node):
     def on_click(self):
         global robot
         print("button clicked")
-        robot.linear_speed = [0, 0]
+        self.robot.linear_speed = [0, 0]
 
 
     def update(self):
@@ -303,10 +296,10 @@ class GuiNode(Node):
                 x, y = mouse_pos
                 x, y = x-45, y-30
                 x, y = x/(WIDTH-90)*TABLE_WIDTH, y/(HEIGHT-60)*TABLE_HEIGHT
-                waiting_for_release = True
+                self.waiting_for_release = True
                 pos_waiting = [x, y]
 
-            if event.type == pygame.MOUSEBUTTONUP and waiting_for_release and event.button == 1: # left click up
+            if event.type == pygame.MOUSEBUTTONUP and self.waiting_for_release and event.button == 1: # left click up
                 # calcule la position sur la table
                 mouse_pos = pygame.mouse.get_pos()
                 x, y = mouse_pos
@@ -317,10 +310,10 @@ class GuiNode(Node):
                 
                 # GOTO
                 ic("goto", pos_waiting, theta*180/pi)
-                waiting_for_release = False
+                self.waiting_for_release = False
 
                 """ENVOI MESSAGE ROS"""
-                # robot.recompute_path(obstacle,table,[pos_waiting[0],pos_waiting[1],theta])
+                # self.robot.recompute_path(obstacle,table,[pos_waiting[0],pos_waiting[1],theta])
 
             # si clic droit on bouge le robot adverse
             if pygame.mouse.get_pressed()[2]:
@@ -338,27 +331,10 @@ class GuiNode(Node):
         pw.update(events)
 
         # delete the last point so that the array does not get to heavy
-        # if len(robot.robot_positions)>500:
-        #     robot.robot_positions.pop(0)
+        # if len(self.robot.robot_positions)>500:
+        #     self.robot.robot_positions.pop(0)
 
         """ENVOI MSG ROS POSE GOAL, POLY ROBOT ADVERSE"""
 
         self.draw()    
         self.clock.tick(FPS)
-
-
-
-
-def main(args=None):
-    rclpy.init(args=args)
-
-    gui_node = GuiNode()
-
-    rclpy.spin(gui_node)
-
-    gui_node.destroy_node()
-    rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()

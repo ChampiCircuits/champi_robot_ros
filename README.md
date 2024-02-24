@@ -5,6 +5,10 @@
 - Ubuntu 22
 - ROS2 Humble
 
+## Commandes
+```bash
+ros2 run champi_navigation pose_control_node.py
+```
 ## Commandements
 
 Suis ces commandemments et tout se passera bien.
@@ -29,6 +33,8 @@ rosdep install --from src --ignore-src
 Et lancer le script `scripts/setup.sh` pour faire d'autres choses.
 
 ### Compilation
+
+Pour compiler:
 ```bash
 colcon build --symlink-install
 ```
