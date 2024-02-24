@@ -7,6 +7,7 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PoseStamped
 
 from champi_navigation.kinematic_models import Robot_Kinematic_Model, Obstacle_static_model, Table_static_model
 import champi_navigation.avoidance as avoidance
@@ -38,6 +39,11 @@ class PoseControl(Node):
 
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
+        # Subscribe to goal pose
+        self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
+        self.goal_sub  # prevent unused variable warning
+        self.latest_goal = None
+
 
         timer_period = 1/FPS
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -45,6 +51,8 @@ class PoseControl(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
+    def goal_callback(self, msg):
+        self.latest_goal = msg
 
     def timer_callback(self):
         self.update()
@@ -71,8 +79,6 @@ class PoseControl(Node):
         # Conversion entre -pi et pi
         if self.robot.pos[2] > pi:
             self.robot.pos[2] -= 2*pi
-
-
 
 
     def check_goal_reached(self):
@@ -150,6 +156,14 @@ class PoseControl(Node):
 
 
     def update(self):
+
+        if self.latest_goal is not None:
+            x = self.latest_goal.pose.position.x
+            y = self.latest_goal.pose.position.y
+            q = self.latest_goal.pose.orientation
+            theta = 2*atan2(q.z, q.w)
+            self.robot.goals_positions.append([x, y, theta])
+            self.latest_goal = None
 
         self.update_robot_pose_from_tf()
 

@@ -325,7 +325,7 @@ class Gui():
                 self.waiting_for_release = False
 
                 """pour le node pose_control TODO EST CE QUE C'EST BIEN COMMME CA?"""
-                self.robot.goals_positions.append([self.pos_waiting[0], self.pos_waiting[1], theta])
+                # self.robot.goals_positions.append([self.pos_waiting[0], self.pos_waiting[1], theta]) # TODO remettre
 
             # si clic droit on bouge le robot adverse
             if pygame.mouse.get_pressed()[2]:

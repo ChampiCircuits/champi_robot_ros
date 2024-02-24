@@ -151,6 +151,10 @@ private:
         msg.pose.pose.orientation.z = q.z();
         msg.pose.pose.orientation.w = q.w();
 
+        msg.twist.twist.linear.x = this->current_vel_.x();
+        msg.twist.twist.linear.y = this->current_vel_.y();
+        msg.twist.twist.angular.z = this->current_vel_.theta();
+
         pub_odom_->publish(msg);
     }
 
