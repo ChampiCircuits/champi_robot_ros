@@ -14,7 +14,7 @@ import champi_navigation.gui as gui
 
 from icecream import ic
 from dijkstar import Graph
-from math import pi, atan2
+from math import pi, atan2, cos, sin
 from shapely import Point
 
 WIDTH, HEIGHT = 900, 600  # window
@@ -67,6 +67,10 @@ class PoseControl(Node):
         
         q = t.transform.rotation
         self.robot.pos[2] = 2*atan2(q.z, q.w)
+
+        # Conversion entre -pi et pi
+        if self.robot.pos[2] > pi:
+            self.robot.pos[2] -= 2*pi
 
 
 
@@ -157,13 +161,12 @@ class PoseControl(Node):
                 
         self.recompute_path(self.obstacle, self.table)
     
-        # publish the velocity
+        # publish the velocity (expressed in the base_link frame)
         twist = Twist()
-        twist.linear.x = self.robot.linear_speed[0]
-        twist.linear.y = self.robot.linear_speed[1]
+        twist.linear.x = self.robot.linear_speed[0] * cos(self.robot.pos[2]) + self.robot.linear_speed[1] * sin(self.robot.pos[2])
+        twist.linear.y = -self.robot.linear_speed[0] * sin(self.robot.pos[2]) + self.robot.linear_speed[1] * cos(self.robot.pos[2])
         twist.angular.z = self.robot.angular_speed
         self.cmd_vel_pub.publish(twist)
-
 
         if self.viz:
             self.gui.update()

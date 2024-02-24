@@ -12,6 +12,15 @@ find_package(ament_cmake_python REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
+
+# Allow lauch files to be found when calling them with ros2 launch
+install(DIRECTORY
+  launch
+  # config
+  # ressources
+  DESTINATION share/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

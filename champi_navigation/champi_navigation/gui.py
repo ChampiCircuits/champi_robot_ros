@@ -64,6 +64,9 @@ class Gui():
         # scale everything to 0.9
         screen_x = int(x * x_factor*0.9)+45
         screen_y = int(y * y_factor*0.9)+30
+
+        screen_y = HEIGHT - screen_y # Parce que PyGame et ROS n'ont pas le même sens de l'axe y.
+
         return screen_x, screen_y
 
     def draw_roues(self, screen_x, screen_y, robot_theta):
@@ -221,28 +224,28 @@ class Gui():
 
         # Dessiner le robot à sa nouvelle position
         screen_x, screen_y = self.real_to_screen(self.robot.pos[0], self.robot.pos[1])
-        ic(self.robot.pos, screen_x, screen_y)
         pygame.draw.circle(self.screen, BLACK, (screen_x, screen_y),
                         self.robot.robot_radius, 1)
         pygame.draw.circle(self.screen, GREEN, (screen_x, screen_y), 1)
 
         # dessiner la direction du robot
+        robot_angle_gui = - self.robot.pos[2] # Parce que PyGame et ROS ne tournent pas dans le même sens.
         pygame.draw.line(self.screen, GREEN, (screen_x, screen_y),
-                        (screen_x+20*cos(self.robot.pos[2]), screen_y+20*sin(self.robot.pos[2])), 2)
+                        (screen_x+20*cos(robot_angle_gui), screen_y+20*sin(robot_angle_gui)), 2)
 
-        self.draw_roues(screen_x, screen_y, self.robot.pos[2])
+        self.draw_roues(screen_x, screen_y, robot_angle_gui)
 
         self.draw_graph_and_path(self.robot.dico_all_points)
 
         # print the speeds in the top left corner
         font = pygame.font.SysFont('Arial', 20)
         text = font.render(
-            "speed_x: " + str(round(self.robot.linear_speed[0], 2)) + " cm/s", True, BLACK)
+            "speed_x: " + str(round(self.robot.linear_speed[0], 2)) + " m/s", True, BLACK)
         textRect = text.get_rect()
         textRect.topleft = (50, 30)
         self.screen.blit(text, textRect)
         text = font.render(
-            "speed_y: " + str(round(self.robot.linear_speed[1], 2)) + " cm/s", True, BLACK)
+            "speed_y: " + str(round(self.robot.linear_speed[1], 2)) + " m/s", True, BLACK)
         textRect = text.get_rect()
         textRect.topleft = (50, 50)
         self.screen.blit(text, textRect)
@@ -264,11 +267,19 @@ class Gui():
         if self.waiting_for_release:
             # draw a line from pos_waiting to the mouse
             mouse_pos = pygame.mouse.get_pos()
-            x, y = mouse_pos
-            x, y = x-45, y-30
+            x_screen, y_screen = mouse_pos
+            x, y = x_screen-45, HEIGHT - y_screen-30
             x, y = x/(WIDTH-90)*TABLE_WIDTH, y/(HEIGHT-60)*TABLE_HEIGHT
             pygame.draw.line(self.screen, BLACK, self.real_to_screen(
                 self.pos_waiting[0], self.pos_waiting[1]), self.real_to_screen(x, y), 2)
+            
+            theta = atan2(y-self.pos_waiting[1], x-self.pos_waiting[0])
+            # draw text to show the angle
+            font = pygame.font.SysFont('Arial', 10)
+            text = font.render(str(round(theta*180/pi, 2))+"°", True, RED)
+            textRect = text.get_rect()
+            textRect.center = (x_screen, y_screen)
+            self.screen.blit(text, textRect)
 
         # Mettre à jour l'affichage
         pygame.display.flip() # TODO remettre
@@ -295,7 +306,7 @@ class Gui():
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: # left click down
                 mouse_pos = pygame.mouse.get_pos()
                 x, y = mouse_pos
-                x, y = x-45, y-30
+                x, y = x-45, HEIGHT - y-30
                 x, y = x/(WIDTH-90)*TABLE_WIDTH, y/(HEIGHT-60)*TABLE_HEIGHT
                 self.waiting_for_release = True
                 self.pos_waiting = [x, y]
@@ -304,10 +315,10 @@ class Gui():
                 # calcule la position sur la table
                 mouse_pos = pygame.mouse.get_pos()
                 x, y = mouse_pos
-                x, y = x-45, y-30
+                x, y = x-45, HEIGHT - y-30
                 x, y = x/(WIDTH-90)*TABLE_WIDTH, y/(HEIGHT-60)*TABLE_HEIGHT
                 # calcule l'angle demandé
-                theta = atan2(y-self.pos_waiting[1], x-self.pos_waiting[0]) + pi/2
+                theta = atan2(y-self.pos_waiting[1], x-self.pos_waiting[0])
                 
                 # GOTO
                 ic("goto", self.pos_waiting, theta*180/pi)
@@ -322,11 +333,11 @@ class Gui():
                     # if event.button == 3: # right click
                     mouse_pos = pygame.mouse.get_pos()
                     x, y = mouse_pos
-                    x, y = x-45, y-30
+                    x, y = x-45, HEIGHT - y-30
                     x, y = x/(WIDTH-90)*TABLE_WIDTH, y/(HEIGHT-60)*TABLE_HEIGHT
 
                     """ENVOI MESSAGE ROS"""
-                    # obstacle = Obstacle_static_model(x, y, 10, 10, offset)
+                    # obstacle = Obstacle_static_model(x, y, 10, 10, offset) TODO
 
         self.button.listen(events)
         pw.update(events)
