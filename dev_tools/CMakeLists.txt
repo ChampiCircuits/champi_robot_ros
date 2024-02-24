@@ -52,6 +52,7 @@ install(PROGRAMS
   scripts/camera_info_publisher_node.py
   scripts/cv2_camera_publisher_node.py
   scripts/holo_teleop_joy_node.py
+  scripts/holo_base_control_dummy_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
