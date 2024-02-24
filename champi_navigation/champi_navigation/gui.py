@@ -19,7 +19,7 @@ PINK = (255, 0, 255)
 
 # CONSTANTS
 WIDTH, HEIGHT = 900, 600  # window
-TABLE_WIDTH, TABLE_HEIGHT = 300, 200  # Table size in cm
+TABLE_WIDTH, TABLE_HEIGHT = 3, 2  # Table size in m
 FPS = 50
 
 
@@ -221,13 +221,14 @@ class Gui():
 
         # Dessiner le robot à sa nouvelle position
         screen_x, screen_y = self.real_to_screen(self.robot.pos[0], self.robot.pos[1])
+        ic(self.robot.pos, screen_x, screen_y)
         pygame.draw.circle(self.screen, BLACK, (screen_x, screen_y),
                         self.robot.robot_radius, 1)
         pygame.draw.circle(self.screen, GREEN, (screen_x, screen_y), 1)
 
         # dessiner la direction du robot
         pygame.draw.line(self.screen, GREEN, (screen_x, screen_y),
-                        (screen_x+20*cos(-pi/2+self.robot.pos[2]), screen_y+20*sin(-pi/2+self.robot.pos[2])), 2)
+                        (screen_x+20*cos(self.robot.pos[2]), screen_y+20*sin(self.robot.pos[2])), 2)
 
         self.draw_roues(screen_x, screen_y, self.robot.pos[2])
 
@@ -297,7 +298,7 @@ class Gui():
                 x, y = x-45, y-30
                 x, y = x/(WIDTH-90)*TABLE_WIDTH, y/(HEIGHT-60)*TABLE_HEIGHT
                 self.waiting_for_release = True
-                pos_waiting = [x, y]
+                self.pos_waiting = [x, y]
 
             if event.type == pygame.MOUSEBUTTONUP and self.waiting_for_release and event.button == 1: # left click up
                 # calcule la position sur la table
@@ -306,14 +307,14 @@ class Gui():
                 x, y = x-45, y-30
                 x, y = x/(WIDTH-90)*TABLE_WIDTH, y/(HEIGHT-60)*TABLE_HEIGHT
                 # calcule l'angle demandé
-                theta = atan2(y-pos_waiting[1], x-pos_waiting[0]) + pi/2
+                theta = atan2(y-self.pos_waiting[1], x-self.pos_waiting[0]) + pi/2
                 
                 # GOTO
-                ic("goto", pos_waiting, theta*180/pi)
+                ic("goto", self.pos_waiting, theta*180/pi)
                 self.waiting_for_release = False
 
-                """ENVOI MESSAGE ROS"""
-                # self.robot.recompute_path(obstacle,table,[pos_waiting[0],pos_waiting[1],theta])
+                """pour le node pose_control TODO EST CE QUE C'EST BIEN COMMME CA?"""
+                self.robot.goals_positions.append([self.pos_waiting[0], self.pos_waiting[1], theta])
 
             # si clic droit on bouge le robot adverse
             if pygame.mouse.get_pressed()[2]:

@@ -27,10 +27,10 @@ def create_graph(start: Point, goal: Point, expanded_obstacle_poly: Polygon, exp
 
     # create a dictionnary associating each point with an index
     dico_all_points = {}
-    dico_all_points[len(dico_all_points)] = (start.x(),start.y())
-    dico_all_points[len(dico_all_points)] = (goal.x(),goal.y())
-    for point in list(expanded_obstacle_poly.vertices):
-        dico_all_points[len(dico_all_points)] = point_to_tuple(point)
+    dico_all_points[len(dico_all_points)] = (start.x,start.y)
+    dico_all_points[len(dico_all_points)] = (goal.x,goal.y)
+    for point in list(expanded_obstacle_poly.exterior.coords):
+        dico_all_points[len(dico_all_points)] = point
     
 
 # GENERATING COMBINATIONS
@@ -61,9 +61,9 @@ def create_graph(start: Point, goal: Point, expanded_obstacle_poly: Polygon, exp
         graph.add_edge(seg[1],seg[0],d)
 
     edges_to_not_cross = []
-    for edge in expanded_obstacle_poly.edges:
+    for edge in get_edges(expanded_obstacle_poly):
         edges_to_not_cross.append(edge)
-    for edge in expanded_table_poly.edges:
+    for edge in get_edges(expanded_table_poly):
         edges_to_not_cross.append(edge)
 
     # check for each segment/combination of two points if they cross the obstacle
@@ -72,7 +72,7 @@ def create_graph(start: Point, goal: Point, expanded_obstacle_poly: Polygon, exp
         a, b = comb
         pointA = dico_all_points[a]
         pointB = dico_all_points[b]
-        segment = LineString(pointA,pointB)
+        segment = LineString([pointA, pointB])
 
         # Check if there is an intersection with one obstacle or the table
         no_inter = True
@@ -82,8 +82,8 @@ def create_graph(start: Point, goal: Point, expanded_obstacle_poly: Polygon, exp
                 continue
             
             inter = point_to_tuple(inter)
-            edgeA = point_to_tuple(edge[0])
-            edgeB = point_to_tuple(edge[1])
+            edgeB = edge.coords[1]
+            edgeA = edge.coords[0]
             
             # if segments have a common point, having an intersection is OK
             if not eq_tuples(pointA, inter) and not eq_tuples(inter, pointB) and not eq_tuples(inter, edgeA) and not eq_tuples(inter,edgeB):
@@ -123,3 +123,17 @@ def find_avoidance_path(graph, start, end):
         return find_path(graph, start, end)
     except:
         return None
+
+def get_edges(poly: Polygon):
+    """Get the edges of a polygon
+
+    Args:
+        poly (Polygon): The polygon to get the edges from
+
+    Returns:
+        list[LineString]: The list of edges
+    """
+    edges = []
+    for i in range(len(poly.exterior.coords)-1):
+        edges.append(LineString([poly.exterior.coords[i],poly.exterior.coords[i+1]]))
+    return edges

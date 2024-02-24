@@ -20,7 +20,7 @@ def eq_segs(segA: LineString, segB: LineString) -> bool:
 
 def dist(A: Point,B: Point) -> float:
     """Compute the euclidian distance between two points"""
-    return sqrt(pow(B.x-A.x,2)+pow(B.y-A.y,2))
+    return sqrt(pow(B[0]-A[0],2)+pow(B[1]-A[1],2))
 
 def point_to_tuple(p: Point) -> tuple:
     """Transform a Point to a tuple of coordinates"""

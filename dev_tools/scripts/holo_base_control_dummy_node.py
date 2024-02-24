@@ -5,9 +5,11 @@ import time
 
 import rclpy
 from rclpy.node import Node
+from tf2_ros import TransformBroadcaster
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TransformStamped
 
 
 class HoloBaseControlDummy(Node):
@@ -23,6 +25,9 @@ class HoloBaseControlDummy(Node):
         self.subscription  # prevent unused variable warning
 
         self.pub = self.create_publisher(Odometry, '/odom', 10)
+
+        # Initialize the transform broadcaster
+        self.tf_broadcaster = TransformBroadcaster(self)
 
         timer_period = 0.02  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -48,15 +53,14 @@ class HoloBaseControlDummy(Node):
     def timer_callback(self):
         self.cmd_vel_to_wheels()
         self.wheels_to_current_vel()
+        self.update_pose()
 
+        # Publish the odometry
         odom = Odometry()
+        odom.header.stamp = self.get_clock().now().to_msg()
         odom.twist.twist.linear.x = self.current_vel[0]
         odom.twist.twist.linear.y = self.current_vel[1]
         odom.twist.twist.angular.z = self.current_vel[2]
-
-        odom.header.stamp = self.get_clock().now().to_msg()
-
-        self.update_pose()
         odom.pose.pose.position.x = self.current_pose[0]
         odom.pose.pose.position.y = self.current_pose[1]
         odom.pose.pose.position.z = 0.
@@ -64,11 +68,22 @@ class HoloBaseControlDummy(Node):
         odom.pose.pose.orientation.y = 0.
         odom.pose.pose.orientation.z = sin(self.current_pose[2] / 2)
         odom.pose.pose.orientation.w = cos(self.current_pose[2] / 2)
-
         self.pub.publish(odom)
 
-        
-            
+        # Broadcast the transform
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = "odom"
+        t.child_frame_id = "base_link"
+        t.transform.translation.x = self.current_pose[0]
+        t.transform.translation.y = self.current_pose[1]
+        t.transform.translation.z = 0.
+        t.transform.rotation.x = 0.
+        t.transform.rotation.y = 0.
+        t.transform.rotation.z = sin(self.current_pose[2] / 2)
+        t.transform.rotation.w = cos(self.current_pose[2] / 2)
+        self.tf_broadcaster.sendTransform(t)
+
 
     def wheels_to_current_vel(self):
         # Convert from WHEEL speeds --> LINEAR and ANGULAR speeds

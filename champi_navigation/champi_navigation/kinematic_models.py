@@ -50,60 +50,6 @@ class Robot_Kinematic_Model():
         self.speed_wheel2 = speeds[2]
     # TODO A CHANGER POUR LINEAR & ANGULAR 
 
-    def update_robot_position(self):
-        # DONC ICI JE FAIS LA CONVERSION,
-        # ET C'EST ICI QU'IL FAUT QUE T'AJOUTES L'APPEL A LA STM ET LA LECTURE
-        self.linear_to_wheel() # y'a WRITE SPEEDS dedans
-        self.wheel_to_linear()
-
-        # Update robot position
-        self.pos[0] += self.linear_speed[0] * self.delta_t
-        self.pos[1] += self.linear_speed[1] * self.delta_t
-        self.pos[2] += self.angular_speed * self.delta_t
-        # self.robot_positions.append(self.pos.copy())
-
-    def wheel_to_linear(self):
-        # Convert from WHEEL speeds --> LINEAR and ANGULAR speeds
-        self.linear_speed = [-(self.speed_wheel0 + self.speed_wheel1 - 2*self.speed_wheel2),
-                                 1/3*(-self.speed_wheel0*sqrt(3) + self.speed_wheel1*sqrt(3))]
-        self.angular_speed = (1 / (self.robot_radius)) * \
-            (-self.speed_wheel0 - self.speed_wheel1 + self.speed_wheel2)
-
-    def linear_to_wheel(self):
-        # Convert from LINEAR and ANGULAR speeds --> WHEEL speeds
-        cmd_vitesse_roue0 = 0.5 * \
-            self.linear_speed[0] - sqrt(3) / 2 * self.linear_speed[1] - \
-            self.robot_radius * self.angular_speed
-        cmd_vitesse_roue1 = 0.5 * \
-            self.linear_speed[0] + sqrt(3) / 2 * self.linear_speed[1] - \
-            self.robot_radius * self.angular_speed
-        cmd_vitesse_roue2 = self.linear_speed[0] - \
-            self.robot_radius * self.angular_speed
-
-
-        # limit the speeds
-        accel_roue_0 = cmd_vitesse_roue0 - self.speed_wheel0
-        accel_roue_1 = cmd_vitesse_roue1 - self.speed_wheel1
-        accel_roue_2 = cmd_vitesse_roue2 - self.speed_wheel2
-        
-        abs_accel_roue_0 = abs(accel_roue_0)
-        abs_accel_roue_1 = abs(accel_roue_1)
-        abs_accel_roue_2 = abs(accel_roue_2)
-        abs_accel_roues = [abs_accel_roue_0, abs_accel_roue_1, abs_accel_roue_2]
-
-        if abs_accel_roue_0 < self.MAX_ACCEL_PER_CYCLE and abs_accel_roue_1 < self.MAX_ACCEL_PER_CYCLE and abs_accel_roue_2 < self.MAX_ACCEL_PER_CYCLE:
-            # acceleration requested is ok, no need to accelerate gradually.
-            self.write_speeds([cmd_vitesse_roue0, cmd_vitesse_roue1, cmd_vitesse_roue2])
-        else:
-            speed_ratio = self.MAX_ACCEL_PER_CYCLE / max(abs_accel_roues)
-            self.write_speeds([self.speed_wheel0 + speed_ratio * accel_roue_0, 
-                               self.speed_wheel1 + speed_ratio * accel_roue_1, 
-                               self.speed_wheel2 + speed_ratio * accel_roue_2])
-            
-    
-
-
-
 class Obstacle_static_model():
     def __init__(self, center_x, center_y, width, height, offset) -> None:
         self.center_x = center_x

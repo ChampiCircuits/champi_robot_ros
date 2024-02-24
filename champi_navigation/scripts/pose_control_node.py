@@ -2,6 +2,11 @@
 
 import rclpy
 from rclpy.node import Node
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+
+from geometry_msgs.msg import Twist
 
 from champi_navigation.kinematic_models import Robot_Kinematic_Model, Obstacle_static_model, Table_static_model
 import champi_navigation.avoidance as avoidance
@@ -9,35 +14,59 @@ import champi_navigation.gui as gui
 
 from icecream import ic
 from dijkstar import Graph
-from math import pi
+from math import pi, atan2
 from shapely import Point
 
 WIDTH, HEIGHT = 900, 600  # window
-TABLE_WIDTH, TABLE_HEIGHT = 300, 200  # Table size in cm
+TABLE_WIDTH, TABLE_HEIGHT = 3, 2  # Table size in cm
 FPS = 50
-OFFSET = 15 # TODO rayon du self.robot, à voir Etienne
+OFFSET = 0.15 # TODO rayon du self.robot, à voir Etienne
 
 class PoseControl(Node):
 
     def __init__(self):
-        super().__init__('pos_control_node')
-
+        super().__init__('pose_control_node')
 
 
         self.robot = Robot_Kinematic_Model(TABLE_WIDTH=TABLE_WIDTH, TABLE_HEIGHT=TABLE_HEIGHT,FPS=FPS)
-        self.obstacle = Obstacle_static_model(center_x=100, center_y= 100, width= 10, height= 10,offset=OFFSET)
+        self.obstacle = Obstacle_static_model(center_x=1, center_y= 1, width= 0.1, height= 0.1,offset=OFFSET)
         self.table = Table_static_model(TABLE_WIDTH, TABLE_HEIGHT, offset=OFFSET)
 
         self.viz = True
         self.gui = gui.Gui(self.robot, self.obstacle, self.table)
 
 
-        timer_period = 0.1  # seconds
+        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+
+
+        timer_period = 1/FPS
         self.timer = self.create_timer(timer_period, self.timer_callback)
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
 
     def timer_callback(self):
         self.update()
+
+    def update_robot_pose_from_tf(self):
+        t = None
+        try:
+            t = self.tf_buffer.lookup_transform(
+                "odom",
+                "base_link",
+                rclpy.time.Time())
+            
+        except TransformException as ex:
+            self.get_logger().info(
+                f'Could not transform {"odom"} to {"base_link"}: {ex}')
+            return
+
+        self.robot.pos[0] = t.transform.translation.x
+        self.robot.pos[1] = t.transform.translation.y
+        
+        q = t.transform.rotation
+        self.robot.pos[2] = 2*atan2(q.z, q.w)
 
 
 
@@ -117,6 +146,9 @@ class PoseControl(Node):
 
 
     def update(self):
+
+        self.update_robot_pose_from_tf()
+
         self.check_goal_reached()
 
         self.goto(self.robot.current_goal[0],
@@ -124,8 +156,14 @@ class PoseControl(Node):
         self.robot.current_goal[2])
                 
         self.recompute_path(self.obstacle, self.table)
-        
-        self.robot.update_robot_position()
+    
+        # publish the velocity
+        twist = Twist()
+        twist.linear.x = self.robot.linear_speed[0]
+        twist.linear.y = self.robot.linear_speed[1]
+        twist.angular.z = self.robot.angular_speed
+        self.cmd_vel_pub.publish(twist)
+
 
         if self.viz:
             self.gui.update()
