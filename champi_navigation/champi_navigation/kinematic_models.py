@@ -44,12 +44,6 @@ class Robot_Kinematic_Model():
         self.pid_pos_theta = PID(1, 0, 0, 1/FPS)
         self.delta_t = 1 / FPS  # Time between two updates
 
-    def write_speeds(self, speeds: List) -> None:
-        self.speed_wheel0 = speeds[0]
-        self.speed_wheel1 = speeds[1]
-        self.speed_wheel2 = speeds[2]
-    # TODO A CHANGER POUR LINEAR & ANGULAR 
-
 class Obstacle_static_model():
     def __init__(self, center_x, center_y, width, height, offset) -> None:
         self.center_x = center_x

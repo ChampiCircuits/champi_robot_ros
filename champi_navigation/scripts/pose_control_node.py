@@ -44,8 +44,7 @@ class PoseControl(Node):
         self.goal_sub  # prevent unused variable warning
         self.latest_goal = None
 
-
-        timer_period = 1/FPS
+        timer_period = 0.1
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         self.tf_buffer = Buffer()
@@ -79,6 +78,8 @@ class PoseControl(Node):
         # Conversion entre -pi et pi
         if self.robot.pos[2] > pi:
             self.robot.pos[2] -= 2*pi
+        elif self.robot.pos[2] < -pi:
+            self.robot.pos[2] += 2*pi
 
 
     def check_goal_reached(self):
@@ -101,10 +102,12 @@ class PoseControl(Node):
         # if it's shorter to turn in the other direction, we do it
         # TODO not always working
         error_theta = theta - self.robot.pos[2]
-        if error_theta > pi:
-            error_theta -= 2*pi
-        elif error_theta < -pi:
-            error_theta += 2*pi
+        if abs(error_theta) > pi:
+            if error_theta > 0:
+                error_theta -= 2*pi
+            else:
+                error_theta += 2*pi
+
         self.robot.angular_speed = self.robot.pid_pos_theta.update(error_theta)
 
         # # PID
@@ -184,10 +187,6 @@ class PoseControl(Node):
 
         if self.viz:
             self.gui.update()
-
-
-        """ENVOI MESSAGE ROS CMD_VEL"""
-        """LIRE POSE GOAL, POLY ROBOT ADVERSE, ODOM"""
 
 
 def main(args=None):

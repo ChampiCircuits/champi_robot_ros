@@ -44,7 +44,7 @@ class HoloBaseControlDummy(Node):
         self.speed_wheel1 = 0
         self.speed_wheel2 = 0
 
-        self.robot_radius = 0.1  # TODO
+        self.robot_radius = 0.01  # TODO
 
 
     def listener_callback(self, msg):
@@ -58,6 +58,8 @@ class HoloBaseControlDummy(Node):
         # Publish the odometry
         odom = Odometry()
         odom.header.stamp = self.get_clock().now().to_msg()
+        odom.header.frame_id = "odom"
+        odom.child_frame_id = "base_link"
         odom.twist.twist.linear.x = self.current_vel[0]
         odom.twist.twist.linear.y = self.current_vel[1]
         odom.twist.twist.angular.z = self.current_vel[2]
