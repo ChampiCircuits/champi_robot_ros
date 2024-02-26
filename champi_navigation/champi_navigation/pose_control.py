@@ -43,6 +43,27 @@ class CmdVelCalculator:
 
         return cmd_vel
 
+class CmdVelCalculator2:
+    def __init__(self):
+        # PIDs
+        self.pid_angle_vec_dir = PID(1, 0, 0)
+    
+
+    def compute_cmd_vel(self, robot_state, pose_goal, dt):
+        # if it's shorter to turn in the other direction, we do it
+        # TODO not always working
+        error_theta = pose_goal[2] - robot_state.current_pose[2]
+        if abs(error_theta) > pi:
+            if error_theta > 0:
+                error_theta -= 2*pi
+            else:
+                error_theta += 2*pi
+        
+        cmd_vel = Vel()
+
+        
+
+        return cmd_vel
         
 class PoseControl:
     def __init__(self, viz=None):
@@ -83,7 +104,7 @@ class PoseControl:
     def control_loop_spin_once(self, dt):
 
         self.update_goal()
-        self.recompute_path(self.obstacle, self.table)
+        # self.recompute_path(self.obstacle, self.table)
 
         cmd_vel = self.cmd_vel_calc.compute_cmd_vel(self.robot_state, self.current_goal, dt)
 

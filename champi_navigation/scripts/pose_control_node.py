@@ -7,6 +7,7 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import PoseStamped
 
 from icecream import ic
@@ -35,7 +36,7 @@ class PoseControlNode(Node):
         self.poseControl = PoseControl(self.viz)
 
         # Publishers
-        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_vel_pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
 
         # Subscribers
         self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
@@ -70,19 +71,25 @@ class PoseControlNode(Node):
         # Compute the time elapsed since the last control loop
         current_time = self.get_clock().now()
         dt = (current_time - self.last_time_ctrl_loop).nanoseconds / 1e9
+        self.last_time_ctrl_loop = current_time
 
         # Transmit the current state of the robot to the pose control
         current_robot_pose = self.get_robot_pose_from_tf()
         if current_robot_pose is None: # TF could not be received
             return
-        current_robot_speed = self.get_curent_robot_speed()
+        current_robot_speed = self.get_current_robot_speed()
         self.poseControl.robot_state.update(current_robot_pose, current_robot_speed)
 
         # Call the control loop of the pose control
         cmd_twist = self.poseControl.control_loop_spin_once(dt)
 
+        cmd_twist_stamped = TwistStamped()
+        cmd_twist_stamped.header.stamp = current_time.to_msg()
+        cmd_twist_stamped.header.frame_id = "base_link"
+        cmd_twist_stamped.twist = cmd_twist
+
         # Publish the command
-        self.cmd_vel_pub.publish(cmd_twist)
+        self.cmd_vel_pub.publish(cmd_twist_stamped)
 
 
     def get_robot_pose_from_tf(self):
@@ -110,7 +117,7 @@ class PoseControlNode(Node):
         return pose
 
 
-    def get_curent_robot_speed(self):
+    def get_current_robot_speed(self):
         return Vel(0, 0, 0) # TODO
 
 

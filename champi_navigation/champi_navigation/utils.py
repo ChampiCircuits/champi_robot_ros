@@ -7,16 +7,10 @@ from geometry_msgs.msg import Twist
 
 class Vel:
     """Velocity. It can be expressed in any frame."""
-    def __init__(self, x=None, y=None, theta=None):
-
-        if x is None or y is None or theta is None:
-            self.x = 0.
-            self.y = 0.
-            self.theta = 0.
-        else:
-            self.x = x # m/s
-            self.y = y # m/s
-            self.theta = theta # rad/s
+    def __init__(self, x=0., y=0., theta=0.):
+        self.x = x # m/s
+        self.y = y # m/s
+        self.theta = theta # rad/s
     
     def init_from_mag_ang(self, mag, angle, theta):
         self.x = mag * cos(angle)

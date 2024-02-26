@@ -8,7 +8,7 @@ from rclpy.node import Node
 from tf2_ros import TransformBroadcaster
 
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import TransformStamped
 
 
@@ -18,7 +18,7 @@ class HoloBaseControlDummy(Node):
         super().__init__('holo_base_control_dummy_node')
 
         self.subscription = self.create_subscription(
-            Twist,
+            TwistStamped,
             '/cmd_vel',
             self.listener_callback,
             10)
@@ -48,7 +48,7 @@ class HoloBaseControlDummy(Node):
 
 
     def listener_callback(self, msg):
-        self.latest_cmd_vel = [msg.linear.x, msg.linear.y, msg.angular.z]
+        self.latest_cmd_vel = [msg.twist.linear.x, msg.twist.linear.y, msg.twist.angular.z]
 
     def timer_callback(self):
         self.cmd_vel_to_wheels()
