@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import numpy as np
 from icecream import ic
 import cv2
 
@@ -27,8 +26,8 @@ class GuiV2:
 
         positions_px = self.rviz_img_displayer.m_to_pxl(positions)
         # draw lines
-        for pos in positions_px[1:]:
-            cv2.line(self.rviz_img_displayer.background_img, tuple(positions_px[0]), tuple(pos), (0, 0, 255), 1)
+        for i in range(len(positions_px)-1):
+            cv2.line(self.rviz_img_displayer.get_img(), tuple(positions_px[i]), tuple(positions_px[i+1]), (0, 0, 255), 2)
     
     def update(self):
         self.rviz_img_displayer.update()

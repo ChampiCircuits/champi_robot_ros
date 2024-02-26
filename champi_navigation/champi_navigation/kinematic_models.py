@@ -8,28 +8,9 @@ from shapely import Point, Polygon
 
 class Robot_Kinematic_Model():
     def __init__(self) -> None:
-        self.pos = None
-        self.wheel_radius = 5.8
-        self.wheel_width = 5
-        self.robot_radius = 15
 
         self.linear_speed = [0, 0]  # m/s
         self.angular_speed = 0  # rad/s
-        self.has_finished_rotation = False
-
-        self.current_goal = None
-        self.goal_reached = True
-        self.goals_positions = None  # [[x, y, theta], ...]
-        
-
-        self.max_ang_speed = 1.2  # pi/2  # rad/s
-
-
-        self.graph = None
-        self.dico_all_points = {}
-        self.path_nodes = None
-
-        self.max_ang_speed = 1.2  # pi/2  # rad/s
     
 
 class Obstacle_static_model():
