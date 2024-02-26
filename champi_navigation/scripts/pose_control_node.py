@@ -8,6 +8,8 @@ from tf2_ros.transform_listener import TransformListener
 
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
+from visualization_msgs.msg import Marker
+import geometry_msgs.msg
 
 from champi_navigation.kinematic_models import Robot_Kinematic_Model, Obstacle_static_model, Table_static_model
 import champi_navigation.avoidance as avoidance
@@ -53,6 +55,9 @@ class PoseControl(Node):
 
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.markers_pub_obstacle = self.create_publisher(Marker, '/obstacle_marker', 10)
+        self.markers_pub_obstacle_offset = self.create_publisher(Marker, '/obstacle_offset_marker', 10)
+        self.markers_pub_path = self.create_publisher(Marker, '/path_markers', 10)
 
         # Subscribers
         self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
@@ -213,7 +218,76 @@ class PoseControl(Node):
             # self.gui.update()
             self.gui_v2.draw_goal_poses(self.robot.pos, self.robot.goals_positions)
             self.gui_v2.update()
+            self.rviz_draw()
 
+
+    def rviz_draw(self):
+
+        # OBSTACLE marker
+        marker_obstacle = Marker()
+        marker_obstacle.header.frame_id = "odom"
+        marker_obstacle.type = Marker.CUBE
+        marker_obstacle.action = Marker.ADD
+
+        marker_obstacle.scale.x = float(self.obstacle.width)
+        marker_obstacle.scale.y = float(self.obstacle.height)
+        marker_obstacle.scale.z = 0.3
+
+        marker_obstacle.color.a = 1.0
+        marker_obstacle.color.r = 0.5
+        marker_obstacle.color.g = 0.0
+        marker_obstacle.color.b = 0.0
+        marker_obstacle.pose.position.x = float(self.obstacle.center_x)
+        marker_obstacle.pose.position.y = float(self.obstacle.center_y)
+        marker_obstacle.pose.position.z = 0.0
+
+        self.markers_pub_obstacle.publish(marker_obstacle)
+
+        # OFFSET OBSTACLE MARKER
+        marker_obstacle_offset = Marker()
+        marker_obstacle_offset.header.frame_id = "odom"
+        marker_obstacle_offset.type = Marker.CUBE
+        marker_obstacle_offset.action = Marker.ADD
+
+        marker_obstacle_offset.scale.x = float(self.obstacle.width+2*OFFSET)
+        marker_obstacle_offset.scale.y = float(self.obstacle.height+2*OFFSET)
+        marker_obstacle_offset.scale.z = 0.05
+
+        marker_obstacle_offset.color.a = 1.0
+        marker_obstacle_offset.color.r = 1.0
+        marker_obstacle_offset.color.g = 1.0
+        marker_obstacle_offset.color.b = 0.0
+        marker_obstacle_offset.pose.position.x = float(self.obstacle.center_x)
+        marker_obstacle_offset.pose.position.y = float(self.obstacle.center_y)
+        marker_obstacle_offset.pose.position.z = 0.0
+
+        self.markers_pub_obstacle_offset.publish(marker_obstacle_offset)
+
+        ic(self.robot.goals_positions)
+
+        # path markers
+        if self.robot.goals_positions is not None:
+            marker_path = Marker(type=Marker.LINE_STRIP, ns='points_and_lines', action=Marker.ADD)
+            marker_path.header.frame_id = "odom"
+            marker_path.scale.x = 0.05
+            marker_path.color.a = 1.0
+            marker_path.color.r = 0.0
+            marker_path.color.g = 1.0
+            marker_path.color.b = 0.0
+            marker_path.points = []
+
+            # add current pos if odd
+            for i in range(len(self.robot.goals_positions)-1):
+                p1 = self.robot.goals_positions[i]
+                p2 = self.robot.goals_positions[i+1]
+                marker_path.points.append(geometry_msgs.msg.Point(x=float(p1[0]), y=float(p1[1]), z=0.0))
+                marker_path.points.append(geometry_msgs.msg.Point(x=float(p2[0]), y=float(p2[1]), z=0.0))
+                # si pas le dernier on ajoute encore
+                if i != len(self.robot.goals_positions)-2:
+                    marker_path.points.append(geometry_msgs.msg.Point(x=float(p2[0]), y=float(p2[1]), z=0.0))
+
+            # publish the markers
+            self.markers_pub_path.publish(marker_path)
 
 def main(args=None):
     rclpy.init(args=args)
