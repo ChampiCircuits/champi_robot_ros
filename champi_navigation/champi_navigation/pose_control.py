@@ -1,84 +1,18 @@
 #!/usr/bin/env python3
 
-from math import pi, atan2, cos, sin
+from math import pi
 
 from shapely import Point
 from icecream import ic
 
-import numpy as np
-
-from geometry_msgs.msg import Twist
-
 import champi_navigation.avoidance as avoidance
 from champi_navigation.pid import PID
-from champi_navigation.kinematic_models import Robot_Kinematic_Model, Obstacle_static_model, Table_static_model
+from champi_navigation.kinematic_models import Obstacle_static_model, Table_static_model
+from champi_navigation.utils import Vel, RobotState
 
 
 TABLE_WIDTH, TABLE_HEIGHT = 3, 2  # Table size in m
 OFFSET = 0.15 # TODO rayon du self.robot, à voir Etienne
-
-
-class Vel:
-    """Velocity. It can be expressed in any frame."""
-    def __init__(self, x=None, y=None, theta=None):
-
-        if x is None or y is None or theta is None:
-            self.x = 0.
-            self.y = 0.
-            self.theta = 0.
-        else:
-            self.x = x # m/s
-            self.y = y # m/s
-            self.theta = theta # rad/s
-    
-    def init_from_mag_ang(self, mag, angle, theta):
-        self.x = mag * cos(angle)
-        self.y = mag * sin(angle)
-        self.theta = theta
-
-    def as_mag_ang(self):
-        angle = atan2(self.y, self.x)
-        mag = (self.x**2 + self.y**2)**0.5
-        return np.array([mag, angle, self.theta])
-
-    def __str__(self):
-        return f'CmdVel(x={self.x}, y={self.y}, theta={self.theta})'
-
-    def to_twist(self):
-        twist = Twist()
-        twist.linear.x = self.x
-        twist.linear.y = self.y
-        twist.angular.z = self.theta
-        return twist
-    
-    @staticmethod
-    def to_robot_frame(robot_pose, cmd_vel):
-        """Transform a velocity expressed in the base_link frame to the robot frame"""
-        x = cmd_vel.x * cos(robot_pose[2]) + cmd_vel.y * sin(robot_pose[2])
-        y = -cmd_vel.x * sin(robot_pose[2]) + cmd_vel.y * cos(robot_pose[2])
-        theta = cmd_vel.theta
-        return Vel(x, y, theta)
-    
-    @staticmethod
-    def to_global_frame(robot_pose, cmd_vel):
-        """Transform a velocity expressed in the robot frame to the base_link frame"""
-        x = cmd_vel.x * cos(robot_pose[2]) - cmd_vel.y * sin(robot_pose[2])
-        y = cmd_vel.x * sin(robot_pose[2]) + cmd_vel.y * cos(robot_pose[2])
-        theta = cmd_vel.theta
-        return Vel(x, y, theta)
-
-class RobotState:
-    def __init__(self):
-        self.current_pose = np.array([0, 0, 0])  # x, y, theta
-        self.current_vel = Vel(0, 0, 0)  # m/s, rad/s
-    
-    def update(self, x, y, theta, vx, vy, vtheta):
-        self.current_pose = np.array([x, y, theta])
-        self.current_vel = Vel(vx, vy, vtheta)
-    
-    def update(self, pose, vel):
-        self.current_pose = pose
-        self.current_vel = vel
 
 
 class CmdVelCalculator:
@@ -88,7 +22,7 @@ class CmdVelCalculator:
         self.pid_pos_y = PID(1, 0, 0)
         self.pid_pos_theta = PID(1, 0, 0,)
     
-    
+
     def compute_cmd_vel(self, robot_state, pose_goal, dt):
         # if it's shorter to turn in the other direction, we do it
         # TODO not always working
@@ -116,10 +50,11 @@ class PoseControl:
         self.viz = viz
         
         # Objects instanciation
-        self.robot_state = RobotState()
+        
         self.obstacle = Obstacle_static_model(center_x=1, center_y= 1, width= 0.1, height= 0.1,offset=OFFSET)
         self.table = Table_static_model(TABLE_WIDTH, TABLE_HEIGHT, offset=OFFSET)
-
+        
+        self.robot_state = RobotState()
         self.cmd_vel_calc = CmdVelCalculator()
 
 
