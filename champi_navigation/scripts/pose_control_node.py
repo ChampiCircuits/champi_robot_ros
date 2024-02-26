@@ -12,6 +12,7 @@ from geometry_msgs.msg import PoseStamped
 from champi_navigation.kinematic_models import Robot_Kinematic_Model, Obstacle_static_model, Table_static_model
 import champi_navigation.avoidance as avoidance
 import champi_navigation.gui as gui
+from champi_navigation.pid import PID
 
 from icecream import ic
 from math import pi, atan2, cos, sin
@@ -31,10 +32,17 @@ class PoseControl(Node):
         self.viz = self.declare_parameter('viz', True).value
 
         # Objects instanciation
-        self.robot = Robot_Kinematic_Model(TABLE_WIDTH=TABLE_WIDTH, TABLE_HEIGHT=TABLE_HEIGHT, control_loop_period=self.control_loop_period)
+        self.robot = Robot_Kinematic_Model()
         self.obstacle = Obstacle_static_model(center_x=1, center_y= 1, width= 0.1, height= 0.1,offset=OFFSET)
         self.table = Table_static_model(TABLE_WIDTH, TABLE_HEIGHT, offset=OFFSET)
         self.gui = gui.Gui(self.robot, self.obstacle, self.table)
+
+        # Go to goal v1
+        self.pid_pos_x = PID(1, 0, 0, self.control_loop_period)
+        self.pid_pos_y = PID(1, 0, 0, self.control_loop_period)
+        self.pid_pos_theta = PID(1, 0, 0, self.control_loop_period)
+        self.delta_t = self.control_loop_period  # Time between two updates
+
 
         # Variables
         self.latest_goal = None # Set by the goal_callback when new goal is received
@@ -108,14 +116,13 @@ class PoseControl(Node):
             else:
                 error_theta += 2*pi
 
-        self.robot.angular_speed = self.robot.pid_pos_theta.update(error_theta)
+        self.robot.angular_speed = self.pid_pos_theta.update(error_theta)
 
         # # PID
         self.robot.linear_speed = [
-            self.robot.pid_pos_x.update(x - self.robot.pos[0]),
-            self.robot.pid_pos_y.update(y - self.robot.pos[1])
+            self.pid_pos_x.update(x - self.robot.pos[0]),
+            self.pid_pos_y.update(y - self.robot.pos[1])
         ]
-
 
     def goto_next_goal(self):
         # called when a goal is reached to set the new current goal

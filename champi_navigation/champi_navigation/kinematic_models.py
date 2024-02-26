@@ -1,4 +1,3 @@
-from champi_navigation.pid import PID
 import champi_navigation.math_bind as math_bind 
 
 from typing import List
@@ -8,7 +7,7 @@ from shapely import Point, Polygon
 
 
 class Robot_Kinematic_Model():
-    def __init__(self, TABLE_WIDTH, TABLE_HEIGHT, control_loop_period) -> None:
+    def __init__(self) -> None:
         self.pos = None
         self.wheel_radius = 5.8
         self.wheel_width = 5
@@ -31,12 +30,6 @@ class Robot_Kinematic_Model():
         self.path_nodes = None
 
         self.max_ang_speed = 1.2  # pi/2  # rad/s
-
-        # just a P
-        self.pid_pos_x = PID(1, 0, 0, control_loop_period)
-        self.pid_pos_y = PID(1, 0, 0, control_loop_period)
-        self.pid_pos_theta = PID(1, 0, 0, control_loop_period)
-        self.delta_t = control_loop_period  # Time between two updates
     
 
 class Obstacle_static_model():
