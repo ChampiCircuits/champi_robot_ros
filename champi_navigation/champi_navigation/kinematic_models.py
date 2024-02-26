@@ -8,30 +8,24 @@ from shapely import Point, Polygon
 
 
 class Robot_Kinematic_Model():
-    def __init__(self, TABLE_WIDTH, TABLE_HEIGHT, FPS) -> None:
-        self.pos = [TABLE_WIDTH/2,  # x, m
-                    TABLE_HEIGHT/2,  # y, m
-                    0]  # theta, rad between -pi and pi
+    def __init__(self, TABLE_WIDTH, TABLE_HEIGHT, control_loop_period) -> None:
+        self.pos = None
         self.wheel_radius = 5.8
         self.wheel_width = 5
         self.robot_radius = 15
-        # self.robot_positions = [self.pos]
 
         self.linear_speed = [0, 0]  # m/s
         self.angular_speed = 0  # rad/s
         self.has_finished_rotation = False
 
-        self.speed_wheel0 = 0
-        self.speed_wheel1 = 0
-        self.speed_wheel2 = 0
-
-        self.MAX_ACCEL_PER_CYCLE = 500/FPS # rotation/s/cycle
-
         self.current_goal = None
         self.goal_reached = True
-        self.goals_positions = [[TABLE_WIDTH/2, TABLE_HEIGHT/2, 0],
-                                ]  # [x, y, theta]
+        self.goals_positions = None  # [[x, y, theta], ...]
         
+
+        self.max_ang_speed = 1.2  # pi/2  # rad/s
+
+
         self.graph = None
         self.dico_all_points = {}
         self.path_nodes = None
@@ -39,10 +33,11 @@ class Robot_Kinematic_Model():
         self.max_ang_speed = 1.2  # pi/2  # rad/s
 
         # just a P
-        self.pid_pos_x = PID(1, 0, 0, 1/FPS)
-        self.pid_pos_y = PID(1, 0, 0, 1/FPS)
-        self.pid_pos_theta = PID(1, 0, 0, 1/FPS)
-        self.delta_t = 1 / FPS  # Time between two updates
+        self.pid_pos_x = PID(1, 0, 0, control_loop_period)
+        self.pid_pos_y = PID(1, 0, 0, control_loop_period)
+        self.pid_pos_theta = PID(1, 0, 0, control_loop_period)
+        self.delta_t = control_loop_period  # Time between two updates
+    
 
 class Obstacle_static_model():
     def __init__(self, center_x, center_y, width, height, offset) -> None:

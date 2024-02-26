@@ -52,6 +52,8 @@ class Gui():
         self.waiting_for_release = False
         self.pos_waiting = []
 
+        self.pose_request = None
+
     # Fonction pour convertir les coordonnées réelles en coordonnées écran
     def real_to_screen(self, x, y):
         x = float(x)
@@ -170,11 +172,11 @@ class Gui():
                                     self.real_to_screen(float(pointB[0]),float(pointB[1])),
                                     3)
                     
-                    # font = pygame.font.SysFont('Arial', 20)
-                    # text = font.render(str(A), True, RED)
-                    # textRect = text.get_rect()
-                    # textRect.center = real_to_screen(float(pointA[0]),float(pointA[1]))
-                    # screen.blit(text, textRect)
+                    font = pygame.font.SysFont('Arial', 20)
+                    text = font.render(str(A), True, RED)
+                    textRect = text.get_rect()
+                    textRect.center = self.real_to_screen(float(pointA[0]),float(pointA[1]))
+                    self.screen.blit(text, textRect)
                 
         if self.toggle_path.getValue()==True:
             # draw path
@@ -185,6 +187,7 @@ class Gui():
                         self.real_to_screen(dico_all_points[nodes[i]][0],dico_all_points[nodes[i]][1]), 
                         self.real_to_screen(dico_all_points[nodes[i+1]][0], dico_all_points[nodes[i+1]][1]), 
                         5)
+
 
         # draw the obstacle
         self.draw_poly(self.obstacle.polygon, RED)    
@@ -282,7 +285,7 @@ class Gui():
             self.screen.blit(text, textRect)
 
         # Mettre à jour l'affichage
-        pygame.display.flip() # TODO remettre
+        pygame.display.flip()
 
     def on_click(self):
         global robot
@@ -324,8 +327,7 @@ class Gui():
                 ic("goto", self.pos_waiting, theta*180/pi)
                 self.waiting_for_release = False
 
-                """pour le node pose_control TODO EST CE QUE C'EST BIEN COMMME CA?"""
-                # self.robot.goals_positions.append([self.pos_waiting[0], self.pos_waiting[1], theta]) # TODO remettre
+                self.pose_request = [self.pos_waiting[0], self.pos_waiting[1], theta]
 
             # si clic droit on bouge le robot adverse
             if pygame.mouse.get_pressed()[2]:

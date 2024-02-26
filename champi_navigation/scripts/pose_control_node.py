@@ -14,13 +14,11 @@ import champi_navigation.avoidance as avoidance
 import champi_navigation.gui as gui
 
 from icecream import ic
-from dijkstar import Graph
 from math import pi, atan2, cos, sin
 from shapely import Point
 
 WIDTH, HEIGHT = 900, 600  # window
-TABLE_WIDTH, TABLE_HEIGHT = 3, 2  # Table size in cm
-FPS = 50
+TABLE_WIDTH, TABLE_HEIGHT = 3, 2  # Table size in m
 OFFSET = 0.15 # TODO rayon du self.robot, à voir Etienne
 
 class PoseControl(Node):
@@ -28,32 +26,37 @@ class PoseControl(Node):
     def __init__(self):
         super().__init__('pose_control_node')
 
+        # Parameters
+        self.control_loop_period = self.declare_parameter('control_loop_period', 0.1).value
+        self.viz = self.declare_parameter('viz', True).value
 
-        self.robot = Robot_Kinematic_Model(TABLE_WIDTH=TABLE_WIDTH, TABLE_HEIGHT=TABLE_HEIGHT,FPS=FPS)
+        # Objects instanciation
+        self.robot = Robot_Kinematic_Model(TABLE_WIDTH=TABLE_WIDTH, TABLE_HEIGHT=TABLE_HEIGHT, control_loop_period=self.control_loop_period)
         self.obstacle = Obstacle_static_model(center_x=1, center_y= 1, width= 0.1, height= 0.1,offset=OFFSET)
         self.table = Table_static_model(TABLE_WIDTH, TABLE_HEIGHT, offset=OFFSET)
-
-        self.viz = True
         self.gui = gui.Gui(self.robot, self.obstacle, self.table)
 
+        # Variables
+        self.latest_goal = None # Set by the goal_callback when new goal is received
 
+        # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
-        # Subscribe to goal pose
+        # Subscribers
         self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
         self.goal_sub  # prevent unused variable warning
-        self.latest_goal = None
+        
+        # Timers
+        self.timer = self.create_timer(self.control_loop_period, self.control_loop_callback)
 
-        timer_period = 0.1
-        self.timer = self.create_timer(timer_period, self.timer_callback)
-
+        # TF related
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
     def goal_callback(self, msg):
         self.latest_goal = msg
 
-    def timer_callback(self):
+    def control_loop_callback(self):
         self.update()
 
     def update_robot_pose_from_tf(self):
@@ -68,12 +71,9 @@ class PoseControl(Node):
             self.get_logger().info(
                 f'Could not transform {"odom"} to {"base_link"}: {ex}')
             return
-
-        self.robot.pos[0] = t.transform.translation.x
-        self.robot.pos[1] = t.transform.translation.y
         
         q = t.transform.rotation
-        self.robot.pos[2] = 2*atan2(q.z, q.w)
+        self.robot.pos = [t.transform.translation.x, t.transform.translation.y, 2*atan2(q.z, q.w)]
 
         # Conversion entre -pi et pi
         if self.robot.pos[2] > pi:
@@ -156,10 +156,9 @@ class PoseControl(Node):
             for p in self.robot.path_nodes[1:]: # we don't add the start point
                 goals.append([float(self.robot.dico_all_points[p][0]),float(self.robot.dico_all_points[p][1]), theta])
             self.robot.goals_positions = goals
+    
 
-
-    def update(self):
-
+    def update_goal(self):
         if self.latest_goal is not None:
             x = self.latest_goal.pose.position.x
             y = self.latest_goal.pose.position.y
@@ -167,8 +166,22 @@ class PoseControl(Node):
             theta = 2*atan2(q.z, q.w)
             self.robot.goals_positions.append([x, y, theta])
             self.latest_goal = None
+        
+        if self.gui.pose_request is not None:
+            self.robot.goals_positions.append(self.gui.pose_request)
+            self.gui.pose_request = None
+
+    def update(self):
 
         self.update_robot_pose_from_tf()
+        if self.robot.pos is None: # TF could not be received
+            return
+
+        self.update_goal()
+
+        if self.robot.goals_positions is None: # Initialisation
+            self.robot.goals_positions = []
+            self.robot.goals_positions.append([self.robot.pos[0], self.robot.pos[1], self.robot.pos[2]])
 
         self.check_goal_reached()
 
