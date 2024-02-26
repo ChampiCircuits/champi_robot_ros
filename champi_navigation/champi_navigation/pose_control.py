@@ -67,7 +67,6 @@ class Vel:
         theta = cmd_vel.theta
         return Vel(x, y, theta)
 
-
 class RobotState:
     def __init__(self):
         self.current_pose = np.array([0, 0, 0])  # x, y, theta
@@ -80,6 +79,36 @@ class RobotState:
     def update(self, pose, vel):
         self.current_pose = pose
         self.current_vel = vel
+
+
+class CmdVelCalculator:
+    def __init__(self):
+        # PIDs
+        self.pid_pos_x = PID(1, 0, 0)
+        self.pid_pos_y = PID(1, 0, 0)
+        self.pid_pos_theta = PID(1, 0, 0,)
+    
+    
+    def compute_cmd_vel(self, robot_state, pose_goal, dt):
+        # if it's shorter to turn in the other direction, we do it
+        # TODO not always working
+        error_theta = pose_goal[2] - robot_state.current_pose[2]
+        if abs(error_theta) > pi:
+            if error_theta > 0:
+                error_theta -= 2*pi
+            else:
+                error_theta += 2*pi
+        
+        cmd_vel = Vel()
+
+        cmd_vel.theta = self.pid_pos_theta.update(error_theta, dt)
+
+        # # PID
+        cmd_vel.x = self.pid_pos_x.update(pose_goal[0] - robot_state.current_pose[0], dt)
+        cmd_vel.y = self.pid_pos_y.update(pose_goal[1] - robot_state.current_pose[1], dt)
+
+        return cmd_vel
+
         
 class PoseControl:
     def __init__(self, viz=None):
@@ -88,14 +117,11 @@ class PoseControl:
         
         # Objects instanciation
         self.robot_state = RobotState()
-        self.robot = Robot_Kinematic_Model()
         self.obstacle = Obstacle_static_model(center_x=1, center_y= 1, width= 0.1, height= 0.1,offset=OFFSET)
         self.table = Table_static_model(TABLE_WIDTH, TABLE_HEIGHT, offset=OFFSET)
 
-        # PIDs
-        self.pid_pos_x = PID(1, 0, 0) # TODO dt
-        self.pid_pos_y = PID(1, 0, 0)
-        self.pid_pos_theta = PID(1, 0, 0,)
+        self.cmd_vel_calc = CmdVelCalculator()
+
 
         # Variables related to goals
         
@@ -124,7 +150,7 @@ class PoseControl:
         self.update_goal()
         self.recompute_path(self.obstacle, self.table)
 
-        cmd_vel = self.compute_cmd_vel(self.current_goal, dt)
+        cmd_vel = self.cmd_vel_calc.compute_cmd_vel(self.robot_state, self.current_goal, dt)
 
         # Viz
         if self.viz is not None:
@@ -153,27 +179,6 @@ class PoseControl:
                 ic("GOAL REACHED")
 
                 self.goal_reached = True
-
-
-    def compute_cmd_vel(self, pose_goal, dt):
-        # if it's shorter to turn in the other direction, we do it
-        # TODO not always working
-        error_theta = pose_goal[2] - self.robot_state.current_pose[2]
-        if abs(error_theta) > pi:
-            if error_theta > 0:
-                error_theta -= 2*pi
-            else:
-                error_theta += 2*pi
-        
-        cmd_vel = Vel()
-
-        cmd_vel.theta = self.pid_pos_theta.update(error_theta, dt)
-
-        # # PID
-        cmd_vel.x = self.pid_pos_x.update(pose_goal[0] - self.robot_state.current_pose[0], dt)
-        cmd_vel.y = self.pid_pos_y.update(pose_goal[1] - self.robot_state.current_pose[1], dt)
-
-        return cmd_vel
 
 
     def switch_to_next_goal(self):
