@@ -14,6 +14,8 @@ import champi_navigation.avoidance as avoidance
 import champi_navigation.gui as gui
 from champi_navigation.pid import PID
 
+from champi_navigation.gui_v2 import GuiV2
+
 from icecream import ic
 from math import pi, atan2, cos, sin
 from shapely import Point
@@ -35,7 +37,9 @@ class PoseControl(Node):
         self.robot = Robot_Kinematic_Model()
         self.obstacle = Obstacle_static_model(center_x=1, center_y= 1, width= 0.1, height= 0.1,offset=OFFSET)
         self.table = Table_static_model(TABLE_WIDTH, TABLE_HEIGHT, offset=OFFSET)
-        self.gui = gui.Gui(self.robot, self.obstacle, self.table)
+        # self.gui = gui.Gui(self.robot, self.obstacle, self.table)
+
+        self.gui_v2 = GuiV2(self)
 
         # Go to goal v1
         self.pid_pos_x = PID(1, 0, 0, self.control_loop_period)
@@ -174,9 +178,9 @@ class PoseControl(Node):
             self.robot.goals_positions.append([x, y, theta])
             self.latest_goal = None
         
-        if self.gui.pose_request is not None:
-            self.robot.goals_positions.append(self.gui.pose_request)
-            self.gui.pose_request = None
+        # if self.gui.pose_request is not None:
+        #     self.robot.goals_positions.append(self.gui.pose_request)
+        #     self.gui.pose_request = None
 
     def update(self):
 
@@ -206,7 +210,9 @@ class PoseControl(Node):
         self.cmd_vel_pub.publish(twist)
 
         if self.viz:
-            self.gui.update()
+            # self.gui.update()
+            self.gui_v2.draw_goal_poses(self.robot.pos, self.robot.goals_positions)
+            self.gui_v2.update()
 
 
 def main(args=None):
