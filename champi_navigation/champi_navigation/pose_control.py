@@ -48,6 +48,8 @@ class CmdVelUpdater2:
         
         self.vel_profile_mag = TrapezoidalVelocityProfile(0.5, 0.5)
         self.vel_profile_theta = TrapezoidalVelocityProfile(2.0, 1.0)
+
+        self.pid_correct_dir = PID(2, 0, 1)
     
     def compute_cmd_vel(self, robot_state, pose_goal, dt):
 
@@ -76,15 +78,40 @@ class CmdVelUpdater2:
         mag = self.vel_profile_mag.compute_vel(None)
         theta = self.vel_profile_theta.compute_vel(None)
 
-        cmd_vel = Vel()
-
         angle_vec_dir = atan2(pose_goal[1] - robot_state.current_pose[1], pose_goal[0] - robot_state.current_pose[0])
+
+
+        dist = self.dist_point_to_line_signed(robot_state.current_pose[:2], [self.start_pose[:2], self.goal_pose[:2]])
+
+        correction = self.pid_correct_dir.update(dist, dt)
+
+        correction_max = 0.5
+        if correction > correction_max:
+            correction = correction_max
+        elif correction < -correction_max:
+            correction = -correction_max
         
+        angle_vec_dir += correction
+
+        cmd_vel = Vel()
         cmd_vel.init_from_mag_ang(mag, angle_vec_dir, theta)
 
         print(cmd_vel)
 
         return cmd_vel
+
+    
+    def dist_point_to_line (self, point, line):
+        x0, y0 = point
+        x1, y1 = line[0]
+        x2, y2 = line[1]
+        return abs((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
+    
+    def dist_point_to_line_signed (self, point, line):
+        x0, y0 = point
+        x1, y1 = line[0]
+        x2, y2 = line[1]
+        return ((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
 
 
 class TrapezoidalVelocityProfile:
@@ -169,7 +196,7 @@ class TrapezoidalVelocityProfile:
         if not self.error_negative:
             cmd = -cmd
 
-        ic(self.state, t, self.t_end_acc, self.t_end_flat, self.t_end_dec, cmd)
+        # ic(self.state, t, self.t_end_acc, self.t_end_flat, self.t_end_dec, cmd)
 
         return cmd
 

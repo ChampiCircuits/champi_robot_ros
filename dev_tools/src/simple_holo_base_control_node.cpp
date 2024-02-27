@@ -4,7 +4,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include <tf2/LinearMath/Quaternion.h>
 
-#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
 #include "champi_can/msgs_can.pb.h"
@@ -51,7 +51,7 @@ public:
 
 
         // Create Subscribers
-        sub_twist_in_ = this->create_subscription<geometry_msgs::msg::Twist>(topic_twist_in, 10, std::bind(&SimpleHoloBaseControlNode::twist_in_callback, this, std::placeholders::_1));
+        sub_twist_in_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(topic_twist_in, 10, std::bind(&SimpleHoloBaseControlNode::twist_in_callback, this, std::placeholders::_1));
     
         // Create Publishers
         pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -62,7 +62,7 @@ public:
 
 private:
     // Subscribers
-    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_twist_in_;
+    rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr sub_twist_in_;
     
     // Publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_;
@@ -83,13 +83,13 @@ private:
     int id_receive_vel_;
 
     // Callbacks
-    void twist_in_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
+    void twist_in_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg)
     {
         msgs_can::BaseVel base_vel_cmd;
 
-        base_vel_cmd.set_x(msg->linear.x);
-        base_vel_cmd.set_y(msg->linear.y);
-        base_vel_cmd.set_theta(msg->angular.z);
+        base_vel_cmd.set_x(msg->twist.linear.x);
+        base_vel_cmd.set_y(msg->twist.linear.y);
+        base_vel_cmd.set_theta(msg->twist.angular.z);
 
         // Send message
         if(champi_can_interface_.send(0x10, base_vel_cmd.SerializeAsString()) != 0) {
