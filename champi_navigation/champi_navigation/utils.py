@@ -49,14 +49,13 @@ class Vel:
         return Vel(x, y, theta)
 
 class RobotState:
-    def __init__(self):
-        self.current_pose = np.array([0, 0, 0])  # x, y, theta
-        self.current_vel = Vel(0, 0, 0)  # m/s, rad/s
-    
-    def update(self, x, y, theta, vx, vy, vtheta):
-        self.current_pose = np.array([x, y, theta])
-        self.current_vel = Vel(vx, vy, vtheta)
-    
-    def update(self, pose, vel):
+    def __init__(self, pose: np.array, vel: Vel):
+        # TODO Etienne, est ce qu'on utilise numpy partout ou nulle part ?
+        # Moi, j'aime bien numpy parce qu'il y a beaucoup de fonctions cool, 
+        # c'est du cpp derrière, et c'est possible de faire du parallelisme
+        # avec jit et numba moyennant quelques modifications après.
+        # Mais pour juste représenter des points, y a pas un giga intérêt non plus...
         self.current_pose = pose
-        self.current_vel = vel
+        self.current_vel = vel 
+    
+

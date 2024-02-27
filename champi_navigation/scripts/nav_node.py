@@ -6,7 +6,6 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
-from geometry_msgs.msg import Twist
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import PoseStamped
 
@@ -15,10 +14,12 @@ from math import pi, atan2
 import numpy as np
 
 from champi_navigation.gui_v2 import GuiV2
-from champi_navigation.pose_control import PoseControl, Vel
+from champi_navigation.pose_control import PoseControl
+from champi_navigation.utils import Vel, RobotState
+from champi_navigation.path_planner import PathPlanner
 
 
-class PoseControlNode(Node):
+class NavigationNode(Node):
 
     def __init__(self):
         super().__init__('pose_control_node')
@@ -26,6 +27,7 @@ class PoseControlNode(Node):
         # Parameters
         self.control_loop_period = self.declare_parameter('control_loop_period', 0.1).value
         self.enable_viz = self.declare_parameter('viz', True).value
+        self.enable_avoidance = self.declare_parameter('enable_avoidance', False).value
 
         # Viz in Rviz
         if self.enable_viz:
@@ -35,6 +37,8 @@ class PoseControlNode(Node):
 
         self.poseControl = PoseControl(self.viz)
 
+        self.pathPlanner = PathPlanner(self.enable_avoidance)
+
         # Publishers
         self.cmd_vel_pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
 
@@ -43,7 +47,7 @@ class PoseControlNode(Node):
         self.goal_sub  # prevent unused variable warning
         
         # Timers
-        self.timer = self.create_timer(self.control_loop_period, self.control_loop_callback)
+        self.timer = self.create_timer(self.control_loop_period, self.nav_loop_callback)
 
         # TF related
         self.tf_buffer = Buffer()
@@ -52,16 +56,29 @@ class PoseControlNode(Node):
         # Diagnostic
         self.last_time_ctrl_loop = None
 
+        # Variables
+        self.latest_goal_msg = None
+
 
     def goal_callback(self, msg):
-        x = msg.pose.position.x
-        y = msg.pose.position.y
-        q = msg.pose.orientation
+        """Callback for the goal pose message. It is called when a new goal is received from topic."""
+        self.latest_goal_msg = msg
+    
+    
+    def get_cmd_goal(self):
+        """Construct the command path for the robot""" # TODO temporary
+        if self.latest_goal_msg is None:
+            return None
+        x = self.latest_goal_msg.pose.position.x
+        y = self.latest_goal_msg.pose.position.y
+        q = self.latest_goal_msg.pose.orientation
         theta = 2*atan2(q.z, q.w)
-        self.poseControl.set_goal(np.array([x, y, theta]))
+        return [x, y, theta]
+        
 
+    def nav_loop_callback(self):
 
-    def control_loop_callback(self):
+        """Compute loop time"""
 
         # Initialize the last_time_ctrl_loop
         if self.last_time_ctrl_loop is None:
@@ -73,14 +90,54 @@ class PoseControlNode(Node):
         dt = (current_time - self.last_time_ctrl_loop).nanoseconds / 1e9
         self.last_time_ctrl_loop = current_time
 
-        # Transmit the current state of the robot to the pose control
+        """Construct the current state of the robot"""
+
         current_robot_pose = self.get_robot_pose_from_tf()
         if current_robot_pose is None: # TF could not be received
             return
         current_robot_speed = self.get_current_robot_speed()
-        self.poseControl.robot_state.update(current_robot_pose, current_robot_speed)
+        robot_state = RobotState(current_robot_pose, current_robot_speed)
 
-        # Call the control loop of the pose control
+        """
+        Path Planning: 
+            inputs:
+                A. observations 
+                    - robot state,
+                    - environment state,
+                B. Command
+                    - goal (single pose, from topic)
+            output:
+                - cmd_path (list of poses to follow)
+        """
+
+        # Transmit the current state of the robot to path planner
+        self.pathPlanner.set_robot_state(robot_state)
+
+        # Transmit the goal to path planner
+        cmd_goal = self.get_cmd_goal()
+        self.pathPlanner.set_cmd_goal(cmd_goal) # Note: It can be None! Which means no goal to reach.
+        
+        # Call the planning loop of path planner
+        cmd_path = self.pathPlanner.planning_loop_spin_once()
+        
+        """
+        Pose Control:
+            inputs:
+                A. observations
+                    - robot state,
+                B. Command
+                    - cmd_path (list of poses to follow, from path planner)
+            output:
+                - cmd_twist (TwistStamped)
+        """
+
+        # Transmit the current state of the robot to pose control
+        self.poseControl.set_robot_state(robot_state)
+
+        # Transmit the command path to pose control
+        self.poseControl.set_cmd_path(cmd_path) # Note: It can be empty! Which means no path to follow.
+
+        # Call the control loop of pose control
         cmd_twist = self.poseControl.control_loop_spin_once(dt)
 
         cmd_twist_stamped = TwistStamped()
@@ -123,7 +180,7 @@ class PoseControlNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    pose_control_node = PoseControlNode()
+    pose_control_node = NavigationNode()
     rclpy.spin(pose_control_node)
     pose_control_node.destroy_node()
     rclpy.shutdown()

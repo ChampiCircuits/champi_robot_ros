@@ -18,8 +18,8 @@ def generate_launch_description():
 
     pose_control_node = Node(
             package='champi_navigation',
-            executable='pose_control_node.py',
-            name='pose_control_node',
+            executable='nav_node.py',
+            name='nav_node',
             output='screen',
     )
 
