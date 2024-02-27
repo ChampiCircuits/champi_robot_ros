@@ -8,6 +8,7 @@ from tf2_ros.transform_listener import TransformListener
 
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Path
 
 from icecream import ic
 from math import pi, atan2
@@ -41,6 +42,7 @@ class NavigationNode(Node):
 
         # Publishers
         self.cmd_vel_pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
+        self.path_pub = self.create_publisher(Path, '/cmd_path', 10)
 
         # Subscribers
         self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
@@ -148,6 +150,9 @@ class NavigationNode(Node):
         # Publish the command
         self.cmd_vel_pub.publish(cmd_twist_stamped)
 
+        # Publish the path. Only for visualization purposes for now.
+        self.publish_path(cmd_path)
+
 
     def get_robot_pose_from_tf(self):
         t = None
@@ -176,7 +181,21 @@ class NavigationNode(Node):
 
     def get_current_robot_speed(self):
         return Vel(0, 0, 0) # TODO
-
+    
+    def publish_path(self, path):
+        path_msg = Path()
+        path_msg.header.stamp = self.get_clock().now().to_msg()
+        path_msg.header.frame_id = "odom"
+        path_msg.poses = [PoseStamped() for _ in path]
+        for i, pose in enumerate(path):
+            path_msg.poses[i].pose.position.x = pose[0]
+            path_msg.poses[i].pose.position.y = pose[1]
+            path_msg.poses[i].pose.position.z = 0.
+            path_msg.poses[i].pose.orientation.x = 0.
+            path_msg.poses[i].pose.orientation.y = 0.
+            path_msg.poses[i].pose.orientation.w = np.cos(pose[2]/2)
+            path_msg.poses[i].pose.orientation.z = np.sin(pose[2]/2)
+        self.path_pub.publish(path_msg)
 
 def main(args=None):
     rclpy.init(args=args)

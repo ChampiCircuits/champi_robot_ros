@@ -126,8 +126,9 @@ class PoseControl:
 
         # Viz
         if self.viz is not None:
-            self.viz.draw_goal_poses(self.robot_state.current_pose, self.cmd_path)
-            self.viz.update()
+            # self.viz.draw_goal_poses(self.robot_state.current_pose, self.cmd_path)
+            # self.viz.update()
+            pass
         
         # publish the velocity (expressed in the base_link frame)
         cmd_vel = Vel.to_robot_frame(self.robot_state.current_pose, cmd_vel)    

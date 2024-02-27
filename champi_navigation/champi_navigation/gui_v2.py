@@ -7,10 +7,14 @@ from champi_navigation.rviz_img_displayer import RvizImageDisplayer
 
 from ament_index_python.packages import get_package_share_directory
 
+# TODO est ce qu'on la garde dans le node de nav ? Elle y est seulement pour qu'on puisse dessiner sur la carte,
+# mais là on a rien à dessiner
+# Ca pourrait aussi être un node à part entière, qui publie juste la table et c'est tout
+
 class GuiV2:
     def __init__(self, node):
 
-        self.rviz_img_displayer = RvizImageDisplayer(node, 100., 3., 2., "odom")
+        self.rviz_img_displayer = RvizImageDisplayer(node, 200., 3., 2., "odom")
 
         background_img_path = get_package_share_directory('champi_navigation') + '/resources/table.png'
         self.rviz_img_displayer.load_background_img(background_img_path)

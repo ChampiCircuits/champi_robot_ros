@@ -59,7 +59,7 @@ Visualization Manager:
           Value: true
       Marker Scale: 1
       Name: TF
-      Show Arrows: true
+      Show Arrows: false
       Show Axes: true
       Show Names: false
       Tree:
@@ -119,14 +119,14 @@ Visualization Manager:
       Value: true
     - Alpha: 1
       Angular Arrow Scale: 1
-      Angular Color: 204; 204; 51
+      Angular Color: 85; 255; 255
       Arrow Width: 0.20000000298023224
       Class: rviz_default_plugins/TwistStamped
       Enabled: true
       Hide Small Values: false
       History Length: 1
-      Linear Arrow Scale: 1
-      Linear Color: 204; 51; 51
+      Linear Arrow Scale: 0.5
+      Linear Color: 85; 255; 255
       Name: TwistStamped
       Topic:
         Depth: 5
@@ -135,6 +135,34 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /cmd_vel
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Billboards
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /cmd_path
       Value: true
   Enabled: true
   Global Options:
@@ -171,7 +199,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 1.825392246246338e-07
+      Angle: 2.1606683731079102e-07
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
