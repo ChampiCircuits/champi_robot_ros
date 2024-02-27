@@ -46,42 +46,43 @@ class CmdVelUpdater2:
         self.start_pose = None
         self.goal_pose = None
         
-        self.vel_profile = TrapezoidalVelocityProfile(0.5, 0.5)
+        self.vel_profile_mag = TrapezoidalVelocityProfile(0.5, 0.5)
+        self.vel_profile_theta = TrapezoidalVelocityProfile(2.0, 1.0)
     
     def compute_cmd_vel(self, robot_state, pose_goal, dt):
 
         # Quick fix parce qu'il faut avoir la pose de depart à vitesse = 0
         if self.goal_pose != pose_goal:
+
             self.start_pose = robot_state.current_pose
             self.goal_pose = pose_goal
+
             distance_start_to_goal = ((pose_goal[0] - self.start_pose[0])**2 + (pose_goal[1] - self.start_pose[1])**2)**0.5
-            self.vel_profile.set_new_goal(distance_start_to_goal, 0)
+            self.vel_profile_mag.set_new_goal(distance_start_to_goal, 0)
+
+            # if it's shorter to turn in the other direction, we do it
+            error_theta = pose_goal[2] - robot_state.current_pose[2]
+            if abs(error_theta) > pi:
+                if error_theta > 0:
+                    error_theta -= 2*pi
+                else:
+                    error_theta += 2*pi
+
+            self.vel_profile_theta.set_new_goal(error_theta, 0)
 
         # Compute distance to goal
-        distance_to_goal = ((pose_goal[0] - robot_state.current_pose[0])**2 + (pose_goal[1] - robot_state.current_pose[1])**2)**0.5
+        # distance_to_goal = ((pose_goal[0] - robot_state.current_pose[0])**2 + (pose_goal[1] - robot_state.current_pose[1])**2)**0.5
         
-        mag = self.vel_profile.compute_vel(distance_to_goal)
+        mag = self.vel_profile_mag.compute_vel(None)
+        theta = self.vel_profile_theta.compute_vel(None)
 
-        # if it's shorter to turn in the other direction, we do it
-        error_theta = pose_goal[2] - robot_state.current_pose[2]
-        if abs(error_theta) > pi:
-            if error_theta > 0:
-                error_theta -= 2*pi
-            else:
-                error_theta += 2*pi
-        
         cmd_vel = Vel()
 
         angle_vec_dir = atan2(pose_goal[1] - robot_state.current_pose[1], pose_goal[0] - robot_state.current_pose[0])
-
-        angular_speed = 0.5
-
-        if error_theta > 0:
-            cmd_vel.theta = angular_speed
-        else:
-            cmd_vel.theta = -angular_speed
         
-        cmd_vel.init_from_mag_ang(mag, angle_vec_dir, cmd_vel.theta)
+        cmd_vel.init_from_mag_ang(mag, angle_vec_dir, theta)
+
+        print(cmd_vel)
 
         return cmd_vel
 
@@ -109,11 +110,16 @@ class TrapezoidalVelocityProfile:
         self.t_end_flat = None
         self.t_end_dec = None
 
+        self.error_negative = False
+
     
     def set_new_goal(self, start_pos, goal_pos):
 
         self.start_pos = start_pos
         self.end_pos = goal_pos
+
+        if self.start_pos > self.end_pos:
+            self.error_negative = True
 
         tf = 2 * sqrt(abs(self.end_pos - self.start_pos) / self.a_max)
 
@@ -133,7 +139,7 @@ class TrapezoidalVelocityProfile:
         self.t_start = time.time()
 
     
-    def compute_vel(self, pos_current): # dt = 0 the first time
+    def compute_vel(self, pos_current):
 
         t = time.time() - self.t_start
 
@@ -160,6 +166,9 @@ class TrapezoidalVelocityProfile:
                 midpoint_vel = self.a_max * self.t_end_dec / 2
                 cmd = midpoint_vel - self.a_max * (t - self.t_end_acc)
         
+        if not self.error_negative:
+            cmd = -cmd
+
         ic(self.state, t, self.t_end_acc, self.t_end_flat, self.t_end_dec, cmd)
 
         return cmd

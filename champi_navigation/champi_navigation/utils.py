@@ -27,9 +27,9 @@ class Vel:
 
     def to_twist(self):
         twist = Twist()
-        twist.linear.x = self.x
-        twist.linear.y = self.y
-        twist.angular.z = self.theta
+        twist.linear.x = float(self.x)
+        twist.linear.y = float(self.y)
+        twist.angular.z = float(self.theta)
         return twist
     
     @staticmethod
