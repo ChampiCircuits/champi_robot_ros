@@ -5,6 +5,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 from math import cos, sin
 
+from icecream import ic
 
 
 class TestGoal(Node):
@@ -19,10 +20,12 @@ class TestGoal(Node):
         # pub pose stamped
         self.pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
 
-        self.goals = [[1.5, 1., 0.], [2.0, 1., 1.57079]]
-        self.i_goal = 1
+        pi = 3.14159265359
 
-        timer_period = 6  # seconds
+        self.goals = [[0., 0., 0.], [0., 0.5, -pi/2], [0.5, 0.5, 0.], [0.5, 0., pi/2]]
+        self.i_goal = 0
+
+        timer_period = 3  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         self.timer_callback()
@@ -41,10 +44,12 @@ class TestGoal(Node):
         goal.pose.orientation.w = cos(self.goals[self.i_goal][2]/2)
 
         self.pub.publish(goal)
+
+        ic(self.goals[self.i_goal])
+
         self.i_goal += 1
         if self.i_goal == len(self.goals):
             self.i_goal = 0
-        print("Published goal")
 
 
         
