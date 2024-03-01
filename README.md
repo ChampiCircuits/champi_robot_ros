@@ -26,21 +26,22 @@ Regarder ce site pour savoir commment organiser un package c++ + python : https:
 
 ### Configuration du projet
 
-La première fois, se placer à la racine du workspace et lancer la commande suivante installer les packages ROS nécessaires:
+La première fois, se placer à la racine du workspace et lancer la commande suivante pour installer les dépendances et ajouter
+des variables d'environnement et des alias dans le zshrc:
 ```bash
-rosdep install --from src --ignore-src
+./src/champi_robot_ros/scripts/setup.sh
 ```
-Et lancer le script `scripts/setup.sh` pour faire d'autres choses.
 
 ### Compilation
 
-Pour compiler:
-```bash
-colcon build --symlink-install
-```
-With `--symlink-install`, you can edit python files, launch files and config files without re-compiling.
+Le script `setup.sh` a ajouté des alias dans le zshrc pour simplifier la compilation: on peut lancer la commande
+`champi_build` depuis n'importe quel répertoire pour compiler le workspace.
 
-On peut aussi ajouter l'option `--packages-select mon_package` pour ne compiler que les package que l'on veut et ainsi réduire le temps de compilation.
+On peut aussi ajouter des options à la commande `champi_build`. Celles-ci sont les mêmes que pour `colcon build`.
+Par exemple, pour ne compiler que le package `mon_package`:
+```bash
+champi_build --packages-select mon_package
+```
 
 ### Generate protobuf files for the CAN Bus
 ```bash
