@@ -17,7 +17,7 @@ class SimpleHoloBaseControlNode : public rclcpp::Node
 public:
     SimpleHoloBaseControlNode() : 
         Node("simple_holo_base_control_node"),
-        champi_can_interface_(this->declare_parameter("can_interface_name", "vcan0"), {(int) this->declare_parameter("id_send", 0x10)})
+        champi_can_interface_(this->declare_parameter("can_interface_name", "can0"), {(int) this->declare_parameter("id_send", 0x10)})
     {
 
         // Get parameters
@@ -58,6 +58,10 @@ public:
 
             // Initialize the transform broadcaster
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
+        // Timer loop
+        timer_ = this->create_wall_timer(std::chrono::duration<double>(0.05), std::bind(&SimpleHoloBaseControlNode::loop_callback, this));
+
     }
 
 private:
@@ -69,6 +73,9 @@ private:
 
     // TF broadcast related
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
+    // Timers
+    rclcpp::TimerBase::SharedPtr timer_;
 
     // Variables
     ChampiCan champi_can_interface_;
@@ -97,13 +104,19 @@ private:
             // TODO send diagnostic
         }
 
+    }
 
+
+    void loop_callback() {
         // Read incoming message if available
+        RCLCPP_INFO(this->get_logger(), "Checking for new message");
         if(champi_can_interface_.check_if_new_full_msg(id_receive_vel_)) {
+
             auto buffer = champi_can_interface_.get_full_msg(id_receive_vel_);
 
-            
             current_vel_.ParseFromString(buffer);
+
+            RCLCPP_INFO(this->get_logger(), "we got a new message! %f %f %f", current_vel_.x(), current_vel_.y(), current_vel_.theta());
 
             update_pose();
             publish_odom();
