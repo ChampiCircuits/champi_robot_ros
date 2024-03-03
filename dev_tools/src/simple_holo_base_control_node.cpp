@@ -3,13 +3,14 @@
 #include <rclcpp/rclcpp.hpp>
 #include "tf2_ros/transform_broadcaster.h"
 #include <tf2/LinearMath/Quaternion.h>
-#include <champi_can/can_ids.hpp>
+
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
 #include "champi_can/msgs_can.pb.h"
 #include "champi_can/champi_can.hpp"
+#include <champi_can/can_ids.hpp>
 
 using namespace std;
 
@@ -18,7 +19,7 @@ class SimpleHoloBaseControlNode : public rclcpp::Node
 public:
     SimpleHoloBaseControlNode() : 
         Node("simple_holo_base_control_node"),
-        champi_can_interface_(this->declare_parameter("can_interface_name", "vcan0"), {can_ids::BASE_CURRENT_VEL})
+        champi_can_interface_(this->declare_parameter("can_interface_name", "can0"), {can_ids::BASE_CURRENT_VEL})
     {
 
         // Get parameters
@@ -52,7 +53,6 @@ public:
         }
 
         // Send config to the base
-        waiting_for_ret_config = true;
         send_config();
 
         // Create Subscribers
@@ -107,6 +107,9 @@ private:
         base_set_config.set_max_accel(base_config_.max_accel);
         base_set_config.set_wheel_radius(base_config_.wheel_radius);
         base_set_config.set_base_radius(base_config_.base_radius);
+        base_set_config.set_cmd_vel_timeout(base_config_.cmd_vel_timeout);
+
+        waiting_for_ret_config = true;
 
         // Send message
         if(champi_can_interface_.send(can_ids::BASE_SET_CONFIG, base_set_config.SerializeAsString()) != 0) {
