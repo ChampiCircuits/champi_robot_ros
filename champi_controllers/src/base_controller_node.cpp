@@ -13,30 +13,35 @@
 
 using namespace std;
 
-class SimpleHoloBaseControlNode : public rclcpp::Node
+class BaseControllerNode : public rclcpp::Node
 {
 public:
-    SimpleHoloBaseControlNode() : 
+    BaseControllerNode() :
         Node("simple_holo_base_control_node"),
         champi_can_interface_(
-                this->declare_parameter("can_interface_name", "vcan0"),
+                this->declare_parameter<std::string>("can_interface_name"),
                 {can_ids::BASE_CURRENT_VEL, can_ids::BASE_RET_CONFIG},
-                this->declare_parameter("champi_can_verbose_mode", true))
+                this->declare_parameter<bool>("champi_can_verbose_mode"))
     {
 
         // Get parameters
         string topic_twist_in = this->declare_parameter("topic_twist_in", "cmd_vel");
         string can_interface_name = this->get_parameter("can_interface_name").as_string();
 
-        base_config_.max_accel = this->declare_parameter("max_accel", 10.0);
-        base_config_.wheel_radius = this->declare_parameter("wheel_radius", 0.029);
-        base_config_.base_radius = this->declare_parameter("base_radius", 0.175);
-        base_config_.cmd_vel_timeout = this->declare_parameter("cmd_vel_timeout", 0.1);
+        base_config_.max_accel = this->declare_parameter<double>("base_config.max_accel_wheels");
+        base_config_.wheel_radius = this->declare_parameter<double>("base_config.wheel_radius");
+        base_config_.base_radius = this->declare_parameter<double>("base_config.base_radius");
+        base_config_.cmd_vel_timeout = this->declare_parameter<double>("base_config.cmd_vel_timeout");
 
 
         // Print parameters
         RCLCPP_INFO(this->get_logger(), "Node started with the following parameters:");
         RCLCPP_INFO(this->get_logger(), "topic_twist_in: %s", topic_twist_in.c_str());
+        RCLCPP_INFO(this->get_logger(), "can_interface_name: %s", can_interface_name.c_str());
+        RCLCPP_INFO(this->get_logger(), "base_config.max_accel_wheels: %f", base_config_.max_accel);
+        RCLCPP_INFO(this->get_logger(), "base_config.wheel_radius: %f", base_config_.wheel_radius);
+        RCLCPP_INFO(this->get_logger(), "base_config.base_radius: %f", base_config_.base_radius);
+        RCLCPP_INFO(this->get_logger(), "base_config.cmd_vel_timeout: %f", base_config_.cmd_vel_timeout);
 
 
         // Initialize current_pose_
@@ -59,7 +64,7 @@ public:
         send_config();
 
         // Create Subscribers
-        sub_twist_in_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(topic_twist_in, 10, std::bind(&SimpleHoloBaseControlNode::twist_in_callback, this, std::placeholders::_1));
+        sub_twist_in_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(topic_twist_in, 10, std::bind(&BaseControllerNode::twist_in_callback, this, std::placeholders::_1));
     
         // Create Publishers
         pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -68,7 +73,7 @@ public:
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
         // Timer loop
-        timer_ = this->create_wall_timer(std::chrono::duration<double>(0.05), std::bind(&SimpleHoloBaseControlNode::loop_callback, this));
+        timer_ = this->create_wall_timer(std::chrono::duration<double>(0.05), std::bind(&BaseControllerNode::loop_callback, this));
 
     }
 
@@ -92,7 +97,7 @@ private:
         float x;
         float y;
         float theta;
-    } current_pose_;
+    } current_pose_{};
     bool waiting_for_ret_config;
 
     // Parameters
@@ -101,7 +106,7 @@ private:
         float wheel_radius;
         float base_radius;
         float cmd_vel_timeout;
-    } base_config_;
+    } base_config_{};
 
     // Functions
 
@@ -244,7 +249,7 @@ private:
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<SimpleHoloBaseControlNode>());
+    rclcpp::spin(std::make_shared<BaseControllerNode>());
     rclcpp::shutdown();
     return 0;
 }
