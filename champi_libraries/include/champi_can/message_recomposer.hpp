@@ -4,11 +4,12 @@
 class MessageRecomposer {
 
 public:
-    MessageRecomposer(int id_of_interest) :
+    explicit MessageRecomposer(int id_of_interest, bool verbose=false) :
         id_of_interest_(id_of_interest),
         msg_number_(-1),
         n_frames_(-1),
-        full_msg_received_(false) {
+        full_msg_received_(false),
+        verbose_(verbose){
     }
 
     // default constructor, do not use directly
@@ -16,7 +17,8 @@ public:
         id_of_interest_(-1),
         msg_number_(-1),
         n_frames_(-1),
-        full_msg_received_(false) {
+        full_msg_received_(false),
+        verbose_(false){
     }
 
     void add_new_frame(can_frame frame) {
@@ -31,7 +33,9 @@ public:
         // But it's not that easy bc what if we miss an entire message ? we would loose the 3 messages that follow it
         if(msg_number_ != msg_number) {
             // new message
-            // cout << "New message" << endl;
+            if (verbose_) {
+                std::cout << "CHAMPI_CAN: New message advertised for ID: " << std::hex << id_of_interest_ << ". Msg number: " << msg_number << ". Msg size: " << msg_size << std::endl;
+            }
             msg_number_ = msg_number;
             n_frames_ = msg_size;
             for(int i=0; i<n_frames_; i++) {
@@ -42,12 +46,13 @@ public:
         frames_received_[frame_index] = true;
         msg_parts[frame_index] = std::string((char*)frame.data+2, frame.can_dlc-2);
 
-        // for(int i=0; i<n_frames_; i++) {
-        //     cout << "Frame " << i << " received: " << frames_received_[i] << endl;
-        // }
+        if(verbose_) {
+            for(int i=0; i<n_frames_; i++) {
+                std::cout << "CHAMPI_CAN: Frame " << i << " received: " << frames_received_[i] << std::endl;
+            }
+        }
 
         if(all_frames_received()) {
-            // cout << "All frames received" << endl;
             std::string full_msg;
             for(int i=0; i<n_frames_; i++) {
                 full_msg += msg_parts[i];
@@ -56,6 +61,9 @@ public:
             full_msg_received_ = true;
             for(int i=0; i<n_frames_; i++) {
                 frames_received_[i] = false;
+            }
+            if (verbose_) {
+                std::cout << "CHAMPI_CAN: Full message received for ID: " << std::hex << id_of_interest_ << ". Message: " << full_msg_ << std::endl;
             }
         }
         
@@ -94,10 +102,12 @@ private:
     int id_of_interest_;
     int msg_number_;
     int n_frames_; // nb of frames needed to get the full message
-    bool frames_received_[64];
+    bool frames_received_[64]{};
     std::string msg_parts[64]; // TODO RAM usage could be optimized at the cost of CPU usage
 
     std::string full_msg_;
     bool full_msg_received_;
+
+    bool verbose_;
 
 };

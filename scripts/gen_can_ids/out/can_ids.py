@@ -1,0 +1,9 @@
+class CanIds:
+    BASE_CMD_VEL = 0x10
+    BASE_CURRENT_VEL = 0x11
+    BASE_STATUS = 0x12
+    BASE_SET_CONFIG = 0x13
+    BASE_RET_CONFIG = 0x14
+    BASE_GET_LOG = 0x15
+    BASE_RET_LOG = 0x16
+    BASE_RESET = 0x1

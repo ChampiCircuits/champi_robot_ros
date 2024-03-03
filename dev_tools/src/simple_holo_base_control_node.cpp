@@ -18,7 +18,10 @@ class SimpleHoloBaseControlNode : public rclcpp::Node
 public:
     SimpleHoloBaseControlNode() : 
         Node("simple_holo_base_control_node"),
-        champi_can_interface_(this->declare_parameter("can_interface_name", "vcan0"), {can_ids::BASE_CURRENT_VEL})
+        champi_can_interface_(
+                this->declare_parameter("can_interface_name", "vcan0"),
+                {can_ids::BASE_CURRENT_VEL, can_ids::BASE_RET_CONFIG},
+                this->declare_parameter("champi_can_verbose_mode", true))
     {
 
         // Get parameters
