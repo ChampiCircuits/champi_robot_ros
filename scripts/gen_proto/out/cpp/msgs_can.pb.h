@@ -31,6 +31,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
+#include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
@@ -47,7 +48,7 @@ struct TableStruct_msgs_5fcan_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[2]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[5]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -55,19 +56,85 @@ struct TableStruct_msgs_5fcan_2eproto {
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_msgs_5fcan_2eproto;
 namespace msgs_can {
+class BaseConfig;
+class BaseConfigDefaultTypeInternal;
+extern BaseConfigDefaultTypeInternal _BaseConfig_default_instance_;
 class BaseVel;
 class BaseVelDefaultTypeInternal;
 extern BaseVelDefaultTypeInternal _BaseVel_default_instance_;
-class HeartBeat;
-class HeartBeatDefaultTypeInternal;
-extern HeartBeatDefaultTypeInternal _HeartBeat_default_instance_;
+class Log;
+class LogDefaultTypeInternal;
+extern LogDefaultTypeInternal _Log_default_instance_;
+class Status;
+class StatusDefaultTypeInternal;
+extern StatusDefaultTypeInternal _Status_default_instance_;
+class StatusReport;
+class StatusReportDefaultTypeInternal;
+extern StatusReportDefaultTypeInternal _StatusReport_default_instance_;
 }  // namespace msgs_can
 PROTOBUF_NAMESPACE_OPEN
+template<> ::msgs_can::BaseConfig* Arena::CreateMaybeMessage<::msgs_can::BaseConfig>(Arena*);
 template<> ::msgs_can::BaseVel* Arena::CreateMaybeMessage<::msgs_can::BaseVel>(Arena*);
-template<> ::msgs_can::HeartBeat* Arena::CreateMaybeMessage<::msgs_can::HeartBeat>(Arena*);
+template<> ::msgs_can::Log* Arena::CreateMaybeMessage<::msgs_can::Log>(Arena*);
+template<> ::msgs_can::Status* Arena::CreateMaybeMessage<::msgs_can::Status>(Arena*);
+template<> ::msgs_can::StatusReport* Arena::CreateMaybeMessage<::msgs_can::StatusReport>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace msgs_can {
 
+enum Status_StatusType : int {
+  Status_StatusType_OK = 0,
+  Status_StatusType_INIT = 1,
+  Status_StatusType_WARN = 2,
+  Status_StatusType_ERROR = 3
+};
+bool Status_StatusType_IsValid(int value);
+constexpr Status_StatusType Status_StatusType_StatusType_MIN = Status_StatusType_OK;
+constexpr Status_StatusType Status_StatusType_StatusType_MAX = Status_StatusType_ERROR;
+constexpr int Status_StatusType_StatusType_ARRAYSIZE = Status_StatusType_StatusType_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* Status_StatusType_descriptor();
+template<typename T>
+inline const std::string& Status_StatusType_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, Status_StatusType>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function Status_StatusType_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    Status_StatusType_descriptor(), enum_t_value);
+}
+inline bool Status_StatusType_Parse(
+    const std::string& name, Status_StatusType* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<Status_StatusType>(
+    Status_StatusType_descriptor(), name, value);
+}
+enum Status_ErrorType : int {
+  Status_ErrorType_NONE = 0,
+  Status_ErrorType_INIT_PERIPHERALS = 1,
+  Status_ErrorType_INIT_CAN = 2,
+  Status_ErrorType_PROTO_ENCODE = 3,
+  Status_ErrorType_PROTO_DECODE = 4,
+  Status_ErrorType_CMD_VEL_TIMEOUT = 5,
+  Status_ErrorType_CAN_TX = 6,
+  Status_ErrorType_CAN_RX = 7
+};
+bool Status_ErrorType_IsValid(int value);
+constexpr Status_ErrorType Status_ErrorType_ErrorType_MIN = Status_ErrorType_NONE;
+constexpr Status_ErrorType Status_ErrorType_ErrorType_MAX = Status_ErrorType_CAN_RX;
+constexpr int Status_ErrorType_ErrorType_ARRAYSIZE = Status_ErrorType_ErrorType_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* Status_ErrorType_descriptor();
+template<typename T>
+inline const std::string& Status_ErrorType_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, Status_ErrorType>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function Status_ErrorType_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    Status_ErrorType_descriptor(), enum_t_value);
+}
+inline bool Status_ErrorType_Parse(
+    const std::string& name, Status_ErrorType* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<Status_ErrorType>(
+    Status_ErrorType_descriptor(), name, value);
+}
 // ===================================================================
 
 class BaseVel PROTOBUF_FINAL :
@@ -249,23 +316,23 @@ class BaseVel PROTOBUF_FINAL :
 };
 // -------------------------------------------------------------------
 
-class HeartBeat PROTOBUF_FINAL :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.HeartBeat) */ {
+class Status PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.Status) */ {
  public:
-  inline HeartBeat() : HeartBeat(nullptr) {};
-  virtual ~HeartBeat();
+  inline Status() : Status(nullptr) {};
+  virtual ~Status();
 
-  HeartBeat(const HeartBeat& from);
-  HeartBeat(HeartBeat&& from) noexcept
-    : HeartBeat() {
+  Status(const Status& from);
+  Status(Status&& from) noexcept
+    : Status() {
     *this = ::std::move(from);
   }
 
-  inline HeartBeat& operator=(const HeartBeat& from) {
+  inline Status& operator=(const Status& from) {
     CopyFrom(from);
     return *this;
   }
-  inline HeartBeat& operator=(HeartBeat&& from) noexcept {
+  inline Status& operator=(Status&& from) noexcept {
     if (GetArena() == from.GetArena()) {
       if (this != &from) InternalSwap(&from);
     } else {
@@ -290,20 +357,20 @@ class HeartBeat PROTOBUF_FINAL :
   static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
     return GetMetadataStatic().reflection;
   }
-  static const HeartBeat& default_instance();
+  static const Status& default_instance();
 
   static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const HeartBeat* internal_default_instance() {
-    return reinterpret_cast<const HeartBeat*>(
-               &_HeartBeat_default_instance_);
+  static inline const Status* internal_default_instance() {
+    return reinterpret_cast<const Status*>(
+               &_Status_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
     1;
 
-  friend void swap(HeartBeat& a, HeartBeat& b) {
+  friend void swap(Status& a, Status& b) {
     a.Swap(&b);
   }
-  inline void Swap(HeartBeat* other) {
+  inline void Swap(Status* other) {
     if (other == this) return;
     if (GetArena() == other->GetArena()) {
       InternalSwap(other);
@@ -311,7 +378,7 @@ class HeartBeat PROTOBUF_FINAL :
       ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(HeartBeat* other) {
+  void UnsafeArenaSwap(Status* other) {
     if (other == this) return;
     GOOGLE_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -319,17 +386,17 @@ class HeartBeat PROTOBUF_FINAL :
 
   // implements Message ----------------------------------------------
 
-  inline HeartBeat* New() const final {
-    return CreateMaybeMessage<HeartBeat>(nullptr);
+  inline Status* New() const final {
+    return CreateMaybeMessage<Status>(nullptr);
   }
 
-  HeartBeat* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
-    return CreateMaybeMessage<HeartBeat>(arena);
+  Status* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<Status>(arena);
   }
   void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
   void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
-  void CopyFrom(const HeartBeat& from);
-  void MergeFrom(const HeartBeat& from);
+  void CopyFrom(const Status& from);
+  void MergeFrom(const Status& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -343,13 +410,299 @@ class HeartBeat PROTOBUF_FINAL :
   inline void SharedCtor();
   inline void SharedDtor();
   void SetCachedSize(int size) const final;
-  void InternalSwap(HeartBeat* other);
+  void InternalSwap(Status* other);
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "msgs_can.HeartBeat";
+    return "msgs_can.Status";
   }
   protected:
-  explicit HeartBeat(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  explicit Status(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_msgs_5fcan_2eproto);
+    return ::descriptor_table_msgs_5fcan_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  typedef Status_StatusType StatusType;
+  static constexpr StatusType OK =
+    Status_StatusType_OK;
+  static constexpr StatusType INIT =
+    Status_StatusType_INIT;
+  static constexpr StatusType WARN =
+    Status_StatusType_WARN;
+  static constexpr StatusType ERROR =
+    Status_StatusType_ERROR;
+  static inline bool StatusType_IsValid(int value) {
+    return Status_StatusType_IsValid(value);
+  }
+  static constexpr StatusType StatusType_MIN =
+    Status_StatusType_StatusType_MIN;
+  static constexpr StatusType StatusType_MAX =
+    Status_StatusType_StatusType_MAX;
+  static constexpr int StatusType_ARRAYSIZE =
+    Status_StatusType_StatusType_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  StatusType_descriptor() {
+    return Status_StatusType_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& StatusType_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, StatusType>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function StatusType_Name.");
+    return Status_StatusType_Name(enum_t_value);
+  }
+  static inline bool StatusType_Parse(const std::string& name,
+      StatusType* value) {
+    return Status_StatusType_Parse(name, value);
+  }
+
+  typedef Status_ErrorType ErrorType;
+  static constexpr ErrorType NONE =
+    Status_ErrorType_NONE;
+  static constexpr ErrorType INIT_PERIPHERALS =
+    Status_ErrorType_INIT_PERIPHERALS;
+  static constexpr ErrorType INIT_CAN =
+    Status_ErrorType_INIT_CAN;
+  static constexpr ErrorType PROTO_ENCODE =
+    Status_ErrorType_PROTO_ENCODE;
+  static constexpr ErrorType PROTO_DECODE =
+    Status_ErrorType_PROTO_DECODE;
+  static constexpr ErrorType CMD_VEL_TIMEOUT =
+    Status_ErrorType_CMD_VEL_TIMEOUT;
+  static constexpr ErrorType CAN_TX =
+    Status_ErrorType_CAN_TX;
+  static constexpr ErrorType CAN_RX =
+    Status_ErrorType_CAN_RX;
+  static inline bool ErrorType_IsValid(int value) {
+    return Status_ErrorType_IsValid(value);
+  }
+  static constexpr ErrorType ErrorType_MIN =
+    Status_ErrorType_ErrorType_MIN;
+  static constexpr ErrorType ErrorType_MAX =
+    Status_ErrorType_ErrorType_MAX;
+  static constexpr int ErrorType_ARRAYSIZE =
+    Status_ErrorType_ErrorType_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  ErrorType_descriptor() {
+    return Status_ErrorType_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& ErrorType_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, ErrorType>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function ErrorType_Name.");
+    return Status_ErrorType_Name(enum_t_value);
+  }
+  static inline bool ErrorType_Parse(const std::string& name,
+      ErrorType* value) {
+    return Status_ErrorType_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMessageFieldNumber = 4,
+    kTimestampFieldNumber = 1,
+    kStatusFieldNumber = 2,
+    kErrorFieldNumber = 3,
+  };
+  // optional string message = 4;
+  bool has_message() const;
+  private:
+  bool _internal_has_message() const;
+  public:
+  void clear_message();
+  const std::string& message() const;
+  void set_message(const std::string& value);
+  void set_message(std::string&& value);
+  void set_message(const char* value);
+  void set_message(const char* value, size_t size);
+  std::string* mutable_message();
+  std::string* release_message();
+  void set_allocated_message(std::string* message);
+  GOOGLE_PROTOBUF_RUNTIME_DEPRECATED("The unsafe_arena_ accessors for"
+  "    string fields are deprecated and will be removed in a"
+  "    future release.")
+  std::string* unsafe_arena_release_message();
+  GOOGLE_PROTOBUF_RUNTIME_DEPRECATED("The unsafe_arena_ accessors for"
+  "    string fields are deprecated and will be removed in a"
+  "    future release.")
+  void unsafe_arena_set_allocated_message(
+      std::string* message);
+  private:
+  const std::string& _internal_message() const;
+  void _internal_set_message(const std::string& value);
+  std::string* _internal_mutable_message();
+  public:
+
+  // optional float timestamp = 1;
+  bool has_timestamp() const;
+  private:
+  bool _internal_has_timestamp() const;
+  public:
+  void clear_timestamp();
+  float timestamp() const;
+  void set_timestamp(float value);
+  private:
+  float _internal_timestamp() const;
+  void _internal_set_timestamp(float value);
+  public:
+
+  // optional .msgs_can.Status.StatusType status = 2;
+  bool has_status() const;
+  private:
+  bool _internal_has_status() const;
+  public:
+  void clear_status();
+  ::msgs_can::Status_StatusType status() const;
+  void set_status(::msgs_can::Status_StatusType value);
+  private:
+  ::msgs_can::Status_StatusType _internal_status() const;
+  void _internal_set_status(::msgs_can::Status_StatusType value);
+  public:
+
+  // optional .msgs_can.Status.ErrorType error = 3;
+  bool has_error() const;
+  private:
+  bool _internal_has_error() const;
+  public:
+  void clear_error();
+  ::msgs_can::Status_ErrorType error() const;
+  void set_error(::msgs_can::Status_ErrorType value);
+  private:
+  ::msgs_can::Status_ErrorType _internal_error() const;
+  void _internal_set_error(::msgs_can::Status_ErrorType value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:msgs_can.Status)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr message_;
+  float timestamp_;
+  int status_;
+  int error_;
+  friend struct ::TableStruct_msgs_5fcan_2eproto;
+};
+// -------------------------------------------------------------------
+
+class StatusReport PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.StatusReport) */ {
+ public:
+  inline StatusReport() : StatusReport(nullptr) {};
+  virtual ~StatusReport();
+
+  StatusReport(const StatusReport& from);
+  StatusReport(StatusReport&& from) noexcept
+    : StatusReport() {
+    *this = ::std::move(from);
+  }
+
+  inline StatusReport& operator=(const StatusReport& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline StatusReport& operator=(StatusReport&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const StatusReport& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const StatusReport* internal_default_instance() {
+    return reinterpret_cast<const StatusReport*>(
+               &_StatusReport_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    2;
+
+  friend void swap(StatusReport& a, StatusReport& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(StatusReport* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(StatusReport* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline StatusReport* New() const final {
+    return CreateMaybeMessage<StatusReport>(nullptr);
+  }
+
+  StatusReport* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<StatusReport>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const StatusReport& from);
+  void MergeFrom(const StatusReport& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(StatusReport* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "msgs_can.StatusReport";
+  }
+  protected:
+  explicit StatusReport(::PROTOBUF_NAMESPACE_ID::Arena* arena);
   private:
   static void ArenaDtor(void* object);
   inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
@@ -371,20 +724,25 @@ class HeartBeat PROTOBUF_FINAL :
   enum : int {
     kStatusFieldNumber = 1,
   };
-  // optional int32 status = 1;
+  // optional .msgs_can.Status status = 1;
   bool has_status() const;
   private:
   bool _internal_has_status() const;
   public:
   void clear_status();
-  ::PROTOBUF_NAMESPACE_ID::int32 status() const;
-  void set_status(::PROTOBUF_NAMESPACE_ID::int32 value);
+  const ::msgs_can::Status& status() const;
+  ::msgs_can::Status* release_status();
+  ::msgs_can::Status* mutable_status();
+  void set_allocated_status(::msgs_can::Status* status);
   private:
-  ::PROTOBUF_NAMESPACE_ID::int32 _internal_status() const;
-  void _internal_set_status(::PROTOBUF_NAMESPACE_ID::int32 value);
+  const ::msgs_can::Status& _internal_status() const;
+  ::msgs_can::Status* _internal_mutable_status();
   public:
+  void unsafe_arena_set_allocated_status(
+      ::msgs_can::Status* status);
+  ::msgs_can::Status* unsafe_arena_release_status();
 
-  // @@protoc_insertion_point(class_scope:msgs_can.HeartBeat)
+  // @@protoc_insertion_point(class_scope:msgs_can.StatusReport)
  private:
   class _Internal;
 
@@ -393,7 +751,375 @@ class HeartBeat PROTOBUF_FINAL :
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-  ::PROTOBUF_NAMESPACE_ID::int32 status_;
+  ::msgs_can::Status* status_;
+  friend struct ::TableStruct_msgs_5fcan_2eproto;
+};
+// -------------------------------------------------------------------
+
+class Log PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.Log) */ {
+ public:
+  inline Log() : Log(nullptr) {};
+  virtual ~Log();
+
+  Log(const Log& from);
+  Log(Log&& from) noexcept
+    : Log() {
+    *this = ::std::move(from);
+  }
+
+  inline Log& operator=(const Log& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Log& operator=(Log&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const Log& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const Log* internal_default_instance() {
+    return reinterpret_cast<const Log*>(
+               &_Log_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    3;
+
+  friend void swap(Log& a, Log& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Log* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Log* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline Log* New() const final {
+    return CreateMaybeMessage<Log>(nullptr);
+  }
+
+  Log* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<Log>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const Log& from);
+  void MergeFrom(const Log& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Log* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "msgs_can.Log";
+  }
+  protected:
+  explicit Log(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_msgs_5fcan_2eproto);
+    return ::descriptor_table_msgs_5fcan_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kStatusFieldNumber = 2,
+    kConfigFieldNumber = 1,
+  };
+  // repeated .msgs_can.Status status = 2;
+  int status_size() const;
+  private:
+  int _internal_status_size() const;
+  public:
+  void clear_status();
+  ::msgs_can::Status* mutable_status(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::msgs_can::Status >*
+      mutable_status();
+  private:
+  const ::msgs_can::Status& _internal_status(int index) const;
+  ::msgs_can::Status* _internal_add_status();
+  public:
+  const ::msgs_can::Status& status(int index) const;
+  ::msgs_can::Status* add_status();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::msgs_can::Status >&
+      status() const;
+
+  // optional .msgs_can.BaseConfig config = 1;
+  bool has_config() const;
+  private:
+  bool _internal_has_config() const;
+  public:
+  void clear_config();
+  const ::msgs_can::BaseConfig& config() const;
+  ::msgs_can::BaseConfig* release_config();
+  ::msgs_can::BaseConfig* mutable_config();
+  void set_allocated_config(::msgs_can::BaseConfig* config);
+  private:
+  const ::msgs_can::BaseConfig& _internal_config() const;
+  ::msgs_can::BaseConfig* _internal_mutable_config();
+  public:
+  void unsafe_arena_set_allocated_config(
+      ::msgs_can::BaseConfig* config);
+  ::msgs_can::BaseConfig* unsafe_arena_release_config();
+
+  // @@protoc_insertion_point(class_scope:msgs_can.Log)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::msgs_can::Status > status_;
+  ::msgs_can::BaseConfig* config_;
+  friend struct ::TableStruct_msgs_5fcan_2eproto;
+};
+// -------------------------------------------------------------------
+
+class BaseConfig PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.BaseConfig) */ {
+ public:
+  inline BaseConfig() : BaseConfig(nullptr) {};
+  virtual ~BaseConfig();
+
+  BaseConfig(const BaseConfig& from);
+  BaseConfig(BaseConfig&& from) noexcept
+    : BaseConfig() {
+    *this = ::std::move(from);
+  }
+
+  inline BaseConfig& operator=(const BaseConfig& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BaseConfig& operator=(BaseConfig&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const BaseConfig& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const BaseConfig* internal_default_instance() {
+    return reinterpret_cast<const BaseConfig*>(
+               &_BaseConfig_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    4;
+
+  friend void swap(BaseConfig& a, BaseConfig& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(BaseConfig* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BaseConfig* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline BaseConfig* New() const final {
+    return CreateMaybeMessage<BaseConfig>(nullptr);
+  }
+
+  BaseConfig* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<BaseConfig>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const BaseConfig& from);
+  void MergeFrom(const BaseConfig& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(BaseConfig* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "msgs_can.BaseConfig";
+  }
+  protected:
+  explicit BaseConfig(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_msgs_5fcan_2eproto);
+    return ::descriptor_table_msgs_5fcan_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMaxAccelFieldNumber = 1,
+    kCmdVelTimeoutFieldNumber = 2,
+    kWheelRadiusFieldNumber = 3,
+    kBaseRadiusFieldNumber = 4,
+  };
+  // optional float max_accel = 1;
+  bool has_max_accel() const;
+  private:
+  bool _internal_has_max_accel() const;
+  public:
+  void clear_max_accel();
+  float max_accel() const;
+  void set_max_accel(float value);
+  private:
+  float _internal_max_accel() const;
+  void _internal_set_max_accel(float value);
+  public:
+
+  // optional float cmd_vel_timeout = 2;
+  bool has_cmd_vel_timeout() const;
+  private:
+  bool _internal_has_cmd_vel_timeout() const;
+  public:
+  void clear_cmd_vel_timeout();
+  float cmd_vel_timeout() const;
+  void set_cmd_vel_timeout(float value);
+  private:
+  float _internal_cmd_vel_timeout() const;
+  void _internal_set_cmd_vel_timeout(float value);
+  public:
+
+  // optional float wheel_radius = 3;
+  bool has_wheel_radius() const;
+  private:
+  bool _internal_has_wheel_radius() const;
+  public:
+  void clear_wheel_radius();
+  float wheel_radius() const;
+  void set_wheel_radius(float value);
+  private:
+  float _internal_wheel_radius() const;
+  void _internal_set_wheel_radius(float value);
+  public:
+
+  // optional float base_radius = 4;
+  bool has_base_radius() const;
+  private:
+  bool _internal_has_base_radius() const;
+  public:
+  void clear_base_radius();
+  float base_radius() const;
+  void set_base_radius(float value);
+  private:
+  float _internal_base_radius() const;
+  void _internal_set_base_radius(float value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:msgs_can.BaseConfig)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  float max_accel_;
+  float cmd_vel_timeout_;
+  float wheel_radius_;
+  float base_radius_;
   friend struct ::TableStruct_msgs_5fcan_2eproto;
 };
 // ===================================================================
@@ -493,34 +1219,510 @@ inline void BaseVel::set_theta(float value) {
 
 // -------------------------------------------------------------------
 
-// HeartBeat
+// Status
 
-// optional int32 status = 1;
-inline bool HeartBeat::_internal_has_status() const {
+// optional float timestamp = 1;
+inline bool Status::_internal_has_timestamp() const {
+  bool value = (_has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool Status::has_timestamp() const {
+  return _internal_has_timestamp();
+}
+inline void Status::clear_timestamp() {
+  timestamp_ = 0;
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline float Status::_internal_timestamp() const {
+  return timestamp_;
+}
+inline float Status::timestamp() const {
+  // @@protoc_insertion_point(field_get:msgs_can.Status.timestamp)
+  return _internal_timestamp();
+}
+inline void Status::_internal_set_timestamp(float value) {
+  _has_bits_[0] |= 0x00000002u;
+  timestamp_ = value;
+}
+inline void Status::set_timestamp(float value) {
+  _internal_set_timestamp(value);
+  // @@protoc_insertion_point(field_set:msgs_can.Status.timestamp)
+}
+
+// optional .msgs_can.Status.StatusType status = 2;
+inline bool Status::_internal_has_status() const {
+  bool value = (_has_bits_[0] & 0x00000004u) != 0;
+  return value;
+}
+inline bool Status::has_status() const {
+  return _internal_has_status();
+}
+inline void Status::clear_status() {
+  status_ = 0;
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline ::msgs_can::Status_StatusType Status::_internal_status() const {
+  return static_cast< ::msgs_can::Status_StatusType >(status_);
+}
+inline ::msgs_can::Status_StatusType Status::status() const {
+  // @@protoc_insertion_point(field_get:msgs_can.Status.status)
+  return _internal_status();
+}
+inline void Status::_internal_set_status(::msgs_can::Status_StatusType value) {
+  assert(::msgs_can::Status_StatusType_IsValid(value));
+  _has_bits_[0] |= 0x00000004u;
+  status_ = value;
+}
+inline void Status::set_status(::msgs_can::Status_StatusType value) {
+  _internal_set_status(value);
+  // @@protoc_insertion_point(field_set:msgs_can.Status.status)
+}
+
+// optional .msgs_can.Status.ErrorType error = 3;
+inline bool Status::_internal_has_error() const {
+  bool value = (_has_bits_[0] & 0x00000008u) != 0;
+  return value;
+}
+inline bool Status::has_error() const {
+  return _internal_has_error();
+}
+inline void Status::clear_error() {
+  error_ = 0;
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline ::msgs_can::Status_ErrorType Status::_internal_error() const {
+  return static_cast< ::msgs_can::Status_ErrorType >(error_);
+}
+inline ::msgs_can::Status_ErrorType Status::error() const {
+  // @@protoc_insertion_point(field_get:msgs_can.Status.error)
+  return _internal_error();
+}
+inline void Status::_internal_set_error(::msgs_can::Status_ErrorType value) {
+  assert(::msgs_can::Status_ErrorType_IsValid(value));
+  _has_bits_[0] |= 0x00000008u;
+  error_ = value;
+}
+inline void Status::set_error(::msgs_can::Status_ErrorType value) {
+  _internal_set_error(value);
+  // @@protoc_insertion_point(field_set:msgs_can.Status.error)
+}
+
+// optional string message = 4;
+inline bool Status::_internal_has_message() const {
   bool value = (_has_bits_[0] & 0x00000001u) != 0;
   return value;
 }
-inline bool HeartBeat::has_status() const {
-  return _internal_has_status();
+inline bool Status::has_message() const {
+  return _internal_has_message();
 }
-inline void HeartBeat::clear_status() {
-  status_ = 0;
+inline void Status::clear_message() {
+  message_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   _has_bits_[0] &= ~0x00000001u;
 }
-inline ::PROTOBUF_NAMESPACE_ID::int32 HeartBeat::_internal_status() const {
-  return status_;
+inline const std::string& Status::message() const {
+  // @@protoc_insertion_point(field_get:msgs_can.Status.message)
+  return _internal_message();
 }
-inline ::PROTOBUF_NAMESPACE_ID::int32 HeartBeat::status() const {
-  // @@protoc_insertion_point(field_get:msgs_can.HeartBeat.status)
+inline void Status::set_message(const std::string& value) {
+  _internal_set_message(value);
+  // @@protoc_insertion_point(field_set:msgs_can.Status.message)
+}
+inline std::string* Status::mutable_message() {
+  // @@protoc_insertion_point(field_mutable:msgs_can.Status.message)
+  return _internal_mutable_message();
+}
+inline const std::string& Status::_internal_message() const {
+  return message_.Get();
+}
+inline void Status::_internal_set_message(const std::string& value) {
+  _has_bits_[0] |= 0x00000001u;
+  message_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void Status::set_message(std::string&& value) {
+  _has_bits_[0] |= 0x00000001u;
+  message_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:msgs_can.Status.message)
+}
+inline void Status::set_message(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000001u;
+  message_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:msgs_can.Status.message)
+}
+inline void Status::set_message(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000001u;
+  message_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:msgs_can.Status.message)
+}
+inline std::string* Status::_internal_mutable_message() {
+  _has_bits_[0] |= 0x00000001u;
+  return message_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* Status::release_message() {
+  // @@protoc_insertion_point(field_release:msgs_can.Status.message)
+  if (!_internal_has_message()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000001u;
+  return message_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void Status::set_allocated_message(std::string* message) {
+  if (message != nullptr) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  message_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), message,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:msgs_can.Status.message)
+}
+inline std::string* Status::unsafe_arena_release_message() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:msgs_can.Status.message)
+  GOOGLE_DCHECK(GetArena() != nullptr);
+  _has_bits_[0] &= ~0x00000001u;
+  return message_.UnsafeArenaRelease(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArena());
+}
+inline void Status::unsafe_arena_set_allocated_message(
+    std::string* message) {
+  GOOGLE_DCHECK(GetArena() != nullptr);
+  if (message != nullptr) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  message_.UnsafeArenaSetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      message, GetArena());
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:msgs_can.Status.message)
+}
+
+// -------------------------------------------------------------------
+
+// StatusReport
+
+// optional .msgs_can.Status status = 1;
+inline bool StatusReport::_internal_has_status() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || status_ != nullptr);
+  return value;
+}
+inline bool StatusReport::has_status() const {
+  return _internal_has_status();
+}
+inline void StatusReport::clear_status() {
+  if (status_ != nullptr) status_->Clear();
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline const ::msgs_can::Status& StatusReport::_internal_status() const {
+  const ::msgs_can::Status* p = status_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::msgs_can::Status*>(
+      &::msgs_can::_Status_default_instance_);
+}
+inline const ::msgs_can::Status& StatusReport::status() const {
+  // @@protoc_insertion_point(field_get:msgs_can.StatusReport.status)
   return _internal_status();
 }
-inline void HeartBeat::_internal_set_status(::PROTOBUF_NAMESPACE_ID::int32 value) {
-  _has_bits_[0] |= 0x00000001u;
-  status_ = value;
+inline void StatusReport::unsafe_arena_set_allocated_status(
+    ::msgs_can::Status* status) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(status_);
+  }
+  status_ = status;
+  if (status) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:msgs_can.StatusReport.status)
 }
-inline void HeartBeat::set_status(::PROTOBUF_NAMESPACE_ID::int32 value) {
-  _internal_set_status(value);
-  // @@protoc_insertion_point(field_set:msgs_can.HeartBeat.status)
+inline ::msgs_can::Status* StatusReport::release_status() {
+  auto temp = unsafe_arena_release_status();
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::msgs_can::Status* StatusReport::unsafe_arena_release_status() {
+  // @@protoc_insertion_point(field_release:msgs_can.StatusReport.status)
+  _has_bits_[0] &= ~0x00000001u;
+  ::msgs_can::Status* temp = status_;
+  status_ = nullptr;
+  return temp;
+}
+inline ::msgs_can::Status* StatusReport::_internal_mutable_status() {
+  _has_bits_[0] |= 0x00000001u;
+  if (status_ == nullptr) {
+    auto* p = CreateMaybeMessage<::msgs_can::Status>(GetArena());
+    status_ = p;
+  }
+  return status_;
+}
+inline ::msgs_can::Status* StatusReport::mutable_status() {
+  // @@protoc_insertion_point(field_mutable:msgs_can.StatusReport.status)
+  return _internal_mutable_status();
+}
+inline void StatusReport::set_allocated_status(::msgs_can::Status* status) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete status_;
+  }
+  if (status) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::GetArena(status);
+    if (message_arena != submessage_arena) {
+      status = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, status, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  status_ = status;
+  // @@protoc_insertion_point(field_set_allocated:msgs_can.StatusReport.status)
+}
+
+// -------------------------------------------------------------------
+
+// Log
+
+// optional .msgs_can.BaseConfig config = 1;
+inline bool Log::_internal_has_config() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || config_ != nullptr);
+  return value;
+}
+inline bool Log::has_config() const {
+  return _internal_has_config();
+}
+inline void Log::clear_config() {
+  if (config_ != nullptr) config_->Clear();
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline const ::msgs_can::BaseConfig& Log::_internal_config() const {
+  const ::msgs_can::BaseConfig* p = config_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::msgs_can::BaseConfig*>(
+      &::msgs_can::_BaseConfig_default_instance_);
+}
+inline const ::msgs_can::BaseConfig& Log::config() const {
+  // @@protoc_insertion_point(field_get:msgs_can.Log.config)
+  return _internal_config();
+}
+inline void Log::unsafe_arena_set_allocated_config(
+    ::msgs_can::BaseConfig* config) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(config_);
+  }
+  config_ = config;
+  if (config) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:msgs_can.Log.config)
+}
+inline ::msgs_can::BaseConfig* Log::release_config() {
+  auto temp = unsafe_arena_release_config();
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::msgs_can::BaseConfig* Log::unsafe_arena_release_config() {
+  // @@protoc_insertion_point(field_release:msgs_can.Log.config)
+  _has_bits_[0] &= ~0x00000001u;
+  ::msgs_can::BaseConfig* temp = config_;
+  config_ = nullptr;
+  return temp;
+}
+inline ::msgs_can::BaseConfig* Log::_internal_mutable_config() {
+  _has_bits_[0] |= 0x00000001u;
+  if (config_ == nullptr) {
+    auto* p = CreateMaybeMessage<::msgs_can::BaseConfig>(GetArena());
+    config_ = p;
+  }
+  return config_;
+}
+inline ::msgs_can::BaseConfig* Log::mutable_config() {
+  // @@protoc_insertion_point(field_mutable:msgs_can.Log.config)
+  return _internal_mutable_config();
+}
+inline void Log::set_allocated_config(::msgs_can::BaseConfig* config) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete config_;
+  }
+  if (config) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::GetArena(config);
+    if (message_arena != submessage_arena) {
+      config = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, config, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  config_ = config;
+  // @@protoc_insertion_point(field_set_allocated:msgs_can.Log.config)
+}
+
+// repeated .msgs_can.Status status = 2;
+inline int Log::_internal_status_size() const {
+  return status_.size();
+}
+inline int Log::status_size() const {
+  return _internal_status_size();
+}
+inline void Log::clear_status() {
+  status_.Clear();
+}
+inline ::msgs_can::Status* Log::mutable_status(int index) {
+  // @@protoc_insertion_point(field_mutable:msgs_can.Log.status)
+  return status_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::msgs_can::Status >*
+Log::mutable_status() {
+  // @@protoc_insertion_point(field_mutable_list:msgs_can.Log.status)
+  return &status_;
+}
+inline const ::msgs_can::Status& Log::_internal_status(int index) const {
+  return status_.Get(index);
+}
+inline const ::msgs_can::Status& Log::status(int index) const {
+  // @@protoc_insertion_point(field_get:msgs_can.Log.status)
+  return _internal_status(index);
+}
+inline ::msgs_can::Status* Log::_internal_add_status() {
+  return status_.Add();
+}
+inline ::msgs_can::Status* Log::add_status() {
+  // @@protoc_insertion_point(field_add:msgs_can.Log.status)
+  return _internal_add_status();
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::msgs_can::Status >&
+Log::status() const {
+  // @@protoc_insertion_point(field_list:msgs_can.Log.status)
+  return status_;
+}
+
+// -------------------------------------------------------------------
+
+// BaseConfig
+
+// optional float max_accel = 1;
+inline bool BaseConfig::_internal_has_max_accel() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool BaseConfig::has_max_accel() const {
+  return _internal_has_max_accel();
+}
+inline void BaseConfig::clear_max_accel() {
+  max_accel_ = 0;
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline float BaseConfig::_internal_max_accel() const {
+  return max_accel_;
+}
+inline float BaseConfig::max_accel() const {
+  // @@protoc_insertion_point(field_get:msgs_can.BaseConfig.max_accel)
+  return _internal_max_accel();
+}
+inline void BaseConfig::_internal_set_max_accel(float value) {
+  _has_bits_[0] |= 0x00000001u;
+  max_accel_ = value;
+}
+inline void BaseConfig::set_max_accel(float value) {
+  _internal_set_max_accel(value);
+  // @@protoc_insertion_point(field_set:msgs_can.BaseConfig.max_accel)
+}
+
+// optional float cmd_vel_timeout = 2;
+inline bool BaseConfig::_internal_has_cmd_vel_timeout() const {
+  bool value = (_has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool BaseConfig::has_cmd_vel_timeout() const {
+  return _internal_has_cmd_vel_timeout();
+}
+inline void BaseConfig::clear_cmd_vel_timeout() {
+  cmd_vel_timeout_ = 0;
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline float BaseConfig::_internal_cmd_vel_timeout() const {
+  return cmd_vel_timeout_;
+}
+inline float BaseConfig::cmd_vel_timeout() const {
+  // @@protoc_insertion_point(field_get:msgs_can.BaseConfig.cmd_vel_timeout)
+  return _internal_cmd_vel_timeout();
+}
+inline void BaseConfig::_internal_set_cmd_vel_timeout(float value) {
+  _has_bits_[0] |= 0x00000002u;
+  cmd_vel_timeout_ = value;
+}
+inline void BaseConfig::set_cmd_vel_timeout(float value) {
+  _internal_set_cmd_vel_timeout(value);
+  // @@protoc_insertion_point(field_set:msgs_can.BaseConfig.cmd_vel_timeout)
+}
+
+// optional float wheel_radius = 3;
+inline bool BaseConfig::_internal_has_wheel_radius() const {
+  bool value = (_has_bits_[0] & 0x00000004u) != 0;
+  return value;
+}
+inline bool BaseConfig::has_wheel_radius() const {
+  return _internal_has_wheel_radius();
+}
+inline void BaseConfig::clear_wheel_radius() {
+  wheel_radius_ = 0;
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline float BaseConfig::_internal_wheel_radius() const {
+  return wheel_radius_;
+}
+inline float BaseConfig::wheel_radius() const {
+  // @@protoc_insertion_point(field_get:msgs_can.BaseConfig.wheel_radius)
+  return _internal_wheel_radius();
+}
+inline void BaseConfig::_internal_set_wheel_radius(float value) {
+  _has_bits_[0] |= 0x00000004u;
+  wheel_radius_ = value;
+}
+inline void BaseConfig::set_wheel_radius(float value) {
+  _internal_set_wheel_radius(value);
+  // @@protoc_insertion_point(field_set:msgs_can.BaseConfig.wheel_radius)
+}
+
+// optional float base_radius = 4;
+inline bool BaseConfig::_internal_has_base_radius() const {
+  bool value = (_has_bits_[0] & 0x00000008u) != 0;
+  return value;
+}
+inline bool BaseConfig::has_base_radius() const {
+  return _internal_has_base_radius();
+}
+inline void BaseConfig::clear_base_radius() {
+  base_radius_ = 0;
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline float BaseConfig::_internal_base_radius() const {
+  return base_radius_;
+}
+inline float BaseConfig::base_radius() const {
+  // @@protoc_insertion_point(field_get:msgs_can.BaseConfig.base_radius)
+  return _internal_base_radius();
+}
+inline void BaseConfig::_internal_set_base_radius(float value) {
+  _has_bits_[0] |= 0x00000008u;
+  base_radius_ = value;
+}
+inline void BaseConfig::set_base_radius(float value) {
+  _internal_set_base_radius(value);
+  // @@protoc_insertion_point(field_set:msgs_can.BaseConfig.base_radius)
 }
 
 #ifdef __GNUC__
@@ -528,10 +1730,31 @@ inline void HeartBeat::set_status(::PROTOBUF_NAMESPACE_ID::int32 value) {
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
 }  // namespace msgs_can
+
+PROTOBUF_NAMESPACE_OPEN
+
+template <> struct is_proto_enum< ::msgs_can::Status_StatusType> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::msgs_can::Status_StatusType>() {
+  return ::msgs_can::Status_StatusType_descriptor();
+}
+template <> struct is_proto_enum< ::msgs_can::Status_ErrorType> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::msgs_can::Status_ErrorType>() {
+  return ::msgs_can::Status_ErrorType_descriptor();
+}
+
+PROTOBUF_NAMESPACE_CLOSE
 
 // @@protoc_insertion_point(global_scope)
 

@@ -3,6 +3,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include "tf2_ros/transform_broadcaster.h"
 #include <tf2/LinearMath/Quaternion.h>
+#include <champi_can/can_ids.hpp>
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -17,22 +18,23 @@ class SimpleHoloBaseControlNode : public rclcpp::Node
 public:
     SimpleHoloBaseControlNode() : 
         Node("simple_holo_base_control_node"),
-        champi_can_interface_(this->declare_parameter("can_interface_name", "can0"), {(int) this->declare_parameter("id_send", 0x10)})
+        champi_can_interface_(this->declare_parameter("can_interface_name", "vcan0"), {can_ids::BASE_CURRENT_VEL})
     {
 
         // Get parameters
         string topic_twist_in = this->declare_parameter("topic_twist_in", "cmd_vel");
         string can_interface_name = this->get_parameter("can_interface_name").as_string();
-        int id_send_cmd = this->get_parameter("id_send").as_int();
-        id_receive_vel_ = this->declare_parameter("id_receive", 0x11);
-        stm32_loop_rate_ = this->declare_parameter("stm32_loop_rate", 100.0); // Hz
-        
+
+        base_config_.max_accel = this->declare_parameter("max_accel", 10.0);
+        base_config_.wheel_radius = this->declare_parameter("wheel_radius", 0.029);
+        base_config_.base_radius = this->declare_parameter("base_radius", 0.175);
+        base_config_.cmd_vel_timeout = this->declare_parameter("cmd_vel_timeout", 0.1);
+
 
         // Print parameters
         RCLCPP_INFO(this->get_logger(), "Node started with the following parameters:");
         RCLCPP_INFO(this->get_logger(), "topic_twist_in: %s", topic_twist_in.c_str());
-        RCLCPP_INFO(this->get_logger(), "id_send_cmd: %d", id_send_cmd);
-        RCLCPP_INFO(this->get_logger(), "id_receive_vel: %d", id_receive_vel_);
+
 
         // Initialize current_pose_
         current_pose_.x = 0.0;
@@ -49,6 +51,9 @@ public:
             // TODO handle error
         }
 
+        // Send config to the base
+        waiting_for_ret_config = true;
+        send_config();
 
         // Create Subscribers
         sub_twist_in_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(topic_twist_in, 10, std::bind(&SimpleHoloBaseControlNode::twist_in_callback, this, std::placeholders::_1));
@@ -80,14 +85,58 @@ private:
     // Variables
     ChampiCan champi_can_interface_;
     msgs_can::BaseVel current_vel_;
-    float stm32_loop_rate_;
     struct Pose {
         float x;
         float y;
         float theta;
     } current_pose_;
+    bool waiting_for_ret_config;
 
-    int id_receive_vel_;
+    // Parameters
+    struct BaseConfig {
+        float max_accel;
+        float wheel_radius;
+        float base_radius;
+        float cmd_vel_timeout;
+    } base_config_;
+
+    // Functions
+
+    void send_config() {
+        msgs_can::BaseConfig base_set_config;
+        base_set_config.set_max_accel(base_config_.max_accel);
+        base_set_config.set_wheel_radius(base_config_.wheel_radius);
+        base_set_config.set_base_radius(base_config_.base_radius);
+
+        // Send message
+        if(champi_can_interface_.send(can_ids::BASE_SET_CONFIG, base_set_config.SerializeAsString()) != 0) {
+            RCLCPP_ERROR(this->get_logger(), "Error sending config message");
+            // TODO send diagnostic
+        }
+    }
+
+    void rx_can() {
+        if(champi_can_interface_.check_if_new_full_msg(can_ids::BASE_CURRENT_VEL)) {
+
+            auto buffer = champi_can_interface_.get_full_msg(can_ids::BASE_CURRENT_VEL);
+
+            // Update current_vel_
+            current_vel_.ParseFromString(buffer);
+        }
+        if(waiting_for_ret_config && champi_can_interface_.check_if_new_full_msg(can_ids::BASE_RET_CONFIG)) {
+            waiting_for_ret_config = false;
+
+            auto buffer = champi_can_interface_.get_full_msg(can_ids::BASE_RET_CONFIG);
+            msgs_can::BaseConfig base_ret_config;
+            base_ret_config.ParseFromString(buffer);
+
+            RCLCPP_INFO(this->get_logger(), "Base confirmed config: max_accel: %f, wheel_radius: %f, base_radius: %f",
+                        base_ret_config.max_accel(), base_ret_config.wheel_radius(), base_ret_config.base_radius());
+
+        }
+    }
+
+
 
     // Callbacks
     void twist_in_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg)
@@ -99,7 +148,7 @@ private:
         base_vel_cmd.set_theta(msg->twist.angular.z);
 
         // Send message
-        if(champi_can_interface_.send(0x10, base_vel_cmd.SerializeAsString()) != 0) {
+        if(champi_can_interface_.send(can_ids::BASE_CMD_VEL, base_vel_cmd.SerializeAsString()) != 0) {
             RCLCPP_ERROR(this->get_logger(), "Error sending message");
             // TODO send diagnostic
         }
@@ -109,19 +158,18 @@ private:
 
     void loop_callback() {
         // Read incoming message if available
-        RCLCPP_INFO(this->get_logger(), "Checking for new message");
-        if(champi_can_interface_.check_if_new_full_msg(id_receive_vel_)) {
+        rx_can();
 
-            auto buffer = champi_can_interface_.get_full_msg(id_receive_vel_);
-
-            current_vel_.ParseFromString(buffer);
-
-            RCLCPP_INFO(this->get_logger(), "we got a new message! %f %f %f", current_vel_.x(), current_vel_.y(), current_vel_.theta());
-
-            update_pose();
-            publish_odom();
-            broadcast_tf();
+        if(waiting_for_ret_config) {
+            RCLCPP_WARN_ONCE(this->get_logger(), "Waiting for base to confirm config");
+            return;
         }
+
+        // Update pose / velocity for other nodes
+        update_pose();
+        publish_odom();
+        broadcast_tf();
+
     }
 
     void update_pose() {

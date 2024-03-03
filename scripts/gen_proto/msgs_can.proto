@@ -8,6 +8,55 @@ message BaseVel {
   optional float theta = 3;
 }
 
-message HeartBeat {
-  optional int32 status = 1;
+message Status {
+
+  optional float timestamp = 1; // seconds since epoch
+
+  enum StatusType {
+    OK = 0;
+    INIT = 1;
+    WARN = 2;
+    ERROR = 3;
+  }
+  optional StatusType status = 2;
+
+  enum ErrorType {
+    NONE = 0;
+    INIT_PERIPHERALS = 1;
+    INIT_CAN = 2;
+    PROTO_ENCODE = 3;
+    PROTO_DECODE = 4;
+    CMD_VEL_TIMEOUT = 5;
+    CAN_TX = 6;
+    CAN_RX = 7;
+    INVALID_CONFIG = 8;
+  }
+  optional ErrorType error = 3;
+
+  optional string message = 4;
+}
+
+// Use this as an heartbeat sent at a regular interval. Also, send one right away after a status change
+message StatusReport {
+  // Keep short : use only status if everything is OK
+  optional Status status = 1;
+}
+
+message Log {
+  optional BaseConfig config = 1;
+  repeated Status status = 2;
+}
+
+message BaseConfig {
+  optional float max_accel = 1; // rad/s^2
+  optional float cmd_vel_timeout = 2; // seconds
+  optional float wheel_radius = 3; // meters
+  optional float base_radius = 4; // meters
+}
+
+// STM Uses this to return the current configuration after a change
+// If missing or wrong values in the request, set status to ERROR etc
+message RetBaseConfig {
+  optional BaseConfig config = 1;
+  optional Status status = 2;
 }

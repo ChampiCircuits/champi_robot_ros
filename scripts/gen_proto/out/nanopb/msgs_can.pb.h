@@ -9,7 +9,37 @@
 #error Regenerate this file with the current version of nanopb generator.
 #endif
 
+/* Enum definitions */
+typedef enum _msgs_can_Status_StatusType { 
+    msgs_can_Status_StatusType_OK = 0, 
+    msgs_can_Status_StatusType_INIT = 1, 
+    msgs_can_Status_StatusType_WARN = 2, 
+    msgs_can_Status_StatusType_ERROR = 3 
+} msgs_can_Status_StatusType;
+
+typedef enum _msgs_can_Status_ErrorType { 
+    msgs_can_Status_ErrorType_NONE = 0, 
+    msgs_can_Status_ErrorType_INIT_PERIPHERALS = 1, 
+    msgs_can_Status_ErrorType_INIT_CAN = 2, 
+    msgs_can_Status_ErrorType_PROTO_ENCODE = 3, 
+    msgs_can_Status_ErrorType_PROTO_DECODE = 4, 
+    msgs_can_Status_ErrorType_CMD_VEL_TIMEOUT = 5, 
+    msgs_can_Status_ErrorType_CAN_TX = 6, 
+    msgs_can_Status_ErrorType_CAN_RX = 7 
+} msgs_can_Status_ErrorType;
+
 /* Struct definitions */
+typedef struct _msgs_can_BaseConfig { 
+    bool has_max_accel;
+    float max_accel; /* rad/s^2 */
+    bool has_cmd_vel_timeout;
+    float cmd_vel_timeout; /* seconds */
+    bool has_wheel_radius;
+    float wheel_radius; /* meters */
+    bool has_base_radius;
+    float base_radius; /* meters */
+} msgs_can_BaseConfig;
+
 typedef struct _msgs_can_BaseVel { 
     bool has_x;
     float x; 
@@ -19,10 +49,38 @@ typedef struct _msgs_can_BaseVel {
     float theta; 
 } msgs_can_BaseVel;
 
-typedef struct _msgs_can_HeartBeat { 
+typedef struct _msgs_can_Status { 
+    bool has_timestamp;
+    float timestamp; /* seconds since epoch */
     bool has_status;
-    int32_t status; 
-} msgs_can_HeartBeat;
+    msgs_can_Status_StatusType status; 
+    bool has_error;
+    msgs_can_Status_ErrorType error; 
+    pb_callback_t message; 
+} msgs_can_Status;
+
+typedef struct _msgs_can_Log { 
+    bool has_config;
+    msgs_can_BaseConfig config; 
+    pb_callback_t status; 
+} msgs_can_Log;
+
+/* Use this as an heartbeat sent at a regular interval. Also, send one right away after a status change */
+typedef struct _msgs_can_StatusReport { 
+    /* Keep short : use only status if everything is OK */
+    bool has_status;
+    msgs_can_Status status; 
+} msgs_can_StatusReport;
+
+
+/* Helper constants for enums */
+#define _msgs_can_Status_StatusType_MIN msgs_can_Status_StatusType_OK
+#define _msgs_can_Status_StatusType_MAX msgs_can_Status_StatusType_ERROR
+#define _msgs_can_Status_StatusType_ARRAYSIZE ((msgs_can_Status_StatusType)(msgs_can_Status_StatusType_ERROR+1))
+
+#define _msgs_can_Status_ErrorType_MIN msgs_can_Status_ErrorType_NONE
+#define _msgs_can_Status_ErrorType_MAX msgs_can_Status_ErrorType_CAN_RX
+#define _msgs_can_Status_ErrorType_ARRAYSIZE ((msgs_can_Status_ErrorType)(msgs_can_Status_ErrorType_CAN_RX+1))
 
 
 #ifdef __cplusplus
@@ -31,15 +89,31 @@ extern "C" {
 
 /* Initializer values for message structs */
 #define msgs_can_BaseVel_init_default            {false, 0, false, 0, false, 0}
-#define msgs_can_HeartBeat_init_default          {false, 0}
+#define msgs_can_Status_init_default             {false, 0, false, _msgs_can_Status_StatusType_MIN, false, _msgs_can_Status_ErrorType_MIN, {{NULL}, NULL}}
+#define msgs_can_StatusReport_init_default       {false, msgs_can_Status_init_default}
+#define msgs_can_Log_init_default                {false, msgs_can_BaseConfig_init_default, {{NULL}, NULL}}
+#define msgs_can_BaseConfig_init_default         {false, 0, false, 0, false, 0, false, 0}
 #define msgs_can_BaseVel_init_zero               {false, 0, false, 0, false, 0}
-#define msgs_can_HeartBeat_init_zero             {false, 0}
+#define msgs_can_Status_init_zero                {false, 0, false, _msgs_can_Status_StatusType_MIN, false, _msgs_can_Status_ErrorType_MIN, {{NULL}, NULL}}
+#define msgs_can_StatusReport_init_zero          {false, msgs_can_Status_init_zero}
+#define msgs_can_Log_init_zero                   {false, msgs_can_BaseConfig_init_zero, {{NULL}, NULL}}
+#define msgs_can_BaseConfig_init_zero            {false, 0, false, 0, false, 0, false, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
+#define msgs_can_BaseConfig_max_accel_tag        1
+#define msgs_can_BaseConfig_cmd_vel_timeout_tag  2
+#define msgs_can_BaseConfig_wheel_radius_tag     3
+#define msgs_can_BaseConfig_base_radius_tag      4
 #define msgs_can_BaseVel_x_tag                   1
 #define msgs_can_BaseVel_y_tag                   2
 #define msgs_can_BaseVel_theta_tag               3
-#define msgs_can_HeartBeat_status_tag            1
+#define msgs_can_Status_timestamp_tag            1
+#define msgs_can_Status_status_tag               2
+#define msgs_can_Status_error_tag                3
+#define msgs_can_Status_message_tag              4
+#define msgs_can_Log_config_tag                  1
+#define msgs_can_Log_status_tag                  2
+#define msgs_can_StatusReport_status_tag         1
 
 /* Struct field encoding specification for nanopb */
 #define msgs_can_BaseVel_FIELDLIST(X, a) \
@@ -49,21 +123,55 @@ X(a, STATIC,   OPTIONAL, FLOAT,    theta,             3)
 #define msgs_can_BaseVel_CALLBACK NULL
 #define msgs_can_BaseVel_DEFAULT NULL
 
-#define msgs_can_HeartBeat_FIELDLIST(X, a) \
-X(a, STATIC,   OPTIONAL, INT32,    status,            1)
-#define msgs_can_HeartBeat_CALLBACK NULL
-#define msgs_can_HeartBeat_DEFAULT NULL
+#define msgs_can_Status_FIELDLIST(X, a) \
+X(a, STATIC,   OPTIONAL, FLOAT,    timestamp,         1) \
+X(a, STATIC,   OPTIONAL, UENUM,    status,            2) \
+X(a, STATIC,   OPTIONAL, UENUM,    error,             3) \
+X(a, CALLBACK, OPTIONAL, STRING,   message,           4)
+#define msgs_can_Status_CALLBACK pb_default_field_callback
+#define msgs_can_Status_DEFAULT NULL
+
+#define msgs_can_StatusReport_FIELDLIST(X, a) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  status,            1)
+#define msgs_can_StatusReport_CALLBACK NULL
+#define msgs_can_StatusReport_DEFAULT NULL
+#define msgs_can_StatusReport_status_MSGTYPE msgs_can_Status
+
+#define msgs_can_Log_FIELDLIST(X, a) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  config,            1) \
+X(a, CALLBACK, REPEATED, MESSAGE,  status,            2)
+#define msgs_can_Log_CALLBACK pb_default_field_callback
+#define msgs_can_Log_DEFAULT NULL
+#define msgs_can_Log_config_MSGTYPE msgs_can_BaseConfig
+#define msgs_can_Log_status_MSGTYPE msgs_can_Status
+
+#define msgs_can_BaseConfig_FIELDLIST(X, a) \
+X(a, STATIC,   OPTIONAL, FLOAT,    max_accel,         1) \
+X(a, STATIC,   OPTIONAL, FLOAT,    cmd_vel_timeout,   2) \
+X(a, STATIC,   OPTIONAL, FLOAT,    wheel_radius,      3) \
+X(a, STATIC,   OPTIONAL, FLOAT,    base_radius,       4)
+#define msgs_can_BaseConfig_CALLBACK NULL
+#define msgs_can_BaseConfig_DEFAULT NULL
 
 extern const pb_msgdesc_t msgs_can_BaseVel_msg;
-extern const pb_msgdesc_t msgs_can_HeartBeat_msg;
+extern const pb_msgdesc_t msgs_can_Status_msg;
+extern const pb_msgdesc_t msgs_can_StatusReport_msg;
+extern const pb_msgdesc_t msgs_can_Log_msg;
+extern const pb_msgdesc_t msgs_can_BaseConfig_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define msgs_can_BaseVel_fields &msgs_can_BaseVel_msg
-#define msgs_can_HeartBeat_fields &msgs_can_HeartBeat_msg
+#define msgs_can_Status_fields &msgs_can_Status_msg
+#define msgs_can_StatusReport_fields &msgs_can_StatusReport_msg
+#define msgs_can_Log_fields &msgs_can_Log_msg
+#define msgs_can_BaseConfig_fields &msgs_can_BaseConfig_msg
 
 /* Maximum encoded size of messages (where known) */
+/* msgs_can_Status_size depends on runtime parameters */
+/* msgs_can_StatusReport_size depends on runtime parameters */
+/* msgs_can_Log_size depends on runtime parameters */
+#define msgs_can_BaseConfig_size                 20
 #define msgs_can_BaseVel_size                    15
-#define msgs_can_HeartBeat_size                  11
 
 #ifdef __cplusplus
 } /* extern "C" */

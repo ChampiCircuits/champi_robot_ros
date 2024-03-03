@@ -19,10 +19,100 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0emsgs_can.proto\x12\x08msgs_can\".\n\x07\x42\x61seVel\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"\x1b\n\tHeartBeat\x12\x0e\n\x06status\x18\x01 \x01(\x05'
+  serialized_pb=b'\n\x0emsgs_can.proto\x12\x08msgs_can\".\n\x07\x42\x61seVel\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"\xc6\x02\n\x06Status\x12\x11\n\ttimestamp\x18\x01 \x01(\x02\x12+\n\x06status\x18\x02 \x01(\x0e\x32\x1b.msgs_can.Status.StatusType\x12)\n\x05\x65rror\x18\x03 \x01(\x0e\x32\x1a.msgs_can.Status.ErrorType\x12\x0f\n\x07message\x18\x04 \x01(\t\"3\n\nStatusType\x12\x06\n\x02OK\x10\x00\x12\x08\n\x04INIT\x10\x01\x12\x08\n\x04WARN\x10\x02\x12\t\n\x05\x45RROR\x10\x03\"\x8a\x01\n\tErrorType\x12\x08\n\x04NONE\x10\x00\x12\x14\n\x10INIT_PERIPHERALS\x10\x01\x12\x0c\n\x08INIT_CAN\x10\x02\x12\x10\n\x0cPROTO_ENCODE\x10\x03\x12\x10\n\x0cPROTO_DECODE\x10\x04\x12\x13\n\x0f\x43MD_VEL_TIMEOUT\x10\x05\x12\n\n\x06\x43\x41N_TX\x10\x06\x12\n\n\x06\x43\x41N_RX\x10\x07\"0\n\x0cStatusReport\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\"M\n\x03Log\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x03(\x0b\x32\x10.msgs_can.Status\"c\n\nBaseConfig\x12\x11\n\tmax_accel\x18\x01 \x01(\x02\x12\x17\n\x0f\x63md_vel_timeout\x18\x02 \x01(\x02\x12\x14\n\x0cwheel_radius\x18\x03 \x01(\x02\x12\x13\n\x0b\x62\x61se_radius\x18\x04 \x01(\x02'
 )
 
 
+
+_STATUS_STATUSTYPE = _descriptor.EnumDescriptor(
+  name='StatusType',
+  full_name='msgs_can.Status.StatusType',
+  filename=None,
+  file=DESCRIPTOR,
+  create_key=_descriptor._internal_create_key,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='OK', index=0, number=0,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='INIT', index=1, number=1,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='WARN', index=2, number=2,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='ERROR', index=3, number=3,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=211,
+  serialized_end=262,
+)
+_sym_db.RegisterEnumDescriptor(_STATUS_STATUSTYPE)
+
+_STATUS_ERRORTYPE = _descriptor.EnumDescriptor(
+  name='ErrorType',
+  full_name='msgs_can.Status.ErrorType',
+  filename=None,
+  file=DESCRIPTOR,
+  create_key=_descriptor._internal_create_key,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='NONE', index=0, number=0,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='INIT_PERIPHERALS', index=1, number=1,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='INIT_CAN', index=2, number=2,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='PROTO_ENCODE', index=3, number=3,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='PROTO_DECODE', index=4, number=4,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='CMD_VEL_TIMEOUT', index=5, number=5,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='CAN_TX', index=6, number=6,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='CAN_RX', index=7, number=7,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=265,
+  serialized_end=403,
+)
+_sym_db.RegisterEnumDescriptor(_STATUS_ERRORTYPE)
 
 
 _BASEVEL = _descriptor.Descriptor(
@@ -71,18 +161,73 @@ _BASEVEL = _descriptor.Descriptor(
 )
 
 
-_HEARTBEAT = _descriptor.Descriptor(
-  name='HeartBeat',
-  full_name='msgs_can.HeartBeat',
+_STATUS = _descriptor.Descriptor(
+  name='Status',
+  full_name='msgs_can.Status',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='msgs_can.HeartBeat.status', index=0,
-      number=1, type=5, cpp_type=1, label=1,
+      name='timestamp', full_name='msgs_can.Status.timestamp', index=0,
+      number=1, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='status', full_name='msgs_can.Status.status', index=1,
+      number=2, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='error', full_name='msgs_can.Status.error', index=2,
+      number=3, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='message', full_name='msgs_can.Status.message', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+    _STATUS_STATUSTYPE,
+    _STATUS_ERRORTYPE,
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=77,
+  serialized_end=403,
+)
+
+
+_STATUSREPORT = _descriptor.Descriptor(
+  name='StatusReport',
+  full_name='msgs_can.StatusReport',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='status', full_name='msgs_can.StatusReport.status', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -98,12 +243,114 @@ _HEARTBEAT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=76,
-  serialized_end=103,
+  serialized_start=405,
+  serialized_end=453,
 )
 
+
+_LOG = _descriptor.Descriptor(
+  name='Log',
+  full_name='msgs_can.Log',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='config', full_name='msgs_can.Log.config', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='status', full_name='msgs_can.Log.status', index=1,
+      number=2, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=455,
+  serialized_end=532,
+)
+
+
+_BASECONFIG = _descriptor.Descriptor(
+  name='BaseConfig',
+  full_name='msgs_can.BaseConfig',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='max_accel', full_name='msgs_can.BaseConfig.max_accel', index=0,
+      number=1, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='cmd_vel_timeout', full_name='msgs_can.BaseConfig.cmd_vel_timeout', index=1,
+      number=2, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='wheel_radius', full_name='msgs_can.BaseConfig.wheel_radius', index=2,
+      number=3, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='base_radius', full_name='msgs_can.BaseConfig.base_radius', index=3,
+      number=4, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=534,
+  serialized_end=633,
+)
+
+_STATUS.fields_by_name['status'].enum_type = _STATUS_STATUSTYPE
+_STATUS.fields_by_name['error'].enum_type = _STATUS_ERRORTYPE
+_STATUS_STATUSTYPE.containing_type = _STATUS
+_STATUS_ERRORTYPE.containing_type = _STATUS
+_STATUSREPORT.fields_by_name['status'].message_type = _STATUS
+_LOG.fields_by_name['config'].message_type = _BASECONFIG
+_LOG.fields_by_name['status'].message_type = _STATUS
 DESCRIPTOR.message_types_by_name['BaseVel'] = _BASEVEL
-DESCRIPTOR.message_types_by_name['HeartBeat'] = _HEARTBEAT
+DESCRIPTOR.message_types_by_name['Status'] = _STATUS
+DESCRIPTOR.message_types_by_name['StatusReport'] = _STATUSREPORT
+DESCRIPTOR.message_types_by_name['Log'] = _LOG
+DESCRIPTOR.message_types_by_name['BaseConfig'] = _BASECONFIG
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 BaseVel = _reflection.GeneratedProtocolMessageType('BaseVel', (_message.Message,), {
@@ -113,12 +360,33 @@ BaseVel = _reflection.GeneratedProtocolMessageType('BaseVel', (_message.Message,
   })
 _sym_db.RegisterMessage(BaseVel)
 
-HeartBeat = _reflection.GeneratedProtocolMessageType('HeartBeat', (_message.Message,), {
-  'DESCRIPTOR' : _HEARTBEAT,
+Status = _reflection.GeneratedProtocolMessageType('Status', (_message.Message,), {
+  'DESCRIPTOR' : _STATUS,
   '__module__' : 'msgs_can_pb2'
-  # @@protoc_insertion_point(class_scope:msgs_can.HeartBeat)
+  # @@protoc_insertion_point(class_scope:msgs_can.Status)
   })
-_sym_db.RegisterMessage(HeartBeat)
+_sym_db.RegisterMessage(Status)
+
+StatusReport = _reflection.GeneratedProtocolMessageType('StatusReport', (_message.Message,), {
+  'DESCRIPTOR' : _STATUSREPORT,
+  '__module__' : 'msgs_can_pb2'
+  # @@protoc_insertion_point(class_scope:msgs_can.StatusReport)
+  })
+_sym_db.RegisterMessage(StatusReport)
+
+Log = _reflection.GeneratedProtocolMessageType('Log', (_message.Message,), {
+  'DESCRIPTOR' : _LOG,
+  '__module__' : 'msgs_can_pb2'
+  # @@protoc_insertion_point(class_scope:msgs_can.Log)
+  })
+_sym_db.RegisterMessage(Log)
+
+BaseConfig = _reflection.GeneratedProtocolMessageType('BaseConfig', (_message.Message,), {
+  'DESCRIPTOR' : _BASECONFIG,
+  '__module__' : 'msgs_can_pb2'
+  # @@protoc_insertion_point(class_scope:msgs_can.BaseConfig)
+  })
+_sym_db.RegisterMessage(BaseConfig)
 
 
 # @@protoc_insertion_point(module_scope)
