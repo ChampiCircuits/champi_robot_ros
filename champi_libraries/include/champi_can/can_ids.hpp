@@ -8,4 +8,6 @@ namespace can_ids {
     int BASE_GET_LOG = 0x15;
     int BASE_RET_LOG = 0x16;
     int BASE_RESET = 0x1;
+    int BASE_TEST = 0x200;
+    int RET_BASE_TEST = 0x201;
 }
