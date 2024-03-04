@@ -3,11 +3,9 @@ BASE_CMD_VEL, 0x10
 BASE_CURRENT_VEL, 0x11
 ...
 It then generates a C++ header file with the following format:
-#pragma once
-namespace can_ids {
-    int BASE_CMD_VEL = 0x10;
-    int BASE_CURRENT_VEL = 0x11;
-    ...
+#define CAN_ID_BASE_CMD_VEL 0x10
+#define CAN_ID_BASE_CURRENT_VEL 0x11
+...
 }
 And a Python file with the following format:
 class CanIds:
@@ -44,11 +42,9 @@ def main():
         rows = list(reader)
 
     with open(output_cpp, 'w') as f:
-        f.write("#pragma once\n")
-        f.write("namespace can_ids {\n")
         for row in rows:
-            f.write(f"    int {row[0]} = {row[1]};\n")
-        f.write("}\n")
+            f.write(f"#define CAN_ID_{row[0]} {row[1]}\n")
+        f.write("\n")
 
     with open(output_py, 'w') as f:
         f.write("class CanIds:\n")

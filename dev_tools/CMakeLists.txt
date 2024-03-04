@@ -17,6 +17,10 @@ find_package(champi_libraries REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(diagnostic_updater REQUIRED)
+
+add_executable(test_diag src/test_diag.cpp)
+ament_target_dependencies(test_diag rclcpp diagnostic_updater)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -53,8 +57,8 @@ install(PROGRAMS
 )
 
 # Install C++ executables
-#install(TARGETS
-#  simple_holo_base_control_node
-#  DESTINATION lib/${PROJECT_NAME})
+install(TARGETS
+        test_diag
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

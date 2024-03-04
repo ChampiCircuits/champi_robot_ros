@@ -3,6 +3,8 @@ base_controller:
 
     topic_twist_in: "/cmd_vel"
     champi_can_verbose_mode: false
+    timeout_connexion_ros: 1.0
+    timeout_connexion_stm: 1.0
 
     base_config:
       max_accel_wheels: 10.0 # rotation des roues en rotation/s²
