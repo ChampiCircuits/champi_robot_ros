@@ -344,9 +344,7 @@ private:
             // Config confirmed, everything is OK
             else {
                 correct_config_received_ = true;
-                RCLCPP_INFO(this->get_logger(), "Base confirmed config: max_accel: %f, wheel_radius: %f, base_radius: %f, cmd_vel_timeout: %f",
-                            base_ret_config.max_accel(), base_ret_config.wheel_radius(), base_ret_config.base_radius(), base_ret_config.cmd_vel_timeout());
-
+                update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Base confirmed config. Node still Initializing");
             }
         }
         if(champi_can_interface_.check_if_new_full_msg(can_ids::BASE_STATUS)) {
