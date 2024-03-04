@@ -13,6 +13,8 @@
 
 #include <diagnostic_updater/diagnostic_updater.hpp>
 
+#define CONFIG_RETRY_DELAY 1.0 // If no ret config reveived for this amount of time (s), we retry to send config
+
 using namespace std;
 
 class BaseControllerNode : public rclcpp::Node
@@ -40,13 +42,13 @@ public:
         base_config_.cmd_vel_timeout = (float) this->declare_parameter<float>("base_config.cmd_vel_timeout");
 
         // Print parameters
-        RCLCPP_INFO(this->get_logger(), "Node started with the following parameters:");
-        RCLCPP_INFO(this->get_logger(), "topic_twist_in: %s", topic_twist_in.c_str());
-        RCLCPP_INFO(this->get_logger(), "can_interface_name: %s", can_interface_name.c_str());
-        RCLCPP_INFO(this->get_logger(), "base_config.max_accel_wheels: %f", base_config_.max_accel);
-        RCLCPP_INFO(this->get_logger(), "base_config.wheel_radius: %f", base_config_.wheel_radius);
-        RCLCPP_INFO(this->get_logger(), "base_config.base_radius: %f", base_config_.base_radius);
-        RCLCPP_INFO(this->get_logger(), "base_config.cmd_vel_timeout: %f", base_config_.cmd_vel_timeout);
+        // RCLCPP_INFO(this->get_logger(), "Node started with the following parameters:");
+        // RCLCPP_INFO(this->get_logger(), "topic_twist_in: %s", topic_twist_in.c_str());
+        // RCLCPP_INFO(this->get_logger(), "can_interface_name: %s", can_interface_name.c_str());
+        // RCLCPP_INFO(this->get_logger(), "base_config.max_accel_wheels: %f", base_config_.max_accel);
+        // RCLCPP_INFO(this->get_logger(), "base_config.wheel_radius: %f", base_config_.wheel_radius);
+        // RCLCPP_INFO(this->get_logger(), "base_config.base_radius: %f", base_config_.base_radius);
+        // RCLCPP_INFO(this->get_logger(), "base_config.cmd_vel_timeout: %f", base_config_.cmd_vel_timeout);
 
         // Set up diagnostics
         diag_updater_base_.setHardwareID("holo_base");
@@ -70,11 +72,15 @@ public:
             exit(1);// TODO handle error
         }
 
-        // Send config to the base
-        waiting_for_ret_config = true;
-        update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Waiting for base to confirm config");
-        RCLCPP_WARN(this->get_logger(), "Waiting for base to confirm config");
+        // Reset the base
+        update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Resetting the base");
+        reset_base();
+
+        // Wait a little to let the base reset
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
         send_config();
+        update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Waiting for base to confirm config");
 
         // Create Subscribers
         sub_twist_in_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(topic_twist_in, 10, std::bind(&BaseControllerNode::twist_in_callback, this, std::placeholders::_1));
@@ -116,6 +122,7 @@ private:
     bool timeout_connexion_ros_exceeded_ = false;
     bool got_first_twist_ = false;
     bool got_first_status_ = false;
+    bool correct_config_received_ = false;
     // Structure to store the state of the node. Matches the ROS2 diagnostic msg to be able to publish it easily.
     struct NodeState {
         unsigned char lvl;
@@ -131,7 +138,6 @@ private:
         double y;
         double theta;
     } current_pose_{};
-    bool waiting_for_ret_config;
 
     // Parameters
     struct BaseConfig {
@@ -196,6 +202,7 @@ private:
         stat.add("current_loop_rate (Hz)", 1.0 / dt_measured_);
         stat.add("got_first_status", got_first_status_);
         stat.add("got_first_twist", got_first_twist_);
+        stat.add("correct_config_received", correct_config_received_);
         stat.add("timeout_connexion_stm_exceeded", timeout_connexion_stm_exceeded_);
         stat.add("timeout_connexion_ros_exceeded", timeout_connexion_ros_exceeded_);
     }
@@ -210,6 +217,20 @@ private:
     void update_node_state(unsigned char lvl, std::string summary) {
         node_state_.lvl = lvl;
         node_state_.summary = summary;
+        // Print with the correct color
+        switch(lvl) {
+            case diagnostic_msgs::msg::DiagnosticStatus::OK:
+                RCLCPP_INFO(this->get_logger(), summary.c_str());
+                break;
+            case diagnostic_msgs::msg::DiagnosticStatus::WARN:
+                RCLCPP_WARN(this->get_logger(), summary.c_str());
+                break;
+            case diagnostic_msgs::msg::DiagnosticStatus::ERROR:
+                RCLCPP_ERROR(this->get_logger(), summary.c_str());
+                break;
+            default:
+                RCLCPP_ERROR(this->get_logger(), "Unknown diagnostic level");
+        }
     }
 
     /**
@@ -218,14 +239,14 @@ private:
      */
     bool check_node_ok_and_update() {
 
-        if(node_state_.lvl != diagnostic_msgs::msg::DiagnosticStatus::OK) {
+        if(node_state_.lvl != diagnostic_msgs::msg::DiagnosticStatus::OK && 
+            node_state_.lvl != diagnostic_msgs::msg::DiagnosticStatus::WARN) {
             // Node is not OK. Do not change it.
             return false;
         }
 
-        if(!got_first_status_ || !got_first_twist_) {
+        if(!got_first_status_ || !got_first_twist_ || !correct_config_received_) {
             // That's fine but we signal we should not execute the loop
-            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Initializing");
             return false;
         }
 
@@ -248,6 +269,13 @@ private:
             diag_updater_node_.force_update();
             return false;
         }
+
+        // Everything is OK
+
+        if(node_state_.lvl == diagnostic_msgs::msg::DiagnosticStatus::WARN) { // WARN is during initialization TODO pas bien si on veut utilier WARN pour autre chose aussi
+            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::OK, "OK");
+            diag_updater_node_.force_update();
+        }
         return true;
     }
 
@@ -256,6 +284,15 @@ private:
 
 
     // ================================ Communication with the base (CAN bus) ==========================================
+
+    void reset_base() {
+        // Send message
+        if(champi_can_interface_.send_raw(can_ids::BASE_RESET, "") != 0) {
+            RCLCPP_ERROR(this->get_logger(), "Error sending reset message");
+            // TODO send diagnostic
+            exit(1);
+        }
+    }
 
     void send_config() {
         msgs_can::BaseConfig base_set_config;
@@ -279,7 +316,7 @@ private:
             // Update current_vel_
             current_vel_.ParseFromString(buffer);
         }
-        if(waiting_for_ret_config && champi_can_interface_.check_if_new_full_msg(can_ids::BASE_RET_CONFIG)) {
+        if(!correct_config_received_ && champi_can_interface_.check_if_new_full_msg(can_ids::BASE_RET_CONFIG)) {
 
             auto buffer = champi_can_interface_.get_full_msg(can_ids::BASE_RET_CONFIG);
             msgs_can::BaseConfig base_ret_config;
@@ -294,8 +331,6 @@ private:
                 // Update / send diagnostic
                 update_node_state(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Base returned config message is missing fields");
                 diag_updater_node_.force_update();
-                // print error
-                RCLCPP_ERROR(this->get_logger(), "%s", node_state_.summary.c_str());
             }
             // Received config is different from the sent one
             else if(base_ret_config.max_accel() != base_config_.max_accel ||
@@ -305,15 +340,13 @@ private:
 
                 update_node_state(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Base returned config message is different from the sent one");
                 diag_updater_node_.force_update();
-                RCLCPP_ERROR(this->get_logger(), "%s", node_state_.summary.c_str());
             }
             // Config confirmed, everything is OK
             else {
-                update_node_state(diagnostic_msgs::msg::DiagnosticStatus::OK, "Base confirmed config");
-                diag_updater_node_.force_update();
+                correct_config_received_ = true;
                 RCLCPP_INFO(this->get_logger(), "Base confirmed config: max_accel: %f, wheel_radius: %f, base_radius: %f, cmd_vel_timeout: %f",
                             base_ret_config.max_accel(), base_ret_config.wheel_radius(), base_ret_config.base_radius(), base_ret_config.cmd_vel_timeout());
-                waiting_for_ret_config = false;
+
             }
         }
         if(champi_can_interface_.check_if_new_full_msg(can_ids::BASE_STATUS)) {
@@ -419,13 +452,17 @@ private:
         dt_measured_ = (now - last_time).seconds();
         last_time = now;
 
+        static auto time_config_sent = now;
+        if(!correct_config_received_ && now - time_config_sent > rclcpp::Duration::from_seconds(CONFIG_RETRY_DELAY)) {
+            // Re-send config to the base
+            send_config();
+            RCLCPP_WARN(this->get_logger(), "Re-sending config to the base");
+            time_config_sent = now;
+        }
+
+
         // Read incoming message if available
         rx_can();
-
-        // return if waiting for base to confirm config
-        if(waiting_for_ret_config) {
-            return;
-        }
 
         // Return if needed (state not ok or 1st twist not received or 1st status not received)
         if(!check_node_ok_and_update()) {

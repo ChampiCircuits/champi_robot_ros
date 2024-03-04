@@ -42,6 +42,10 @@ class ChampiCan {
         return 0;
     }
 
+    int send_raw(canid_t id, const std::string& msg) {
+        return can_interface_.send(id, msg);
+    }
+
     int send(canid_t id, const std::string& msg) {
         
         static unsigned char msg_number = 0; // TODO how does this works ?? It should be uint16_t...
