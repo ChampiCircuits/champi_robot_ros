@@ -8,7 +8,9 @@ from icecream import ic
 
 
 def create_graph(start: Point, goal: Point, expanded_obstacle_poly: Polygon, expanded_table_poly: Polygon):
-    ic.disable()
+    
+    # TODO Etienne, des fois bug, robot passes à travers les vertices
+
     """Create the graph of navigation from is point to the goal
 
     Args:
@@ -102,7 +104,6 @@ def create_graph(start: Point, goal: Point, expanded_obstacle_poly: Polygon, exp
 
 
     ic("CREATED GRAPH\n\n")
-    ic.enable()
 
     return graph, dico_all_points
 

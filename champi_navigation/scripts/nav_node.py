@@ -28,7 +28,7 @@ class NavigationNode(Node):
         # Parameters
         self.control_loop_period = self.declare_parameter('control_loop_period', 0.1).value
         self.enable_viz = self.declare_parameter('viz', True).value
-        self.enable_avoidance = self.declare_parameter('enable_avoidance', False).value
+        self.enable_avoidance = self.declare_parameter('enable_avoidance', True).value
 
         # Viz in Rviz
         if self.enable_viz:

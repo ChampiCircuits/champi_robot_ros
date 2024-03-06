@@ -14,18 +14,15 @@ class TestGoal(Node):
 
         super().__init__('test_goal_node')
     
-
-
-
         # pub pose stamped
         self.pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
 
         pi = 3.14159265359
 
-        self.goals = [[0., 0., 0.], [0., 0.5, -pi/2], [0.5, 0.5, 0.], [0.5, 0., pi/2]]
+        self.goals = [[0.5, 0.5, 0.], [0.5, 1.5, -pi/2], [1.5, 1.5, 0.], [1.5, 0.5, pi/2]]
         self.i_goal = 0
 
-        timer_period = 3  # seconds
+        timer_period = 10  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         self.timer_callback()

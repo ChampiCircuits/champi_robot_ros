@@ -36,7 +36,7 @@ class HoloBaseControlDummy(Node):
         self.latest_cmd_vel = [0., 0., 0.]
         self.current_vel = [0., 0., 0.]
 
-        self.current_pose = [0., 0., 0.]
+        self.current_pose = [0.5, 0.5, 0.]
 
         self.first_time = True
 

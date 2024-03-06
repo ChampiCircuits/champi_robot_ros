@@ -8,7 +8,6 @@ from shapely import Point, Polygon
 
 class Robot_Kinematic_Model():
     def __init__(self) -> None:
-
         self.linear_speed = [0, 0]  # m/s
         self.angular_speed = 0  # rad/s
     
@@ -33,4 +32,4 @@ class Table_static_model():
                                 Point(width,0),
                                 Point(width, height),
                                 Point(0, height)])
-        self.expanded_poly = math_bind.expand(self.polygon, -offset)
+        self.expanded_poly = math_bind.expand(self.polygon, offset)
