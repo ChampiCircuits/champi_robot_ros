@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from math import sqrt, cos, sin
+from math import sqrt, cos, sin, atan2
 import time
 
 import rclpy
@@ -10,6 +10,7 @@ from tf2_ros import TransformBroadcaster
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 
 class HoloBaseControlDummy(Node):
@@ -22,9 +23,15 @@ class HoloBaseControlDummy(Node):
             '/cmd_vel',
             self.listener_callback,
             10)
-        self.subscription  # prevent unused variable warning
 
         self.pub = self.create_publisher(Odometry, '/odom', 10)
+
+        self.subscription_initial_pose = self.create_subscription(
+            PoseWithCovarianceStamped,
+            '/initialpose',
+            self.initial_pose_callback,
+            10)
+
 
         # Initialize the transform broadcaster
         self.tf_broadcaster = TransformBroadcaster(self)
@@ -45,6 +52,12 @@ class HoloBaseControlDummy(Node):
         self.speed_wheel2 = 0
 
         self.robot_radius = 0.01  # TODO
+
+
+    def initial_pose_callback(self, msg):
+        self.current_pose[0] = msg.pose.pose.position.x
+        self.current_pose[1] = msg.pose.pose.position.y
+        self.current_pose[2] = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
 
 
     def listener_callback(self, msg):

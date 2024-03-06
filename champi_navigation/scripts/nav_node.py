@@ -188,6 +188,7 @@ class NavigationNode(Node):
         path_msg.header.frame_id = "odom"
         path_msg.poses = [PoseStamped() for _ in path]
         for i, pose in enumerate(path):
+            path_msg.poses[i].header = path_msg.header
             path_msg.poses[i].pose.position.x = pose[0]
             path_msg.poses[i].pose.position.y = pose[1]
             path_msg.poses[i].pose.position.z = 0.

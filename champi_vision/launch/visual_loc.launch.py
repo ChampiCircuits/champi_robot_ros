@@ -26,7 +26,7 @@ def generate_launch_description():
         ),
         Node(
             package='dev_tools',
-            executable='camera_info_publisher',
+            executable='camera_info_publisher_node.py',
             name='camera_info_publisher',
             output='screen',
             parameters=[{
