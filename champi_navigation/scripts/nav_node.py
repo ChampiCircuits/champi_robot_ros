@@ -9,6 +9,7 @@ from tf2_ros.transform_listener import TransformListener
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
+from visualization_msgs.msg import Marker
 
 from icecream import ic
 from math import pi, atan2
@@ -43,6 +44,9 @@ class NavigationNode(Node):
         # Publishers
         self.cmd_vel_pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
         self.path_pub = self.create_publisher(Path, '/cmd_path', 10)
+        self.markers_pub_obstacle = self.create_publisher(Marker, "/visualization_marker_obstacle", 10)
+        self.markers_pub_obstacle_offset = self.create_publisher(Marker, "/visualization_marker_obstacle_offset", 10)
+
 
         # Subscribers
         self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
@@ -152,6 +156,52 @@ class NavigationNode(Node):
 
         # Publish the path. Only for visualization purposes for now.
         self.publish_path(cmd_path)
+        # Publish the obstacle. Only for visualization purposes.
+        self.pub_rviz_obstacles()
+
+
+    def pub_rviz_obstacles(self):
+        # OBSTACLE marker
+        marker_obstacle = Marker()
+        marker_obstacle.header.frame_id = "odom"
+        marker_obstacle.type = Marker.CUBE
+        marker_obstacle.action = Marker.ADD
+
+        marker_obstacle.scale.x = float(self.pathPlanner.obstacle.width)
+        marker_obstacle.scale.y = float(self.pathPlanner.obstacle.height)
+        marker_obstacle.scale.z = 0.3
+
+        marker_obstacle.color.a = 1.0
+        marker_obstacle.color.r = 0.5
+        marker_obstacle.color.g = 0.0
+        marker_obstacle.color.b = 0.0
+        marker_obstacle.pose.position.x = float(self.pathPlanner.obstacle.center_x)
+        marker_obstacle.pose.position.y = float(self.pathPlanner.obstacle.center_y)
+        marker_obstacle.pose.position.z = 0.0
+
+        self.markers_pub_obstacle.publish(marker_obstacle)
+
+
+        # OFFSET OBSTACLE MARKER
+        marker_obstacle_offset = Marker()
+        marker_obstacle_offset.header.frame_id = "odom"
+        marker_obstacle_offset.type = Marker.CUBE
+        marker_obstacle_offset.action = Marker.ADD
+
+        OFFSET = self.pathPlanner.offset
+        marker_obstacle_offset.scale.x = float(self.pathPlanner.obstacle.width+2*OFFSET)
+        marker_obstacle_offset.scale.y = float(self.pathPlanner.obstacle.height+2*OFFSET)
+        marker_obstacle_offset.scale.z = 0.05
+
+        marker_obstacle_offset.color.a = 1.0
+        marker_obstacle_offset.color.r = 1.0
+        marker_obstacle_offset.color.g = 1.0
+        marker_obstacle_offset.color.b = 0.0
+        marker_obstacle_offset.pose.position.x = float(self.pathPlanner.obstacle.center_x)
+        marker_obstacle_offset.pose.position.y = float(self.pathPlanner.obstacle.center_y)
+        marker_obstacle_offset.pose.position.z = 0.0
+
+        self.markers_pub_obstacle_offset.publish(marker_obstacle_offset)
 
 
     def get_robot_pose_from_tf(self):
