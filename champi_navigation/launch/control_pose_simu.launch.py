@@ -16,14 +16,14 @@ def generate_launch_description():
             output='screen',
     )
 
-    pose_control_node = Node(
+    planner_node = Node(
             package='champi_navigation',
-            executable='nav_node.py',
-            name='nav_node',
+            executable='planner_node.py',
+            name='planner_node',
             output='screen',
     )
 
     return LaunchDescription([
         base_control_simu_node,
-        pose_control_node,
+        planner_node,
     ])

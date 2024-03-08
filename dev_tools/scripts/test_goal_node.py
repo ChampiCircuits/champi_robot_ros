@@ -14,9 +14,6 @@ class TestGoal(Node):
 
         super().__init__('test_goal_node')
     
-
-
-
         # pub pose stamped
         self.pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
 

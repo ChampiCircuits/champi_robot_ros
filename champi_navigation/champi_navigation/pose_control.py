@@ -5,7 +5,7 @@ from icecream import ic
 from enum import Enum
 import time
 
-from champi_navigation.utils import Vel, RobotState
+from champi_navigation.utils import Vel
 from champi_navigation.pid import PID
 
 import matplotlib.pyplot as plt
@@ -17,7 +17,7 @@ class CmdVelUpdater:
         self.pid_pos_x = PID(1, 0, 0)
         self.pid_pos_y = PID(1, 0, 0)
         self.pid_pos_theta = PID(1, 0, 0,)
-    
+
 
     def compute_cmd_vel(self, robot_state, pose_goal, dt):
         # if it's shorter to turn in the other direction, we do it

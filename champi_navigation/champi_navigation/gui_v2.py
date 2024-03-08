@@ -11,6 +11,8 @@ from ament_index_python.packages import get_package_share_directory
 # mais là on a rien à dessiner
 # Ca pourrait aussi être un node à part entière, qui publie juste la table et c'est tout
 
+# je pense qu'on peut faire ca ouais
+
 class GuiV2:
     def __init__(self, node):
 
