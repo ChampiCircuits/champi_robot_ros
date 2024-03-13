@@ -23,7 +23,23 @@ def generate_launch_description():
             output='screen',
     )
 
+    pose_control_node = Node(
+        package='champi_navigation',
+        executable='pose_control_node.py',
+        name='pose_control_node',
+        output='screen',
+    )
+
+    gui_node = Node(
+        package='champi_navigation',
+        executable='gui_node.py',
+        name='gui_node',
+        output='screen',
+    )
+
     return LaunchDescription([
         base_control_simu_node,
         planner_node,
+        pose_control_node,
+        gui_node
     ])

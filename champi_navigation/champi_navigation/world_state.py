@@ -3,6 +3,8 @@
 from champi_navigation import math_bind
 from champi_navigation.trajectory import Pose
 
+from geometry_msgs.msg import PoseStamped
+
 from shapely import Point, Polygon
 
 class WorldObject():
@@ -23,6 +25,11 @@ class OpponentRobotObject(WorldObject):
                                Point(center_x-width/2,center_y+height/2)])
         self.expanded_poly = math_bind.expand(self.polygon, offset)
 
+class SelfRobot(WorldObject):
+    def __init__(self) -> None:
+        self.pose_stamped:PoseStamped = PoseStamped() #TODO ptet pas opti?
+        self.radius:float = 0.1 #TODO param
+
 class PlantObject(WorldObject):
     def __init__(self) -> None:
         self.__is_standing:bool = True
@@ -37,24 +44,17 @@ class TableObject(WorldObject):
                                 Point(width, height),
                                 Point(0, height)])
         self.expanded_poly = math_bind.expand(self.polygon, -offset)
+        self.expanded_poly = math_bind.expand(self.polygon, offset) # TODO JUSTE POUR DEBUG
         
 class WorldState():
     def __init__(self) -> None:
-        self.__self_robot:dict = {"pose":Pose(0, [0., 0.], 0.),
-                                 "radius":0.1} #TODO
-        self.__opponent_robot:OpponentRobotObject = OpponentRobotObject(1.,1.,0.5,0.5,0.1) #TODO offset
-        self.__table:TableObject = TableObject(3.,2.,0.1) #TODO offset
-        self.__plants:list[PlantObject] = [] # todo init
-        self.__current_state:dict = {"self_robot": self.__self_robot,
-                                     "opponent_robot":self.__opponent_robot,
-                                     "plants":self.__plants}
-        
-    def get_table(self) -> TableObject:
-        return self.__table
-    def get_opponent_robot(self) -> OpponentRobotObject:
-        return self.__opponent_robot
-    def get_self_robot(self) -> dict:
-        return self.__self_robot
+        self.self_robot:SelfRobot = SelfRobot()
+        self.opponent_robot:OpponentRobotObject = OpponentRobotObject(0.5,0.5,0.5,0.5,0.1) #TODO offset
+        self.table:TableObject = TableObject(3.,2.,0.1) #TODO offset
+        self.plants:list[PlantObject] = [] # todo init
+        self.current_state:dict = {"self_robot": self.self_robot,
+                                     "opponent_robot":self.opponent_robot,
+                                     "plants":self.plants}
 
     def update(self) -> None:
         # read the ros messages to update current_state

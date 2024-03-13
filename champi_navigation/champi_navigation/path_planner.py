@@ -34,27 +34,26 @@ class PathPlanner:
         """Set the goal of the robot (x, y, theta)
             self.update() should be called to compute a new path"""
         self.cmd_goal = goal
-        ic("RECEIVED NEW CMD GOAL :")
+        ic("pp: RECEIVED NEW CMD GOAL :")
         ic(self.cmd_goal)
 
-    def update(self, current_time):
+    def update(self, current_time) -> Path:
         """Spin once of the planning loop"""
-
         if self.cmd_goal is None:
-            return []
+            return Path()
         
         if self.enable_avoidance:
             cmd_path = self.compute_path_avoidance()
         else:
             cmd_path = self.compute_path_simple()
         
-        ic("PATH COMPUTED :")
-        ic(cmd_path)
+        # ic("PATH COMPUTED :")
+        # ic(cmd_path)
 
         # convert the cmd_path [[x, y, theta],...] to a Path ros msg
         cmd_path_msg = Path()
-        cmd_path_msg.header.frame_id = "odom"
         cmd_path_msg.header.stamp = current_time
+        cmd_path_msg.header.frame_id = "odom"
         for pose in cmd_path:
             p = PoseStamped()
             p.pose.position.x = pose[0]
@@ -69,7 +68,7 @@ class PathPlanner:
 
         # ic("PATH MSG :")
         # ic(cmd_path_msg)
-        ic("\n")
+
         return cmd_path_msg
 
 
@@ -87,13 +86,14 @@ class PathPlanner:
 
         goal = Point(self.cmd_goal.position.x, self.cmd_goal.position.y)
         theta = self.cmd_goal.orientation.z # TODO sûr ?
-        start = Point(self.world_state.get_self_robot()["pose"].position_m[0],
-                      self.world_state.get_self_robot()["pose"].position_m[1])
+        start = Point(self.world_state.self_robot.pose_stamped.pose.pose.position.x,
+                      self.world_state.self_robot.pose_stamped.pose.pose.position.y)
 
-        ic(start, goal, theta)
+        # ic(start, goal, theta)
 
         self.graph, self.dico_all_points = avoidance.create_graph(start, goal, self.world_state)
         # ic("GRAPH CREATED")
+        # ic(self.graph)
         path = avoidance.find_avoidance_path(self.graph, 0, 1)
         # ic("PATH FOUND")
         
@@ -103,6 +103,7 @@ class PathPlanner:
             goals = []
             for p in self.path_nodes:
                 goals.append([float(self.dico_all_points[p][0]),float(self.dico_all_points[p][1]), theta])
+            # ic("path found")
             return goals
         else:
             ic("No path found")

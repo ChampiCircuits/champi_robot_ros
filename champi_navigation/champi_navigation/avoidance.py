@@ -9,7 +9,6 @@ from icecream import ic
 
 
 def create_graph(start: Point, goal: Point, world_state:WorldState):
-    ic.disable()
     """Create the graph of navigation from is point to the goal
 
     Args:
@@ -18,10 +17,10 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
         world_state (WorldState): The instance of the world state
     """
 
-    ic("CREATING GRAPH\n\n")
+    # ic("CREATING GRAPH\n\n")
 
-    expanded_table_poly = world_state.get_table().expanded_poly
-    expanded_opponent_robot_poly = world_state.get_opponent_robot().expanded_poly
+    expanded_table_poly = world_state.table.expanded_poly
+    expanded_opponent_robot_poly = world_state.opponent_robot.expanded_poly
 
 
     # check if goal lies inside the obstacle
@@ -42,7 +41,8 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
     for point in list(expanded_opponent_robot_poly.exterior.coords):
         dico_all_points[len(dico_all_points)] = point
 
-    ic("DICO ALL POINTS CREATED")
+    # ic("DICO ALL POINTS CREATED")
+    # ic(dico_all_points)
     
 
 # GENERATING COMBINATIONS
@@ -56,7 +56,7 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
     # Add the segment between start and goal as a combination to test
     all_combinations.append((0,1)) 
 
-    ic("COMBINATIONS CREATED")
+    # ic("COMBINATIONS CREATED")
 
 # ADDING EDGES TO THE GRAPH
     # generate the edges of the polygon that should not be crossed
@@ -68,7 +68,7 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
         else:
             obstacle_edges.append((i+2, i+2+1))
 
-    ic("OBSTACLE EDGES CREATED")
+    # ic("OBSTACLE EDGES CREATED")
 
     # Add the edges of the polygon to the graph as they are admissible by nature
     for seg in obstacle_edges:
@@ -82,7 +82,7 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
     for edge in get_edges(expanded_table_poly):
         edges_to_not_cross.append(edge)
 
-    ic("EDGES TO NOT CROSS CREATED")
+    # ic("EDGES TO NOT CROSS CREATED")
 
     # check for each segment/combination of two points if they cross the obstacle
     # if not we add them as edges to the graph
@@ -119,8 +119,8 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
             # print()
 
 
-    ic("CREATED GRAPH\n\n")
-    ic.enable()
+    # ic("CREATED GRAPH\n\n")
+    # ic.enable()
 
     return graph, dico_all_points
 

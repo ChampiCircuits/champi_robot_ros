@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 
+from champi_navigation.utils import Vel
+from champi_navigation.pid import PID
+
 from math import pi, atan2, sqrt
+import matplotlib.pyplot as plt
 from icecream import ic
 from enum import Enum
 import time
 
-from champi_navigation.utils import Vel
-from champi_navigation.pid import PID
-
-import matplotlib.pyplot as plt
-
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import TwistStamped
+from nav_msgs.msg import Odometry
+from nav_msgs.msg import Path
 
 class CmdVelUpdater:
     def __init__(self):
@@ -50,20 +54,26 @@ class CmdVelUpdater2:
         self.vel_profile_theta = TrapezoidalVelocityProfile(2.0, 1.0)
 
         self.pid_correct_dir = PID(2, 0, 1)
+        self.last_time_called = time.time()
     
-    def compute_cmd_vel(self, robot_state, pose_goal, dt):
+    def compute_cmd_vel(self, robot_current_pose, pose_goal):
+        dt = time.time() - self.last_time_called
+        self.last_time_called = time.time()
 
         # Quick fix parce qu'il faut avoir la pose de depart à vitesse = 0
         if self.goal_pose != pose_goal:
 
-            self.start_pose = robot_state.current_pose
+            self.start_pose = robot_current_pose
             self.goal_pose = pose_goal
+            ic(self.start_pose)
+            ic(self.goal_pose)
 
             distance_start_to_goal = ((pose_goal[0] - self.start_pose[0])**2 + (pose_goal[1] - self.start_pose[1])**2)**0.5
+            # distance_start_to_goal = ((pose_goal[0] - self.start_pose.pose.position.x)**2 + (pose_goal[1] - self.start_pose.pose.position.y)**2)**0.5
             self.vel_profile_mag.set_new_goal(distance_start_to_goal, 0)
 
             # if it's shorter to turn in the other direction, we do it
-            error_theta = pose_goal[2] - robot_state.current_pose[2]
+            error_theta = pose_goal[2] - robot_current_pose[2]
             if abs(error_theta) > pi:
                 if error_theta > 0:
                     error_theta -= 2*pi
@@ -73,15 +83,15 @@ class CmdVelUpdater2:
             self.vel_profile_theta.set_new_goal(error_theta, 0)
 
         # Compute distance to goal
-        # distance_to_goal = ((pose_goal[0] - robot_state.current_pose[0])**2 + (pose_goal[1] - robot_state.current_pose[1])**2)**0.5
+        # distance_to_goal = ((pose_goal[0] - robot_current_pose[0])**2 + (pose_goal[1] - robot_current_pose[1])**2)**0.5
         
         mag = self.vel_profile_mag.compute_vel(None)
         theta = self.vel_profile_theta.compute_vel(None)
 
-        angle_vec_dir = atan2(pose_goal[1] - robot_state.current_pose[1], pose_goal[0] - robot_state.current_pose[0])
+        angle_vec_dir = atan2(pose_goal[1] - robot_current_pose[1], pose_goal[0] - robot_current_pose[0])
 
 
-        dist = self.dist_point_to_line_signed(robot_state.current_pose[:2], [self.start_pose[:2], self.goal_pose[:2]])
+        dist = self.dist_point_to_line_signed(robot_current_pose[:2], [self.start_pose[:2], self.goal_pose[:2]])
 
         correction = self.pid_correct_dir.update(dist, dt)
 
@@ -95,8 +105,6 @@ class CmdVelUpdater2:
 
         cmd_vel = Vel()
         cmd_vel.init_from_mag_ang(mag, angle_vec_dir, theta)
-
-        print(cmd_vel)
 
         return cmd_vel
 
@@ -204,14 +212,24 @@ class TrapezoidalVelocityProfile:
 
 
         
-class PoseControl:
-    def __init__(self, viz=None):
+class PoseControl(Node):
+    def __init__(self):
+        super().__init__('pose_control_node')
+        self.control_loop_period = self.declare_parameter('control_loop_period', 0.1).value        
 
-        self.viz = viz
-        
+        self.cmd_vel_pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
+        self.path_sub = self.create_subscription(Path, '/cmd_path', self.path_callback, 10)
+        self.current_pose_sub = self.create_subscription(Odometry, '/odom', self.current_pose_callback, 10)
+
+        # Timers
+        self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
+
+        # Diagnostic
+        self.last_time_ctrl_loop = None
+
         # Objects instanciation
 
-        self.robot_state = None
+        self.robot_current_pose = None # TODO s'en debarasser ?
         self.cmd_vel_updater = CmdVelUpdater2()
 
         # Variables related to goals
@@ -225,9 +243,17 @@ class PoseControl:
         # Convenience variable that is equal to cmd_path[i_goal-1]
         self.prev_goal = None
 
+    def current_pose_callback(self, msg):
+        """Callback for the current pose message. It is called when a new pose is received from topic."""
+        self.robot_current_pose = [msg.pose.pose.position.x, msg.pose.pose.position.y, 2*atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)]
+        # ic("pc: RECEIVED CURRENT POSE :")
+        # ic(self.robot_current_pose)
 
-    def set_robot_state(self, robot_state):
-        self.robot_state = robot_state
+    def path_callback(self, msg):
+        """Callback for the path message. It is called when a new path is received from topic."""
+        self.set_cmd_path(msg.poses)
+        # ic("pc: RECEIVED PATH :")
+        # ic(self.cmd_path)
 
 
     def set_cmd_path(self, cmd_path):
@@ -239,18 +265,16 @@ class PoseControl:
         else:
             self.cmd_path = cmd_path
             self.i_goal = 1
-            self.current_goal = self.cmd_path[1]
+            # convert the cmd_path[1] to [x, y, theta]
+            self.current_goal = [cmd_path[1].pose.position.x, cmd_path[1].pose.position.y, 2*atan2(cmd_path[1].pose.orientation.z, cmd_path[1].pose.orientation.w)]
             self.prev_goal = self.cmd_path[0]
     
 
-    def control_loop_spin_once(self, dt):
-
+    def control_loop_spin_once(self):
         if self.i_goal is None:
             return Vel(0., 0., 0.).to_twist() # No cmd path to follow, return
         
         goal_reached = self.is_current_goal_reached()
-
-
         if goal_reached:
             self.switch_to_next_goal()
         
@@ -259,17 +283,24 @@ class PoseControl:
             return Vel(0., 0., 0.).to_twist()
 
         # Compute the command velocity
-        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.robot_state, self.current_goal, dt)
+        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.robot_current_pose, self.current_goal)
+        # express in the base_link frame
+        cmd_vel = Vel.to_robot_frame(self.robot_current_pose, cmd_vel)    
+        # convert to cmd_twist
+        cmd_twist = cmd_vel.to_twist()
 
-        # Viz
-        if self.viz is not None:
-            # self.viz.draw_goal_poses(self.robot_state.current_pose, self.cmd_path)
-            # self.viz.update()
-            pass
         
-        # publish the velocity (expressed in the base_link frame)
-        cmd_vel = Vel.to_robot_frame(self.robot_state.current_pose, cmd_vel)    
-        return cmd_vel.to_twist()
+
+        # publish the velocity
+        cmd_twist_stamped = TwistStamped()
+        cmd_twist_stamped.header.stamp = self.get_clock().now().to_msg()
+        cmd_twist_stamped.header.frame_id = "base_link"
+        cmd_twist_stamped.twist = cmd_twist
+
+        # Publish the command
+        self.cmd_vel_pub.publish(cmd_twist_stamped)
+
+        return
 
 
     def is_current_goal_reached(self):
@@ -279,9 +310,10 @@ class PoseControl:
         error_max_lin = 0.01
         error_max_ang = 0.01
 
-
-        if abs(self.robot_state.current_pose[0] - self.current_goal[0]) < error_max_lin and abs(self.robot_state.current_pose[1] - self.current_goal[1]) < error_max_lin:
-            if self.check_angle(self.robot_state.current_pose[2], self.current_goal[2], error_max_ang):
+        # ic(self.robot_current_pose)
+        # ic(self.current_goal)
+        if abs(self.robot_current_pose[0] - self.current_goal[0]) < error_max_lin and abs(self.robot_current_pose[1] - self.current_goal[1]) < error_max_lin:
+            if self.check_angle(self.robot_current_pose[2], self.current_goal[2], error_max_ang):
                 return True
     
         return False
@@ -308,8 +340,19 @@ class PoseControl:
             self.prev_goal = None
             return
         
-        self.current_goal = self.cmd_path[self.i_goal]
+        self.current_goal = [self.cmd_path[self.i_goal].pose.position.x, 
+                             self.cmd_path[self.i_goal].pose.position.y, 
+                             2*atan2(self.cmd_path[self.i_goal].pose.orientation.z, self.cmd_path[self.i_goal].pose.orientation.w)]
+
         self.prev_goal = self.cmd_path[self.i_goal-1]
         
 
-    
+def main(args=None):
+    rclpy.init(args=args)
+    pose_control_node = PoseControl()
+    rclpy.spin(pose_control_node)
+    pose_control_node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
