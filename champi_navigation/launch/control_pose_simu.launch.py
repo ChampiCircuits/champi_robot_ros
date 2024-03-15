@@ -41,5 +41,5 @@ def generate_launch_description():
         base_control_simu_node,
         planner_node,
         pose_control_node,
-        gui_node
+        # gui_node
     ])

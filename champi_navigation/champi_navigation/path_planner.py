@@ -24,7 +24,8 @@ class PathPlanner:
         # self.environment_state = None
         # self.robot_state = None
 
-        # self.graph = None
+        # debug
+        self.graph = None
         # self.dico_all_points = {}
         # self.path_nodes = None
 

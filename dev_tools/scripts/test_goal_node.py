@@ -17,7 +17,7 @@ class TestGoal(Node):
         # pub pose stamped
         self.pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
 
-        self.goals = [[0., 1., -pi/2], [1., 1., 0.], [0., 0., 0.]]
+        self.goals = [[1., 1., 0.], [0., 0., 0.]]
         # self.goals = [[0., 1., -pi/2], [1., 1., 0.], [1., 0., pi/2],[0., 0., 0.]]
         self.i_goal = 0
 

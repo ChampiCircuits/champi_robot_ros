@@ -8,7 +8,7 @@ from rclpy.node import Node
 from tf2_ros import TransformBroadcaster
 
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import TwistStamped, Twist
 from geometry_msgs.msg import TransformStamped
 
 
@@ -16,13 +16,19 @@ class HoloBaseControlDummy(Node):
 
     def __init__(self):
         super().__init__('holo_base_control_dummy_node')
-
-        self.subscription = self.create_subscription(
+        self.subscription_stamped = self.create_subscription(
             TwistStamped,
             '/cmd_vel',
             self.listener_callback,
             10)
-        self.subscription  # prevent unused variable warning
+        self.subscription_stamped  # prevent unused variable warning
+        # A ACTIVER POUR KEYBOARD TELEOP ET PAREIL DAN LE CALLBACK
+        # self.subscription = self.create_subscription(
+        #     Twist,
+        #     '/cmd_vel',
+        #     self.listener_callback,
+        #     10)
+        # self.subscription  # prevent unused variable warning
 
         self.pub = self.create_publisher(Odometry, '/odom', 10)
 
@@ -46,10 +52,11 @@ class HoloBaseControlDummy(Node):
 
         self.robot_radius = 0.01  # TODO
 
-
+      
     def listener_callback(self, msg):
         self.latest_cmd_vel = [msg.twist.linear.x, msg.twist.linear.y, msg.twist.angular.z]
-
+        #self.latest_cmd_vel = [msg.linear.x, msg.linear.y, msg.angular.z]
+            
     def timer_callback(self):
         self.cmd_vel_to_wheels()
         self.wheels_to_current_vel()

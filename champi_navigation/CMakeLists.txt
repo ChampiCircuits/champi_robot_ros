@@ -40,7 +40,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/planner_node.py
   scripts/pose_control_node.py
-  scripts/gui_node.py
+ # scripts/gui_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

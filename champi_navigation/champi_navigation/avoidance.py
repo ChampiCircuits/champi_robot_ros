@@ -21,6 +21,7 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
 
     expanded_table_poly = world_state.table.expanded_poly
     expanded_opponent_robot_poly = world_state.opponent_robot.expanded_poly
+    expanded_opponent_robot_poly2 = world_state.opponent_robot.expanded_poly2
 
 
     # check if goal lies inside the obstacle
@@ -38,7 +39,7 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
     dico_all_points = {}
     dico_all_points[len(dico_all_points)] = (start.x,start.y)
     dico_all_points[len(dico_all_points)] = (goal.x,goal.y)
-    for point in list(expanded_opponent_robot_poly.exterior.coords):
+    for point in list(expanded_opponent_robot_poly2.exterior.coords):
         dico_all_points[len(dico_all_points)] = point
 
     # ic("DICO ALL POINTS CREATED")
@@ -46,7 +47,7 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
     
 
 # GENERATING COMBINATIONS
-    # generate each combination between start/goal to every other points to test visibility
+    # generate each combination between start/goal to every other points to test visibility with
     all_combinations = []
     for key in dico_all_points.keys():
         if key != 0 and key != 1: # start and goal
@@ -59,14 +60,10 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
     # ic("COMBINATIONS CREATED")
 
 # ADDING EDGES TO THE GRAPH
-    # generate the edges of the polygon that should not be crossed
-    # Todo TROUVER UNE AUTRE METHODE
     obstacle_edges = []
-    for i in range(len(dico_all_points)-2):
-        if i==len(dico_all_points)-2-1:
-            obstacle_edges.append((i+2, 2))
-        else:
-            obstacle_edges.append((i+2, i+2+1))
+    for i in range(len(expanded_opponent_robot_poly2.exterior.coords)-1):
+        obstacle_edges.append((i+2,i+1+2)) # because 0 and 1 are start and goal
+    # obstacle_edges.append((len(expanded_opponent_robot_poly2.exterior.coords)-1,2))
 
     # ic("OBSTACLE EDGES CREATED")
 
@@ -76,6 +73,7 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
         graph.add_edge(seg[0],seg[1],d)
         graph.add_edge(seg[1],seg[0],d)
 
+    # generate the edges of the polygon that should not be crossed
     edges_to_not_cross = []
     for edge in get_edges(expanded_opponent_robot_poly):
         edges_to_not_cross.append(edge)
@@ -84,7 +82,7 @@ def create_graph(start: Point, goal: Point, world_state:WorldState):
 
     # ic("EDGES TO NOT CROSS CREATED")
 
-    # check for each segment/combination of two points if they cross the obstacle
+    # check for each segment/combination of two points if they cross edges_to_not_cross
     # if not we add them as edges to the graph
     for comb in all_combinations:
         a, b = comb
@@ -154,4 +152,5 @@ def get_edges(poly: Polygon):
     edges = []
     for i in range(len(poly.exterior.coords)-1):
         edges.append(LineString([poly.exterior.coords[i],poly.exterior.coords[i+1]]))
+    edges.append(LineString([poly.exterior.coords[-1],poly.exterior.coords[0]]))
     return edges

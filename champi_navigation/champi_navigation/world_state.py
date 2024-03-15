@@ -24,6 +24,7 @@ class OpponentRobotObject(WorldObject):
                                Point(center_x-width/2,center_y-height/2),
                                Point(center_x-width/2,center_y+height/2)])
         self.expanded_poly = math_bind.expand(self.polygon, offset)
+        self.expanded_poly2 = math_bind.expand(self.polygon, offset+0.03)
 
 class SelfRobot(WorldObject):
     def __init__(self) -> None:
