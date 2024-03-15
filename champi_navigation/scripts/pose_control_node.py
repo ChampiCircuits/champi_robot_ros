@@ -293,6 +293,11 @@ class PoseControl(Node):
 
             if min_i+1>self.i_goal: #quickfix TODO
                 self.i_goal = min_i+1
+            
+            # if goal is out of path
+            if self.i_goal >= len(cmd_path):
+                self.i_goal = len(cmd_path)-1 # TODO DO BETTER
+
             # print("\t\t nearest seg : ",min_i,"donc i_goal = ",self.i_goal)
             # convert the cmd_path[self.i_goal] to [x, y, theta]
             self.current_goal = [cmd_path[self.i_goal].pose.position.x, 

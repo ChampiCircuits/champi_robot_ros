@@ -6,6 +6,9 @@ from champi_navigation.trajectory import Pose
 from geometry_msgs.msg import PoseStamped
 
 from shapely import Point, Polygon
+import math
+
+OFFSET = 0.2 # TODO PARAM ROS
 
 class WorldObject():
     def __init__(self) -> None:
@@ -29,7 +32,7 @@ class OpponentRobotObject(WorldObject):
 class SelfRobot(WorldObject):
     def __init__(self) -> None:
         self.pose_stamped:PoseStamped = PoseStamped() #TODO ptet pas opti?
-        self.radius:float = 0.1 #TODO param
+        self.radius:float = OFFSET #meters
 
 class PlantObject(WorldObject):
     def __init__(self) -> None:
@@ -50,8 +53,8 @@ class TableObject(WorldObject):
 class WorldState():
     def __init__(self) -> None:
         self.self_robot:SelfRobot = SelfRobot()
-        self.opponent_robot:OpponentRobotObject = OpponentRobotObject(0.5,0.5,0.5,0.5,0.1) #TODO offset
-        self.table:TableObject = TableObject(3.,2.,0.1) #TODO offset
+        self.opponent_robot:OpponentRobotObject = OpponentRobotObject(center_x=0.5,center_y=0.5,width=0.4,height=0.4,offset=OFFSET)
+        self.table:TableObject = TableObject(3.,2.,OFFSET)
         self.plants:list[PlantObject] = [] # todo init
         self.current_state:dict = {"self_robot": self.self_robot,
                                      "opponent_robot":self.opponent_robot,

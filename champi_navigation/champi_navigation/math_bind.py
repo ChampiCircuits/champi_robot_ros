@@ -4,7 +4,7 @@ from shapely import Point, Polygon, LineString, BufferCapStyle
 def expand(poly: Polygon, offset: float) -> Polygon:
     """Expand a polygon by a given offset and return the expanded polygon"""
     print(len(poly.exterior.coords))
-    return poly.buffer(offset,cap_style="flat", resolution=1)
+    return poly.buffer(offset,cap_style="flat", resolution=6)
 
 def eq_tuples(pointA: tuple, pointB: tuple) -> bool:
     """Check if two tuples of points are almost equals at the 2nd decimal"""

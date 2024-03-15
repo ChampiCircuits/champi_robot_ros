@@ -39,14 +39,14 @@ class PlannerNode(Node):
 
         self.gui = GuiV2(self)
         self.gui.opponent_to_draw = self.world_state.opponent_robot
-
+        self.gui.robot_to_draw = self.world_state.self_robot
 
         #debug
         self.last_path = None
 
     def pub_rviz_obstacles(self):
         #TODO OFFSET
-        OFFSET = 0.1
+        OFFSET = 0.2
 
         # OBSTACLE marker
         marker_obstacle = Marker()
@@ -99,8 +99,8 @@ class PlannerNode(Node):
         self.path_planner.set_cmd_goal(self.goal)
 
     def define_init_pose_callback(self, msg):
-        self.world_state.self_robot.pose_stamped.pose = msg.pose.pose
-        ic("INIT POSE RECEIVED :")
+        # self.world_state.self_robot.pose_stamped.pose = msg.pose.pose
+        # ic("INIT POSE RECEIVED :")
         ic(msg.pose.pose)
 
     def callback(self):
@@ -108,18 +108,18 @@ class PlannerNode(Node):
         path_msg:Path = self.path_planner.update(self.get_clock().now().to_msg())
 
         graph = self.path_planner.graph
-        segs = []
         # envoi du graph pour dessiner
-        if graph is not None:
-            for key, vals in graph.items():
-                for val in vals.keys():
-                    segs.append((key, val))
-            for i in range(len(segs)):
-                segs[i] = (
-                    (self.path_planner.dico_all_points[segs[i][0]][0], self.path_planner.dico_all_points[segs[i][0]][1]),
-                    (self.path_planner.dico_all_points[segs[i][1]][0], self.path_planner.dico_all_points[segs[i][1]][1])
-                )
-            self.gui.add_lines_to_draw(segs)
+        # segs = []
+        # if graph is not None:
+        #     for key, vals in graph.items():
+        #         for val in vals.keys():
+        #             segs.append((key, val))
+        #     for i in range(len(segs)):
+        #         segs[i] = (
+        #             (self.path_planner.dico_all_points[str(segs[i][0])][0], self.path_planner.dico_all_points[str(segs[i][0])][1]),
+        #             (self.path_planner.dico_all_points[str(segs[i][1])][0], self.path_planner.dico_all_points[str(segs[i][1])][1])
+        #         )
+        #     self.gui.add_lines_to_draw(segs)
 
         self.path_pub.publish(path_msg)
         self.pub_rviz_obstacles()

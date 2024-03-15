@@ -93,9 +93,9 @@ class PathPlanner:
         # ic(start, goal, theta)
 
         self.graph, self.dico_all_points = avoidance.create_graph(start, goal, self.world_state)
-        # ic("GRAPH CREATED")
-        # ic(self.graph)
-        path = avoidance.find_avoidance_path(self.graph, 0, 1)
+        # print("GRAPH CREATED")
+        # print(self.graph)
+        path = avoidance.find_avoidance_path_(self.graph, "0", "1")
         # ic("PATH FOUND")
         
         if path is not None:
@@ -103,7 +103,7 @@ class PathPlanner:
             
             goals = []
             for p in self.path_nodes:
-                goals.append([float(self.dico_all_points[p][0]),float(self.dico_all_points[p][1]), theta])
+                goals.append([float(self.dico_all_points[str(p)][0]),float(self.dico_all_points[str(p)][1]), theta])
             # ic("path found")
             return goals
         else:
