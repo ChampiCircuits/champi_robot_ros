@@ -31,7 +31,7 @@ class RvizImageDisplayer:
 
         ic(self.img_size)
 
-        self.publish_period_img = 0.5
+        self.publish_period_img = 0.1
         self.publish_period_param = 0.5
 
         # This is a topic required by the rviz plugin to display the image. 
@@ -61,7 +61,7 @@ class RvizImageDisplayer:
         self.bird_eye_param_pub = self.node.create_publisher(BirdEyeParam, '/params', 10)
 
         # Timer for the /bird_eye_image topic
-        self.timer_img = self.node.create_timer(self.publish_period_img, self.publish_image)
+        # self.timer_img = self.node.create_timer(self.publish_period_img, self.publish_image)
 
         # Timer for the /params topic
         self.timer_param = self.node.create_timer(self.publish_period_param, self.publish_param)
