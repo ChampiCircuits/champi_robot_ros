@@ -67,7 +67,6 @@ class GuiV2():
             # print(type(self.robot_to_draw.pose_stamped), type(PoseStamped()))
 
             if isinstance(self.robot_to_draw.pose_stamped, PoseStamped):
-                print("posestamped")
                 pose_with_cov = self.robot_to_draw.pose_stamped.pose
                 # print(type(self.robot_to_draw.pose_stamped.pose))
                 if (isinstance(self.robot_to_draw.pose_stamped.pose, PoseWithCovariance)):
@@ -77,8 +76,8 @@ class GuiV2():
                     OFFSET = 0.2
                     radius = self.rviz_img_displayer.m_to_pxl([(OFFSET,0)])[0][0]
                     cv2.circle(self.rviz_img_displayer.get_img(), center, radius, (0, 255, 0), 3)
-            else:
-                print(type(self.robot_to_draw.pose_stamped))
+            # else:
+                # print(type(self.robot_to_draw.pose_stamped))
             #     pose_stamped = self.robot_to_draw.pose_stamped
             #     x,y = pose_stamped.pose.position.x, pose_stamped.pose.position.y
             #     #draw circle

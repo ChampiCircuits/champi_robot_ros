@@ -28,6 +28,26 @@ class OpponentRobotObject(WorldObject):
                                Point(center_x-width/2,center_y+height/2)])
         self.expanded_poly = math_bind.expand(self.polygon, offset)
         self.expanded_poly2 = math_bind.expand(self.polygon, offset+0.03)
+        self.offset = offset
+
+        self.dir = 1
+
+    def test_move(self):
+        # move up to down and down to up
+        if self.center_y > 1.5:
+            self.dir = -1
+        if self.center_y < 0:
+            self.dir = 1
+        self.center_y += 0.005*self.dir
+
+        self.polygon = Polygon([Point(self.center_x+self.width/2,self.center_y+self.height/2),
+                        Point(self.center_x+self.width/2,self.center_y-self.height/2),
+                        Point(self.center_x-self.width/2,self.center_y-self.height/2),
+                        Point(self.center_x-self.width/2,self.center_y+self.height/2)])
+        self.expanded_poly = math_bind.expand(self.polygon, self.offset)
+        self.expanded_poly2 = math_bind.expand(self.polygon, self.offset+0.03)
+        # print("moviiiiiiiiiiiiiing")
+        # ic("moviiiiiiiiiiiiiing")
 
 class SelfRobot(WorldObject):
     def __init__(self) -> None:
@@ -53,7 +73,7 @@ class TableObject(WorldObject):
 class WorldState():
     def __init__(self) -> None:
         self.self_robot:SelfRobot = SelfRobot()
-        self.opponent_robot:OpponentRobotObject = OpponentRobotObject(center_x=0.5,center_y=0.5,width=0.4,height=0.4,offset=OFFSET)
+        self.opponent_robot:OpponentRobotObject = OpponentRobotObject(center_x=1.5,center_y=0.5,width=0.4,height=0.4,offset=OFFSET)
         self.table:TableObject = TableObject(3.,2.,OFFSET)
         self.plants:list[PlantObject] = [] # todo init
         self.current_state:dict = {"self_robot": self.self_robot,
@@ -61,6 +81,7 @@ class WorldState():
                                      "plants":self.plants}
 
     def update(self) -> None:
+        self.opponent_robot.test_move()
         # read the ros messages to update current_state
         #   + plants/pots positions eventually
         pass

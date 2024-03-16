@@ -63,12 +63,15 @@ class CmdVelUpdater2:
 
             self.start_pose = robot_current_pose
             self.goal_pose = pose_goal
-            print("start_pose",self.start_pose)
-            print("goal_pose",self.goal_pose)
+            # print("start_pose",self.start_pose)
+            # print("goal_pose",self.goal_pose)
 
             distance_start_to_goal = ((pose_goal[0] - self.start_pose[0])**2 + (pose_goal[1] - self.start_pose[1])**2)**0.5
             # distance_start_to_goal = ((pose_goal[0] - self.start_pose.pose.position.x)**2 + (pose_goal[1] - self.start_pose.pose.position.y)**2)**0.5
-            self.vel_profile_mag.set_new_goal(distance_start_to_goal, 0)
+            current_mag_speed = 0
+            if self.vel_profile_mag.t_start is not None:
+                current_mag_speed = self.vel_profile_mag.compute_vel(None)
+            self.vel_profile_mag.set_new_goal(distance_start_to_goal, 0, current_mag_speed) # TODO pareil pour theta?
 
             # if it's shorter to turn in the other direction, we do it
             error_theta = pose_goal[2] - robot_current_pose[2]
@@ -85,6 +88,7 @@ class CmdVelUpdater2:
         
         mag = self.vel_profile_mag.compute_vel(None)
         theta = self.vel_profile_theta.compute_vel(None)
+        theta=0 # TODO REMETTRE
 
         angle_vec_dir = atan2(pose_goal[1] - robot_current_pose[1], pose_goal[0] - robot_current_pose[0])
 
@@ -148,8 +152,9 @@ class TrapezoidalVelocityProfile:
         self.error_negative = False
 
     
-    def set_new_goal(self, start_pos, goal_pos):
-
+    def set_new_goal(self, start_pos, goal_pos, v_init = 0):
+        # print("current speed",current_speed)
+        # ic(current_speed)
         self.start_pos = start_pos
         self.end_pos = goal_pos
 
@@ -159,22 +164,41 @@ class TrapezoidalVelocityProfile:
         tf = 2 * sqrt(abs(self.end_pos - self.start_pos) / self.a_max)
 
         midpoint_vel = self.a_max * tf / 2
-
-        if midpoint_vel <= self.v_max: # 2 segments case
-            self.t_end_acc = tf/2
-            self.t_end_flat = None
-            self.t_end_dec = tf
         
+        if midpoint_vel <= self.v_max: # 2 segments case
+            self.t_end_acc = (self.v_max-v_init) /self.a_max
+            self.t_end_flat = None
+            t_dec = (self.v_max-0) /self.a_max
+            self.t_end_dec = self.t_end_acc + t_dec
+
+            print("\n"*2)
+            print("2 segments case")
+
         else: # 3 segments case
-            tf = abs(self.end_pos - self.start_pos) / self.v_max + self.v_max / self.a_max
-            self.t_end_acc = self.v_max / self.a_max
-            self.t_end_flat = tf - self.t_end_acc
-            self.t_end_dec = tf
+            V = self.v_max
+            A = self.a_max
+            
+            self.t_end_acc = (V-v_init) / A
+            self.t_end_dec = (V-0) / A
+            deltaQ = self.end_pos - self.start_pos
+            Tstar = deltaQ/V + (pow(V-v_init,2) + pow(V-0,2))/(2*A*V) # total minimum time
+            self.t_end_flat = Tstar - self.t_end_acc - self.t_end_dec
 
-        self.t_start = time.time()
+            print("\n"*2)
+            print("3 segments case")
 
+
+        # if current_speed!=0:
+        #     self.t_end_acc += (time.time()-self.t_start)
+        if v_init == 0: # TODO OUI NON?
+            self.t_start = time.time()
+
+        print(self.t_start-time.time())
+        print(self.t_end_acc)
+        print(self.t_end_flat)
+        print(self.t_end_dec)
     
-    def compute_vel(self, pos_current):
+    def compute_vel(self, pos_current): # TODO SERT A RIEN?
 
         t = time.time() - self.t_start
 
