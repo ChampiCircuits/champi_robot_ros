@@ -16,11 +16,12 @@ class ChampiCan {
     */
 
     public:
-    ChampiCan(std::string can_interface_name, std::vector<int> ids_of_interest) :
-        can_interface_(can_interface_name) {
+    ChampiCan(std::string can_interface_name, std::vector<int> ids_of_interest, bool verbose=false) :
+        can_interface_(can_interface_name),
+        verbose_(verbose){
 
         for(int id : ids_of_interest) {
-            message_recomposers_[id] = MessageRecomposer(id);
+            message_recomposers_[id] = MessageRecomposer(id, verbose_);
         }
     }
 
@@ -41,7 +42,11 @@ class ChampiCan {
         return 0;
     }
 
-    int send(canid_t id, std::string msg) {
+    int send_raw(canid_t id, const std::string& msg) {
+        return can_interface_.send(id, msg);
+    }
+
+    int send(canid_t id, const std::string& msg) {
         
         static unsigned char msg_number = 0; // TODO how does this works ?? It should be uint16_t...
 
@@ -56,7 +61,7 @@ class ChampiCan {
             uint16_t msg_descriptor = msg_number << 12 | (nb_frames << 6) | i;
 
             std::string msg_to_send = msg.substr(i*6, 6);
-            msg_to_send = std::string((char*)&msg_descriptor, 2) + msg_to_send;
+            msg_to_send = std::string((char*)&msg_descriptor, 2).append(msg_to_send);
 
             ret = can_interface_.send(id, msg_to_send);
             if(ret != 0) {
@@ -117,12 +122,12 @@ class ChampiCan {
         return message_recomposers_[id].get_full_msg();
     }
 
-
-
     private:
     CanInterface can_interface_;
     std::map<int, MessageRecomposer> message_recomposers_;
 
     std::thread receive_thread_;
     std::mutex mtx_;
+
+    bool verbose_;
 };

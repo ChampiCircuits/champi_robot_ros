@@ -30,6 +30,12 @@ class CanInterface {
     }
 
     /**
+     * @brief Default constructor. Do not use directly.
+     *
+     */
+    CanInterface() = default;
+
+    /**
      * @brief Destructor. Closes the CAN socket.
      * 
      */
