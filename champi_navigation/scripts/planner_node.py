@@ -92,7 +92,13 @@ class PlannerNode(Node):
     
     def odom_callback(self, msg):
         # print("odom callback", msg.pose.pose.position.x, msg.pose.pose.position.y)
-        self.world_state.self_robot.pose_stamped.pose = msg.pose
+        poseWithCov = msg.pose
+        # convert to poseStamped
+        pose_stamped = PoseStamped()
+        pose_stamped.header = msg.header
+        pose_stamped.pose = poseWithCov.pose
+
+        self.world_state.self_robot.pose_stamped = pose_stamped
 
     def goal_callback(self, msg):
         self.goal = msg.pose

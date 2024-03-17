@@ -87,8 +87,8 @@ class PathPlanner:
 
         goal = Point(self.cmd_goal.position.x, self.cmd_goal.position.y)
         theta = self.cmd_goal.orientation.z # TODO sûr ?
-        start = Point(self.world_state.self_robot.pose_stamped.pose.pose.position.x,
-                      self.world_state.self_robot.pose_stamped.pose.pose.position.y)
+        start = Point(self.world_state.self_robot.pose_stamped.pose.position.x,
+                      self.world_state.self_robot.pose_stamped.pose.position.y)
 
         # ic(start, goal, theta)
 
