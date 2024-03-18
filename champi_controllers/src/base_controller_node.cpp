@@ -83,7 +83,8 @@ public:
         update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Waiting for base to confirm config");
 
         // Create Subscribers
-        sub_twist_in_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(topic_twist_in, 10, std::bind(&BaseControllerNode::twist_in_callback, this, std::placeholders::_1));
+        // sub_twist_in_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(topic_twist_in, 10, std::bind(&BaseControllerNode::twist_in_callback, this, std::placeholders::_1));
+        sub_twist_in_unstamped = this->create_subscription<geometry_msgs::msg::Twist>(topic_twist_in, 10, std::bind(&BaseControllerNode::twist_in_callback_unstamped, this, std::placeholders::_1));
 
         // Create Publishers
         pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -98,7 +99,9 @@ public:
 
 private:
     // Subscribers
-    rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr sub_twist_in_;
+    // rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr sub_twist_in_;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_twist_in_unstamped;
+
 
     // Publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_;
@@ -132,7 +135,7 @@ private:
     // Other variables
     ChampiCan champi_can_interface_;
     msgs_can::BaseVel current_vel_;
-    geometry_msgs::msg::TwistStamped::SharedPtr latest_twist_;
+    geometry_msgs::msg::Twist::SharedPtr latest_twist_;
     struct Pose {
         double x;
         double y;
@@ -359,9 +362,9 @@ private:
 
     void send_latest_twist_can() {
         msgs_can::BaseVel base_vel_cmd;
-        base_vel_cmd.set_x((float) latest_twist_->twist.linear.x);
-        base_vel_cmd.set_y((float) latest_twist_->twist.linear.y);
-        base_vel_cmd.set_theta((float) latest_twist_->twist.angular.z);
+        base_vel_cmd.set_x((float) latest_twist_->linear.x);
+        base_vel_cmd.set_y((float) latest_twist_->linear.y);
+        base_vel_cmd.set_theta((float) latest_twist_->angular.z);
 
         // Send message
         if(champi_can_interface_.send(can_ids::BASE_CMD_VEL, base_vel_cmd.SerializeAsString()) != 0) {
@@ -375,13 +378,23 @@ private:
 
     //  =========================================== Communication ROS2 =================================================
 
-    void twist_in_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+    // void twist_in_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+    //     last_rx_twist_time_ = this->now();
+    //     if(!got_first_twist_) {
+    //         got_first_twist_ = true;
+    //     }
+    //     latest_twist_ = msg;
+    // }
+
+    void twist_in_callback_unstamped(const geometry_msgs::msg::Twist::SharedPtr msg) {
         last_rx_twist_time_ = this->now();
         if(!got_first_twist_) {
             got_first_twist_ = true;
         }
+
         latest_twist_ = msg;
     }
+
 
     void publish_odom() {
         auto msg = nav_msgs::msg::Odometry();
@@ -417,6 +430,24 @@ private:
         transformStamped.transform.translation.z = 0.0;
         tf2::Quaternion q;
         q.setRPY(0.0, 0.0, current_pose_.theta);
+        transformStamped.transform.rotation.x = q.x();
+        transformStamped.transform.rotation.y = q.y();
+        transformStamped.transform.rotation.z = q.z();
+        transformStamped.transform.rotation.w = q.w();
+
+        tf_broadcaster_->sendTransform(transformStamped);
+    }
+
+    void broadcast_tf_map() {
+        geometry_msgs::msg::TransformStamped transformStamped;
+        transformStamped.header.stamp = this->now();
+        transformStamped.header.frame_id = "map";
+        transformStamped.child_frame_id = "odom";
+        transformStamped.transform.translation.x = 0.0;
+        transformStamped.transform.translation.y = 0.0;
+        transformStamped.transform.translation.z = 0.0;
+        tf2::Quaternion q;
+        q.setRPY(0.0, 0.0, 0.0);
         transformStamped.transform.rotation.x = q.x();
         transformStamped.transform.rotation.y = q.y();
         transformStamped.transform.rotation.z = q.z();
@@ -464,6 +495,9 @@ private:
 
         // Return if needed (state not ok or 1st twist not received or 1st status not received)
         if(!check_node_ok_and_update()) {
+            publish_odom();
+            broadcast_tf();
+            broadcast_tf_map();
             return;
         }
 
@@ -474,6 +508,7 @@ private:
         update_pose();
         publish_odom();
         broadcast_tf();
+        broadcast_tf_map();
     }
 
 

@@ -48,7 +48,7 @@ rosdep install --from src --ignore-src -y
 # Install dependencies
 echo "Installing dependencies..."
 sudo apt update
-sudo apt install -y libprotobuf-dev
+sudo apt install -y libprotobuf-dev libudev-dev
 
 
 # Check if repositories rviz_birdeye_display spatz_interfaces already exist

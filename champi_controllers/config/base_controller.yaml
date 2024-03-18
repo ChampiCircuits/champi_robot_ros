@@ -3,11 +3,11 @@ base_controller:
 
     topic_twist_in: "/cmd_vel"
     champi_can_verbose_mode: false
-    timeout_connexion_ros: 1.0
+    timeout_connexion_ros: 1000000000000.0
     timeout_connexion_stm: 1.0
 
     base_config:
       max_accel_wheels: 10.0 # rotation des roues en rotation/s²
       wheel_radius: 0.029 # en m
       base_radius: 0.175 # en m
-      cmd_vel_timeout: 0.5 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
+      cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête

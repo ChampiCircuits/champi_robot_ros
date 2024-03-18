@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<robot name="my_robot">
+  <!-- Base Link -->
+  <link name="base_link">
+    <inertial>
+      <mass value="1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+  </link>
+
+  <!-- Lidar Link -->
+  <link name="ldlidar_base">
+    <inertial>
+      <mass value="1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+  </link>
+
+  <!-- Camera Link -->
+  <link name="camera">
+    <inertial>
+      <mass value="1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+  </link>
+
+  <!-- Joint between base_link and lidar -->
+  <joint name="base_to_lidar" type="fixed">
+    <parent link="base_link"/>
+    <child link="ldlidar_base"/>
+    <origin xyz="0 0 0.3" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Joint between base_link and camera -->
+  <joint name="base_to_camera" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera"/>
+    <origin xyz="0 0 0.78539" rpy="-1 3.14159 -1.57079"/>
+  </joint>
+</robot>
