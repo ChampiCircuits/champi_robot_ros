@@ -22,7 +22,8 @@ def generate_launch_description():
         parameters=[
             os.path.join(get_package_share_directory('champi_controllers'), 'config', 'base_controller.yaml'),
             {'can_interface_name': LaunchConfiguration('can_interface')}
-        ]
+        ],
+        remappings=[('/cmd_vel', '/base_controller/cmd_vel')] # TODO move this to bringup
     )
 
     return LaunchDescription([

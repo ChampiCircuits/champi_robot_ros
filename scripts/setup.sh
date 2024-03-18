@@ -51,6 +51,25 @@ sudo apt update
 sudo apt install -y libprotobuf-dev libudev-dev
 
 
+# Check if the repository ldrobot-lidar-ros2 already exists
+if [ -d "$CHAMPI_WS_DIR/src/ldrobot-lidar-ros2" ]; then
+  echo "The repository ldrobot-lidar-ros2 already exists."
+  echo "Do you want to delete it and clone it again? (y/n)"
+  read answer
+  if [ "$answer" != "y" ]; then
+    echo "Setup Done!"
+    exit 0
+  fi
+  rm -rf $CHAMPI_WS_DIR/src/ldrobot-lidar-ros2
+  git clone https://github.com/Myzhar/ldrobot-lidar-ros2.git $CHAMPI_WS_DIR/src/ldrobot-lidar-ros2
+else
+  echo "Cloning ldrobot-lidar-ros2..."
+  git clone https://github.com/Myzhar/ldrobot-lidar-ros2.git $CHAMPI_WS_DIR/src/ldrobot-lidar-ros2
+fi
+
+
+
+
 # Check if repositories rviz_birdeye_display spatz_interfaces already exist
 if [ -d "$CHAMPI_WS_DIR/src/rviz_birdeye_display" ] || [ -d "$CHAMPI_WS_DIR/src/spatz_interfaces" ]; then
   echo "The repositories rviz_birdeye_display and/or spatz_interfaces already exist."

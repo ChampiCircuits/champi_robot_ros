@@ -7,6 +7,7 @@ from math import cos, sin, pi
 
 from icecream import ic
 
+from rclpy.executors import ExternalShutdownException
 
 class TestGoal(Node):
 
@@ -47,15 +48,24 @@ class TestGoal(Node):
         if self.i_goal == len(self.goals):
             self.i_goal = 0
 
+    # destructor
+    def __del__(self):
+        print('destroying TestGoal')
+        self.destroy_node()
 
-        
 
 def main(args=None):
     rclpy.init(args=args)
-    test_goal_node = TestGoal()
-    rclpy.spin(test_goal_node)
-    test_goal_node.destroy_node()
-    rclpy.shutdown()
+
+    node = TestGoal()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+
 
 if __name__ == '__main__':
     main()

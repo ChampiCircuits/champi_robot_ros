@@ -53,6 +53,7 @@ install(PROGRAMS
   scripts/holo_teleop_joy_node.py
   scripts/holo_base_control_simu_node.py
   scripts/test_goal_node.py
+        scripts/simu_lidar_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

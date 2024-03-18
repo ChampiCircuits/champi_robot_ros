@@ -17,6 +17,8 @@
 
 using namespace std;
 
+// TODO tester mes modifs (twist not stamped, twist not needed for init)
+
 class BaseControllerNode : public rclcpp::Node
 {
 public:
@@ -83,8 +85,8 @@ public:
         update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Waiting for base to confirm config");
 
         // Create Subscribers
-        // sub_twist_in_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(topic_twist_in, 10, std::bind(&BaseControllerNode::twist_in_callback, this, std::placeholders::_1));
-        sub_twist_in_unstamped = this->create_subscription<geometry_msgs::msg::Twist>(topic_twist_in, 10, std::bind(&BaseControllerNode::twist_in_callback_unstamped, this, std::placeholders::_1));
+        sub_twist_in_ = this->create_subscription<geometry_msgs::msg::Twist>(topic_twist_in, 10, std::bind(
+                &BaseControllerNode::twist_in_callback, this, std::placeholders::_1));
 
         // Create Publishers
         pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -99,8 +101,7 @@ public:
 
 private:
     // Subscribers
-    // rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr sub_twist_in_;
-    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_twist_in_unstamped;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_twist_in_;
 
 
     // Publishers
@@ -242,27 +243,39 @@ private:
      */
     bool check_node_ok_and_update() {
 
+        // If node state is not OK or WARN, leave it as is and return.
         if(node_state_.lvl != diagnostic_msgs::msg::DiagnosticStatus::OK && 
             node_state_.lvl != diagnostic_msgs::msg::DiagnosticStatus::WARN) {
             // Node is not OK. Do not change it.
             return false;
         }
 
-        if(!got_first_status_ || !got_first_twist_ || !correct_config_received_) {
-            // That's fine but we signal we should not execute the loop
+        // If the STM is not initialized yet, we should not execute the loop so we return false.
+        if(!got_first_status_ || !correct_config_received_) {
             return false;
         }
 
         auto now = this->now();
 
+        // Check if timeout for connexion to the base is exceeded. If yes, set node state to ERROR and return false.
         timeout_connexion_stm_exceeded_ = now - last_rx_status_time_ > rclcpp::Duration::from_seconds(timeout_connexion_stm_);
-        timeout_connexion_ros_exceeded_ = now - last_rx_twist_time_ > rclcpp::Duration::from_seconds(timeout_connexion_ros_);
-
-        if(timeout_connexion_stm_exceeded_ || timeout_connexion_ros_exceeded_) {
+        if(timeout_connexion_stm_exceeded_) {
             // Set node state to ERROR
-            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Timeout error");
+            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Timeout error (CAN bus)");
             diag_updater_node_.force_update(); // Send diagnostic right away
             return false;
+        }
+
+        // Check if timeout for connexion to ROS is exceeded. If yes, set node state to ERROR and return false.
+        // If we have not received the first twist yet, we do not check this timeout.
+        if(got_first_twist_) {
+            timeout_connexion_ros_exceeded_ = now - last_rx_twist_time_ > rclcpp::Duration::from_seconds(timeout_connexion_ros_);
+            if(timeout_connexion_ros_exceeded_) {
+                // Set node state to ERROR
+                update_node_state(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Timeout error (ROS)");
+                diag_updater_node_.force_update(); // Send diagnostic right away
+                return false;
+            }
         }
 
         // check if base status ok
@@ -279,7 +292,7 @@ private:
             update_node_state(diagnostic_msgs::msg::DiagnosticStatus::OK, "OK");
             diag_updater_node_.force_update();
         }
-        return true;
+        return got_first_twist_; // If we have not received the first twist yet, we do not send commands to the base.
     }
 
 
@@ -378,20 +391,11 @@ private:
 
     //  =========================================== Communication ROS2 =================================================
 
-    // void twist_in_callback(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
-    //     last_rx_twist_time_ = this->now();
-    //     if(!got_first_twist_) {
-    //         got_first_twist_ = true;
-    //     }
-    //     latest_twist_ = msg;
-    // }
-
-    void twist_in_callback_unstamped(const geometry_msgs::msg::Twist::SharedPtr msg) {
+    void twist_in_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
         last_rx_twist_time_ = this->now();
         if(!got_first_twist_) {
             got_first_twist_ = true;
         }
-
         latest_twist_ = msg;
     }
 
@@ -493,19 +497,21 @@ private:
         // Read incoming message if available
         rx_can();
 
-        // Return if needed (state not ok or 1st twist not received or 1st status not received)
-        if(!check_node_ok_and_update()) {
-            publish_odom();
-            broadcast_tf();
-            broadcast_tf_map();
-            return;
+        // Check if we can send commands to the base. We can't if:
+        // - Initialization is not finished
+        // - we have not received the first twist yet (which is not part of the initialization)
+        // - the node is OK or WARN
+        bool allow_control_robot = check_node_ok_and_update();
+
+        // If we can send commands to the base, do it
+        if(allow_control_robot) {
+            // Send latest twist to the base
+            send_latest_twist_can();
+            // Update pose / velocity for other nodes
+            update_pose();
         }
 
-        // Send latest twist to the base
-        send_latest_twist_can();
-
-        // Update pose / velocity for other nodes
-        update_pose();
+        // We always publish the odometry and broadcast the tf for the other nodes to initialize
         publish_odom();
         broadcast_tf();
         broadcast_tf_map();

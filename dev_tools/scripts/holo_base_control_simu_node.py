@@ -12,24 +12,20 @@ from geometry_msgs.msg import TwistStamped, Twist
 from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 
+from rclpy.executors import ExternalShutdownException
+
 
 class HoloBaseControlDummy(Node):
 
     def __init__(self):
         super().__init__('holo_base_control_dummy_node')
-        self.subscription_stamped = self.create_subscription(
-            TwistStamped,
+
+        self.subscription = self.create_subscription(
+            Twist,
             '/cmd_vel',
             self.listener_callback,
             10)
-        self.subscription_stamped  # prevent unused variable warning
-        # A ACTIVER POUR KEYBOARD TELEOP ET PAREIL DAN LE CALLBACK
-        # self.subscription = self.create_subscription(
-        #     Twist,
-        #     '/cmd_vel',
-        #     self.listener_callback,
-        #     10)
-        # self.subscription  # prevent unused variable warning
+        self.subscription  # prevent unused variable warning
 
         self.pub = self.create_publisher(Odometry, '/odom', 10)
 
@@ -62,8 +58,12 @@ class HoloBaseControlDummy(Node):
 
       
     def listener_callback(self, msg):
-        self.latest_cmd_vel = [msg.twist.linear.x, msg.twist.linear.y, msg.twist.angular.z]
-        #self.latest_cmd_vel = [msg.linear.x, msg.linear.y, msg.angular.z]
+        self.latest_cmd_vel = [msg.linear.x, msg.linear.y, msg.angular.z]
+
+    def initial_pose_callback(self, msg):
+        self.current_pose[0] = msg.pose.pose.position.x
+        self.current_pose[1] = msg.pose.pose.position.y
+        self.current_pose[2] = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
             
     def timer_callback(self):
         self.cmd_vel_to_wheels()
@@ -165,12 +165,14 @@ class HoloBaseControlDummy(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    holo_teleop_joy = HoloBaseControlDummy()
-
-    rclpy.spin(holo_teleop_joy)
-
-    holo_teleop_joy.destroy_node()
-    rclpy.shutdown()
+    node = HoloBaseControlDummy()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':
