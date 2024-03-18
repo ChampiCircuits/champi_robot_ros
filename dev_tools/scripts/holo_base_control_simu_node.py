@@ -46,7 +46,7 @@ class HoloBaseControlDummy(Node):
         self.latest_cmd_vel = [0., 0., 0.]
         self.current_vel = [0., 0., 0.]
 
-        self.current_pose = [0.5, 0.5, 0.]
+        self.current_pose = [1.5, 0.5, 0.]
 
         self.first_time = True
 
@@ -54,7 +54,7 @@ class HoloBaseControlDummy(Node):
         self.speed_wheel1 = 0
         self.speed_wheel2 = 0
 
-        self.robot_radius = 0.01  # TODO
+        self.robot_radius = 0.175
 
       
     def listener_callback(self, msg):
@@ -100,6 +100,21 @@ class HoloBaseControlDummy(Node):
         t.transform.rotation.z = sin(self.current_pose[2] / 2)
         t.transform.rotation.w = cos(self.current_pose[2] / 2)
         self.tf_broadcaster.sendTransform(t)
+
+        # Broadcast zero transform between map and odom
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = "map"
+        t.child_frame_id = "odom"
+        t.transform.translation.x = 0.
+        t.transform.translation.y = 0.
+        t.transform.translation.z = 0.
+        t.transform.rotation.x = 0.
+        t.transform.rotation.y = 0.
+        t.transform.rotation.z = 0.
+        t.transform.rotation.w = 1.
+        self.tf_broadcaster.sendTransform(t)
+
 
 
     def wheels_to_current_vel(self):

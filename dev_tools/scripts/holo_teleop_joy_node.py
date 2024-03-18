@@ -21,6 +21,7 @@ class HoloTeleopJoy(Node):
             10)
 
         self.latest_msg = None
+        self.t_latest_nonzero = None
 
         timer_period = 0.05  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -44,9 +45,21 @@ class HoloTeleopJoy(Node):
                 self.id_steering = 3
 
     def timer_callback(self):
-        if self.latest_msg is not None:
-            self.pub.publish(self.joy_to_twist(self.latest_msg))
-            self.pub_stamped.publish(self.joy_to_twist_stamped(self.latest_msg))
+        if self.latest_msg is None:
+            return
+
+        if self.latest_msg.axes[0] != 0 or self.latest_msg.axes[1] != 0 or self.latest_msg.axes[self.id_steering] != 0:
+            self.t_latest_nonzero = self.get_clock().now()
+
+        if self.t_latest_nonzero is None:
+            return
+
+        if self.t_latest_nonzero is not None and (self.get_clock().now() - self.t_latest_nonzero).nanoseconds > 0.2e9:
+            self.latest_msg = None
+            return
+
+        self.pub.publish(self.joy_to_twist(self.latest_msg))
+        self.pub_stamped.publish(self.joy_to_twist_stamped(self.latest_msg))
 
     def joy_to_twist(self, joy_msg):
         twist = Twist()

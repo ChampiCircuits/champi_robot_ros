@@ -1,5 +1,12 @@
 # Coupe de France de Robotique 2024 : Code ROS2
 
+
+
+Commande Nav2
+
+ros2 launch nav2_bringup bringup_launch.py use_sim_time:=False autostart:=True map:=/home/arusso/dev/coupe/ws_0/src/champi_robot_ros/champi_nav2/config/map/map_test.yaml
+
+
 ## Requirements
 
 - Ubuntu 22
