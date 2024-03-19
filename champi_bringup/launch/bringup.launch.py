@@ -18,6 +18,12 @@ def generate_launch_description():
         description='Launch simulation'
     )
 
+    joy_arg = DeclareLaunchArgument(
+        'joy',
+        default_value='False',
+        description='Launch joystick'
+    )
+
     # Get configuration file
     config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
 
@@ -86,7 +92,8 @@ def generate_launch_description():
         package='joy',
         executable='game_controller_node',
         name='game_controller_node',
-        output='screen'
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('joy'))
     )
 
     holo_teleop_joy_node = Node(
@@ -94,7 +101,15 @@ def generate_launch_description():
         executable='holo_teleop_joy_node.py',
         name='holo_teleop_joy_node',
         output='screen',
-        remappings=[('/cmd_vel', '/cmd_vel_joy')]
+        remappings=[('/cmd_vel', '/cmd_vel_joy')],
+        condition=IfCondition(LaunchConfiguration('joy'))
+    )
+
+    pub_goal_rviz_node = Node(
+        package='dev_tools',
+        executable='pub_goal_rviz.py',
+        name='pub_goal_rviz',
+        output='screen'
     )
 
     return LaunchDescription([
@@ -106,6 +121,7 @@ def generate_launch_description():
         base_control_simu_node,
         cmd_vel_mux_node,
         joy_node,
-        holo_teleop_joy_node
+        holo_teleop_joy_node,
+        pub_goal_rviz_node
     ])
 
