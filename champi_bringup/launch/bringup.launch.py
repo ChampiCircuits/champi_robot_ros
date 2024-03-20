@@ -52,7 +52,7 @@ def generate_launch_description():
     # Include LDLidar with lifecycle manager launch
     ldlidar_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('ldlidar_node'),
+            get_package_share_directory('champi_bringup'),
             '/launch/ldlidar_with_mgr.launch.py'
         ]),
         launch_arguments={
