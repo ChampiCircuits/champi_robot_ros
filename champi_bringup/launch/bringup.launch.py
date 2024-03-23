@@ -114,6 +114,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         sim_arg,
+        joy_arg,
         description_broadcaster,
         base_controller_launch,
         ldlidar_launch,
