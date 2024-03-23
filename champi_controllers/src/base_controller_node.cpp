@@ -60,7 +60,9 @@ public:
         diag_updater_node_.add("node_state", this, &BaseControllerNode::test_node_state);
 
         // Initialize current_pose_
-        current_pose_.x = 0.0;
+        current_pose_.x = 1.0;
+        current_pose_.y = 1.0;
+        current_pose_.theta = 0.0;
 
         // Start the CAN interface
         int ret = champi_can_interface_.start();

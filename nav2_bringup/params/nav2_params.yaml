@@ -114,7 +114,7 @@ controller_server:
       temperature: 0.3
       gamma: 0.015
       motion_model: "Omni"
-      visualize: true
+      visualize: false
       TrajectoryVisualizer:
         trajectory_step: 10
         time_step: 5
