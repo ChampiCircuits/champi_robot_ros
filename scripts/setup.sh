@@ -51,20 +51,20 @@ sudo apt update
 sudo apt install -y libprotobuf-dev libudev-dev
 
 
-# Check if the repository ldrobot-lidar-ros2 already exists
-if [ -d "$CHAMPI_WS_DIR/src/ldrobot-lidar-ros2" ]; then
-  echo "The repository ldrobot-lidar-ros2 already exists."
+# Check if the repository ldlidar_stl_ros2 already exists
+if [ -d "$CHAMPI_WS_DIR/src/ldlidar_stl_ros2" ]; then
+  echo "The repository ldlidar_stl_ros2 already exists."
   echo "Do you want to delete it and clone it again? (y/n)"
   read answer
   if [ "$answer" != "y" ]; then
     echo "Setup Done!"
     exit 0
   fi
-  rm -rf $CHAMPI_WS_DIR/src/ldrobot-lidar-ros2
-  git clone https://github.com/Myzhar/ldrobot-lidar-ros2.git $CHAMPI_WS_DIR/src/ldrobot-lidar-ros2
+  rm -rf $CHAMPI_WS_DIR/src/ldlidar_stl_ros2
+  git clone https://github.com/ldrobotSensorTeam/ldlidar_stl_ros2.git $CHAMPI_WS_DIR/src/ldlidar_stl_ros2
 else
-  echo "Cloning ldrobot-lidar-ros2..."
-  git clone https://github.com/Myzhar/ldrobot-lidar-ros2.git $CHAMPI_WS_DIR/src/ldrobot-lidar-ros2
+  echo "Cloning ldlidar_stl_ros2..."
+  git clone https://github.com/ldrobotSensorTeam/ldlidar_stl_ros2.git $CHAMPI_WS_DIR/src/ldlidar_stl_ros2
 fi
 
 

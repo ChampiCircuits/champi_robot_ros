@@ -49,7 +49,7 @@ def generate_launch_description():
 
     )
 
-    # # Include LDLidar with lifecycle manager launch
+    # Old lidar node (was too CPU intensive)
     # ldlidar_launch = IncludeLaunchDescription(
     #     launch_description_source=PythonLaunchDescriptionSource([
     #         get_package_share_directory('champi_bringup'),
@@ -61,7 +61,6 @@ def generate_launch_description():
     #     condition=UnlessCondition(LaunchConfiguration('sim'))
     # )
 
-    # Include LDLidar with lifecycle manager launch
   # LDROBOT LiDAR publisher node
     ldlidar_node = Node(
         package='ldlidar_stl_ros2',
@@ -78,7 +77,8 @@ def generate_launch_description():
             {'enable_angle_crop_func': False},
             {'angle_crop_min': 135.0},
             {'angle_crop_max': 225.0}
-        ]
+        ],
+        condition=UnlessCondition(LaunchConfiguration('sim'))
     )
 
     lidar_simu_node = Node(

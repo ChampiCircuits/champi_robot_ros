@@ -23,4 +23,12 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+# Allow lauch files to be found when calling them with ros2 launch
+install(DIRECTORY
+        launch
+        config
+        # ressources
+        DESTINATION share/${PROJECT_NAME}
+)
+
 ament_package()
