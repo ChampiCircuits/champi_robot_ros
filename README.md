@@ -1,50 +1,34 @@
 # Coupe de France de Robotique 2024 : Code ROS2
 
+## Commandes
 
 
-Commandes
-
-
+### Robot
 ```bash
 ros2 launch champi_bringup bringup.launch.py
 ```
+*Paramètres*:
+- *sim* : `true` | `false`.
+- *joy* : `true` | `false`.
 
+### Teleop
 ```bash
-ros2 launch nav2_bringup bringup_launch.py use_sim_time:=False autostart:=True map:=/home/arusso/dev/coupe/ws_0/src/champi_robot_ros/champi_nav2/config/map/map_test.yaml
-
-/home/etienne/ros2_ws/src/champi_robot_ros/champi_nav2/config/map/map_test.yaml
+ros2 launch bringup teleop.launch.py
 ```
 
+*Paramètres*:
+- *sim* : `true` | `false`.
+- *joy* : `true` | `false`.
 
-Erreur TF from the past si le trajet dure plus de 10s.
-Pour le résoudre, il y a un node spécial lancé acvec le launch file du robot.
-Il ne faut pas utiliser Nav2 Goal sur rviz, mais l'autre.
-https://github.com/ros-planning/navigation2/issues/3075
-https://answers.ros.org/question/396864/nav2-computepathtopose-throws-tf-error-because-goal-stamp-is-out-of-tf-buffer/
-
+### Navigation
+```bash
+ros2 launch champi_nav2 bringup_launch.py
+```
 
 ## Requirements
 
 - Ubuntu 22
 - ROS2 Humble
-
-```bash
-sudo apt install ros-humble-twist-mux ros-humble-joy
-```
-
-
-## Commandements
-
-Suis ces commandemments et tout se passera bien.
-
-#### 1) Ne jamais créer de package python
-
-Avec des packages c++, on peut faire aussi des nodes python. Mais avec des package python: 
-- c'est super galère d'ajouter des nodes et des fichiers dans le projet
-- bug avec symlink-install qui ne marche pas pour les launch files et les fichiers de config.
-Regarder ce site pour savoir commment organiser un package c++ + python : https://roboticsbackend.com/ros2-package-for-both-python-and-cpp-nodes/
-
-**Attention!** Ne pas oublier le sheebang `#!/usr/bin/env python3` en haut des nodes python! Sinon cela fait des erreurs atroces :(
 
 ## How to
 
@@ -74,10 +58,27 @@ chmod +x gen.sh
 ./gen.sh
 ```
 
-### U have an issue u don't understand :((
-```bash
-rm -R log build install # then recompile, and hope
-```
+### Publier des goals pour nav2 sur Rviz2
+
+Utiliser "2D Nav Goal" pour publier un goal, pas "Nav2 Goal".
+
+En effet ces 2 boutons publient un goal avec timestamp. Lorsque nav2 cherche la transformation entre le goal et la pose actuelle du robot, il regarde donc par rapport au goal du passé (à cause de sa timestamp). Si le trajet fait plus de 10s, il dépasse le buffer TF de 10s.
+Il y a donc un node supplémentaire lancé par champi_bringup qui republie " 2D Nav Goal" en mettant à 0 le timestamp, ce qui permet à nav2 d'utiliser la dernière transformation disponible.
+Voir les liens suivants pour plus d'infos:
+
+https://github.com/ros-planning/navigation2/issues/3075
+
+https://answers.ros.org/question/396864/nav2-computepathtopose-throws-tf-error-because-goal-stamp-is-out-of-tf-buffer/
+
+
+###  Créer un package: ne jamai créer de package python !
+
+Avec des packages c++, on peut faire aussi des nodes python. Mais avec des package python: 
+- c'est super galère d'ajouter des nodes et des fichiers dans le projet
+- bug avec symlink-install qui ne marche pas pour les launch files et les fichiers de config.
+Regarder ce site pour savoir commment organiser un package c++ + python : https://roboticsbackend.com/ros2-package-for-both-python-and-cpp-nodes/
+
+**Attention!** Ne pas oublier le sheebang `#!/usr/bin/env python3` en haut des nodes python! Sinon cela fait des erreurs atroces :(
 
 ## Nice ressources
 

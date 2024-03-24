@@ -14,14 +14,13 @@ def generate_launch_description():
     # Declare the launch options
     sim_arg = DeclareLaunchArgument(
         'sim',
-        default_value='True',
-        description='Launch simulation'
+        description='Launch simulation (true|false)',
     )
 
     joy_arg = DeclareLaunchArgument(
         'joy',
         default_value='False',
-        description='Launch joystick'
+        description='Launch joystick (true|false)',
     )
 
     # Get configuration file
@@ -46,20 +45,7 @@ def generate_launch_description():
             '/launch/base_controller.launch.py'
         ]),
         condition=UnlessCondition(LaunchConfiguration('sim'))
-
     )
-
-    # Old lidar node (was too CPU intensive)
-    # ldlidar_launch = IncludeLaunchDescription(
-    #     launch_description_source=PythonLaunchDescriptionSource([
-    #         get_package_share_directory('champi_bringup'),
-    #         '/launch/ldlidar_with_mgr.launch.py'
-    #     ]),
-    #     launch_arguments={
-    #         'node_name': 'ldlidar_node'
-    #     }.items(),
-    #     condition=UnlessCondition(LaunchConfiguration('sim'))
-    # )
 
   # LDROBOT LiDAR publisher node
     ldlidar_node = Node(
@@ -108,20 +94,12 @@ def generate_launch_description():
         remappings=[('/cmd_vel_out', '/base_controller/cmd_vel')]
     )
 
-    joy_node = Node(
-        package='joy',
-        executable='game_controller_node',
-        name='game_controller_node',
-        output='screen',
-        condition=IfCondition(LaunchConfiguration('joy'))
-    )
-
-    holo_teleop_joy_node = Node(
-        package='dev_tools',
-        executable='holo_teleop_joy_node.py',
-        name='holo_teleop_joy_node',
-        output='screen',
-        remappings=[('/cmd_vel', '/cmd_vel_joy')],
+    # Teleop
+    teleop_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource([
+            get_package_share_directory('champi_bringup'),
+            '/launch/teleop.launch.py'
+        ]),
         condition=IfCondition(LaunchConfiguration('joy'))
     )
 
@@ -141,8 +119,7 @@ def generate_launch_description():
         lidar_simu_node,
         base_control_simu_node,
         cmd_vel_mux_node,
-        joy_node,
-        holo_teleop_joy_node,
+        teleop_launch,
         pub_goal_rviz_node
     ])
 
