@@ -4,10 +4,16 @@
 
 Commandes
 
-ros2 launch champi_bringup bringup.launch.py
 
+```bash
+ros2 launch champi_bringup bringup.launch.py
+```
+
+```bash
 ros2 launch nav2_bringup bringup_launch.py use_sim_time:=False autostart:=True map:=/home/arusso/dev/coupe/ws_0/src/champi_robot_ros/champi_nav2/config/map/map_test.yaml
 
+/home/etienne/ros2_ws/src/champi_robot_ros/champi_nav2/config/map/map_test.yaml
+```
 
 
 Erreur TF from the past si le trajet dure plus de 10s.
@@ -22,10 +28,11 @@ https://answers.ros.org/question/396864/nav2-computepathtopose-throws-tf-error-b
 - Ubuntu 22
 - ROS2 Humble
 
-## Commandes
 ```bash
-ros2 run champi_navigation pose_control_node.py
+sudo apt install ros-humble-twist-mux ros-humble-joy
 ```
+
+
 ## Commandements
 
 Suis ces commandemments et tout se passera bien.
