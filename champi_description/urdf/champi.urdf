@@ -10,7 +10,7 @@
   </link>
 
   <!-- Lidar Link -->
-  <link name="ldlidar_base">
+  <link name="base_laser">
     <inertial>
       <mass value="1"/>
       <origin xyz="0 0 0"/>
@@ -30,8 +30,8 @@
   <!-- Joint between base_link and lidar -->
   <joint name="base_to_lidar" type="fixed">
     <parent link="base_link"/>
-    <child link="ldlidar_base"/>
-    <origin xyz="0 0 0.3" rpy="0 0 0"/>
+    <child link="base_laser"/>
+    <origin xyz="0 0 0.3" rpy="0 0 1.57"/>
   </joint>
 
   <!-- Joint between base_link and camera -->

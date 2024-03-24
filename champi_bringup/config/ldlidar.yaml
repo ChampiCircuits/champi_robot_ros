@@ -17,7 +17,7 @@
       rot_verse: 'CCW' # 'CW' -> `CLOCKWISE` / 'CCW' -> `COUNTERCLOCKWISE` [ROS STANDARD]
       units: 'M' # 'MM' -> `MILLIMETERS` / 'CM' -> `CENTIMETERS` / 'M' -> `METERS` [ROS STANDARD]
       frame_id: 'ldlidar_link' # TF frame name for the lidar
-      bins: 455 # set to 0 for dynamic scan size according to rotation speed, set to a fixed value [e.g. 455] for compatibility with SLAM Toolbox
+      bins: 0 # set to 0 for dynamic scan size according to rotation speed, set to a fixed value [e.g. 455] for compatibility with SLAM Toolbox
       range_min: 0.03 # Minimum distance in 'units'
       range_max: 4.0 # Maximum distance in 'units'
       enable_angle_crop: false # enable angle cropping

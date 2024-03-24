@@ -49,16 +49,36 @@ def generate_launch_description():
 
     )
 
+    # # Include LDLidar with lifecycle manager launch
+    # ldlidar_launch = IncludeLaunchDescription(
+    #     launch_description_source=PythonLaunchDescriptionSource([
+    #         get_package_share_directory('champi_bringup'),
+    #         '/launch/ldlidar_with_mgr.launch.py'
+    #     ]),
+    #     launch_arguments={
+    #         'node_name': 'ldlidar_node'
+    #     }.items(),
+    #     condition=UnlessCondition(LaunchConfiguration('sim'))
+    # )
+
     # Include LDLidar with lifecycle manager launch
-    ldlidar_launch = IncludeLaunchDescription(
-        launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('champi_bringup'),
-            '/launch/ldlidar_with_mgr.launch.py'
-        ]),
-        launch_arguments={
-            'node_name': 'ldlidar_node'
-        }.items(),
-        condition=UnlessCondition(LaunchConfiguration('sim'))
+  # LDROBOT LiDAR publisher node
+    ldlidar_node = Node(
+        package='ldlidar_stl_ros2',
+        executable='ldlidar_stl_ros2_node',
+        name='LD19',
+        output='screen',
+        parameters=[
+            {'product_name': 'LDLiDAR_LD19'},
+            {'topic_name': 'scan'},
+            {'frame_id': 'base_laser'},
+            {'port_name': '/dev/ttyUSB0'},
+            {'port_baudrate': 230400},
+            {'laser_scan_dir': True},
+            {'enable_angle_crop_func': False},
+            {'angle_crop_min': 135.0},
+            {'angle_crop_max': 225.0}
+        ]
     )
 
     lidar_simu_node = Node(
@@ -117,7 +137,7 @@ def generate_launch_description():
         joy_arg,
         description_broadcaster,
         base_controller_launch,
-        ldlidar_launch,
+        ldlidar_node,
         lidar_simu_node,
         base_control_simu_node,
         cmd_vel_mux_node,
