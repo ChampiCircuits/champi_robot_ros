@@ -6,8 +6,13 @@ base_controller:
     timeout_connexion_ros: 1000000000000.0
     timeout_connexion_stm: 1.0
 
+    start_x: 1.825
+    start_y: 0.175
+    start_theta: 1.57
+
     base_config:
       max_accel_wheels: 10.0 # rotation des roues en rotation/s²
       wheel_radius: 0.029 # en m
       base_radius: 0.175 # en m
       cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
+      # coin de la table

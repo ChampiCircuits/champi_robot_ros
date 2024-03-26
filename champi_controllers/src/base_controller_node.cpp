@@ -2,10 +2,12 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <tf2/LinearMath/Quaternion.h>
+#include <tf2/impl/utils.h>
 
 #include "tf2_ros/transform_broadcaster.h"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 #include "champi_can/msgs_can.pb.h"
 #include "champi_can/champi_can.hpp"
@@ -38,6 +40,10 @@ public:
         timeout_connexion_stm_ = this->declare_parameter<double>("timeout_connexion_stm");
         timeout_connexion_ros_ = this->declare_parameter<double>("timeout_connexion_ros");
 
+        double start_x = this->declare_parameter<double>("start_x");
+        double start_y = this->declare_parameter<double>("start_y");
+        double start_theta = this->declare_parameter<double>("start_theta");
+
         base_config_.max_accel = (float) this->declare_parameter<float>("base_config.max_accel_wheels");
         base_config_.wheel_radius = (float) this->declare_parameter<float>("base_config.wheel_radius");
         base_config_.base_radius = (float) this->declare_parameter<float>("base_config.base_radius");
@@ -60,9 +66,11 @@ public:
         diag_updater_node_.add("node_state", this, &BaseControllerNode::test_node_state);
 
         // Initialize current_pose_
-        current_pose_.x = 1.0;
-        current_pose_.y = 1.0;
-        current_pose_.theta = 0.0;
+        current_pose_.x = start_x;
+        current_pose_.y = start_y;
+        current_pose_.theta = start_theta;
+
+        //17.5
 
         // Start the CAN interface
         int ret = champi_can_interface_.start();
@@ -89,6 +97,9 @@ public:
         // Create Subscribers
         sub_twist_in_ = this->create_subscription<geometry_msgs::msg::Twist>(topic_twist_in, 10, std::bind(
                 &BaseControllerNode::twist_in_callback, this, std::placeholders::_1));
+        
+        sub_initial_pose_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10, std::bind(
+                &BaseControllerNode::initial_pose_callback, this, std::placeholders::_1));
 
         // Create Publishers
         pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -104,6 +115,7 @@ public:
 private:
     // Subscribers
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_twist_in_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_initial_pose_;
 
 
     // Publishers
@@ -154,6 +166,7 @@ private:
     } base_config_{};
     double timeout_connexion_stm_; // receive status from CAN
     double timeout_connexion_ros_; // receive twist from ROS
+
 
 
 
@@ -400,6 +413,16 @@ private:
         }
         latest_twist_ = msg;
     }
+
+    void initial_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped msg) {
+        current_pose_.x = msg.pose.pose.position.x;
+        current_pose_.y = msg.pose.pose.position.y;
+        
+        // get yaw from quaternion
+        tf2::Quaternion q(msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w);
+
+        current_pose_.theta = tf2::impl::getYaw(q);
+    } 
 
 
     void publish_odom() {
