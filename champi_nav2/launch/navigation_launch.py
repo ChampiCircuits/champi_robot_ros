@@ -41,13 +41,16 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
+    bt_xml_filename = os.path.join(
+        get_package_share_directory('champi_nav2'), 'config', 'behavior_trees', 'navigate_to_pose_smoother.xml')
+
     lifecycle_nodes = ['map_server',
                        'controller_server',
                        'smoother_server',
                        'planner_server',
                        'behavior_server',
-                       'bt_navigator',
-                       'waypoint_follower']
+                       'bt_navigator']
+                       # 'waypoint_follower']
                        # 'velocity_smoother']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
@@ -63,7 +66,8 @@ def generate_launch_description():
     param_substitutions = {
         'use_sim_time': use_sim_time,
         'autostart': autostart,
-        'yaml_filename': map_yaml_file}
+        'yaml_filename': map_yaml_file,
+        'default_nav_to_pose_bt_xml': bt_xml_filename}
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -173,16 +177,16 @@ def generate_launch_description():
                 parameters=[configured_params],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
-            Node(
-                package='nav2_waypoint_follower',
-                executable='waypoint_follower',
-                name='waypoint_follower',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings),
+            # Node(
+            #     package='nav2_waypoint_follower',
+            #     executable='waypoint_follower',
+            #     name='waypoint_follower',
+            #     output='screen',
+            #     respawn=use_respawn,
+            #     respawn_delay=2.0,
+            #     parameters=[configured_params],
+            #     arguments=['--ros-args', '--log-level', log_level],
+            #     remappings=remappings),
             # Node(
             #     package='nav2_velocity_smoother',
             #     executable='velocity_smoother',
@@ -246,12 +250,12 @@ def generate_launch_description():
                 name='bt_navigator',
                 parameters=[configured_params],
                 remappings=remappings),
-            ComposableNode(
-                package='nav2_waypoint_follower',
-                plugin='nav2_waypoint_follower::WaypointFollower',
-                name='waypoint_follower',
-                parameters=[configured_params],
-                remappings=remappings),
+            # ComposableNode(
+            #     package='nav2_waypoint_follower',
+            #     plugin='nav2_waypoint_follower::WaypointFollower',
+            #     name='waypoint_follower',
+            #     parameters=[configured_params],
+            #     remappings=remappings),
             # ComposableNode(
             #     package='nav2_velocity_smoother',
             #     plugin='nav2_velocity_smoother::VelocitySmoother',
