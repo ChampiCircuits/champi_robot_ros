@@ -73,7 +73,7 @@ controller_server:
       vy_max: 0.5
       wz_max: 1.9
       # Default 1.7. Distance to prune the path ahead of the robot.
-      prune_distance: 1.7
+      prune_distance: 1.7 # TODO je ne comprends pas vraiment ce paramètre. Ca change la longueur de la trajectoire générée. à 1.7 (valeur par défaut) elle nest supérieure à la taille de la local costmap et de la prediction horizon donc je suppose qu'elle ne fait rien.
       # Default 0.1. Time tolerance for data transformations with TF.
       transform_tolerance: 0.1
       # Default 0.3. Selectiveness of trajectories by their costs.
@@ -107,7 +107,7 @@ controller_server:
         # Power order to apply to term
         cost_power: 1
         # Minimal distance between robot and goal above which goal cost starts being considered
-        threshold_to_consider: 1.4
+        threshold_to_consider: 1.4  # Activé lorsque proche du goal
         enabled: true
 
       GoalAngleCritic:
@@ -116,7 +116,7 @@ controller_server:
         # Power order to apply to term
         cost_power: 1
         # Minimal distance between robot and goal above which angle goal cost considered
-        threshold_to_consider: 0.5
+        threshold_to_consider: 0.5 # Activé lorsque proche du goal: donc le robot commence à tourner en dessous de ce seuil. TODO: ce serait bien de l'active tjrs, mais cela a tendance à rendre la trajectoire un peu courbe au lieu de droite... Peut être qu'il faudrait augmenter la fréquence du controller ?
         enabled: true
 
       PreferForwardCritic:
@@ -126,7 +126,7 @@ controller_server:
         cost_power: 1
         # Distance between robot and goal above which prefer forward cost stops being considered
         threshold_to_consider: 0.5
-        enabled: true
+        enabled: false # Si je comprends bien, cela fait que le robot préfère avancer selon son axe X (avant ou arrière), ce qui cause un petit écart dans le sens de l'axe X au démarrage du robot.
 
       ObstaclesCritic:
         # Weight to apply to critic for near collisions closer than `collision_margin_distance` to prevent near collisions **only** as a method of virtually inflating the footprint. Default 20.0.
@@ -143,7 +143,7 @@ controller_server:
         near_goal_distance: 0.5
         # Whether to use point cost (if robot is circular or low compute power) or compute SE2 footprint cost. Default false.
         consider_footprint: false
-        enabled: true
+        enabled: false # TODO ! désactivé car MPPI dépend aussi de la gridmap, donc on desactive pour tester pour l"instant
 
       PathAlignCritic:
         # Weight to apply to critic term. Default 14.0.
@@ -151,26 +151,29 @@ controller_server:
         # Power order to apply to term
         cost_power: 1
         # Distance between robot and goal above which path align cost stops being considered
-        threshold_to_consider: 0.5
+        threshold_to_consider: 5.0 # Au dessus, la critique n'est pas active. Donc on veut l'activer toujours, je sais pas pourquoi on voudrait la désactiver... C'est vraiment ce changement qui a fait le plus d'amélioration sur le suivi du path
         # Checks that the candidate trajectories are sufficiently far along their way tracking the path to apply the alignment critic.
         offset_from_furthest: 20
         # Step of trajectory points to evaluate for path distance to reduce compute time.
         trajectory_point_step: 3
-        # Maximum proportion of the path that can be occupied before this critic is not considered to allow the obstacle and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.
-        max_path_occupancy_ratio: 0.05
-        enabled: true
+        # Maximum proportion of the path that can be occupied before this critic is not considered to allow the obstacle
+        # and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.
+        # Pour l'évitement d'obstacle : si les paths générés divergent vraiment beaucoup du path, c'est que les paths cherchent à éviter un obstacle, dans ce cas on désactive cette contrainte.
+        # Je n'ai pas compris dans quel sens il faut faire varier ce param pour avoir tel ou tel comportement. 0.07 est la valeur recommandée dans le README. TODO à voir quand on sera à tuner l'évitement d'obstacle.
+        max_path_occupancy_ratio: 0.07
         # Whether to consider path's orientations in path alignment.
         use_path_orientations: false
+        enabled: true
 
       PathFollowCritic:
         # Weight to apply to critic term. Default 5.0.
         cost_weight: 5.0
         # Power order to apply to term
         cost_power: 1
-        # Number of path points after furthest one any trajectory achieves to drive path tracking relative to.
+        # Number of path points after furthest one, any trajectory achieves to drive path tracking relative to.
         offset_from_furthest: 5
         # Distance between robot and goal above which path follow cost stops being considered
-        threshold_to_consider: 1.4
+        threshold_to_consider: 1.4 # Activé lorsque loin du goal. Après, c'est goal critic qui prend le relais
         enabled: true
 
       PathAngleCritic:
@@ -186,7 +189,7 @@ controller_server:
         max_angle_to_furthest: 1.0
         # Whether or not your robot has a preference for which way is forward in motion.
         forward_preference: true
-        enabled: true
+        enabled: false # En fait, c'était ça qu'il fallait désactiver au lieu de réécrire un smoother !! comme ça le controller ne prend en compte que le dernier point du path
 
       # Twirling Critic
       # cost_weight: Default 10.0. Weight to apply to critic term.

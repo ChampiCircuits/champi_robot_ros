@@ -5,6 +5,7 @@ import time
 
 import rclpy
 from rclpy.node import Node
+from rclpy.logging import get_logger
 from tf2_ros import TransformBroadcaster
 
 from nav_msgs.msg import Odometry
@@ -68,6 +69,16 @@ class HoloBaseControlDummy(Node):
         self.current_pose[2] = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
             
     def timer_callback(self):
+
+        # comppute speed of the robot and print it
+        speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
+        # print 1/20 times
+        if self.cnt == 20:
+            rclpy.logging.get_logger('rclpy').info(f"Speed: {speed}")
+            self.cnt = 0
+        self.cnt += 1
+
+
         self.cmd_vel_to_wheels()
         self.wheels_to_current_vel()
         self.update_pose()
@@ -104,25 +115,19 @@ class HoloBaseControlDummy(Node):
         self.tf_broadcaster.sendTransform(t)
 
 
-        if self.cnt == 0:
-
-            # Broadcast zero transform between map and odom
-            t = TransformStamped()
-            t.header.stamp = self.get_clock().now().to_msg()
-            t.header.frame_id = "map"
-            t.child_frame_id = "odom"
-            t.transform.translation.x = 0.
-            t.transform.translation.y = 0.
-            t.transform.translation.z = 0.
-            t.transform.rotation.x = 0.
-            t.transform.rotation.y = 0.
-            t.transform.rotation.z = 0.
-            t.transform.rotation.w = 1.
-            self.tf_broadcaster.sendTransform(t)
-
-        # self.cnt += 1
-        # if self.cnt > 10:
-        #     self.cnt = 0
+        # Broadcast zero transform between map and odom
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = "map"
+        t.child_frame_id = "odom"
+        t.transform.translation.x = 0.
+        t.transform.translation.y = 0.
+        t.transform.translation.z = 0.
+        t.transform.rotation.x = 0.
+        t.transform.rotation.y = 0.
+        t.transform.rotation.z = 0.
+        t.transform.rotation.w = 1.
+        self.tf_broadcaster.sendTransform(t)
 
 
 
