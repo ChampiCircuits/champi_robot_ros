@@ -116,7 +116,7 @@ def generate_launch_description():
         description_broadcaster,
         base_controller_launch,
         ldlidar_node,
-        # lidar_simu_node,
+        lidar_simu_node,
         base_control_simu_node,
         cmd_vel_mux_node,
         teleop_launch,
