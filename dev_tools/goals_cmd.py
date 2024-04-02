@@ -1,10 +1,22 @@
 #! /usr/bin/env python3
 
+
+"""
+Si on veut cancel une task de nav après un timeout:
+if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
+                navigator.cancelTask()
+
+On peut aussi préempter une task en en donnant just une nouvelle:
+    navigator.goToPose(goal_pose)
+"""
+
+
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
 from rclpy.duration import Duration
 from math import sin, cos
+import signal
 
 carre = [
     [1.0, 1.0, 1.57],
@@ -20,10 +32,10 @@ aller_retour = [
 
 positions = carre
 
-def pose_from_position(position, navigator):
+def pose_from_position(position, stamp):
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
-    goal_pose.header.stamp = navigator.get_clock().now().to_msg()
+    goal_pose.header.stamp = stamp
     goal_pose.pose.position.x = position[0]
     goal_pose.pose.position.y = position[1]
     # theta radians to quaternion
@@ -56,7 +68,7 @@ def main():
 
     # Wait for navigation to fully activate, since autostarting nav2
     print("Waiting for navigation to activate...")
-    # navigator.waitUntilNav2Active()
+    navigator.waitUntilNav2Active(localizer="") # do not wait for amcl
     print("Navigation is active!")
 
     # If desired, you can change or load the map as well
@@ -69,12 +81,11 @@ def main():
 
     # 
 
-    # sanity check a valid path exists
-    # path = navigator.getPath(initial_pose, goal_pose)
-
     i_poses = 0
-    while True:
-        goal_pose = pose_from_position(positions[i_poses], navigator)
+    while rclpy.ok(): # for Ctrl-C handling
+        goal_pose = pose_from_position(positions[i_poses], navigator.get_clock().now().to_msg())
+        # sanity check a valid path exists
+        # path = navigator.getPath(current_pose, goal_pose)
         navigator.goToPose(goal_pose)
         i_poses = (i_poses + 1) % len(positions)
         i = 0
@@ -93,30 +104,29 @@ def main():
                     Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
                     + ' seconds.')
 
-                # Some navigation timeout to demo cancellation
-                if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
-                    navigator.cancelTask()
+                # # Some navigation timeout to demo cancellation
+                # if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
+                #     navigator.cancelTask()
 
-                # Some navigation request change to demo preemption
-                if Duration.from_msg(feedback.navigation_time) > Duration(seconds=18.0):
-                    goal_pose.pose.position.x = -3.0
-                    navigator.goToPose(goal_pose)
+                # # Some navigation request change to demo preemption
+                # if Duration.from_msg(feedback.navigation_time) > Duration(seconds=18.0):
+                #     goal_pose.pose.position.x = -3.0
+                #     navigator.goToPose(goal_pose)
 
-    # Do something depending on the return code
-    result = navigator.getResult()
-    if result == TaskResult.SUCCEEDED:
-        print('Goal succeeded!')
-    elif result == TaskResult.CANCELED:
-        print('Goal was canceled!')
-    elif result == TaskResult.FAILED:
-        print('Goal failed!')
-    else:
-        print('Goal has an invalid return status!')
-
+        # Do something depending on the return code
+        result = navigator.getResult()
+        if result == TaskResult.SUCCEEDED:
+            print('Goal succeeded!')
+        elif result == TaskResult.CANCELED:
+            print('Goal was canceled!')
+        elif result == TaskResult.FAILED:
+            print('Goal failed!')
+        else:
+            print('Goal has an invalid return status!')
+        
+    print('Exiting...')
     navigator.lifecycleShutdown()
-
     exit(0)
-
 
 if __name__ == '__main__':
     main()

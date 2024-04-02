@@ -4,8 +4,11 @@
 
 
 ### Robot
+#### boot de la rpi
+ ./dev/ws_0/src/champi_robot_ros/scripts/bringup-can0.sh
+
 ```bash
-ros2 launch champi_bringup bringup.launch.py
+ros2 launch champi_bringup bringup.launch.py sim:=
 ```
 *Paramètres*:
 - *sim* : `true` | `false`.
