@@ -48,19 +48,19 @@ controller_server:
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.02
-      yaw_goal_tolerance: 0.05
+      xy_goal_tolerance: 0.001
+      yaw_goal_tolerance: 0.02
 
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
       # Default 1. Iteration count in MPPI algorithm. Recommend to keep as 1 and prefer more batches.
       iteration_count: 1
       # Default 1000. Count of randomly sampled candidate trajectories
-      batch_size: 2000
+      batch_size: 1000
       # Default 56. Number of time steps (points) in each sampled trajectory
-      time_steps: 56
+      time_steps: 42
       # Default 0.05. Time interval (s) between two sampled points in trajectories.
-      model_dt: 0.05
+      model_dt: 0.0665
       # Sampling standard deviation for VX
       vx_std: 0.2
       # Sampling standard deviation for VY
@@ -71,9 +71,12 @@ controller_server:
       vx_max: 0.5
       vx_min: -0.5
       vy_max: 0.5
-      wz_max: 1.9
+      wz_max: 1.5 # 1.9
       # Default 1.7. Distance to prune the path ahead of the robot.
-      prune_distance: 1.7 # TODO je ne comprends pas vraiment ce paramètre. Ca change la longueur de la trajectoire générée. à 1.7 (valeur par défaut) elle nest supérieure à la taille de la local costmap et de la prediction horizon donc je suppose qu'elle ne fait rien.
+      prune_distance: 1.7 # TODO je ne comprends pas vraiment ce paramètre. 
+      #Ca change la longueur de la trajectoire générée. à 1.7 (valeur par défaut) elle est supérieure à la taille de la local costmap 
+      #et de la prediction horizon donc je suppose qu'elle ne fait rien.
+      
       # Default 0.1. Time tolerance for data transformations with TF.
       transform_tolerance: 0.1
       # Default 0.3. Selectiveness of trajectories by their costs.
@@ -92,7 +95,7 @@ controller_server:
         time_step: 3
 
       # Critics (plugins) names
-      critics: ["ConstraintCritic", "ObstaclesCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
+      critics: ["ConstraintCritic", "ObstaclesCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic"]
 
       ConstraintCritic:
         # Weight to apply to critic term. Default 4.0.
@@ -103,7 +106,7 @@ controller_server:
 
       GoalCritic:
         # Weight to apply to critic term. Default 5.0.
-        cost_weight: 5.0
+        cost_weight: 20.0
         # Power order to apply to term
         cost_power: 1
         # Minimal distance between robot and goal above which goal cost starts being considered
@@ -118,15 +121,6 @@ controller_server:
         # Minimal distance between robot and goal above which angle goal cost considered
         threshold_to_consider: 0.5 # Activé lorsque proche du goal: donc le robot commence à tourner en dessous de ce seuil. TODO: ce serait bien de l'active tjrs, mais cela a tendance à rendre la trajectoire un peu courbe au lieu de droite... Peut être qu'il faudrait augmenter la fréquence du controller ? -> j'ai testé 50Hz et du coup non
         enabled: true
-
-      PreferForwardCritic:
-        # Weight to apply to critic term. Default 5.0.
-        cost_weight: 5.0
-        # Power order to apply to term
-        cost_power: 1
-        # Distance between robot and goal above which prefer forward cost stops being considered
-        threshold_to_consider: 0.5
-        enabled: false # Si je comprends bien, cela fait que le robot préfère avancer selon son axe X (avant ou arrière), ce qui cause un petit écart dans le sens de l'axe X au démarrage du robot.
 
       # TODO je ne l'ai pas tuné, parce que ça marchait bien direct
       ObstaclesCritic:
@@ -172,31 +166,40 @@ controller_server:
         # Power order to apply to term
         cost_power: 1
         # Number of path points after furthest one, any trajectory achieves to drive path tracking relative to.
-        offset_from_furthest: 5
+        offset_from_furthest: 5 #5
         # Distance between robot and goal above which path follow cost stops being considered
         threshold_to_consider: 1.4 # Activé lorsque loin du goal. Après, c'est goal critic qui prend le relais
         enabled: true
 
-      PathAngleCritic:
-        # Weight to apply to critic term. Default 2.0.
-        cost_weight: 2.0
-        # Power order to apply to term
-        cost_power: 1
-        # Distance between robot and goal above which path angle cost stops being considered
-        threshold_to_consider: 0.5
-        # Number of path points after furthest one any trajectory achieves to compute path angle relative to.
-        offset_from_furthest: 4
-        # Angular distance between robot and goal above which path angle cost starts being considered
-        max_angle_to_furthest: 1.0
-        # Whether or not your robot has a preference for which way is forward in motion.
-        forward_preference: true
-        enabled: false # En fait, c'était ça qu'il fallait désactiver au lieu de réécrire un smoother !! comme ça le controller ne prend en compte que le dernier point du path
+      # PathAngleCritic:
+      #   # Weight to apply to critic term. Default 2.0.
+      #   cost_weight: 2.0
+      #   # Power order to apply to term
+      #   cost_power: 1
+      #   # Distance between robot and goal above which path angle cost stops being considered
+      #   threshold_to_consider: 0.5
+      #   # Number of path points after furthest one any trajectory achieves to compute path angle relative to.
+      #   offset_from_furthest: 4
+      #   # Angular distance between robot and goal above which path angle cost starts being considered
+      #   max_angle_to_furthest: 1.0
+      #   # Whether or not your robot has a preference for which way is forward in motion.
+      #   forward_preference: true
+      #   enabled: false # En fait, c'était ça qu'il fallait désactiver au lieu de réécrire un smoother !! comme ça le controller ne prend en compte que le dernier point du path
 
       # Twirling Critic
       # cost_weight: Default 10.0. Weight to apply to critic term.
       # cost_power: Default 1. Power order to apply to term.
       # enabled: true
 
+
+      # PreferForwardCritic:
+      #   # Weight to apply to critic term. Default 5.0.
+      #   cost_weight: 5.0
+      #   # Power order to apply to term
+      #   cost_power: 1
+      #   # Distance between robot and goal above which prefer forward cost stops being considered
+      #   threshold_to_consider: 0.5
+      #   enabled: false # Si je comprends bien, cela fait que le robot préfère avancer selon son axe X (avant ou arrière), ce qui cause un petit écart dans le sens de l'axe X au démarrage du robot.
 
 
 

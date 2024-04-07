@@ -27,6 +27,10 @@ ros2 launch bringup teleop.launch.py
 ```bash
 ros2 launch champi_nav2 bringup_launch.py
 ```
+```bash
+python3 dev_tools/goals_cmd.py
+```
+
 
 ## Requirements
 

@@ -5,8 +5,6 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 from math import cos, sin, pi
 
-from icecream import ic
-
 from rclpy.executors import ExternalShutdownException
 
 class TestGoal(Node):

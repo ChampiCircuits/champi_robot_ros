@@ -15,14 +15,14 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
 from rclpy.duration import Duration
-from math import sin, cos
+from math import sin, cos, pi
 import signal
 
 carre = [
-    [1.0, 1.0, 1.57],
-    [1.0, 2.0, 1.57],
-    [1.5, 2.0, 1.57],
-    [1.5, 1.0, 1.57]
+    [0.5, 0.5, pi/2],
+    [1.5, 0.5, pi],
+    [1.5, 2.5, pi/2],
+    [0.5, 1.5, pi]
 ]
 
 aller_retour = [
@@ -54,8 +54,10 @@ def main():
     initial_pose = PoseWithCovarianceStamped()
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.pose.position.x = 1.825
-    initial_pose.pose.pose.position.y = 0.175
+    initial_pose.pose.pose.position.x = 0.5
+    initial_pose.pose.pose.position.y = 0.5
+    # initial_pose.pose.pose.position.x = 1.825
+    # initial_pose.pose.pose.position.y = 0.175
     initial_yaw = 1.57
     initial_pose.pose.pose.orientation.z = sin(initial_yaw / 2)
     initial_pose.pose.pose.orientation.w = cos(initial_yaw / 2)
@@ -68,7 +70,7 @@ def main():
 
     # Wait for navigation to fully activate, since autostarting nav2
     print("Waiting for navigation to activate...")
-    navigator.waitUntilNav2Active(localizer="") # do not wait for amcl
+    # navigator.waitUntilNav2Active(localizer="") # do not wait for amcl
     print("Navigation is active!")
 
     # If desired, you can change or load the map as well

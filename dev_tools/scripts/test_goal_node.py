@@ -5,8 +5,6 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 from math import cos, sin, pi
 
-from icecream import ic
-
 from rclpy.executors import ExternalShutdownException
 
 class TestGoal(Node):
@@ -42,7 +40,7 @@ class TestGoal(Node):
 
         self.pub.publish(goal)
 
-        ic(self.goals[self.i_goal])
+        print("goal:",self.goals[self.i_goal])
 
         self.i_goal += 1
         if self.i_goal == len(self.goals):

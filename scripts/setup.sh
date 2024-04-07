@@ -43,6 +43,8 @@ echo "The command champi_build can now be used from any directory."
 
 # Install rosdep dependencies
 echo "Installing rosdep dependencies..."
+sudo rosdep init
+rosdep update
 rosdep install --from src --ignore-src -y
 
 # Install dependencies
