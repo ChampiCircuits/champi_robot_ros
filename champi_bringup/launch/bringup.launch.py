@@ -115,7 +115,7 @@ def generate_launch_description():
         joy_arg,
         description_broadcaster,
         base_controller_launch,
-        ldlidar_node,
+        # ldlidar_node,
         lidar_simu_node,
         base_control_simu_node,
         cmd_vel_mux_node,

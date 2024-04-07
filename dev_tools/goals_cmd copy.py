@@ -54,8 +54,8 @@ def main():
     initial_pose = PoseWithCovarianceStamped()
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.pose.position.x = 1.0
-    initial_pose.pose.pose.position.y = 1.5
+    initial_pose.pose.pose.position.x = 0.5
+    initial_pose.pose.pose.position.y = 0.5
     # initial_pose.pose.pose.position.x = 1.825
     # initial_pose.pose.pose.position.y = 0.175
     initial_yaw = 1.57
@@ -85,19 +85,11 @@ def main():
 
     i_poses = 0
     while rclpy.ok(): # for Ctrl-C handling
-        # goal_pose = pose_from_position(positions[i_poses], navigator.get_clock().now().to_msg())
+        goal_pose = pose_from_position(positions[i_poses], navigator.get_clock().now().to_msg())
         # sanity check a valid path exists
         # path = navigator.getPath(current_pose, goal_pose)
-        # navigator.goToPose(goal_pose)
+        navigator.goToPose(goal_pose)
         i_poses = (i_poses + 1) % len(positions)
-        
-        if i_poses%2 == 0:
-            # navigator.backup(backup_dist=0.3, backup_speed=0.025, time_allowance=10)
-            navigator.spin(spin_dist=1.57, time_allowance=10)
-        else:
-            # navigator.backup(backup_dist=0.3, backup_speed=0.025, time_allowance=10)
-            navigator.spin(spin_dist=-1.57, time_allowance=10)
-
         i = 0
         while not navigator.isTaskComplete():
             ################################################
@@ -105,24 +97,23 @@ def main():
             # Implement some code here for your application!
             #
             ################################################
-            
 
             # Do something with the feedback
             i = i + 1
-            # feedback = navigator.getFeedback()
-            # if feedback and i % 5 == 0:
-            #     print('Estimated time of arrival: ' + '{0:.0f}'.format(
-            #         Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
-            #         + ' seconds.')
+            feedback = navigator.getFeedback()
+            if feedback and i % 5 == 0:
+                print('Estimated time of arrival: ' + '{0:.0f}'.format(
+                    Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
+                    + ' seconds.')
 
-            #     # # Some navigation timeout to demo cancellation
-            #     # if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
-            #     #     navigator.cancelTask()
+                # # Some navigation timeout to demo cancellation
+                # if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
+                #     navigator.cancelTask()
 
-            #     # # Some navigation request change to demo preemption
-            #     # if Duration.from_msg(feedback.navigation_time) > Duration(seconds=18.0):
-            #     #     goal_pose.pose.position.x = -3.0
-            #     #     navigator.goToPose(goal_pose)
+                # # Some navigation request change to demo preemption
+                # if Duration.from_msg(feedback.navigation_time) > Duration(seconds=18.0):
+                #     goal_pose.pose.position.x = -3.0
+                #     navigator.goToPose(goal_pose)
 
         # Do something depending on the return code
         result = navigator.getResult()
