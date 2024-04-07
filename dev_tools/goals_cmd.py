@@ -18,6 +18,9 @@ from rclpy.duration import Duration
 from math import sin, cos, pi
 import signal
 
+from nav2_msgs.action import DriveOnHeading
+from rclpy.action import ActionClient
+
 carre = [
     [0.5, 0.5, pi/2],
     [1.5, 0.5, pi],
@@ -32,6 +35,8 @@ aller_retour = [
 
 positions = carre
 
+
+
 def pose_from_position(position, stamp):
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
@@ -43,12 +48,26 @@ def pose_from_position(position, stamp):
     goal_pose.pose.orientation.w = cos(position[2] / 2)
     return goal_pose
 
+def driveOnHeading(drive_on_heading_client, x,speed):
+    goal_msg = DriveOnHeading.Goal()
+    goal_msg.target.x = x
+    goal_msg.speed = speed
+    goal_msg.time_allowance = Duration(seconds=10).to_msg()
+    drive_on_heading_client.wait_for_server()
+    drive_on_heading_client.send_goal(goal_msg)
+    drive_on_heading_client.wait_for_result()
+    
+
 def main():
     rclpy.init()
 
     navigator = BasicNavigator()
 
     pub_initial_pose = navigator.create_publisher(PoseWithCovarianceStamped, '/initialpose', 10)
+
+
+    drive_on_heading_client = ActionClient(navigator, DriveOnHeading, 'drive_on_heading')
+
 
     # Set our demo's initial pose
     initial_pose = PoseWithCovarianceStamped()
@@ -92,11 +111,18 @@ def main():
         i_poses = (i_poses + 1) % len(positions)
         
         if i_poses%2 == 0:
-            # navigator.backup(backup_dist=0.3, backup_speed=0.025, time_allowance=10)
-            navigator.spin(spin_dist=1.57, time_allowance=10)
+            # navigator.backup(backup_dist=-0.3, backup_speed=0.05, time_allowance=10)
+            print("drive on heading to 0.2")
+            driveOnHeading(drive_on_heading_client, 0.2, 0.1)
+            print("drive on heading to 0.2 done")
+            # navigator.spin(spin_dist=1.57, time_allowance=10)
         else:
-            # navigator.backup(backup_dist=0.3, backup_speed=0.025, time_allowance=10)
-            navigator.spin(spin_dist=-1.57, time_allowance=10)
+            # navigator.backup(backup_dist=0.3, backup_speed=0.05, time_allowance=10)
+            print("drive on heading to 0.2")
+            driveOnHeading(drive_on_heading_client, 0.2,  0.1)
+            print("drive on heading to 0.2 done")
+            # navigator.spin(spin_dist=-1.57, time_allowance=10)
+        continue
 
         i = 0
         while not navigator.isTaskComplete():
