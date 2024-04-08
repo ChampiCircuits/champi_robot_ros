@@ -78,8 +78,9 @@ def generate_launch_description():
     base_control_simu_node = Node(
         package='dev_tools',
         executable='holo_base_control_simu_node.py',
-        name='holo_base_control_simu_node',
+        name='base_controller_simu',
         output='screen',
+        parameters=[config_file_path],
         remappings=[('/cmd_vel', '/base_controller/cmd_vel')],
         condition=IfCondition(LaunchConfiguration('sim'))
     )

@@ -34,7 +34,7 @@ endif()
 # Allow launch files to be found when calling them with ros2 launch
 install(DIRECTORY
         launch
-        config
+#        config
         # resources
         DESTINATION share/${PROJECT_NAME}
 )

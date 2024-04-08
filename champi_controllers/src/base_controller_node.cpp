@@ -49,6 +49,12 @@ public:
         base_config_.base_radius = (float) this->declare_parameter<float>("base_config.base_radius");
         base_config_.cmd_vel_timeout = (float) this->declare_parameter<float>("base_config.cmd_vel_timeout");
 
+        enable_accel_limit_ = this->declare_parameter<bool>("enable_accel_limits");
+        max_accel_linear_ = this->declare_parameter<double>("max_acceleration_linear");
+        max_decel_linear_ = this->declare_parameter<double>("max_deceleration_linear");
+        max_accel_angular_ = this->declare_parameter<double>("max_acceleration_angular");
+        max_decel_angular_ = this->declare_parameter<double>("max_deceleration_angular");
+
         // Print parameters
         // RCLCPP_INFO(this->get_logger(), "Node started with the following parameters:");
         // RCLCPP_INFO(this->get_logger(), "topic_twist_in: %s", topic_twist_in.c_str());
@@ -166,6 +172,12 @@ private:
     } base_config_{};
     double timeout_connexion_stm_; // receive status from CAN
     double timeout_connexion_ros_; // receive twist from ROS
+
+    bool enable_accel_limit_;
+    double max_accel_linear_;
+    double max_decel_linear_;
+    double max_accel_angular_;
+    double max_decel_angular_;
 
 
 
@@ -388,11 +400,11 @@ private:
         }
     }
 
-    void send_latest_twist_can() {
+    void send_twist_can(const geometry_msgs::msg::Twist::SharedPtr& twist) {
         msgs_can::BaseVel base_vel_cmd;
-        base_vel_cmd.set_x((float) latest_twist_->linear.x);
-        base_vel_cmd.set_y((float) latest_twist_->linear.y);
-        base_vel_cmd.set_theta((float) latest_twist_->angular.z);
+        base_vel_cmd.set_x((float) twist->linear.x);
+        base_vel_cmd.set_y((float) twist->linear.y);
+        base_vel_cmd.set_theta((float) twist->angular.z);
 
         // Send message
         if(champi_can_interface_.send(can_ids::BASE_CMD_VEL, base_vel_cmd.SerializeAsString()) != 0) {
@@ -530,8 +542,11 @@ private:
 
         // If we can send commands to the base, do it
         if(allow_control_robot) {
+            // Compute the limited speed
+            auto limited_twist = std::make_shared<geometry_msgs::msg::Twist>();
+            compute_limited_speed(limited_twist);
             // Send latest twist to the base
-            send_latest_twist_can();
+            send_twist_can(limited_twist);
             // Update pose / velocity for other nodes
             update_pose();
         }
@@ -540,6 +555,111 @@ private:
         publish_odom();
         broadcast_tf();
         broadcast_tf_map();
+    }
+
+
+
+
+
+    // ===================================== Speed limits ===================================================
+
+    void compute_limited_speed(geometry_msgs::msg::Twist::SharedPtr limited_twist) {
+        // Limit acceleration
+        if(enable_accel_limit_) {
+            // Limit linear acceleration xy
+            double current_speed = sqrt(pow(current_vel_.x(), 2) + pow(current_vel_.y(), 2));
+            double goal_speed = sqrt(pow(latest_twist_->linear.x, 2) + pow(latest_twist_->linear.y, 2));
+            double cmd_vxy_limited = limit_accel_decel(current_speed, goal_speed, max_accel_linear_, max_decel_linear_, dt_measured_);
+
+            double vel_vect_angle;
+            if (goal_speed == 0) {
+                // Use angle of the current vel of the robot. This is to avoid the robot to go forward when the goal speed is 0 but the robot is still moving
+                vel_vect_angle = atan2(current_vel_.y(), current_vel_.x());
+            } else {
+                vel_vect_angle = atan2(latest_twist_->linear.y, latest_twist_->linear.x);
+            }
+            limited_twist->linear.x = cmd_vxy_limited * cos(vel_vect_angle);
+            limited_twist->linear.y = cmd_vxy_limited * sin(vel_vect_angle);
+
+            // Limit angular acceleration z
+            limited_twist->angular.z = limit_accel_decel(current_vel_.theta(), latest_twist_->angular.z, max_accel_angular_, max_decel_angular_, dt_measured_);
+        } else {
+            limited_twist->linear.x = latest_twist_->linear.x;
+            limited_twist->linear.y = latest_twist_->linear.y;
+            limited_twist->angular.z = latest_twist_->angular.z;
+        }
+    }
+
+    // Returns the velocity with limited acceleration and deceleration applied
+    static double limit_accel_decel(double current_speed, double goal_speed, double max_acceleration, double max_deceleration, double dt) {
+        // Check if we are at constant speed, accelerating or decelerating
+        if (goal_speed == current_speed) {
+            // We are at constant speed
+            return current_speed;
+        } else if ((goal_speed > current_speed && current_speed >= 0) || (goal_speed < current_speed && current_speed <= 0)) {
+            // We are accelerating
+            return limit_accel(current_speed, goal_speed, max_acceleration, dt);
+        } else {
+            // We are decelerating
+            return limit_decel(current_speed, goal_speed, max_deceleration, dt);
+        }
+    }
+
+
+    // Returns the velocity with limited acceleration applied
+    static double limit_accel(double current_speed, double goal_speed, double max_acceleration, double dt) {
+        // check if goal is smaller or greater than current speed
+        if (goal_speed > current_speed) {
+            // Compute the speed we can reach in dt
+            double max_speed = current_speed + max_acceleration * dt;
+            // Check if we can reach the goal speed
+            if (max_speed < goal_speed) {
+                // We can't reach the goal speed
+                return max_speed;
+            } else {
+                // We can reach the goal speed
+                return goal_speed;
+            }
+        } else {
+            // Compute the speed we can reach in dt
+            double min_speed = current_speed - max_acceleration * dt;
+            // Check if we can reach the goal speed
+            if (min_speed > goal_speed) {
+                // We can't reach the goal speed
+                return min_speed;
+            } else {
+                // We can reach the goal speed
+                return goal_speed;
+            }
+        }
+    }
+
+    // Returns the velocity with limited deceleration applied
+    static double limit_decel(double current_speed, double goal_speed, double max_deceleration, double dt) {
+        // check if goal is smaller or greater than current speed
+        if (goal_speed > current_speed) {
+            // Compute the speed we can reach in dt
+            double max_speed = current_speed + max_deceleration * dt;
+            // Check if we can reach the goal speed
+            if (max_speed < goal_speed) {
+                // We can't reach the goal speed
+                return max_speed;
+            } else {
+                // We can reach the goal speed
+                return goal_speed;
+            }
+        } else {
+            // Compute the speed we can reach in dt
+            double min_speed = current_speed - max_deceleration * dt;
+            // Check if we can reach the goal speed
+            if (min_speed > goal_speed) {
+                // We can't reach the goal speed
+                return min_speed;
+            } else {
+                // We can reach the goal speed
+                return goal_speed;
+            }
+        }
     }
 
 
