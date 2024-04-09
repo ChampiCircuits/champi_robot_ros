@@ -25,123 +25,123 @@
 #include "nav2_msgs/action/back_up.hpp"
 #include "nav2_util/node_utils.hpp"
 
-namespace champi_nav2_behaviors
+namespace nav2_behaviors
 {
 
 /**
- * @class champi_nav2_behaviors::DriveOnHeading
+ * @class nav2_behaviors::DriveOnHeadingOmni
  * @brief An action server Behavior for spinning in
  */
-class DriveOnHeading : public TimedBehavior<nav2_msgs::action::DriveOnHeading>
-{
-public:
-  /**
-   * @brief A constructor for champi_nav2_behaviors::DriveOnHeading
-   */
-  DriveOnHeading()
-  : TimedBehavior<nav2_msgs::action::DriveOnHeading>(),
-    feedback_(std::make_shared<typename nav2_msgs::action::DriveOnHeading::Feedback>()),
-    command_x_(0.0),
-    command_speed_(0.0),
-    simulate_ahead_time_(0.0)
-  {
-  }
-
-  ~DriveOnHeading() = default;
-
-  /**
-   * @brief Initialization to run behavior
-   * @param command Goal to execute
-   * @return Status of behavior
-   */
-  Status onRun(const std::shared_ptr<const typename nav2_msgs::action::DriveOnHeading::Goal> command) override
-  {
-    if (command->target.y != 0.0 || command->target.z != 0.0) {
-      RCLCPP_INFO(
-        this->logger_,
-        "DrivingOnHeading in Y and Z not supported, will only move in X.");
-      return Status::FAILED;
-    }
-
-    // Ensure that both the speed and direction have the same sign
-    if (!((command->target.x > 0.0) == (command->speed > 0.0)) ) {
-      RCLCPP_ERROR(this->logger_, "Speed and command sign did not match");
-      return Status::FAILED;
-    }
-
-    command_x_ = command->target.x;
-    command_speed_ = command->speed;
-    command_time_allowance_ = command->time_allowance;
-
-    end_time_ = this->steady_clock_.now() + command_time_allowance_;
-
-    if (!nav2_util::getCurrentPose(
-        initial_pose_, *this->tf_, this->global_frame_, this->robot_base_frame_,
-        this->transform_tolerance_))
+    template<typename ActionT = nav2_msgs::action::DriveOnHeading>
+    class DriveOnHeadingOmni : public TimedBehavior<ActionT>
     {
-      RCLCPP_ERROR(this->logger_, "Initial robot pose is not available.");
-      return Status::FAILED;
-    }
+    public:
+        /**
+         * @brief A constructor for nav2_behaviors::DriveOnHeadingOmni
+         */
+        DriveOnHeadingOmni()
+                : TimedBehavior<ActionT>(),
+                  feedback_(std::make_shared<typename ActionT::Feedback>()),
+                  command_x_(0.0),
+                  command_y_(0.0),
+                  command_heading_(0.0),
+                  command_speed_(0.0),
+                  simulate_ahead_time_(0.0)
+        {
+        }
 
-    return Status::SUCCEEDED;
-  }
+        ~DriveOnHeadingOmni() = default;
 
-  /**
-   * @brief Loop function to run behavior
-   * @return Status of behavior
-   */
-  Status onCycleUpdate() override
-  {
-    rclcpp::Duration time_remaining = end_time_ - this->steady_clock_.now();
-    if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
-      this->stopRobot();
-      RCLCPP_WARN(
-        this->logger_,
-        "Exceeded time allowance before reaching the DriveOnHeading goal - Exiting DriveOnHeading");
-      return Status::FAILED;
-    }
+        /**
+         * @brief Initialization to run behavior
+         * @param command Goal to execute
+         * @return Status of behavior
+         */
+        Status onRun(const std::shared_ptr<const typename ActionT::Goal> command) override
+        {
 
-    geometry_msgs::msg::PoseStamped current_pose;
-    if (!nav2_util::getCurrentPose(
-        current_pose, *this->tf_, this->global_frame_, this->robot_base_frame_,
-        this->transform_tolerance_))
-    {
-      RCLCPP_ERROR(this->logger_, "Current robot pose is not available.");
-      return Status::FAILED;
-    }
+            // Ensure that both the speed and direction have the same sign
+            if (command->speed <= 0.0) {
+                RCLCPP_ERROR(this->logger_, "Speed cannot be negative or 0");
+                return Status::FAILED;
+            }
 
-    double diff_x = initial_pose_.pose.position.x - current_pose.pose.position.x;
-    double diff_y = initial_pose_.pose.position.y - current_pose.pose.position.y;
-    double distance = hypot(diff_x, diff_y);
+            command_x_ = command->target.x;
+            command_y_ = command->target.y;
+            command_heading_ = std::atan2(command_y_, command_x_);
+            command_speed_ = command->speed;
+            command_time_allowance_ = command->time_allowance;
 
-    feedback_->distance_traveled = distance;
-    this->action_server_->publish_feedback(feedback_);
+            end_time_ = this->steady_clock_.now() + command_time_allowance_;
 
-    if (distance >= std::fabs(command_x_)) {
-      this->stopRobot();
-      return Status::SUCCEEDED;
-    }
+            if (!nav2_util::getCurrentPose(
+                    initial_pose_, *this->tf_, this->global_frame_, this->robot_base_frame_,
+                    this->transform_tolerance_))
+            {
+                RCLCPP_ERROR(this->logger_, "Initial robot pose is not available.");
+                return Status::FAILED;
+            }
 
-    auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
-    cmd_vel->linear.y = 0.0;
-    cmd_vel->angular.z = 0.0;
-    cmd_vel->linear.x = command_speed_;
+            return Status::SUCCEEDED;
+        }
 
-    geometry_msgs::msg::Pose2D pose2d;
-    pose2d.x = current_pose.pose.position.x;
-    pose2d.y = current_pose.pose.position.y;
-    pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
+        /**
+         * @brief Loop function to run behavior
+         * @return Status of behavior
+         */
+        Status onCycleUpdate() override
+        {
+            rclcpp::Duration time_remaining = end_time_ - this->steady_clock_.now();
+            if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
+                this->stopRobot();
+                RCLCPP_WARN(
+                        this->logger_,
+                        "Exceeded time allowance before reaching the DriveOnHeadingOmni goal - Exiting DriveOnHeadingOmni");
+                return Status::FAILED;
+            }
 
-    if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
-      this->stopRobot();
-      RCLCPP_WARN(this->logger_, "Collision Ahead - Exiting DriveOnHeading");
-      return Status::FAILED;
-    }
+            geometry_msgs::msg::PoseStamped current_pose;
+            if (!nav2_util::getCurrentPose(
+                    current_pose, *this->tf_, this->global_frame_, this->robot_base_frame_,
+                    this->transform_tolerance_))
+            {
+                RCLCPP_ERROR(this->logger_, "Current robot pose is not available.");
+                return Status::FAILED;
+            }
 
-    this->vel_pub_->publish(std::move(cmd_vel));
+            double diff_x = initial_pose_.pose.position.x - current_pose.pose.position.x;
+            double diff_y = initial_pose_.pose.position.y - current_pose.pose.position.y;
+            double distance = hypot(diff_x, diff_y);
 
-    return Status::RUNNING;
-  }
+            feedback_->distance_traveled = distance;
+            this->action_server_->publish_feedback(feedback_);
+
+            if (distance >= hypot(command_x_, command_y_)) {
+                this->stopRobot();
+                return Status::SUCCEEDED;
+            }
+
+            auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+            cmd_vel->linear.x = command_speed_ * cos(command_heading_);
+            cmd_vel->linear.y = command_speed_ * sin(command_heading_);
+            cmd_vel->angular.z = 0.0;
+
+
+            geometry_msgs::msg::Pose2D pose2d;
+            pose2d.x = current_pose.pose.position.x;
+            pose2d.y = current_pose.pose.position.y;
+            pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
+
+            if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
+                this->stopRobot();
+                RCLCPP_WARN(this->logger_, "Collision Ahead - Exiting DriveOnHeadingOmni");
+                return Status::FAILED;
+            }
+
+            this->vel_pub_->publish(std::move(cmd_vel));
+
+            return Status::RUNNING;
+        }
 
 protected:
   /**
@@ -156,6 +156,8 @@ protected:
     geometry_msgs::msg::Twist * cmd_vel,
     geometry_msgs::msg::Pose2D & pose2d)
   {
+// TODO modifier cette fonction pour qu'elle fonctionne en omni. Pour l'instant je ne l'ai pas touché
+
     // Simulate ahead by simulate_ahead_time_ in this->cycle_frequency_ increments
     int cycle_count = 0;
     double sim_position_change;
@@ -182,32 +184,34 @@ protected:
     return true;
   }
 
-  /**
-   * @brief Configuration of behavior action
-   */
-  void onConfigure() override
-  {
-    auto node = this->node_.lock();
-    if (!node) {
-      throw std::runtime_error{"Failed to lock node"};
-    }
+        /**
+         * @brief Configuration of behavior action
+         */
+        void onConfigure() override
+        {
+            auto node = this->node_.lock();
+            if (!node) {
+                throw std::runtime_error{"Failed to lock node"};
+            }
 
-    nav2_util::declare_parameter_if_not_declared(
-      node,
-      "simulate_ahead_time", rclcpp::ParameterValue(2.0));
-    node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
-  }
+            nav2_util::declare_parameter_if_not_declared(
+                    node,
+                    "simulate_ahead_time", rclcpp::ParameterValue(2.0));
+            node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
+        }
 
-  typename nav2_msgs::action::DriveOnHeading::Feedback::SharedPtr feedback_;
+        typename ActionT::Feedback::SharedPtr feedback_;
 
-  geometry_msgs::msg::PoseStamped initial_pose_;
-  double command_x_;
-  double command_speed_;
-  rclcpp::Duration command_time_allowance_{0, 0};
-  rclcpp::Time end_time_;
-  double simulate_ahead_time_;
-};
+        geometry_msgs::msg::PoseStamped initial_pose_;
+        double command_x_;
+        double command_y_;
+        double command_heading_;
+        double command_speed_;
+        rclcpp::Duration command_time_allowance_{0, 0};
+        rclcpp::Time end_time_;
+        double simulate_ahead_time_;
+    };
 
-}  // namespace champi_nav2_behaviors
+}  // namespace nav2_behaviors
 
 #endif  // NAV2_BEHAVIORS__PLUGINS__DRIVE_ON_HEADING_HPP_

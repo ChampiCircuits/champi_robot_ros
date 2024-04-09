@@ -17,4 +17,4 @@
 #include "champi_nav2_plugins/drive_on_heading_omni.hpp"
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(champi_nav2_behaviors::DriveOnHeadingOmni, nav2_core::Behavior)
+PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeadingOmni<>, nav2_core::Behavior)

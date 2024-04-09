@@ -6,7 +6,7 @@
     </library>
 
     <library path="drive_on_heading_omni">
-        <class type="champi_nav2_behaviors::DriveOnHeadingOmni" base_class_type="nav2_core::Behavior">
+        <class name='nav2_behaviors/DriveOnHeadingOmni' type="nav2_behaviors::DriveOnHeadingOmni&lt;&gt;" base_class_type="nav2_core::Behavior">
             <description>DriveOnHeading with control over X and Y.</description>
         </class>
     </library>
