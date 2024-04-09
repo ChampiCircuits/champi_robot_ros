@@ -10,4 +10,10 @@
             <description>DriveOnHeading with control over X and Y.</description>
         </class>
     </library>
+
+    <library path="obstacle_layer_custom">
+        <class type="champi_nav2_plugins::ObstacleLayerCustom" base_class_type="nav2_costmap_2d::Layer">
+            <description>Costmap plugin for enemy robot</description>
+        </class>
+    </library>
 </class_libraries>

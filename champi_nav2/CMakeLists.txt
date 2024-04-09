@@ -44,11 +44,20 @@ add_library(angle_smoother SHARED
 ament_target_dependencies(angle_smoother
         ${dependencies}
 )
+
 # Drive To Heading Omni plugin
 add_library(drive_on_heading_omni SHARED
         src/drive_on_heading_omni.cpp
 )
 ament_target_dependencies(drive_on_heading_omni
+        ${dependencies}
+)
+
+# Obstacle Layer Custom plugin
+add_library(obstacle_layer_custom SHARED
+        src/obstacle_layer_custom.cpp
+)
+ament_target_dependencies(obstacle_layer_custom
         ${dependencies}
 )
 
@@ -87,6 +96,13 @@ install(
 
 install(
         TARGETS drive_on_heading_omni
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+)
+
+install(
+        TARGETS obstacle_layer_custom
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
