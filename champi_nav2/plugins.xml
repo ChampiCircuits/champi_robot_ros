@@ -4,4 +4,10 @@
             <description>Does a simple smoothing process with collision checking</description>
         </class>
     </library>
+
+    <library path="drive_on_heading_omni">
+        <class type="champi_nav2_behaviors::DriveOnHeadingOmni" base_class_type="nav2_core::Behavior">
+            <description>DriveOnHeading with control over X and Y.</description>
+        </class>
+    </library>
 </class_libraries>

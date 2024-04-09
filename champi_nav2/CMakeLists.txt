@@ -15,6 +15,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(nav2_behaviors REQUIRED)
 
 include_directories(
         include
@@ -33,6 +34,7 @@ set(dependencies
         nav2_util
         nav2_core
         pluginlib
+        nav2_behaviors
 )
 
 # Angle Smoother plugin
@@ -42,8 +44,16 @@ add_library(angle_smoother SHARED
 ament_target_dependencies(angle_smoother
         ${dependencies}
 )
+# Drive To Heading Omni plugin
+add_library(drive_on_heading_omni SHARED
+        src/drive_on_heading_omni.cpp
+)
+ament_target_dependencies(drive_on_heading_omni
+        ${dependencies}
+)
 
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
+
 
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -70,6 +80,13 @@ endif()
 
 install(
         TARGETS angle_smoother
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+)
+
+install(
+        TARGETS drive_on_heading_omni
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
