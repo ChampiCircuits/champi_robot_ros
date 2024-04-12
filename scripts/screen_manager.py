@@ -12,13 +12,15 @@ from signal import SIGINT
 from math import acos, cos, sin
 import rclpy
 from nav_msgs.msg import Odometry
-
+from diagnostic_msgs.msg import DiagnosticArray
+from rclpy.node import Node
+import time
 
 # Liste des fichiers de lancement ROS2
 launch_files = [
-    "champi_bringup bringup.launch.py sim:=True",
-    "champi_nav2 bringup_launch.py",
-    "file3.launch.py",
+    "ros2 launch champi_bringup bringup.launch.py sim:=True",
+    "ros2 launch champi_nav2 bringup_launch.py",
+    "python3 src/champi_robot_ros/dev_tools/goals_cmd.py",
     "file4.launch.py",
     "file4.launch.py",
     "file4.launch.py",
@@ -29,7 +31,7 @@ launch_files = [
 red = "#BC2023"
 green = "#0C6B37"
 white = "#FFFFFF"
-orange = "#FFA500" 
+orange = "#FFA500"
 
 class LaunchButton(tk.Button):
     def __init__(self, master, launch_file, **kwargs):
@@ -56,7 +58,7 @@ class LaunchButton(tk.Button):
 
     def launch_process(self):
         args = map(str, self.launch_file.split(" "))
-        self.process = subprocess.Popen(["ros2", "launch", *args])
+        self.process = subprocess.Popen([*args])
         self.after(1000, self.check_process)  # Vérifier l'état du processus toutes les 1 seconde
 
 
@@ -113,19 +115,26 @@ class Application(tk.Tk):
         self.tab5 = ttk.Frame(self.tabControl)
         self.tabControl.add(self.tab5, text="IP")
 
+        self.tab6 = ttk.Frame(self.tabControl)
+        self.tabControl.add(self.tab6, text="DIAGNOSTICS")
+
         self.tabControl.pack(expand=1, fill="both")
+
+        rclpy.init()
+        self.node = rclpy.create_node('GUI_node')
+        self.odom_subscriber = self.node.create_subscription(Odometry, '/odom', self.update_robot_position, 10)
+
 
         self.create_launchs_tab()
         self.create_cpu_tab()
         self.create_ip_tab()
         self.create_table_tab()
 
+        self.node_diagnostics = {}
+        self.create_diagnostics_tab()
+
         # Ajout du gestionnaire d'événement pour la fermeture de la fenêtre
         self.protocol("WM_DELETE_WINDOW", self.close_window)
-
-        rclpy.init()
-        self.node = rclpy.create_node('GUI_node')
-        self.odom_subscriber = self.node.create_subscription(Odometry, '/odom', self.update_robot_position, 10)
 
         self.update()
 
@@ -151,7 +160,7 @@ class Application(tk.Tk):
                 col = 0
             self.launch_grid_frame.grid_rowconfigure(row, weight=1)
             self.launch_grid_frame.grid_columnconfigure(col, weight=1)  # Ajout de la configuration de la colonne
-            button_text = f"Launch {launch_file}"
+            button_text = f"{launch_file}"
             button = LaunchButton(self.launch_grid_frame, text=button_text, launch_file=launch_file)
             button.grid(row=row, column=col, sticky="nsew")  # Utilisation de sticky pour prendre toute la place
             col += 1
@@ -237,7 +246,7 @@ class Application(tk.Tk):
             ip_addresses.append(f"{interface_name}: {ip_address}")
 
         return "\n".join(ip_addresses)
-    
+
     def get_wifi_name(self):
         subprocess_result = subprocess.Popen('iwgetid',shell=True,stdout=subprocess.PIPE)
         subprocess_output = subprocess_result.communicate()[0],subprocess_result.returncode
@@ -255,12 +264,11 @@ class Application(tk.Tk):
         self.table_image = tk.PhotoImage(file=image_path)
 
         self.table_image = self.table_image.subsample(17,17)
-        
+
         # Création du canvas pour afficher l'image
         self.canvas = tk.Canvas(table_frame, width=self.table_image.width(), height=self.table_image.height())
         self.canvas.pack()
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.table_image)
-
 
     def update_robot_position(self,odom_msg):
         # erase previous position
@@ -268,10 +276,10 @@ class Application(tk.Tk):
         for item in self.canvas.find_all():
             if item != 1:
                 self.canvas.delete(item)
-        
+
         x,y,z,w = odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y, odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w
-        theta = -2*acos(w)+1.57 
-        
+        theta = -2*acos(w)+1.57
+
         y_pixel = int((x / 2) * self.table_image.height())
         x_pixel = int((y / 3) * self.table_image.width())
 
@@ -289,14 +297,94 @@ class Application(tk.Tk):
         self.canvas.create_oval(0 - r, 0 - r, 0 + r, 0 + r, outline="green", width=4)
         self.canvas.create_oval(2 - r, 3 - r, 2 + r, 3 + r, outline="green", width=4)
 
+    def create_diagnostics_tab(self):
+        self.diagnostics_frame = ttk.Frame(self.tab6)
+        self.diagnostics_frame.pack(expand=True, fill="x")
+
+        self.diagnostics_texts = {}  # Dictionnaire pour stocker les éléments Text correspondant à chaque diagnostic
+
+        # Souscription au topic des diagnostics
+        self.node.create_subscription(DiagnosticArray, '/diagnostics', self.update_diagnostics, 10)
+
+    def update_diagnostics(self, msg):
+        current_time = time.time()
+        # Mettre à jour le dictionnaire avec les nouveaux diagnostics
+        for status in msg.status:
+            # Vérifier si le diagnostic existe déjà dans le dictionnaire
+            if status.name in self.node_diagnostics:
+                # Mettre à jour le diagnostic et son horodatage
+                self.node_diagnostics[status.name]['message'] = status.message
+                self.node_diagnostics[status.name]['timestamp'] = current_time
+                self.node_diagnostics[status.name]['level'] = status.level
+            else:
+                # Ajouter un nouveau diagnostic avec son horodatage
+                self.node_diagnostics[status.name] = {'message': status.message, 'timestamp': current_time, 'level': status.level}
+
+        # Effacer le contenu précédent
+        for text in self.diagnostics_texts.values():
+            text.delete("1.0", tk.END)
+
+        # Mettre à jour l'affichage des diagnostics à partir du dictionnaire
+        for node_name, diagnostic_info in self.node_diagnostics.items():
+            diagnostic_message = diagnostic_info['message']
+            diagnostic_level = diagnostic_info['level']
+            color = self.get_color_for_diagnostic_level(diagnostic_level)
+
+            # Vérifier si un élément Text existe déjà pour ce diagnostic, sinon le créer
+            if node_name not in self.diagnostics_texts:
+                self.diagnostics_texts[node_name] = tk.Text(self.diagnostics_frame, wrap="word", background=color)
+                self.diagnostics_texts[node_name].pack(fill="both", expand=True)
+
+            # Insérer le message du diagnostic dans l'élément Text correspondant
+            self.diagnostics_texts[node_name].insert(tk.END, f"{diagnostic_message}\n")
+
+    def invalidate_old_diagnostics(self):
+        current_time = time.time()
+        # Mettre à jour l'affichage des diagnostics à partir du dictionnaire
+        for node_name, diagnostic_info in self.node_diagnostics.items():
+            # Vérifier si le diagnostic est toujours valide
+            if current_time - diagnostic_info['timestamp'] > 10:
+                self.node_diagnostics[node_name]['message'] = "Inactive (10s+)"
+                self.node_diagnostics[node_name]['level'] = b'\x02'  # ERROR
+
+        for text in self.diagnostics_texts.values():
+            text.delete("1.0", tk.END)
+
+        # Mettre à jour l'affichage des diagnostics à partir du dictionnaire
+        for node_name, diagnostic_info in self.node_diagnostics.items():
+            diagnostic_message = diagnostic_info['message']
+            color = self.get_color_for_diagnostic_level(diagnostic_info['level'])
+            # Vérifier si un élément Text existe déjà pour ce diagnostic, sinon le créer
+            if node_name not in self.diagnostics_texts:
+                self.diagnostics_texts[node_name] = tk.Text(self.diagnostics_frame, wrap="word", background=color)
+                self.diagnostics_texts[node_name].pack(fill="both", expand=True)
+
+            # Insérer le message du diagnostic dans l'élément Text correspondant
+            self.diagnostics_texts[node_name].insert(tk.END, f"{diagnostic_message}\n")
+
+    def get_color_for_diagnostic_level(self, level):
+        if level == b'\x00':  # OK
+            return "green"
+        elif level == b'\x01':  # WARN
+            return "orange"
+        elif level == b'\x02':  # ERROR
+            return "red"
+        else:  # Autres niveaux non définis
+            print("level not defined: ", level)
+            return "black"  # ou une autre couleur par défaut
 
     def update(self):
         # tick ros
         rclpy.spin_once(self.node, timeout_sec=0.1)
 
+        self.invalidate_old_diagnostics()
+
         self.after(100, self.update)
 
-        
+    class DiagnosticsNode(Node):
+        def __init__(self):
+            super().__init__('diagnostics_node')
+
 if __name__ == "__main__":
     app = Application()
     app.mainloop()
