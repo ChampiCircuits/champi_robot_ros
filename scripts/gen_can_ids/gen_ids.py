@@ -35,6 +35,7 @@ def main():
         os.makedirs("out")
 
     output_cpp = "out/can_ids.hpp"
+    output_cpp_ns = "out/can_ids_ns.hpp"
     output_py = "out/can_ids.py"
 
     with open(input_csv, newline='') as csvfile:
@@ -46,12 +47,19 @@ def main():
             f.write(f"#define CAN_ID_{row[0]} {row[1]}\n")
         f.write("\n")
 
+    with open(output_cpp_ns, 'w') as f:
+        f.write("#pragma once\n")
+        f.write("namespace can_ids {\n")
+        for row in rows:
+            f.write(f"    int {row[0]} = {row[1]};\n")
+        f.write("}\n")
+
     with open(output_py, 'w') as f:
         f.write("class CanIds:\n")
         for row in rows:
             f.write(f"    {row[0]} = {row[1]}\n")
 
-    print(f"Generated {output_cpp} and {output_py}")
+    print(f"Generated {output_cpp}, {output_cpp_ns}, and {output_py}")
 
 if __name__ == "__main__":
     main()

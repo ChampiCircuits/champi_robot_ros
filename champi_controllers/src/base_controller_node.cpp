@@ -66,7 +66,7 @@ public:
 
         // Set up diagnostics
         diag_updater_base_.setHardwareID("holo_base");
-        diag_updater_base_.add("base_state", this, &BaseControllerNode::test_base_status);
+        diag_updater_base_.add("base_state", this, &BaseControllerNode::test_stm_status);
 
         diag_updater_node_.setHardwareID("none");
         diag_updater_node_.add("node_state", this, &BaseControllerNode::test_node_state);
@@ -186,7 +186,7 @@ private:
 
     // =========================== Diagnostic tests (observation only, for /diagnostics) ===============================
 
-    void test_base_status(diagnostic_updater::DiagnosticStatusWrapper & stat)
+    void test_stm_status(diagnostic_updater::DiagnosticStatusWrapper & stat)
     {
         // Summary
         if(!got_first_status_) {

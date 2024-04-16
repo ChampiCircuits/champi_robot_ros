@@ -36,7 +36,19 @@ base_controller:
       wheel_radius: 0.029 # en m
       base_radius: 0.175 # en m
       cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
-      # coin de la table
+
+
+
+
+imu_controller:
+  ros__parameters:
+    champi_can_verbose_mode: false
+    timeout_connexion_stm: 1.0
+
+    imu_covariances:
+      angular_vel: [0.001, 0.001, 0.001]
+      linear_acc: [0.001, 0.001, 0.001]
+
 
 
 

@@ -48,7 +48,7 @@ struct TableStruct_msgs_5fcan_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
     static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-    static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[5]
+    static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[7]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
     static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
     static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -62,9 +62,15 @@ namespace msgs_can {
     class BaseVel;
     class BaseVelDefaultTypeInternal;
     extern BaseVelDefaultTypeInternal _BaseVel_default_instance_;
+    class ImuData;
+    class ImuDataDefaultTypeInternal;
+    extern ImuDataDefaultTypeInternal _ImuData_default_instance_;
     class Log;
     class LogDefaultTypeInternal;
     extern LogDefaultTypeInternal _Log_default_instance_;
+    class RetBaseConfig;
+    class RetBaseConfigDefaultTypeInternal;
+    extern RetBaseConfigDefaultTypeInternal _RetBaseConfig_default_instance_;
     class Status;
     class StatusDefaultTypeInternal;
     extern StatusDefaultTypeInternal _Status_default_instance_;
@@ -75,7 +81,9 @@ namespace msgs_can {
 PROTOBUF_NAMESPACE_OPEN
         template<> ::msgs_can::BaseConfig* Arena::CreateMaybeMessage<::msgs_can::BaseConfig>(Arena*);
         template<> ::msgs_can::BaseVel* Arena::CreateMaybeMessage<::msgs_can::BaseVel>(Arena*);
+        template<> ::msgs_can::ImuData* Arena::CreateMaybeMessage<::msgs_can::ImuData>(Arena*);
         template<> ::msgs_can::Log* Arena::CreateMaybeMessage<::msgs_can::Log>(Arena*);
+        template<> ::msgs_can::RetBaseConfig* Arena::CreateMaybeMessage<::msgs_can::RetBaseConfig>(Arena*);
         template<> ::msgs_can::Status* Arena::CreateMaybeMessage<::msgs_can::Status>(Arena*);
         template<> ::msgs_can::StatusReport* Arena::CreateMaybeMessage<::msgs_can::StatusReport>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
@@ -114,11 +122,12 @@ namespace msgs_can {
         Status_ErrorType_PROTO_DECODE = 4,
         Status_ErrorType_CMD_VEL_TIMEOUT = 5,
         Status_ErrorType_CAN_TX = 6,
-        Status_ErrorType_CAN_RX = 7
+        Status_ErrorType_CAN_RX = 7,
+        Status_ErrorType_INVALID_CONFIG = 8
     };
     bool Status_ErrorType_IsValid(int value);
     constexpr Status_ErrorType Status_ErrorType_ErrorType_MIN = Status_ErrorType_NONE;
-    constexpr Status_ErrorType Status_ErrorType_ErrorType_MAX = Status_ErrorType_CAN_RX;
+    constexpr Status_ErrorType Status_ErrorType_ErrorType_MAX = Status_ErrorType_INVALID_CONFIG;
     constexpr int Status_ErrorType_ErrorType_ARRAYSIZE = Status_ErrorType_ErrorType_MAX + 1;
 
     const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* Status_ErrorType_descriptor();
@@ -484,6 +493,8 @@ namespace msgs_can {
                 Status_ErrorType_CAN_TX;
         static constexpr ErrorType CAN_RX =
                 Status_ErrorType_CAN_RX;
+        static constexpr ErrorType INVALID_CONFIG =
+                Status_ErrorType_INVALID_CONFIG;
         static inline bool ErrorType_IsValid(int value) {
             return Status_ErrorType_IsValid(value);
         }
@@ -1122,6 +1133,404 @@ namespace msgs_can {
         float base_radius_;
         friend struct ::TableStruct_msgs_5fcan_2eproto;
     };
+// -------------------------------------------------------------------
+
+    class RetBaseConfig PROTOBUF_FINAL :
+            public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.RetBaseConfig) */ {
+    public:
+        inline RetBaseConfig() : RetBaseConfig(nullptr) {};
+        virtual ~RetBaseConfig();
+
+        RetBaseConfig(const RetBaseConfig& from);
+        RetBaseConfig(RetBaseConfig&& from) noexcept
+                : RetBaseConfig() {
+            *this = ::std::move(from);
+        }
+
+        inline RetBaseConfig& operator=(const RetBaseConfig& from) {
+            CopyFrom(from);
+            return *this;
+        }
+        inline RetBaseConfig& operator=(RetBaseConfig&& from) noexcept {
+            if (GetArena() == from.GetArena()) {
+                if (this != &from) InternalSwap(&from);
+            } else {
+                CopyFrom(from);
+            }
+            return *this;
+        }
+
+        inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+            return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+        }
+        inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+            return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+        }
+
+        static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+            return GetDescriptor();
+        }
+        static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+            return GetMetadataStatic().descriptor;
+        }
+        static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+            return GetMetadataStatic().reflection;
+        }
+        static const RetBaseConfig& default_instance();
+
+        static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+        static inline const RetBaseConfig* internal_default_instance() {
+            return reinterpret_cast<const RetBaseConfig*>(
+                    &_RetBaseConfig_default_instance_);
+        }
+        static constexpr int kIndexInFileMessages =
+                5;
+
+        friend void swap(RetBaseConfig& a, RetBaseConfig& b) {
+            a.Swap(&b);
+        }
+        inline void Swap(RetBaseConfig* other) {
+            if (other == this) return;
+            if (GetArena() == other->GetArena()) {
+                InternalSwap(other);
+            } else {
+                ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+            }
+        }
+        void UnsafeArenaSwap(RetBaseConfig* other) {
+            if (other == this) return;
+                    GOOGLE_DCHECK(GetArena() == other->GetArena());
+            InternalSwap(other);
+        }
+
+        // implements Message ----------------------------------------------
+
+        inline RetBaseConfig* New() const final {
+            return CreateMaybeMessage<RetBaseConfig>(nullptr);
+        }
+
+        RetBaseConfig* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+            return CreateMaybeMessage<RetBaseConfig>(arena);
+        }
+        void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+        void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+        void CopyFrom(const RetBaseConfig& from);
+        void MergeFrom(const RetBaseConfig& from);
+        PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+        bool IsInitialized() const final;
+
+        size_t ByteSizeLong() const final;
+        const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+        ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+                ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+        int GetCachedSize() const final { return _cached_size_.Get(); }
+
+    private:
+        inline void SharedCtor();
+        inline void SharedDtor();
+        void SetCachedSize(int size) const final;
+        void InternalSwap(RetBaseConfig* other);
+        friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+        static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+            return "msgs_can.RetBaseConfig";
+        }
+    protected:
+        explicit RetBaseConfig(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+    private:
+        static void ArenaDtor(void* object);
+        inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+    public:
+
+        ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+    private:
+        static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+            ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_msgs_5fcan_2eproto);
+            return ::descriptor_table_msgs_5fcan_2eproto.file_level_metadata[kIndexInFileMessages];
+        }
+
+    public:
+
+        // nested types ----------------------------------------------------
+
+        // accessors -------------------------------------------------------
+
+        enum : int {
+            kConfigFieldNumber = 1,
+            kStatusFieldNumber = 2,
+        };
+        // optional .msgs_can.BaseConfig config = 1;
+        bool has_config() const;
+    private:
+        bool _internal_has_config() const;
+    public:
+        void clear_config();
+        const ::msgs_can::BaseConfig& config() const;
+        ::msgs_can::BaseConfig* release_config();
+        ::msgs_can::BaseConfig* mutable_config();
+        void set_allocated_config(::msgs_can::BaseConfig* config);
+    private:
+        const ::msgs_can::BaseConfig& _internal_config() const;
+        ::msgs_can::BaseConfig* _internal_mutable_config();
+    public:
+        void unsafe_arena_set_allocated_config(
+                ::msgs_can::BaseConfig* config);
+        ::msgs_can::BaseConfig* unsafe_arena_release_config();
+
+        // optional .msgs_can.Status status = 2;
+        bool has_status() const;
+    private:
+        bool _internal_has_status() const;
+    public:
+        void clear_status();
+        const ::msgs_can::Status& status() const;
+        ::msgs_can::Status* release_status();
+        ::msgs_can::Status* mutable_status();
+        void set_allocated_status(::msgs_can::Status* status);
+    private:
+        const ::msgs_can::Status& _internal_status() const;
+        ::msgs_can::Status* _internal_mutable_status();
+    public:
+        void unsafe_arena_set_allocated_status(
+                ::msgs_can::Status* status);
+        ::msgs_can::Status* unsafe_arena_release_status();
+
+        // @@protoc_insertion_point(class_scope:msgs_can.RetBaseConfig)
+    private:
+        class _Internal;
+
+        template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+        typedef void InternalArenaConstructable_;
+        typedef void DestructorSkippable_;
+        ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+        mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+        ::msgs_can::BaseConfig* config_;
+        ::msgs_can::Status* status_;
+        friend struct ::TableStruct_msgs_5fcan_2eproto;
+    };
+// -------------------------------------------------------------------
+
+    class ImuData PROTOBUF_FINAL :
+            public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.ImuData) */ {
+    public:
+        inline ImuData() : ImuData(nullptr) {};
+        virtual ~ImuData();
+
+        ImuData(const ImuData& from);
+        ImuData(ImuData&& from) noexcept
+                : ImuData() {
+            *this = ::std::move(from);
+        }
+
+        inline ImuData& operator=(const ImuData& from) {
+            CopyFrom(from);
+            return *this;
+        }
+        inline ImuData& operator=(ImuData&& from) noexcept {
+            if (GetArena() == from.GetArena()) {
+                if (this != &from) InternalSwap(&from);
+            } else {
+                CopyFrom(from);
+            }
+            return *this;
+        }
+
+        inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+            return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+        }
+        inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+            return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+        }
+
+        static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+            return GetDescriptor();
+        }
+        static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+            return GetMetadataStatic().descriptor;
+        }
+        static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+            return GetMetadataStatic().reflection;
+        }
+        static const ImuData& default_instance();
+
+        static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+        static inline const ImuData* internal_default_instance() {
+            return reinterpret_cast<const ImuData*>(
+                    &_ImuData_default_instance_);
+        }
+        static constexpr int kIndexInFileMessages =
+                6;
+
+        friend void swap(ImuData& a, ImuData& b) {
+            a.Swap(&b);
+        }
+        inline void Swap(ImuData* other) {
+            if (other == this) return;
+            if (GetArena() == other->GetArena()) {
+                InternalSwap(other);
+            } else {
+                ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+            }
+        }
+        void UnsafeArenaSwap(ImuData* other) {
+            if (other == this) return;
+                    GOOGLE_DCHECK(GetArena() == other->GetArena());
+            InternalSwap(other);
+        }
+
+        // implements Message ----------------------------------------------
+
+        inline ImuData* New() const final {
+            return CreateMaybeMessage<ImuData>(nullptr);
+        }
+
+        ImuData* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+            return CreateMaybeMessage<ImuData>(arena);
+        }
+        void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+        void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+        void CopyFrom(const ImuData& from);
+        void MergeFrom(const ImuData& from);
+        PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+        bool IsInitialized() const final;
+
+        size_t ByteSizeLong() const final;
+        const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+        ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+                ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+        int GetCachedSize() const final { return _cached_size_.Get(); }
+
+    private:
+        inline void SharedCtor();
+        inline void SharedDtor();
+        void SetCachedSize(int size) const final;
+        void InternalSwap(ImuData* other);
+        friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+        static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+            return "msgs_can.ImuData";
+        }
+    protected:
+        explicit ImuData(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+    private:
+        static void ArenaDtor(void* object);
+        inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+    public:
+
+        ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+    private:
+        static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+            ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_msgs_5fcan_2eproto);
+            return ::descriptor_table_msgs_5fcan_2eproto.file_level_metadata[kIndexInFileMessages];
+        }
+
+    public:
+
+        // nested types ----------------------------------------------------
+
+        // accessors -------------------------------------------------------
+
+        enum : int {
+            kAccXFieldNumber = 1,
+            kAccYFieldNumber = 2,
+            kAccZFieldNumber = 3,
+            kGyroXFieldNumber = 4,
+            kGyroYFieldNumber = 5,
+            kGyroZFieldNumber = 6,
+        };
+        // optional float acc_x = 1;
+        bool has_acc_x() const;
+    private:
+        bool _internal_has_acc_x() const;
+    public:
+        void clear_acc_x();
+        float acc_x() const;
+        void set_acc_x(float value);
+    private:
+        float _internal_acc_x() const;
+        void _internal_set_acc_x(float value);
+    public:
+
+        // optional float acc_y = 2;
+        bool has_acc_y() const;
+    private:
+        bool _internal_has_acc_y() const;
+    public:
+        void clear_acc_y();
+        float acc_y() const;
+        void set_acc_y(float value);
+    private:
+        float _internal_acc_y() const;
+        void _internal_set_acc_y(float value);
+    public:
+
+        // optional float acc_z = 3;
+        bool has_acc_z() const;
+    private:
+        bool _internal_has_acc_z() const;
+    public:
+        void clear_acc_z();
+        float acc_z() const;
+        void set_acc_z(float value);
+    private:
+        float _internal_acc_z() const;
+        void _internal_set_acc_z(float value);
+    public:
+
+        // optional float gyro_x = 4;
+        bool has_gyro_x() const;
+    private:
+        bool _internal_has_gyro_x() const;
+    public:
+        void clear_gyro_x();
+        float gyro_x() const;
+        void set_gyro_x(float value);
+    private:
+        float _internal_gyro_x() const;
+        void _internal_set_gyro_x(float value);
+    public:
+
+        // optional float gyro_y = 5;
+        bool has_gyro_y() const;
+    private:
+        bool _internal_has_gyro_y() const;
+    public:
+        void clear_gyro_y();
+        float gyro_y() const;
+        void set_gyro_y(float value);
+    private:
+        float _internal_gyro_y() const;
+        void _internal_set_gyro_y(float value);
+    public:
+
+        // optional float gyro_z = 6;
+        bool has_gyro_z() const;
+    private:
+        bool _internal_has_gyro_z() const;
+    public:
+        void clear_gyro_z();
+        float gyro_z() const;
+        void set_gyro_z(float value);
+    private:
+        float _internal_gyro_z() const;
+        void _internal_set_gyro_z(float value);
+    public:
+
+        // @@protoc_insertion_point(class_scope:msgs_can.ImuData)
+    private:
+        class _Internal;
+
+        template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+        typedef void InternalArenaConstructable_;
+        typedef void DestructorSkippable_;
+        ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+        mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+        float acc_x_;
+        float acc_y_;
+        float acc_z_;
+        float gyro_x_;
+        float gyro_y_;
+        float gyro_z_;
+        friend struct ::TableStruct_msgs_5fcan_2eproto;
+    };
 // ===================================================================
 
 
@@ -1725,9 +2134,351 @@ namespace msgs_can {
         // @@protoc_insertion_point(field_set:msgs_can.BaseConfig.base_radius)
     }
 
+// -------------------------------------------------------------------
+
+// RetBaseConfig
+
+// optional .msgs_can.BaseConfig config = 1;
+    inline bool RetBaseConfig::_internal_has_config() const {
+        bool value = (_has_bits_[0] & 0x00000001u) != 0;
+        PROTOBUF_ASSUME(!value || config_ != nullptr);
+        return value;
+    }
+    inline bool RetBaseConfig::has_config() const {
+        return _internal_has_config();
+    }
+    inline void RetBaseConfig::clear_config() {
+        if (config_ != nullptr) config_->Clear();
+        _has_bits_[0] &= ~0x00000001u;
+    }
+    inline const ::msgs_can::BaseConfig& RetBaseConfig::_internal_config() const {
+        const ::msgs_can::BaseConfig* p = config_;
+        return p != nullptr ? *p : *reinterpret_cast<const ::msgs_can::BaseConfig*>(
+                &::msgs_can::_BaseConfig_default_instance_);
+    }
+    inline const ::msgs_can::BaseConfig& RetBaseConfig::config() const {
+        // @@protoc_insertion_point(field_get:msgs_can.RetBaseConfig.config)
+        return _internal_config();
+    }
+    inline void RetBaseConfig::unsafe_arena_set_allocated_config(
+            ::msgs_can::BaseConfig* config) {
+        if (GetArena() == nullptr) {
+            delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(config_);
+        }
+        config_ = config;
+        if (config) {
+            _has_bits_[0] |= 0x00000001u;
+        } else {
+            _has_bits_[0] &= ~0x00000001u;
+        }
+        // @@protoc_insertion_point(field_unsafe_arena_set_allocated:msgs_can.RetBaseConfig.config)
+    }
+    inline ::msgs_can::BaseConfig* RetBaseConfig::release_config() {
+        auto temp = unsafe_arena_release_config();
+        if (GetArena() != nullptr) {
+            temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+        }
+        return temp;
+    }
+    inline ::msgs_can::BaseConfig* RetBaseConfig::unsafe_arena_release_config() {
+        // @@protoc_insertion_point(field_release:msgs_can.RetBaseConfig.config)
+        _has_bits_[0] &= ~0x00000001u;
+        ::msgs_can::BaseConfig* temp = config_;
+        config_ = nullptr;
+        return temp;
+    }
+    inline ::msgs_can::BaseConfig* RetBaseConfig::_internal_mutable_config() {
+        _has_bits_[0] |= 0x00000001u;
+        if (config_ == nullptr) {
+            auto* p = CreateMaybeMessage<::msgs_can::BaseConfig>(GetArena());
+            config_ = p;
+        }
+        return config_;
+    }
+    inline ::msgs_can::BaseConfig* RetBaseConfig::mutable_config() {
+        // @@protoc_insertion_point(field_mutable:msgs_can.RetBaseConfig.config)
+        return _internal_mutable_config();
+    }
+    inline void RetBaseConfig::set_allocated_config(::msgs_can::BaseConfig* config) {
+        ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+        if (message_arena == nullptr) {
+            delete config_;
+        }
+        if (config) {
+            ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+                    ::PROTOBUF_NAMESPACE_ID::Arena::GetArena(config);
+            if (message_arena != submessage_arena) {
+                config = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+                        message_arena, config, submessage_arena);
+            }
+            _has_bits_[0] |= 0x00000001u;
+        } else {
+            _has_bits_[0] &= ~0x00000001u;
+        }
+        config_ = config;
+        // @@protoc_insertion_point(field_set_allocated:msgs_can.RetBaseConfig.config)
+    }
+
+// optional .msgs_can.Status status = 2;
+    inline bool RetBaseConfig::_internal_has_status() const {
+        bool value = (_has_bits_[0] & 0x00000002u) != 0;
+        PROTOBUF_ASSUME(!value || status_ != nullptr);
+        return value;
+    }
+    inline bool RetBaseConfig::has_status() const {
+        return _internal_has_status();
+    }
+    inline void RetBaseConfig::clear_status() {
+        if (status_ != nullptr) status_->Clear();
+        _has_bits_[0] &= ~0x00000002u;
+    }
+    inline const ::msgs_can::Status& RetBaseConfig::_internal_status() const {
+        const ::msgs_can::Status* p = status_;
+        return p != nullptr ? *p : *reinterpret_cast<const ::msgs_can::Status*>(
+                &::msgs_can::_Status_default_instance_);
+    }
+    inline const ::msgs_can::Status& RetBaseConfig::status() const {
+        // @@protoc_insertion_point(field_get:msgs_can.RetBaseConfig.status)
+        return _internal_status();
+    }
+    inline void RetBaseConfig::unsafe_arena_set_allocated_status(
+            ::msgs_can::Status* status) {
+        if (GetArena() == nullptr) {
+            delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(status_);
+        }
+        status_ = status;
+        if (status) {
+            _has_bits_[0] |= 0x00000002u;
+        } else {
+            _has_bits_[0] &= ~0x00000002u;
+        }
+        // @@protoc_insertion_point(field_unsafe_arena_set_allocated:msgs_can.RetBaseConfig.status)
+    }
+    inline ::msgs_can::Status* RetBaseConfig::release_status() {
+        auto temp = unsafe_arena_release_status();
+        if (GetArena() != nullptr) {
+            temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+        }
+        return temp;
+    }
+    inline ::msgs_can::Status* RetBaseConfig::unsafe_arena_release_status() {
+        // @@protoc_insertion_point(field_release:msgs_can.RetBaseConfig.status)
+        _has_bits_[0] &= ~0x00000002u;
+        ::msgs_can::Status* temp = status_;
+        status_ = nullptr;
+        return temp;
+    }
+    inline ::msgs_can::Status* RetBaseConfig::_internal_mutable_status() {
+        _has_bits_[0] |= 0x00000002u;
+        if (status_ == nullptr) {
+            auto* p = CreateMaybeMessage<::msgs_can::Status>(GetArena());
+            status_ = p;
+        }
+        return status_;
+    }
+    inline ::msgs_can::Status* RetBaseConfig::mutable_status() {
+        // @@protoc_insertion_point(field_mutable:msgs_can.RetBaseConfig.status)
+        return _internal_mutable_status();
+    }
+    inline void RetBaseConfig::set_allocated_status(::msgs_can::Status* status) {
+        ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+        if (message_arena == nullptr) {
+            delete status_;
+        }
+        if (status) {
+            ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+                    ::PROTOBUF_NAMESPACE_ID::Arena::GetArena(status);
+            if (message_arena != submessage_arena) {
+                status = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+                        message_arena, status, submessage_arena);
+            }
+            _has_bits_[0] |= 0x00000002u;
+        } else {
+            _has_bits_[0] &= ~0x00000002u;
+        }
+        status_ = status;
+        // @@protoc_insertion_point(field_set_allocated:msgs_can.RetBaseConfig.status)
+    }
+
+// -------------------------------------------------------------------
+
+// ImuData
+
+// optional float acc_x = 1;
+    inline bool ImuData::_internal_has_acc_x() const {
+        bool value = (_has_bits_[0] & 0x00000001u) != 0;
+        return value;
+    }
+    inline bool ImuData::has_acc_x() const {
+        return _internal_has_acc_x();
+    }
+    inline void ImuData::clear_acc_x() {
+        acc_x_ = 0;
+        _has_bits_[0] &= ~0x00000001u;
+    }
+    inline float ImuData::_internal_acc_x() const {
+        return acc_x_;
+    }
+    inline float ImuData::acc_x() const {
+        // @@protoc_insertion_point(field_get:msgs_can.ImuData.acc_x)
+        return _internal_acc_x();
+    }
+    inline void ImuData::_internal_set_acc_x(float value) {
+        _has_bits_[0] |= 0x00000001u;
+        acc_x_ = value;
+    }
+    inline void ImuData::set_acc_x(float value) {
+        _internal_set_acc_x(value);
+        // @@protoc_insertion_point(field_set:msgs_can.ImuData.acc_x)
+    }
+
+// optional float acc_y = 2;
+    inline bool ImuData::_internal_has_acc_y() const {
+        bool value = (_has_bits_[0] & 0x00000002u) != 0;
+        return value;
+    }
+    inline bool ImuData::has_acc_y() const {
+        return _internal_has_acc_y();
+    }
+    inline void ImuData::clear_acc_y() {
+        acc_y_ = 0;
+        _has_bits_[0] &= ~0x00000002u;
+    }
+    inline float ImuData::_internal_acc_y() const {
+        return acc_y_;
+    }
+    inline float ImuData::acc_y() const {
+        // @@protoc_insertion_point(field_get:msgs_can.ImuData.acc_y)
+        return _internal_acc_y();
+    }
+    inline void ImuData::_internal_set_acc_y(float value) {
+        _has_bits_[0] |= 0x00000002u;
+        acc_y_ = value;
+    }
+    inline void ImuData::set_acc_y(float value) {
+        _internal_set_acc_y(value);
+        // @@protoc_insertion_point(field_set:msgs_can.ImuData.acc_y)
+    }
+
+// optional float acc_z = 3;
+    inline bool ImuData::_internal_has_acc_z() const {
+        bool value = (_has_bits_[0] & 0x00000004u) != 0;
+        return value;
+    }
+    inline bool ImuData::has_acc_z() const {
+        return _internal_has_acc_z();
+    }
+    inline void ImuData::clear_acc_z() {
+        acc_z_ = 0;
+        _has_bits_[0] &= ~0x00000004u;
+    }
+    inline float ImuData::_internal_acc_z() const {
+        return acc_z_;
+    }
+    inline float ImuData::acc_z() const {
+        // @@protoc_insertion_point(field_get:msgs_can.ImuData.acc_z)
+        return _internal_acc_z();
+    }
+    inline void ImuData::_internal_set_acc_z(float value) {
+        _has_bits_[0] |= 0x00000004u;
+        acc_z_ = value;
+    }
+    inline void ImuData::set_acc_z(float value) {
+        _internal_set_acc_z(value);
+        // @@protoc_insertion_point(field_set:msgs_can.ImuData.acc_z)
+    }
+
+// optional float gyro_x = 4;
+    inline bool ImuData::_internal_has_gyro_x() const {
+        bool value = (_has_bits_[0] & 0x00000008u) != 0;
+        return value;
+    }
+    inline bool ImuData::has_gyro_x() const {
+        return _internal_has_gyro_x();
+    }
+    inline void ImuData::clear_gyro_x() {
+        gyro_x_ = 0;
+        _has_bits_[0] &= ~0x00000008u;
+    }
+    inline float ImuData::_internal_gyro_x() const {
+        return gyro_x_;
+    }
+    inline float ImuData::gyro_x() const {
+        // @@protoc_insertion_point(field_get:msgs_can.ImuData.gyro_x)
+        return _internal_gyro_x();
+    }
+    inline void ImuData::_internal_set_gyro_x(float value) {
+        _has_bits_[0] |= 0x00000008u;
+        gyro_x_ = value;
+    }
+    inline void ImuData::set_gyro_x(float value) {
+        _internal_set_gyro_x(value);
+        // @@protoc_insertion_point(field_set:msgs_can.ImuData.gyro_x)
+    }
+
+// optional float gyro_y = 5;
+    inline bool ImuData::_internal_has_gyro_y() const {
+        bool value = (_has_bits_[0] & 0x00000010u) != 0;
+        return value;
+    }
+    inline bool ImuData::has_gyro_y() const {
+        return _internal_has_gyro_y();
+    }
+    inline void ImuData::clear_gyro_y() {
+        gyro_y_ = 0;
+        _has_bits_[0] &= ~0x00000010u;
+    }
+    inline float ImuData::_internal_gyro_y() const {
+        return gyro_y_;
+    }
+    inline float ImuData::gyro_y() const {
+        // @@protoc_insertion_point(field_get:msgs_can.ImuData.gyro_y)
+        return _internal_gyro_y();
+    }
+    inline void ImuData::_internal_set_gyro_y(float value) {
+        _has_bits_[0] |= 0x00000010u;
+        gyro_y_ = value;
+    }
+    inline void ImuData::set_gyro_y(float value) {
+        _internal_set_gyro_y(value);
+        // @@protoc_insertion_point(field_set:msgs_can.ImuData.gyro_y)
+    }
+
+// optional float gyro_z = 6;
+    inline bool ImuData::_internal_has_gyro_z() const {
+        bool value = (_has_bits_[0] & 0x00000020u) != 0;
+        return value;
+    }
+    inline bool ImuData::has_gyro_z() const {
+        return _internal_has_gyro_z();
+    }
+    inline void ImuData::clear_gyro_z() {
+        gyro_z_ = 0;
+        _has_bits_[0] &= ~0x00000020u;
+    }
+    inline float ImuData::_internal_gyro_z() const {
+        return gyro_z_;
+    }
+    inline float ImuData::gyro_z() const {
+        // @@protoc_insertion_point(field_get:msgs_can.ImuData.gyro_z)
+        return _internal_gyro_z();
+    }
+    inline void ImuData::_internal_set_gyro_z(float value) {
+        _has_bits_[0] |= 0x00000020u;
+        gyro_z_ = value;
+    }
+    inline void ImuData::set_gyro_z(float value) {
+        _internal_set_gyro_z(value);
+        // @@protoc_insertion_point(field_set:msgs_can.ImuData.gyro_z)
+    }
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
