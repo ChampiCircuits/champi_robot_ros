@@ -174,7 +174,7 @@ private:
         stat.summary(node_state_.lvl, node_state_.summary);
         stat.add("current_loop_rate (Hz)", 1.0 / dt_measured_);
         stat.add("got_first_status", got_first_status_);
-        stat.add("got_first_imu_cata", got_first_imu_data_);
+        stat.add("got_first_imu_data", got_first_imu_data_);
         stat.add("timeout_connexion_stm_exceeded", timeout_connexion_stm_exceeded_);
     }
 
@@ -272,6 +272,13 @@ private:
 
             // Update current imu data
             latest_imu_data_.ParseFromString(buffer);
+
+            last_rx_imu_time_ = this->now(); // TODO for now not used. Compute rx freq for diagnostics
+
+            // flag
+            if(!got_first_imu_data_) {
+                got_first_imu_data_ = true;
+            }
         }
         if(champi_can_interface_.check_if_new_full_msg(can_ids::IMU_STATUS)) {
             last_rx_status_time_ = this->now();
