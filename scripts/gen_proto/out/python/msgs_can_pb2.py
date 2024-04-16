@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0emsgs_can.proto\x12\x08msgs_can\".\n\x07\x42\x61seVel\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"\xc6\x02\n\x06Status\x12\x11\n\ttimestamp\x18\x01 \x01(\x02\x12+\n\x06status\x18\x02 \x01(\x0e\x32\x1b.msgs_can.Status.StatusType\x12)\n\x05\x65rror\x18\x03 \x01(\x0e\x32\x1a.msgs_can.Status.ErrorType\x12\x0f\n\x07message\x18\x04 \x01(\t\"3\n\nStatusType\x12\x06\n\x02OK\x10\x00\x12\x08\n\x04INIT\x10\x01\x12\x08\n\x04WARN\x10\x02\x12\t\n\x05\x45RROR\x10\x03\"\x8a\x01\n\tErrorType\x12\x08\n\x04NONE\x10\x00\x12\x14\n\x10INIT_PERIPHERALS\x10\x01\x12\x0c\n\x08INIT_CAN\x10\x02\x12\x10\n\x0cPROTO_ENCODE\x10\x03\x12\x10\n\x0cPROTO_DECODE\x10\x04\x12\x13\n\x0f\x43MD_VEL_TIMEOUT\x10\x05\x12\n\n\x06\x43\x41N_TX\x10\x06\x12\n\n\x06\x43\x41N_RX\x10\x07\"0\n\x0cStatusReport\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\"M\n\x03Log\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x03(\x0b\x32\x10.msgs_can.Status\"c\n\nBaseConfig\x12\x11\n\tmax_accel\x18\x01 \x01(\x02\x12\x17\n\x0f\x63md_vel_timeout\x18\x02 \x01(\x02\x12\x14\n\x0cwheel_radius\x18\x03 \x01(\x02\x12\x13\n\x0b\x62\x61se_radius\x18\x04 \x01(\x02'
+  serialized_pb=b'\n\x0emsgs_can.proto\x12\x08msgs_can\".\n\x07\x42\x61seVel\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"\xda\x02\n\x06Status\x12\x11\n\ttimestamp\x18\x01 \x01(\x02\x12+\n\x06status\x18\x02 \x01(\x0e\x32\x1b.msgs_can.Status.StatusType\x12)\n\x05\x65rror\x18\x03 \x01(\x0e\x32\x1a.msgs_can.Status.ErrorType\x12\x0f\n\x07message\x18\x04 \x01(\t\"3\n\nStatusType\x12\x06\n\x02OK\x10\x00\x12\x08\n\x04INIT\x10\x01\x12\x08\n\x04WARN\x10\x02\x12\t\n\x05\x45RROR\x10\x03\"\x9e\x01\n\tErrorType\x12\x08\n\x04NONE\x10\x00\x12\x14\n\x10INIT_PERIPHERALS\x10\x01\x12\x0c\n\x08INIT_CAN\x10\x02\x12\x10\n\x0cPROTO_ENCODE\x10\x03\x12\x10\n\x0cPROTO_DECODE\x10\x04\x12\x13\n\x0f\x43MD_VEL_TIMEOUT\x10\x05\x12\n\n\x06\x43\x41N_TX\x10\x06\x12\n\n\x06\x43\x41N_RX\x10\x07\x12\x12\n\x0eINVALID_CONFIG\x10\x08\"0\n\x0cStatusReport\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\"M\n\x03Log\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x03(\x0b\x32\x10.msgs_can.Status\"c\n\nBaseConfig\x12\x11\n\tmax_accel\x18\x01 \x01(\x02\x12\x17\n\x0f\x63md_vel_timeout\x18\x02 \x01(\x02\x12\x14\n\x0cwheel_radius\x18\x03 \x01(\x02\x12\x13\n\x0b\x62\x61se_radius\x18\x04 \x01(\x02\"W\n\rRetBaseConfig\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x01(\x0b\x32\x10.msgs_can.Status\"f\n\x07ImuData\x12\r\n\x05\x61\x63\x63_x\x18\x01 \x01(\x02\x12\r\n\x05\x61\x63\x63_y\x18\x02 \x01(\x02\x12\r\n\x05\x61\x63\x63_z\x18\x03 \x01(\x02\x12\x0e\n\x06gyro_x\x18\x04 \x01(\x02\x12\x0e\n\x06gyro_y\x18\x05 \x01(\x02\x12\x0e\n\x06gyro_z\x18\x06 \x01(\x02'
 )
 
 
@@ -106,11 +106,16 @@ _STATUS_ERRORTYPE = _descriptor.EnumDescriptor(
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='INVALID_CONFIG', index=8, number=8,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
   ],
   containing_type=None,
   serialized_options=None,
   serialized_start=265,
-  serialized_end=403,
+  serialized_end=423,
 )
 _sym_db.RegisterEnumDescriptor(_STATUS_ERRORTYPE)
 
@@ -212,7 +217,7 @@ _STATUS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=77,
-  serialized_end=403,
+  serialized_end=423,
 )
 
 
@@ -243,8 +248,8 @@ _STATUSREPORT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=405,
-  serialized_end=453,
+  serialized_start=425,
+  serialized_end=473,
 )
 
 
@@ -282,8 +287,8 @@ _LOG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=455,
-  serialized_end=532,
+  serialized_start=475,
+  serialized_end=552,
 )
 
 
@@ -335,8 +340,114 @@ _BASECONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=534,
-  serialized_end=633,
+  serialized_start=554,
+  serialized_end=653,
+)
+
+
+_RETBASECONFIG = _descriptor.Descriptor(
+  name='RetBaseConfig',
+  full_name='msgs_can.RetBaseConfig',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='config', full_name='msgs_can.RetBaseConfig.config', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='status', full_name='msgs_can.RetBaseConfig.status', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=655,
+  serialized_end=742,
+)
+
+
+_IMUDATA = _descriptor.Descriptor(
+  name='ImuData',
+  full_name='msgs_can.ImuData',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='acc_x', full_name='msgs_can.ImuData.acc_x', index=0,
+      number=1, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='acc_y', full_name='msgs_can.ImuData.acc_y', index=1,
+      number=2, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='acc_z', full_name='msgs_can.ImuData.acc_z', index=2,
+      number=3, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='gyro_x', full_name='msgs_can.ImuData.gyro_x', index=3,
+      number=4, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='gyro_y', full_name='msgs_can.ImuData.gyro_y', index=4,
+      number=5, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='gyro_z', full_name='msgs_can.ImuData.gyro_z', index=5,
+      number=6, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=744,
+  serialized_end=846,
 )
 
 _STATUS.fields_by_name['status'].enum_type = _STATUS_STATUSTYPE
@@ -346,11 +457,15 @@ _STATUS_ERRORTYPE.containing_type = _STATUS
 _STATUSREPORT.fields_by_name['status'].message_type = _STATUS
 _LOG.fields_by_name['config'].message_type = _BASECONFIG
 _LOG.fields_by_name['status'].message_type = _STATUS
+_RETBASECONFIG.fields_by_name['config'].message_type = _BASECONFIG
+_RETBASECONFIG.fields_by_name['status'].message_type = _STATUS
 DESCRIPTOR.message_types_by_name['BaseVel'] = _BASEVEL
 DESCRIPTOR.message_types_by_name['Status'] = _STATUS
 DESCRIPTOR.message_types_by_name['StatusReport'] = _STATUSREPORT
 DESCRIPTOR.message_types_by_name['Log'] = _LOG
 DESCRIPTOR.message_types_by_name['BaseConfig'] = _BASECONFIG
+DESCRIPTOR.message_types_by_name['RetBaseConfig'] = _RETBASECONFIG
+DESCRIPTOR.message_types_by_name['ImuData'] = _IMUDATA
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 BaseVel = _reflection.GeneratedProtocolMessageType('BaseVel', (_message.Message,), {
@@ -387,6 +502,20 @@ BaseConfig = _reflection.GeneratedProtocolMessageType('BaseConfig', (_message.Me
   # @@protoc_insertion_point(class_scope:msgs_can.BaseConfig)
   })
 _sym_db.RegisterMessage(BaseConfig)
+
+RetBaseConfig = _reflection.GeneratedProtocolMessageType('RetBaseConfig', (_message.Message,), {
+  'DESCRIPTOR' : _RETBASECONFIG,
+  '__module__' : 'msgs_can_pb2'
+  # @@protoc_insertion_point(class_scope:msgs_can.RetBaseConfig)
+  })
+_sym_db.RegisterMessage(RetBaseConfig)
+
+ImuData = _reflection.GeneratedProtocolMessageType('ImuData', (_message.Message,), {
+  'DESCRIPTOR' : _IMUDATA,
+  '__module__' : 'msgs_can_pb2'
+  # @@protoc_insertion_point(class_scope:msgs_can.ImuData)
+  })
+_sym_db.RegisterMessage(ImuData)
 
 
 # @@protoc_insertion_point(module_scope)
