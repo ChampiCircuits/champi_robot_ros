@@ -119,17 +119,36 @@ def generate_launch_description():
         output='screen'
     )
 
+    ukf_node = Node(
+        package='robot_localization',
+        executable='ukf_node',
+        name='ukf',
+        output='screen',
+        parameters=[os.path.join(get_package_share_directory("champi_bringup"), "config", "ukf.yaml")]
+    )
+
+    # Static transform map -> odom
+    static_tf_map_odom = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_transform_publisher_map_odom',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
+    )
+
     return LaunchDescription([
         sim_arg,
         joy_arg,
         description_broadcaster,
         base_controller_launch,
-        # imu_controller_launch,
-        # ldlidar_node,
+        imu_controller_launch,
+        ldlidar_node,
         lidar_simu_node,
         base_control_simu_node,
         cmd_vel_mux_node,
         teleop_launch,
-        pub_goal_rviz_node
+        pub_goal_rviz_node,
+        ukf_node,
+        static_tf_map_odom
     ])
 
