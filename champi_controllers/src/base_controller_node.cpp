@@ -287,10 +287,10 @@ private:
         // Check if timeout for connexion to the base is exceeded. If yes, set node state to ERROR and return false.
         timeout_connexion_stm_exceeded_ = now - last_rx_status_time_ > rclcpp::Duration::from_seconds(timeout_connexion_stm_);
         if(timeout_connexion_stm_exceeded_) {
-            // Set node state to ERROR
-            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Timeout error (CAN bus)");
+            // Don't do anything to the node state but report issue
+            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Timeout error (CAN bus). Elapsed time since last status: " + to_string((now - last_rx_status_time_).seconds()));
             diag_updater_node_.force_update(); // Send diagnostic right away
-            return false;
+            return true;
         }
 
         // Check if timeout for connexion to ROS is exceeded. If yes, set node state to ERROR and return false.
@@ -298,10 +298,10 @@ private:
         if(got_first_twist_) {
             timeout_connexion_ros_exceeded_ = now - last_rx_twist_time_ > rclcpp::Duration::from_seconds(timeout_connexion_ros_);
             if(timeout_connexion_ros_exceeded_) {
-                // Set node state to ERROR
-                update_node_state(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Timeout error (ROS)");
+                // Don't do anything to the node state but report issue
+                update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Timeout error (ROS). Elapsed time since last twist: " + to_string((now - last_rx_twist_time_).seconds()));
                 diag_updater_node_.force_update(); // Send diagnostic right away
-                return false;
+                return true;
             }
         }
 
@@ -539,6 +539,26 @@ private:
         // - we have not received the first twist yet (which is not part of the initialization)
         // - the node is OK or WARN
         bool allow_control_robot = check_node_ok_and_update();
+
+
+        // If node is in error state, reset the node
+        if(node_state_.lvl == diagnostic_msgs::msg::DiagnosticStatus::ERROR) {
+
+            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "An error occured. The node will reset and and try to restart the base.");
+
+            // Set node state to initializing
+            correct_config_received_ = false;
+            got_first_twist_ = false;
+
+            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Resetting the base");
+            reset_base();
+
+            // Wait a little to let the base reset
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+            send_config();
+            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Waiting for base to confirm config");
+        }
 
         // If we can send commands to the base, do it
         if(allow_control_robot) {

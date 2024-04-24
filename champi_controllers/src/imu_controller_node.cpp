@@ -227,10 +227,10 @@ private:
         // Check if timeout for connexion to the stm is exceeded. If yes, set node state to ERROR and return false.
         timeout_connexion_stm_exceeded_ = now - last_rx_status_time_ > rclcpp::Duration::from_seconds(timeout_connexion_stm_);
         if(timeout_connexion_stm_exceeded_) {
-            // Set node state to ERROR
-            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Timeout error (CAN bus)");
+            // Don't do anything to the node state but indicate the error.
+            update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Timeout error (CAN bus). Elapsed time since last status: " + std::to_string((now - last_rx_status_time_).seconds()) + "s");
             diag_updater_node_.force_update(); // Send diagnostic right away
-            return false;
+            return true;
         }
 
         // check if stm status ok
