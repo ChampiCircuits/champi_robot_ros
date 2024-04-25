@@ -124,7 +124,8 @@ def generate_launch_description():
         executable='ukf_node',
         name='ukf',
         output='screen',
-        parameters=[os.path.join(get_package_share_directory("champi_bringup"), "config", "ukf.yaml")]
+        parameters=[os.path.join(get_package_share_directory("champi_bringup"), "config", "ukf.yaml")],
+        remappings=[('/cmd_vel', '/base_controller/cmd_vel_limited')]
     )
 
     # Static transform map -> odom
@@ -142,7 +143,7 @@ def generate_launch_description():
         description_broadcaster,
         base_controller_launch,
         imu_controller_launch,
-        ldlidar_node,
+        # ldlidar_node,
         lidar_simu_node,
         base_control_simu_node,
         cmd_vel_mux_node,

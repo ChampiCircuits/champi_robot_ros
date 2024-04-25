@@ -55,6 +55,20 @@ public:
         max_accel_angular_ = this->declare_parameter<double>("max_acceleration_angular");
         max_decel_angular_ = this->declare_parameter<double>("max_deceleration_angular");
 
+        // Get covariances
+        cov_pose_ = this->declare_parameter<std::vector<double>>("covariances.pose");
+        // Check if the covariance is the right size (6 values = the diagonal of the covariance matrix)
+        if (cov_pose_.size() != 6) {
+            RCLCPP_ERROR(this->get_logger(), "covariances.pose must have 6 values (diagonal of the covariance matrix). Exiting.");
+            return;
+        }
+        cov_vel_ = this->declare_parameter<std::vector<double>>("covariances.velocity");
+        // Check if the covariance is the right size (6 values = the diagonal of the covariance matrix)
+        if (cov_vel_.size() != 6) {
+            RCLCPP_ERROR(this->get_logger(), "covariances.velocity must have 6 values (diagonal of the covariance matrix). Exiting.");
+            return;
+        }
+
         // Print parameters
         // RCLCPP_INFO(this->get_logger(), "Node started with the following parameters:");
         // RCLCPP_INFO(this->get_logger(), "topic_twist_in: %s", topic_twist_in.c_str());
@@ -109,6 +123,7 @@ public:
 
         // Create Publishers
         pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+        pub_twist_limited_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_limited", 10);
 
         // Initialize the transform broadcaster
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -126,6 +141,8 @@ private:
 
     // Publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_;
+    // Publisher for cmd vel after limits have been applied
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_twist_limited_;
 
     // TF broadcast related
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
@@ -172,6 +189,8 @@ private:
     } base_config_{};
     double timeout_connexion_stm_; // receive status from CAN
     double timeout_connexion_ros_; // receive twist from ROS
+    std::vector<double> cov_pose_;
+    std::vector<double> cov_vel_;
 
     bool enable_accel_limit_;
     double max_accel_linear_;
@@ -290,7 +309,7 @@ private:
             // Don't do anything to the node state but report issue
             update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Timeout error (CAN bus). Elapsed time since last status: " + to_string((now - last_rx_status_time_).seconds()));
             diag_updater_node_.force_update(); // Send diagnostic right away
-            return true;
+            //return true;
         }
 
         // Check if timeout for connexion to ROS is exceeded. If yes, set node state to ERROR and return false.
@@ -301,7 +320,7 @@ private:
                 // Don't do anything to the node state but report issue
                 update_node_state(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Timeout error (ROS). Elapsed time since last twist: " + to_string((now - last_rx_twist_time_).seconds()));
                 diag_updater_node_.force_update(); // Send diagnostic right away
-                return true;
+                //return true;
             }
         }
 
@@ -358,6 +377,10 @@ private:
 
             // Update current_vel_
             current_vel_.ParseFromString(buffer);
+
+            // TODO quick fix -y and -theta
+            current_vel_.set_y(-current_vel_.y());
+            current_vel_.set_theta(-current_vel_.theta());
         }
         if(!correct_config_received_ && champi_can_interface_.check_if_new_full_msg(can_ids::BASE_RET_CONFIG)) {
 
@@ -402,9 +425,10 @@ private:
 
     void send_twist_can(const geometry_msgs::msg::Twist::SharedPtr& twist) {
         msgs_can::BaseVel base_vel_cmd;
+                // TODO quick fix -y and -theta
         base_vel_cmd.set_x((float) twist->linear.x);
-        base_vel_cmd.set_y((float) twist->linear.y);
-        base_vel_cmd.set_theta((float) twist->angular.z);
+        base_vel_cmd.set_y((float) -twist->linear.y);
+        base_vel_cmd.set_theta((float) -twist->angular.z);
 
         // Send message
         if(champi_can_interface_.send(can_ids::BASE_CMD_VEL, base_vel_cmd.SerializeAsString()) != 0) {
@@ -423,6 +447,7 @@ private:
         if(!got_first_twist_) {
             got_first_twist_ = true;
         }
+
         latest_twist_ = msg;
     }
 
@@ -457,6 +482,12 @@ private:
         msg.twist.twist.linear.x = this->current_vel_.x();
         msg.twist.twist.linear.y = this->current_vel_.y();
         msg.twist.twist.angular.z = this->current_vel_.theta();
+
+        // Covariance
+        for(int i = 0; i < 6; i++) {
+            msg.pose.covariance[i * 6 + i] = cov_pose_[i];
+            msg.twist.covariance[i * 6 + i] = cov_vel_[i];
+        }
 
         pub_odom_->publish(msg);
     }
@@ -567,14 +598,16 @@ private:
             compute_limited_speed(limited_twist);
             // Send latest twist to the base
             send_twist_can(limited_twist);
+            // Publish the limited twist
+            pub_twist_limited_->publish(*limited_twist);
             // Update pose / velocity for other nodes
             update_pose();
         }
 
         // We always publish the odometry and broadcast the tf for the other nodes to initialize
         publish_odom();
-        broadcast_tf();
-        broadcast_tf_map();
+        // broadcast_tf();
+        // broadcast_tf_map();
     }
 
 
