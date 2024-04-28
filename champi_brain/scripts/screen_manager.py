@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import tkinter as tk
 from tkinter import ttk
 import psutil
@@ -16,12 +18,14 @@ from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
 import time
 
+from ament_index_python.packages import get_package_share_directory
+
 # Liste des fichiers de lancement ROS2
 launch_files = [
     "ros2 launch champi_bringup bringup.launch.py sim:=True",
     "ros2 launch champi_nav2 bringup_launch.py",
     "python3 src/champi_robot_ros/dev_tools/goals_cmd.py",
-    "file4.launch.py",
+    "python3 src/champi_robot_ros/champi_brain/scripts/rviz_markers.py",
     "file4.launch.py",
     "file4.launch.py",
     "file4.launch.py",
@@ -258,7 +262,7 @@ class Application(tk.Tk):
         table_frame.pack(expand=True, fill="both")
 
         # Chemin de l'image
-        image_path = "/home/etienne/ros_ws/src/champi_robot_ros/champi_simulator/blender_projects/table/table_dae/vinyle_table_2024_FINAL_V1.png"
+        image_path = get_package_share_directory('champi_simulator') + "/blender_projects/table/table_dae/vinyle_table_2024_FINAL_V1.png"
 
         # Chargement de l'image
         self.table_image = tk.PhotoImage(file=image_path)

@@ -82,7 +82,7 @@ https://github.com/ros-planning/navigation2/issues/3075
 https://answers.ros.org/question/396864/nav2-computepathtopose-throws-tf-error-because-goal-stamp-is-out-of-tf-buffer/
 
 
-###  Créer un package: ne jamai créer de package python !
+###  Créer un package: ne jamais créer de package python !
 
 Avec des packages c++, on peut faire aussi des nodes python. Mais avec des package python: 
 - c'est super galère d'ajouter des nodes et des fichiers dans le projet

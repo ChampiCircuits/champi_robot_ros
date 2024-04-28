@@ -45,8 +45,10 @@ controller_server:
     general_goal_checker:
       stateful: False # Whether to check for XY position tolerance after rotating to goal orientation in case of minor localization changes.
       plugin: "nav2_controller::StoppedGoalChecker"
-      xy_goal_tolerance: 0.0001 #m
-      yaw_goal_tolerance: 0.01 #rad
+      xy_goal_tolerance: 0.001 #m
+      # xy_goal_tolerance: 0.0001 #m
+      yaw_goal_tolerance: 0.04 #rad
+      # yaw_goal_tolerance: 0.01 #rad
       trans_stopped_velocity: 0.01 # m/s
       rot_stopped_velocity: 0.01 # rad/s
 
