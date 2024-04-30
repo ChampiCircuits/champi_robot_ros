@@ -91,6 +91,10 @@ Regarder ce site pour savoir commment organiser un package c++ + python : https:
 
 **Attention!** Ne pas oublier le sheebang `#!/usr/bin/env python3` en haut des nodes python! Sinon cela fait des erreurs atroces :(
 
+Sinon erreur du type : 
+`OSError: [Errno 8] Exec format error: '/home/ku-etienne/ros_ws/install/champi_camera_yolo/lib/champi_camera_yolo/camera_node.py'`
+
+
 ## Nice ressources
 
 * CAN cpp examples: https://github.com/craigpeacock/CAN-Examples/tree/master
