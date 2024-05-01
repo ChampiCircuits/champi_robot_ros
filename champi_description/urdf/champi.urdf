@@ -27,6 +27,9 @@
     </inertial>
   </link>
 
+  <!-- IMU link -->
+  <link name="imu_link"/>
+
   <!-- Joint between base_link and lidar -->
   <joint name="base_to_lidar" type="fixed">
     <parent link="base_link"/>
@@ -40,4 +43,13 @@
     <child link="camera"/>
     <origin xyz="0 0 0.78539" rpy="-1 3.14159 -1.57079"/>
   </joint>
+
+  <!-- Joint between base_link and imu -->
+  <joint name="base_to_imu" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+</robot>
+
 </robot>

@@ -31,12 +31,28 @@ base_controller:
     max_acceleration_angular: 4.0 # rad/s^2
     max_deceleration_angular: 20.0 # rad/s^2
 
+    covariances:
+      pose: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      velocity: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+
     base_config:
       max_accel_wheels: 10.0 # rotation des roues en rotation/s²
       wheel_radius: 0.029 # en m
       base_radius: 0.175 # en m
       cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
-      # coin de la table
+
+
+
+
+imu_controller:
+  ros__parameters:
+    champi_can_verbose_mode: false
+    timeout_connexion_stm: 1.0
+
+    imu_covariances:
+      angular_vel: [0.00001, 0.00001, 0.00001]
+      linear_acc: [1., 1., 1.]
+
 
 
 

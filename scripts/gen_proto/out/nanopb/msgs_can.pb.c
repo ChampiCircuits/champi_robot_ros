@@ -21,6 +21,12 @@ PB_BIND(msgs_can_Log, msgs_can_Log, AUTO)
 PB_BIND(msgs_can_BaseConfig, msgs_can_BaseConfig, AUTO)
 
 
+PB_BIND(msgs_can_RetBaseConfig, msgs_can_RetBaseConfig, AUTO)
+
+
+PB_BIND(msgs_can_ImuData, msgs_can_ImuData, AUTO)
+
+
 
 
 

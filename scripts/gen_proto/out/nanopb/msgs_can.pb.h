@@ -25,7 +25,8 @@ typedef enum _msgs_can_Status_ErrorType {
     msgs_can_Status_ErrorType_PROTO_DECODE = 4, 
     msgs_can_Status_ErrorType_CMD_VEL_TIMEOUT = 5, 
     msgs_can_Status_ErrorType_CAN_TX = 6, 
-    msgs_can_Status_ErrorType_CAN_RX = 7 
+    msgs_can_Status_ErrorType_CAN_RX = 7, 
+    msgs_can_Status_ErrorType_INVALID_CONFIG = 8 
 } msgs_can_Status_ErrorType;
 
 /* Struct definitions */
@@ -49,6 +50,21 @@ typedef struct _msgs_can_BaseVel {
     float theta; 
 } msgs_can_BaseVel;
 
+typedef struct _msgs_can_ImuData { 
+    bool has_acc_x;
+    float acc_x; 
+    bool has_acc_y;
+    float acc_y; 
+    bool has_acc_z;
+    float acc_z; 
+    bool has_gyro_x;
+    float gyro_x; 
+    bool has_gyro_y;
+    float gyro_y; 
+    bool has_gyro_z;
+    float gyro_z; 
+} msgs_can_ImuData;
+
 typedef struct _msgs_can_Status { 
     bool has_timestamp;
     float timestamp; /* seconds since epoch */
@@ -65,6 +81,15 @@ typedef struct _msgs_can_Log {
     pb_callback_t status; 
 } msgs_can_Log;
 
+/* STM Uses this to return the current configuration after a change
+ If missing or wrong values in the request, set status to ERROR etc */
+typedef struct _msgs_can_RetBaseConfig { 
+    bool has_config;
+    msgs_can_BaseConfig config; 
+    bool has_status;
+    msgs_can_Status status; 
+} msgs_can_RetBaseConfig;
+
 /* Use this as an heartbeat sent at a regular interval. Also, send one right away after a status change */
 typedef struct _msgs_can_StatusReport { 
     /* Keep short : use only status if everything is OK */
@@ -79,8 +104,8 @@ typedef struct _msgs_can_StatusReport {
 #define _msgs_can_Status_StatusType_ARRAYSIZE ((msgs_can_Status_StatusType)(msgs_can_Status_StatusType_ERROR+1))
 
 #define _msgs_can_Status_ErrorType_MIN msgs_can_Status_ErrorType_NONE
-#define _msgs_can_Status_ErrorType_MAX msgs_can_Status_ErrorType_CAN_RX
-#define _msgs_can_Status_ErrorType_ARRAYSIZE ((msgs_can_Status_ErrorType)(msgs_can_Status_ErrorType_CAN_RX+1))
+#define _msgs_can_Status_ErrorType_MAX msgs_can_Status_ErrorType_INVALID_CONFIG
+#define _msgs_can_Status_ErrorType_ARRAYSIZE ((msgs_can_Status_ErrorType)(msgs_can_Status_ErrorType_INVALID_CONFIG+1))
 
 
 #ifdef __cplusplus
@@ -93,11 +118,15 @@ extern "C" {
 #define msgs_can_StatusReport_init_default       {false, msgs_can_Status_init_default}
 #define msgs_can_Log_init_default                {false, msgs_can_BaseConfig_init_default, {{NULL}, NULL}}
 #define msgs_can_BaseConfig_init_default         {false, 0, false, 0, false, 0, false, 0}
+#define msgs_can_RetBaseConfig_init_default      {false, msgs_can_BaseConfig_init_default, false, msgs_can_Status_init_default}
+#define msgs_can_ImuData_init_default            {false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define msgs_can_BaseVel_init_zero               {false, 0, false, 0, false, 0}
 #define msgs_can_Status_init_zero                {false, 0, false, _msgs_can_Status_StatusType_MIN, false, _msgs_can_Status_ErrorType_MIN, {{NULL}, NULL}}
 #define msgs_can_StatusReport_init_zero          {false, msgs_can_Status_init_zero}
 #define msgs_can_Log_init_zero                   {false, msgs_can_BaseConfig_init_zero, {{NULL}, NULL}}
 #define msgs_can_BaseConfig_init_zero            {false, 0, false, 0, false, 0, false, 0}
+#define msgs_can_RetBaseConfig_init_zero         {false, msgs_can_BaseConfig_init_zero, false, msgs_can_Status_init_zero}
+#define msgs_can_ImuData_init_zero               {false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define msgs_can_BaseConfig_max_accel_tag        1
@@ -107,12 +136,20 @@ extern "C" {
 #define msgs_can_BaseVel_x_tag                   1
 #define msgs_can_BaseVel_y_tag                   2
 #define msgs_can_BaseVel_theta_tag               3
+#define msgs_can_ImuData_acc_x_tag               1
+#define msgs_can_ImuData_acc_y_tag               2
+#define msgs_can_ImuData_acc_z_tag               3
+#define msgs_can_ImuData_gyro_x_tag              4
+#define msgs_can_ImuData_gyro_y_tag              5
+#define msgs_can_ImuData_gyro_z_tag              6
 #define msgs_can_Status_timestamp_tag            1
 #define msgs_can_Status_status_tag               2
 #define msgs_can_Status_error_tag                3
 #define msgs_can_Status_message_tag              4
 #define msgs_can_Log_config_tag                  1
 #define msgs_can_Log_status_tag                  2
+#define msgs_can_RetBaseConfig_config_tag        1
+#define msgs_can_RetBaseConfig_status_tag        2
 #define msgs_can_StatusReport_status_tag         1
 
 /* Struct field encoding specification for nanopb */
@@ -153,11 +190,31 @@ X(a, STATIC,   OPTIONAL, FLOAT,    base_radius,       4)
 #define msgs_can_BaseConfig_CALLBACK NULL
 #define msgs_can_BaseConfig_DEFAULT NULL
 
+#define msgs_can_RetBaseConfig_FIELDLIST(X, a) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  config,            1) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  status,            2)
+#define msgs_can_RetBaseConfig_CALLBACK NULL
+#define msgs_can_RetBaseConfig_DEFAULT NULL
+#define msgs_can_RetBaseConfig_config_MSGTYPE msgs_can_BaseConfig
+#define msgs_can_RetBaseConfig_status_MSGTYPE msgs_can_Status
+
+#define msgs_can_ImuData_FIELDLIST(X, a) \
+X(a, STATIC,   OPTIONAL, FLOAT,    acc_x,             1) \
+X(a, STATIC,   OPTIONAL, FLOAT,    acc_y,             2) \
+X(a, STATIC,   OPTIONAL, FLOAT,    acc_z,             3) \
+X(a, STATIC,   OPTIONAL, FLOAT,    gyro_x,            4) \
+X(a, STATIC,   OPTIONAL, FLOAT,    gyro_y,            5) \
+X(a, STATIC,   OPTIONAL, FLOAT,    gyro_z,            6)
+#define msgs_can_ImuData_CALLBACK NULL
+#define msgs_can_ImuData_DEFAULT NULL
+
 extern const pb_msgdesc_t msgs_can_BaseVel_msg;
 extern const pb_msgdesc_t msgs_can_Status_msg;
 extern const pb_msgdesc_t msgs_can_StatusReport_msg;
 extern const pb_msgdesc_t msgs_can_Log_msg;
 extern const pb_msgdesc_t msgs_can_BaseConfig_msg;
+extern const pb_msgdesc_t msgs_can_RetBaseConfig_msg;
+extern const pb_msgdesc_t msgs_can_ImuData_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define msgs_can_BaseVel_fields &msgs_can_BaseVel_msg
@@ -165,13 +222,17 @@ extern const pb_msgdesc_t msgs_can_BaseConfig_msg;
 #define msgs_can_StatusReport_fields &msgs_can_StatusReport_msg
 #define msgs_can_Log_fields &msgs_can_Log_msg
 #define msgs_can_BaseConfig_fields &msgs_can_BaseConfig_msg
+#define msgs_can_RetBaseConfig_fields &msgs_can_RetBaseConfig_msg
+#define msgs_can_ImuData_fields &msgs_can_ImuData_msg
 
 /* Maximum encoded size of messages (where known) */
 /* msgs_can_Status_size depends on runtime parameters */
 /* msgs_can_StatusReport_size depends on runtime parameters */
 /* msgs_can_Log_size depends on runtime parameters */
+/* msgs_can_RetBaseConfig_size depends on runtime parameters */
 #define msgs_can_BaseConfig_size                 20
 #define msgs_can_BaseVel_size                    15
+#define msgs_can_ImuData_size                    30
 
 #ifdef __cplusplus
 } /* extern "C" */

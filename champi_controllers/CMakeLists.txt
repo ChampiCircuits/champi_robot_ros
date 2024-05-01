@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(champi_libraries REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(tf2 REQUIRED)
@@ -18,6 +19,9 @@ find_package(diagnostic_updater REQUIRED)
 
 add_executable(base_controller_node src/base_controller_node.cpp)
 ament_target_dependencies(base_controller_node rclcpp geometry_msgs champi_libraries Protobuf nav_msgs tf2 tf2_ros diagnostic_updater)
+
+add_executable(imu_controller_node src/imu_controller_node.cpp)
+ament_target_dependencies(imu_controller_node rclcpp champi_libraries Protobuf diagnostic_updater sensor_msgs)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -41,6 +45,7 @@ install(DIRECTORY
 
 install(TARGETS
         base_controller_node
+        imu_controller_node
         DESTINATION lib/${PROJECT_NAME}
 )
 

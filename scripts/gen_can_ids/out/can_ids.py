@@ -9,3 +9,6 @@ class CanIds:
     BASE_RESET = 0x1
     BASE_TEST = 0x200
     RET_BASE_TEST = 0x201
+    IMU_DATA = 0x20
+    IMU_STATUS = 0x21
+    IMU_TEST = 0x202
