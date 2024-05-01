@@ -77,7 +77,7 @@ public:
         pub_imu_ = this->create_publisher<sensor_msgs::msg::Imu>("imu", 10);
 
         // Timer loop
-        timer_ = this->create_wall_timer(std::chrono::duration<double>(0.01), std::bind(&ImuControllerNode::loop_callback, this));
+        timer_ = this->create_wall_timer(std::chrono::duration<double>(0.05), std::bind(&ImuControllerNode::loop_callback, this));
 
     }
 

@@ -6,6 +6,8 @@ from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 import math
+from rclpy.executors import ExternalShutdownException
+
 
 class MyNode(Node):
     def __init__(self):
@@ -25,12 +27,12 @@ class MyNode(Node):
         self.yaw_velocity_threshold = self.get_parameter('yaw_velocity_threshold').get_parameter_value().double_value
         self.pose_covariance = self.get_parameter('pose_covariance').get_parameter_value().double_array_value
 
-        self.cmd_vel_subscriber = self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
+        # self.cmd_vel_subscriber = self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
         self.imu_subscriber = self.create_subscription(Imu, self.imu_topic, self.imu_callback, 10)
         self.odometry_subscriber = self.create_subscription(Odometry, self.odometry_topic, self.odometry_callback, 10)
         self.publisher = self.create_publisher(PoseWithCovarianceStamped, self.output_topic, 10)
 
-        self.timer = self.create_timer(0.1, self.timer_callback)  # 10Hz
+        self.timer = self.create_timer(0.2, self.timer_callback)  # 10Hz
 
         self.cmd_vel = Twist()
         self.imu = Imu()
@@ -41,6 +43,16 @@ class MyNode(Node):
         self.cov_36 = [0.0] * 36
         for i in range(6):
             self.cov_36[i * 6 + i] = self.pose_covariance[i]
+        
+        self.pose_msg = PoseWithCovarianceStamped()
+        self.pose_msg.header.frame_id = 'odom'
+        self.pose_msg.pose.covariance = self.cov_36
+
+        self.req_imu = True
+        self.req_odom = True
+        self.req_pose = True
+
+
 
     def cmd_vel_callback(self, msg):
         self.cmd_vel = msg
@@ -54,29 +66,33 @@ class MyNode(Node):
             self.odometry = msg
 
     def timer_callback(self):
-        if self.is_stationary() and self.is_yaw_velocity_below_threshold():
+        # if self.is_stationary() and self.is_yaw_velocity_below_threshold():
+        if self.is_yaw_velocity_below_threshold():
             self.robot_stopped = True
-            pose_msg = PoseWithCovarianceStamped()
-            pose_msg.header.stamp = self.get_clock().now().to_msg()
-            pose_msg.header.frame_id = 'odom'
-            pose_msg.pose = self.odometry.pose
-            pose_msg.pose.covariance = self.cov_36
-            self.publisher.publish(pose_msg)
+            self.pose_msg.header.stamp = self.get_clock().now().to_msg()
+            self.pose_msg.pose = self.odometry.pose
+            self.publisher.publish(self.pose_msg)
         else:
             self.robot_stopped = False
 
     def is_stationary(self):
-        return all(value == 0 for value in [self.cmd_vel.linear.x, self.cmd_vel.linear.y, self.cmd_vel.linear.z, self.cmd_vel.angular.x, self.cmd_vel.angular.y, self.cmd_vel.angular.z])
+        return self.cmd_vel.linear.x == 0 and self.cmd_vel.linear.y == 0 and self.cmd_vel.angular.z == 0
 
     def is_yaw_velocity_below_threshold(self):
         return math.fabs(self.imu.angular_velocity.z) < self.yaw_velocity_threshold
 
 def main(args=None):
     rclpy.init(args=args)
+
     node = MyNode()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+
 
 if __name__ == '__main__':
     main()

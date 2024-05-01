@@ -19,7 +19,7 @@ base_controller:
     topic_twist_in: "/cmd_vel"
     champi_can_verbose_mode: false
     timeout_connexion_ros: 1000000000000.0
-    timeout_connexion_stm: 1.0
+    timeout_connexion_stm: 1.2
 
     start_x: 1.825 # m
     start_y: 0.175 # m
