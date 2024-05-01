@@ -156,12 +156,12 @@ class HoloBaseControlDummy(Node):
     def timer_callback(self):
 
         # comppute speed of the robot and print it
-        speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
-        # print 1/20 times
-        if self.cnt == 20:
-            rclpy.logging.get_logger('rclpy').info(f"Speed: {speed}")
-            self.cnt = 0
-        self.cnt += 1
+        # speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
+        # # print 1/20 times
+        # if self.cnt == 20:
+        #     rclpy.logging.get_logger('rclpy').info(f"Speed: {speed}")
+        #     self.cnt = 0
+        # self.cnt += 1
 
 
         # Compute dt
