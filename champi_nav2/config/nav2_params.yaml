@@ -45,8 +45,8 @@ controller_server:
     general_goal_checker:
       stateful: False # Whether to check for XY position tolerance after rotating to goal orientation in case of minor localization changes.
       plugin: "nav2_controller::StoppedGoalChecker"
-      xy_goal_tolerance: 0.0001 #m
-      yaw_goal_tolerance: 0.01 #rad
+      xy_goal_tolerance: 0.001 #m
+      yaw_goal_tolerance: 0.05 #rad
       trans_stopped_velocity: 0.01 # m/s
       rot_stopped_velocity: 0.01 # rad/s
 
@@ -74,10 +74,10 @@ controller_server:
       # Sampling standard deviation for Wz
       wz_std: 0.3
       # Max speeds (m/s or rad/s)
-      vx_max: 0.5
-      vx_min: -0.5
-      vy_max: 0.5
-      wz_max: 1.5 # 1.9
+      vx_max: 0.1
+      vx_min: -0.1
+      vy_max: 0.1
+      wz_max: 1.0 # 1.5
       # Default 1.7. Distance to prune the path ahead of the robot.
       prune_distance: 0.8 # TODO je ne comprends pas vraiment ce paramètre. 
       #Ca change la longueur de la trajectoire générée. à 1.7 (valeur par défaut) elle est supérieure à la taille de la local costmap 
