@@ -2,3 +2,7 @@
 __pycache__
 compile_commands.json
 .idea
+
+build/*
+install/*
+log/*
