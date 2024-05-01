@@ -137,6 +137,15 @@ def generate_launch_description():
         arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
     )
 
+
+    robot_stopped_detector_node = Node(
+        package='champi_navigation',
+        executable='robot_stopped_detector_node.py',
+        name='robot_stopped_detector',
+        output='screen',
+        parameters=[config_file_path]
+    )
+
     return LaunchDescription([
         sim_arg,
         joy_arg,
@@ -150,6 +159,7 @@ def generate_launch_description():
         teleop_launch,
         pub_goal_rviz_node,
         ukf_node,
-        static_tf_map_odom
+        static_tf_map_odom,
+        robot_stopped_detector_node
     ])
 
