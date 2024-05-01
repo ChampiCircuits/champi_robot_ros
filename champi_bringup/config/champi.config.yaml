@@ -39,7 +39,7 @@ base_controller:
 
     base_config:
       max_accel_wheels: 10.0 # rotation des roues en rotation/s²
-      wheel_radius: 0.029 # en m
+      wheel_radius: 0.0276 # en m # 0.029
       base_radius: 0.175 # en m
       cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
 
