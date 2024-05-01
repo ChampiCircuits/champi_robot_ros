@@ -4,7 +4,8 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-import champi_camera_yolo.pyueye_api as pyueye_api
+import pyueye_api as pyueye_api
+#import champi_camera_yolo.pyueye_api as pyueye_api
 
 # Exemple de fonction get_image
 def get_image():
