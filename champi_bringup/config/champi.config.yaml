@@ -9,6 +9,8 @@ base_controller_simu:
     max_acceleration_angular: 4.0 # rad/s^2
     max_deceleration_angular: 20.0 # rad/s^2
 
+    imu_vel_yaw_cov: 0.00001
+
 
 
 base_controller:
@@ -71,3 +73,15 @@ twist_mux:
         topic   : cmd_vel
         timeout : 0.5
         priority: 101
+
+
+robot_stopped_detector:
+  ros__parameters:
+
+    cmd_vel_topic: "/base_controller/cmd_vel_limited"
+    imu_topic: "/imu"
+    odometry_topic: "/odometry/filtered"
+    output_topic: "/robot_stopped/pose"
+    yaw_velocity_threshold: 0.005
+
+    pose_covariance: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]

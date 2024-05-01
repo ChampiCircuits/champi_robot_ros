@@ -10,8 +10,9 @@ from tf2_ros import TransformBroadcaster
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped, Twist
-from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
+from sensor_msgs.msg import Imu
+
 
 from rclpy.executors import ExternalShutdownException
 
@@ -27,18 +28,21 @@ class HoloBaseControlDummy(Node):
         self.declare_parameter('max_acceleration_angular', 2.0)
         self.declare_parameter('max_deceleration_linear', 1.0)
         self.declare_parameter('max_deceleration_angular', 6.0)
+        self.declare_parameter('imu_vel_yaw_cov', 0.01)
         # Get parameters
         self.enable_accel_limits_ = self.get_parameter('enable_accel_limits').value
         self.max_acceleration_linear_ = self.get_parameter('max_acceleration_linear').value
         self.max_acceleration_angular_ = self.get_parameter('max_acceleration_angular').value
         self.max_deceleration_linear_ = self.get_parameter('max_deceleration_linear').value
         self.max_deceleration_angular_ = self.get_parameter('max_deceleration_angular').value
+        self.imu_vel_yaw_cov_ = self.get_parameter('imu_vel_yaw_cov').value
         # Print parameters
         get_logger('rclpy').info(f"enable_accel_limits: {self.enable_accel_limits_}")
         get_logger('rclpy').info(f"max_acceleration_linear: {self.max_acceleration_linear_}")
         get_logger('rclpy').info(f"max_acceleration_angular: {self.max_acceleration_angular_}")
         get_logger('rclpy').info(f"max_deceleration_linear: {self.max_deceleration_linear_}")
         get_logger('rclpy').info(f"max_deceleration_angular: {self.max_deceleration_angular_}")
+        get_logger('rclpy').info(f"imu_vel_yaw_cov: {self.imu_vel_yaw_cov_}")
 
         self.subscription = self.create_subscription(
             Twist,
@@ -48,6 +52,8 @@ class HoloBaseControlDummy(Node):
         self.subscription  # prevent unused variable warning
 
         self.pub = self.create_publisher(Odometry, '/odom', 10)
+        self.pub_imu = self.create_publisher(Imu, '/imu', 10)
+        self.pub_cmd_vel_limited = self.create_publisher(Twist, '/base_controller/cmd_vel_limited', 10)
 
         self.subscription_initial_pose = self.create_subscription(
             PoseWithCovarianceStamped,
@@ -195,6 +201,14 @@ class HoloBaseControlDummy(Node):
 
         self.cmd_vel_to_wheels(cmd_vx_limited, cmd_vy_limited, cmd_wz_limited)
         self.wheels_to_current_vel()
+
+        # Publish the limited cmd_vel
+        cmd_vel_limited = Twist()
+        cmd_vel_limited.linear.x = cmd_vx_limited
+        cmd_vel_limited.linear.y = cmd_vy_limited
+        cmd_vel_limited.angular.z = cmd_wz_limited
+        self.pub_cmd_vel_limited.publish(cmd_vel_limited)
+
         self.update_pose()
 
         # Publish the odometry
@@ -213,6 +227,16 @@ class HoloBaseControlDummy(Node):
         odom.pose.pose.orientation.z = sin(self.current_pose[2] / 2)
         odom.pose.pose.orientation.w = cos(self.current_pose[2] / 2)
         self.pub.publish(odom)
+
+        # Publish the imu (yaw vel only)
+        imu = Imu()
+        imu.header.stamp = self.get_clock().now().to_msg()
+        imu.header.frame_id = "imu_link"
+        imu.angular_velocity.z = self.current_vel[2]
+        # Put diagonal covariance
+        imu.angular_velocity_covariance = [self.imu_vel_yaw_cov_, 0., 0., 0., self.imu_vel_yaw_cov_, 0., 0., 0., self.imu_vel_yaw_cov_]
+        self.pub_imu.publish(imu)
+
 
         # Broadcast the transform
         # t = TransformStamped()
