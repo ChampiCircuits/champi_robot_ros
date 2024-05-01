@@ -84,4 +84,4 @@ robot_stopped_detector:
     output_topic: "/robot_stopped/pose"
     yaw_velocity_threshold: 0.005
 
-    pose_covariance: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+    pose_covariance: [0.000001, 0.000001, 0.000001, 0.000001, 0.000001, 0.000001]
