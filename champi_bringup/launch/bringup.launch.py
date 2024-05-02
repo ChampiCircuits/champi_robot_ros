@@ -29,7 +29,7 @@ def generate_launch_description():
 
     # Get the URDF file TODO faire ça dans un launch file dans champi_description plutôt
     urdf_file_path = os.path.join(get_package_share_directory('champi_description'), 'urdf', 'champi.urdf')
-    urdf_content = open(urdf_file_path).read()    
+    urdf_content = open(urdf_file_path).read()
 
     description_broadcaster = Node(
             package='robot_state_publisher',
@@ -158,7 +158,7 @@ def generate_launch_description():
         cmd_vel_mux_node,
         teleop_launch,
         pub_goal_rviz_node,
-        ukf_node,
+        # ukf_node,
         static_tf_map_odom,
         robot_stopped_detector_node
     ])
