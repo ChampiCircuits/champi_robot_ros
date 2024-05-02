@@ -37,6 +37,14 @@ namespace msgs_can {
     public:
         ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BaseConfig> _instance;
     } _BaseConfig_default_instance_;
+    class RetBaseConfigDefaultTypeInternal {
+    public:
+        ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RetBaseConfig> _instance;
+    } _RetBaseConfig_default_instance_;
+    class ImuDataDefaultTypeInternal {
+    public:
+        ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ImuData> _instance;
+    } _ImuData_default_instance_;
 }  // namespace msgs_can
 static void InitDefaultsscc_info_BaseConfig_msgs_5fcan_2eproto() {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -66,6 +74,20 @@ static void InitDefaultsscc_info_BaseVel_msgs_5fcan_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_BaseVel_msgs_5fcan_2eproto =
         {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_BaseVel_msgs_5fcan_2eproto}, {}};
 
+static void InitDefaultsscc_info_ImuData_msgs_5fcan_2eproto() {
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+    {
+        void* ptr = &::msgs_can::_ImuData_default_instance_;
+        new (ptr) ::msgs_can::ImuData();
+        ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+    }
+    ::msgs_can::ImuData::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ImuData_msgs_5fcan_2eproto =
+        {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ImuData_msgs_5fcan_2eproto}, {}};
+
 static void InitDefaultsscc_info_Log_msgs_5fcan_2eproto() {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -79,6 +101,22 @@ static void InitDefaultsscc_info_Log_msgs_5fcan_2eproto() {
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_Log_msgs_5fcan_2eproto =
         {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_Log_msgs_5fcan_2eproto}, {
+                &scc_info_BaseConfig_msgs_5fcan_2eproto.base,
+                                                                                           &scc_info_Status_msgs_5fcan_2eproto.base,}};
+
+static void InitDefaultsscc_info_RetBaseConfig_msgs_5fcan_2eproto() {
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+    {
+        void* ptr = &::msgs_can::_RetBaseConfig_default_instance_;
+        new (ptr) ::msgs_can::RetBaseConfig();
+        ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+    }
+    ::msgs_can::RetBaseConfig::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_RetBaseConfig_msgs_5fcan_2eproto =
+        {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_RetBaseConfig_msgs_5fcan_2eproto}, {
                 &scc_info_BaseConfig_msgs_5fcan_2eproto.base,
                                                                                            &scc_info_Status_msgs_5fcan_2eproto.base,}};
 
@@ -111,7 +149,7 @@ static void InitDefaultsscc_info_StatusReport_msgs_5fcan_2eproto() {
         {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_StatusReport_msgs_5fcan_2eproto}, {
                 &scc_info_Status_msgs_5fcan_2eproto.base,}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[5];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[7];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_msgs_5fcan_2eproto[2];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_msgs_5fcan_2eproto = nullptr;
 
@@ -169,6 +207,32 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_msgs_5fcan_2eproto::offsets[] 
         1,
         2,
         3,
+        PROTOBUF_FIELD_OFFSET(::msgs_can::RetBaseConfig, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::msgs_can::RetBaseConfig, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::msgs_can::RetBaseConfig, config_),
+        PROTOBUF_FIELD_OFFSET(::msgs_can::RetBaseConfig, status_),
+        0,
+        1,
+        PROTOBUF_FIELD_OFFSET(::msgs_can::ImuData, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::msgs_can::ImuData, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::msgs_can::ImuData, acc_x_),
+        PROTOBUF_FIELD_OFFSET(::msgs_can::ImuData, acc_y_),
+        PROTOBUF_FIELD_OFFSET(::msgs_can::ImuData, acc_z_),
+        PROTOBUF_FIELD_OFFSET(::msgs_can::ImuData, gyro_x_),
+        PROTOBUF_FIELD_OFFSET(::msgs_can::ImuData, gyro_y_),
+        PROTOBUF_FIELD_OFFSET(::msgs_can::ImuData, gyro_z_),
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
         { 0, 8, sizeof(::msgs_can::BaseVel)},
@@ -176,6 +240,8 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
         { 24, 30, sizeof(::msgs_can::StatusReport)},
         { 31, 38, sizeof(::msgs_can::Log)},
         { 40, 49, sizeof(::msgs_can::BaseConfig)},
+        { 53, 60, sizeof(::msgs_can::RetBaseConfig)},
+        { 62, 73, sizeof(::msgs_can::ImuData)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -184,41 +250,51 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
         reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_StatusReport_default_instance_),
         reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_Log_default_instance_),
         reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_BaseConfig_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_RetBaseConfig_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ImuData_default_instance_),
 };
 
 const char descriptor_table_protodef_msgs_5fcan_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
         "\n\016msgs_can.proto\022\010msgs_can\".\n\007BaseVel\022\t\n"
-        "\001x\030\001 \001(\002\022\t\n\001y\030\002 \001(\002\022\r\n\005theta\030\003 \001(\002\"\306\002\n\006S"
+        "\001x\030\001 \001(\002\022\t\n\001y\030\002 \001(\002\022\r\n\005theta\030\003 \001(\002\"\332\002\n\006S"
         "tatus\022\021\n\ttimestamp\030\001 \001(\002\022+\n\006status\030\002 \001(\016"
         "2\033.msgs_can.Status.StatusType\022)\n\005error\030\003"
         " \001(\0162\032.msgs_can.Status.ErrorType\022\017\n\007mess"
         "age\030\004 \001(\t\"3\n\nStatusType\022\006\n\002OK\020\000\022\010\n\004INIT\020"
-        "\001\022\010\n\004WARN\020\002\022\t\n\005ERROR\020\003\"\212\001\n\tErrorType\022\010\n\004"
+        "\001\022\010\n\004WARN\020\002\022\t\n\005ERROR\020\003\"\236\001\n\tErrorType\022\010\n\004"
         "NONE\020\000\022\024\n\020INIT_PERIPHERALS\020\001\022\014\n\010INIT_CAN"
         "\020\002\022\020\n\014PROTO_ENCODE\020\003\022\020\n\014PROTO_DECODE\020\004\022\023"
         "\n\017CMD_VEL_TIMEOUT\020\005\022\n\n\006CAN_TX\020\006\022\n\n\006CAN_R"
-        "X\020\007\"0\n\014StatusReport\022 \n\006status\030\001 \001(\0132\020.ms"
-        "gs_can.Status\"M\n\003Log\022$\n\006config\030\001 \001(\0132\024.m"
-        "sgs_can.BaseConfig\022 \n\006status\030\002 \003(\0132\020.msg"
-        "s_can.Status\"c\n\nBaseConfig\022\021\n\tmax_accel\030"
-        "\001 \001(\002\022\027\n\017cmd_vel_timeout\030\002 \001(\002\022\024\n\014wheel_"
-        "radius\030\003 \001(\002\022\023\n\013base_radius\030\004 \001(\002"
+        "X\020\007\022\022\n\016INVALID_CONFIG\020\010\"0\n\014StatusReport\022"
+        " \n\006status\030\001 \001(\0132\020.msgs_can.Status\"M\n\003Log"
+        "\022$\n\006config\030\001 \001(\0132\024.msgs_can.BaseConfig\022 "
+        "\n\006status\030\002 \003(\0132\020.msgs_can.Status\"c\n\nBase"
+        "Config\022\021\n\tmax_accel\030\001 \001(\002\022\027\n\017cmd_vel_tim"
+        "eout\030\002 \001(\002\022\024\n\014wheel_radius\030\003 \001(\002\022\023\n\013base"
+        "_radius\030\004 \001(\002\"W\n\rRetBaseConfig\022$\n\006config"
+        "\030\001 \001(\0132\024.msgs_can.BaseConfig\022 \n\006status\030\002"
+        " \001(\0132\020.msgs_can.Status\"f\n\007ImuData\022\r\n\005acc"
+        "_x\030\001 \001(\002\022\r\n\005acc_y\030\002 \001(\002\022\r\n\005acc_z\030\003 \001(\002\022\016"
+        "\n\006gyro_x\030\004 \001(\002\022\016\n\006gyro_y\030\005 \001(\002\022\016\n\006gyro_z"
+        "\030\006 \001(\002"
 ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_msgs_5fcan_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[5] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[7] = {
         &scc_info_BaseConfig_msgs_5fcan_2eproto.base,
         &scc_info_BaseVel_msgs_5fcan_2eproto.base,
+        &scc_info_ImuData_msgs_5fcan_2eproto.base,
         &scc_info_Log_msgs_5fcan_2eproto.base,
+        &scc_info_RetBaseConfig_msgs_5fcan_2eproto.base,
         &scc_info_Status_msgs_5fcan_2eproto.base,
         &scc_info_StatusReport_msgs_5fcan_2eproto.base,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_msgs_5fcan_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_msgs_5fcan_2eproto = {
-        false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 633,
-        &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 5, 0,
+        false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 846,
+        &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 7, 0,
         schemas, file_default_instances, TableStruct_msgs_5fcan_2eproto::offsets,
-        file_level_metadata_msgs_5fcan_2eproto, 5, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
+        file_level_metadata_msgs_5fcan_2eproto, 7, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -263,6 +339,7 @@ constexpr int Status::StatusType_ARRAYSIZE;
             case 5:
             case 6:
             case 7:
+            case 8:
                 return true;
             default:
                 return false;
@@ -278,6 +355,7 @@ constexpr Status_ErrorType Status::PROTO_DECODE;
 constexpr Status_ErrorType Status::CMD_VEL_TIMEOUT;
 constexpr Status_ErrorType Status::CAN_TX;
 constexpr Status_ErrorType Status::CAN_RX;
+constexpr Status_ErrorType Status::INVALID_CONFIG;
 constexpr Status_ErrorType Status::ErrorType_MIN;
 constexpr Status_ErrorType Status::ErrorType_MAX;
 constexpr int Status::ErrorType_ARRAYSIZE;
@@ -1683,6 +1761,644 @@ constexpr int Status::ErrorType_ARRAYSIZE;
     }
 
 
+// ===================================================================
+
+    void RetBaseConfig::InitAsDefaultInstance() {
+        ::msgs_can::_RetBaseConfig_default_instance_._instance.get_mutable()->config_ = const_cast< ::msgs_can::BaseConfig*>(
+                ::msgs_can::BaseConfig::internal_default_instance());
+        ::msgs_can::_RetBaseConfig_default_instance_._instance.get_mutable()->status_ = const_cast< ::msgs_can::Status*>(
+                ::msgs_can::Status::internal_default_instance());
+    }
+    class RetBaseConfig::_Internal {
+    public:
+        using HasBits = decltype(std::declval<RetBaseConfig>()._has_bits_);
+        static const ::msgs_can::BaseConfig& config(const RetBaseConfig* msg);
+        static void set_has_config(HasBits* has_bits) {
+            (*has_bits)[0] |= 1u;
+        }
+        static const ::msgs_can::Status& status(const RetBaseConfig* msg);
+        static void set_has_status(HasBits* has_bits) {
+            (*has_bits)[0] |= 2u;
+        }
+    };
+
+    const ::msgs_can::BaseConfig&
+    RetBaseConfig::_Internal::config(const RetBaseConfig* msg) {
+        return *msg->config_;
+    }
+    const ::msgs_can::Status&
+    RetBaseConfig::_Internal::status(const RetBaseConfig* msg) {
+        return *msg->status_;
+    }
+    RetBaseConfig::RetBaseConfig(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+            : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+        SharedCtor();
+        RegisterArenaDtor(arena);
+        // @@protoc_insertion_point(arena_constructor:msgs_can.RetBaseConfig)
+    }
+    RetBaseConfig::RetBaseConfig(const RetBaseConfig& from)
+            : ::PROTOBUF_NAMESPACE_ID::Message(),
+              _has_bits_(from._has_bits_) {
+        _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+        if (from._internal_has_config()) {
+            config_ = new ::msgs_can::BaseConfig(*from.config_);
+        } else {
+            config_ = nullptr;
+        }
+        if (from._internal_has_status()) {
+            status_ = new ::msgs_can::Status(*from.status_);
+        } else {
+            status_ = nullptr;
+        }
+        // @@protoc_insertion_point(copy_constructor:msgs_can.RetBaseConfig)
+    }
+
+    void RetBaseConfig::SharedCtor() {
+        ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_RetBaseConfig_msgs_5fcan_2eproto.base);
+        ::memset(&config_, 0, static_cast<size_t>(
+                                      reinterpret_cast<char*>(&status_) -
+                                      reinterpret_cast<char*>(&config_)) + sizeof(status_));
+    }
+
+    RetBaseConfig::~RetBaseConfig() {
+        // @@protoc_insertion_point(destructor:msgs_can.RetBaseConfig)
+        SharedDtor();
+        _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+    }
+
+    void RetBaseConfig::SharedDtor() {
+                GOOGLE_DCHECK(GetArena() == nullptr);
+        if (this != internal_default_instance()) delete config_;
+        if (this != internal_default_instance()) delete status_;
+    }
+
+    void RetBaseConfig::ArenaDtor(void* object) {
+        RetBaseConfig* _this = reinterpret_cast< RetBaseConfig* >(object);
+        (void)_this;
+    }
+    void RetBaseConfig::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+    }
+    void RetBaseConfig::SetCachedSize(int size) const {
+        _cached_size_.Set(size);
+    }
+    const RetBaseConfig& RetBaseConfig::default_instance() {
+        ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_RetBaseConfig_msgs_5fcan_2eproto.base);
+        return *internal_default_instance();
+    }
+
+
+    void RetBaseConfig::Clear() {
+// @@protoc_insertion_point(message_clear_start:msgs_can.RetBaseConfig)
+        ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+        // Prevent compiler warnings about cached_has_bits being unused
+        (void) cached_has_bits;
+
+        cached_has_bits = _has_bits_[0];
+        if (cached_has_bits & 0x00000003u) {
+            if (cached_has_bits & 0x00000001u) {
+                        GOOGLE_DCHECK(config_ != nullptr);
+                config_->Clear();
+            }
+            if (cached_has_bits & 0x00000002u) {
+                        GOOGLE_DCHECK(status_ != nullptr);
+                status_->Clear();
+            }
+        }
+        _has_bits_.Clear();
+        _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+    }
+
+    const char* RetBaseConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+        _Internal::HasBits has_bits{};
+        ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
+        while (!ctx->Done(&ptr)) {
+            ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+            ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+            CHK_(ptr);
+            switch (tag >> 3) {
+                // optional .msgs_can.BaseConfig config = 1;
+                case 1:
+                    if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+                        ptr = ctx->ParseMessage(_internal_mutable_config(), ptr);
+                        CHK_(ptr);
+                    } else goto handle_unusual;
+                    continue;
+                    // optional .msgs_can.Status status = 2;
+                case 2:
+                    if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+                        ptr = ctx->ParseMessage(_internal_mutable_status(), ptr);
+                        CHK_(ptr);
+                    } else goto handle_unusual;
+                    continue;
+                default: {
+                    handle_unusual:
+                    if ((tag & 7) == 4 || tag == 0) {
+                        ctx->SetLastTag(tag);
+                        goto success;
+                    }
+                    ptr = UnknownFieldParse(tag,
+                                            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+                                            ptr, ctx);
+                    CHK_(ptr != nullptr);
+                    continue;
+                }
+            }  // switch
+        }  // while
+        success:
+        _has_bits_.Or(has_bits);
+        return ptr;
+        failure:
+        ptr = nullptr;
+        goto success;
+#undef CHK_
+    }
+
+    ::PROTOBUF_NAMESPACE_ID::uint8* RetBaseConfig::_InternalSerialize(
+            ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+        // @@protoc_insertion_point(serialize_to_array_start:msgs_can.RetBaseConfig)
+        ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+        (void) cached_has_bits;
+
+        cached_has_bits = _has_bits_[0];
+        // optional .msgs_can.BaseConfig config = 1;
+        if (cached_has_bits & 0x00000001u) {
+            target = stream->EnsureSpace(target);
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+            InternalWriteMessage(
+                    1, _Internal::config(this), target, stream);
+        }
+
+        // optional .msgs_can.Status status = 2;
+        if (cached_has_bits & 0x00000002u) {
+            target = stream->EnsureSpace(target);
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+            InternalWriteMessage(
+                    2, _Internal::status(this), target, stream);
+        }
+
+        if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+        }
+        // @@protoc_insertion_point(serialize_to_array_end:msgs_can.RetBaseConfig)
+        return target;
+    }
+
+    size_t RetBaseConfig::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:msgs_can.RetBaseConfig)
+        size_t total_size = 0;
+
+        ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+        // Prevent compiler warnings about cached_has_bits being unused
+        (void) cached_has_bits;
+
+        cached_has_bits = _has_bits_[0];
+        if (cached_has_bits & 0x00000003u) {
+            // optional .msgs_can.BaseConfig config = 1;
+            if (cached_has_bits & 0x00000001u) {
+                total_size += 1 +
+                              ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                                      *config_);
+            }
+
+            // optional .msgs_can.Status status = 2;
+            if (cached_has_bits & 0x00000002u) {
+                total_size += 1 +
+                              ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                                      *status_);
+            }
+
+        }
+        if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+            return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+                    _internal_metadata_, total_size, &_cached_size_);
+        }
+        int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+        SetCachedSize(cached_size);
+        return total_size;
+    }
+
+    void RetBaseConfig::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:msgs_can.RetBaseConfig)
+                GOOGLE_DCHECK_NE(&from, this);
+        const RetBaseConfig* source =
+                ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<RetBaseConfig>(
+                        &from);
+        if (source == nullptr) {
+            // @@protoc_insertion_point(generalized_merge_from_cast_fail:msgs_can.RetBaseConfig)
+            ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+        } else {
+            // @@protoc_insertion_point(generalized_merge_from_cast_success:msgs_can.RetBaseConfig)
+            MergeFrom(*source);
+        }
+    }
+
+    void RetBaseConfig::MergeFrom(const RetBaseConfig& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:msgs_can.RetBaseConfig)
+                GOOGLE_DCHECK_NE(&from, this);
+        _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+        ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+        (void) cached_has_bits;
+
+        cached_has_bits = from._has_bits_[0];
+        if (cached_has_bits & 0x00000003u) {
+            if (cached_has_bits & 0x00000001u) {
+                _internal_mutable_config()->::msgs_can::BaseConfig::MergeFrom(from._internal_config());
+            }
+            if (cached_has_bits & 0x00000002u) {
+                _internal_mutable_status()->::msgs_can::Status::MergeFrom(from._internal_status());
+            }
+        }
+    }
+
+    void RetBaseConfig::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:msgs_can.RetBaseConfig)
+        if (&from == this) return;
+        Clear();
+        MergeFrom(from);
+    }
+
+    void RetBaseConfig::CopyFrom(const RetBaseConfig& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:msgs_can.RetBaseConfig)
+        if (&from == this) return;
+        Clear();
+        MergeFrom(from);
+    }
+
+    bool RetBaseConfig::IsInitialized() const {
+        return true;
+    }
+
+    void RetBaseConfig::InternalSwap(RetBaseConfig* other) {
+        using std::swap;
+        _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+        swap(_has_bits_[0], other->_has_bits_[0]);
+        ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+                PROTOBUF_FIELD_OFFSET(RetBaseConfig, status_)
+                + sizeof(RetBaseConfig::status_)
+                - PROTOBUF_FIELD_OFFSET(RetBaseConfig, config_)>(
+                reinterpret_cast<char*>(&config_),
+                reinterpret_cast<char*>(&other->config_));
+    }
+
+    ::PROTOBUF_NAMESPACE_ID::Metadata RetBaseConfig::GetMetadata() const {
+        return GetMetadataStatic();
+    }
+
+
+// ===================================================================
+
+    void ImuData::InitAsDefaultInstance() {
+    }
+    class ImuData::_Internal {
+    public:
+        using HasBits = decltype(std::declval<ImuData>()._has_bits_);
+        static void set_has_acc_x(HasBits* has_bits) {
+            (*has_bits)[0] |= 1u;
+        }
+        static void set_has_acc_y(HasBits* has_bits) {
+            (*has_bits)[0] |= 2u;
+        }
+        static void set_has_acc_z(HasBits* has_bits) {
+            (*has_bits)[0] |= 4u;
+        }
+        static void set_has_gyro_x(HasBits* has_bits) {
+            (*has_bits)[0] |= 8u;
+        }
+        static void set_has_gyro_y(HasBits* has_bits) {
+            (*has_bits)[0] |= 16u;
+        }
+        static void set_has_gyro_z(HasBits* has_bits) {
+            (*has_bits)[0] |= 32u;
+        }
+    };
+
+    ImuData::ImuData(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+            : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+        SharedCtor();
+        RegisterArenaDtor(arena);
+        // @@protoc_insertion_point(arena_constructor:msgs_can.ImuData)
+    }
+    ImuData::ImuData(const ImuData& from)
+            : ::PROTOBUF_NAMESPACE_ID::Message(),
+              _has_bits_(from._has_bits_) {
+        _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+        ::memcpy(&acc_x_, &from.acc_x_,
+                 static_cast<size_t>(reinterpret_cast<char*>(&gyro_z_) -
+                                     reinterpret_cast<char*>(&acc_x_)) + sizeof(gyro_z_));
+        // @@protoc_insertion_point(copy_constructor:msgs_can.ImuData)
+    }
+
+    void ImuData::SharedCtor() {
+        ::memset(&acc_x_, 0, static_cast<size_t>(
+                                     reinterpret_cast<char*>(&gyro_z_) -
+                                     reinterpret_cast<char*>(&acc_x_)) + sizeof(gyro_z_));
+    }
+
+    ImuData::~ImuData() {
+        // @@protoc_insertion_point(destructor:msgs_can.ImuData)
+        SharedDtor();
+        _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+    }
+
+    void ImuData::SharedDtor() {
+                GOOGLE_DCHECK(GetArena() == nullptr);
+    }
+
+    void ImuData::ArenaDtor(void* object) {
+        ImuData* _this = reinterpret_cast< ImuData* >(object);
+        (void)_this;
+    }
+    void ImuData::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+    }
+    void ImuData::SetCachedSize(int size) const {
+        _cached_size_.Set(size);
+    }
+    const ImuData& ImuData::default_instance() {
+        ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ImuData_msgs_5fcan_2eproto.base);
+        return *internal_default_instance();
+    }
+
+
+    void ImuData::Clear() {
+// @@protoc_insertion_point(message_clear_start:msgs_can.ImuData)
+        ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+        // Prevent compiler warnings about cached_has_bits being unused
+        (void) cached_has_bits;
+
+        cached_has_bits = _has_bits_[0];
+        if (cached_has_bits & 0x0000003fu) {
+            ::memset(&acc_x_, 0, static_cast<size_t>(
+                                         reinterpret_cast<char*>(&gyro_z_) -
+                                         reinterpret_cast<char*>(&acc_x_)) + sizeof(gyro_z_));
+        }
+        _has_bits_.Clear();
+        _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+    }
+
+    const char* ImuData::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+        _Internal::HasBits has_bits{};
+        ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
+        while (!ctx->Done(&ptr)) {
+            ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+            ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+            CHK_(ptr);
+            switch (tag >> 3) {
+                // optional float acc_x = 1;
+                case 1:
+                    if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 13)) {
+                        _Internal::set_has_acc_x(&has_bits);
+                        acc_x_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+                        ptr += sizeof(float);
+                    } else goto handle_unusual;
+                    continue;
+                    // optional float acc_y = 2;
+                case 2:
+                    if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 21)) {
+                        _Internal::set_has_acc_y(&has_bits);
+                        acc_y_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+                        ptr += sizeof(float);
+                    } else goto handle_unusual;
+                    continue;
+                    // optional float acc_z = 3;
+                case 3:
+                    if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 29)) {
+                        _Internal::set_has_acc_z(&has_bits);
+                        acc_z_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+                        ptr += sizeof(float);
+                    } else goto handle_unusual;
+                    continue;
+                    // optional float gyro_x = 4;
+                case 4:
+                    if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 37)) {
+                        _Internal::set_has_gyro_x(&has_bits);
+                        gyro_x_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+                        ptr += sizeof(float);
+                    } else goto handle_unusual;
+                    continue;
+                    // optional float gyro_y = 5;
+                case 5:
+                    if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 45)) {
+                        _Internal::set_has_gyro_y(&has_bits);
+                        gyro_y_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+                        ptr += sizeof(float);
+                    } else goto handle_unusual;
+                    continue;
+                    // optional float gyro_z = 6;
+                case 6:
+                    if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 53)) {
+                        _Internal::set_has_gyro_z(&has_bits);
+                        gyro_z_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+                        ptr += sizeof(float);
+                    } else goto handle_unusual;
+                    continue;
+                default: {
+                    handle_unusual:
+                    if ((tag & 7) == 4 || tag == 0) {
+                        ctx->SetLastTag(tag);
+                        goto success;
+                    }
+                    ptr = UnknownFieldParse(tag,
+                                            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+                                            ptr, ctx);
+                    CHK_(ptr != nullptr);
+                    continue;
+                }
+            }  // switch
+        }  // while
+        success:
+        _has_bits_.Or(has_bits);
+        return ptr;
+        failure:
+        ptr = nullptr;
+        goto success;
+#undef CHK_
+    }
+
+    ::PROTOBUF_NAMESPACE_ID::uint8* ImuData::_InternalSerialize(
+            ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+        // @@protoc_insertion_point(serialize_to_array_start:msgs_can.ImuData)
+        ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+        (void) cached_has_bits;
+
+        cached_has_bits = _has_bits_[0];
+        // optional float acc_x = 1;
+        if (cached_has_bits & 0x00000001u) {
+            target = stream->EnsureSpace(target);
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(1, this->_internal_acc_x(), target);
+        }
+
+        // optional float acc_y = 2;
+        if (cached_has_bits & 0x00000002u) {
+            target = stream->EnsureSpace(target);
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(2, this->_internal_acc_y(), target);
+        }
+
+        // optional float acc_z = 3;
+        if (cached_has_bits & 0x00000004u) {
+            target = stream->EnsureSpace(target);
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(3, this->_internal_acc_z(), target);
+        }
+
+        // optional float gyro_x = 4;
+        if (cached_has_bits & 0x00000008u) {
+            target = stream->EnsureSpace(target);
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(4, this->_internal_gyro_x(), target);
+        }
+
+        // optional float gyro_y = 5;
+        if (cached_has_bits & 0x00000010u) {
+            target = stream->EnsureSpace(target);
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(5, this->_internal_gyro_y(), target);
+        }
+
+        // optional float gyro_z = 6;
+        if (cached_has_bits & 0x00000020u) {
+            target = stream->EnsureSpace(target);
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(6, this->_internal_gyro_z(), target);
+        }
+
+        if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+            target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+        }
+        // @@protoc_insertion_point(serialize_to_array_end:msgs_can.ImuData)
+        return target;
+    }
+
+    size_t ImuData::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:msgs_can.ImuData)
+        size_t total_size = 0;
+
+        ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+        // Prevent compiler warnings about cached_has_bits being unused
+        (void) cached_has_bits;
+
+        cached_has_bits = _has_bits_[0];
+        if (cached_has_bits & 0x0000003fu) {
+            // optional float acc_x = 1;
+            if (cached_has_bits & 0x00000001u) {
+                total_size += 1 + 4;
+            }
+
+            // optional float acc_y = 2;
+            if (cached_has_bits & 0x00000002u) {
+                total_size += 1 + 4;
+            }
+
+            // optional float acc_z = 3;
+            if (cached_has_bits & 0x00000004u) {
+                total_size += 1 + 4;
+            }
+
+            // optional float gyro_x = 4;
+            if (cached_has_bits & 0x00000008u) {
+                total_size += 1 + 4;
+            }
+
+            // optional float gyro_y = 5;
+            if (cached_has_bits & 0x00000010u) {
+                total_size += 1 + 4;
+            }
+
+            // optional float gyro_z = 6;
+            if (cached_has_bits & 0x00000020u) {
+                total_size += 1 + 4;
+            }
+
+        }
+        if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+            return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+                    _internal_metadata_, total_size, &_cached_size_);
+        }
+        int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+        SetCachedSize(cached_size);
+        return total_size;
+    }
+
+    void ImuData::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:msgs_can.ImuData)
+                GOOGLE_DCHECK_NE(&from, this);
+        const ImuData* source =
+                ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ImuData>(
+                        &from);
+        if (source == nullptr) {
+            // @@protoc_insertion_point(generalized_merge_from_cast_fail:msgs_can.ImuData)
+            ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+        } else {
+            // @@protoc_insertion_point(generalized_merge_from_cast_success:msgs_can.ImuData)
+            MergeFrom(*source);
+        }
+    }
+
+    void ImuData::MergeFrom(const ImuData& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:msgs_can.ImuData)
+                GOOGLE_DCHECK_NE(&from, this);
+        _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+        ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+        (void) cached_has_bits;
+
+        cached_has_bits = from._has_bits_[0];
+        if (cached_has_bits & 0x0000003fu) {
+            if (cached_has_bits & 0x00000001u) {
+                acc_x_ = from.acc_x_;
+            }
+            if (cached_has_bits & 0x00000002u) {
+                acc_y_ = from.acc_y_;
+            }
+            if (cached_has_bits & 0x00000004u) {
+                acc_z_ = from.acc_z_;
+            }
+            if (cached_has_bits & 0x00000008u) {
+                gyro_x_ = from.gyro_x_;
+            }
+            if (cached_has_bits & 0x00000010u) {
+                gyro_y_ = from.gyro_y_;
+            }
+            if (cached_has_bits & 0x00000020u) {
+                gyro_z_ = from.gyro_z_;
+            }
+            _has_bits_[0] |= cached_has_bits;
+        }
+    }
+
+    void ImuData::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:msgs_can.ImuData)
+        if (&from == this) return;
+        Clear();
+        MergeFrom(from);
+    }
+
+    void ImuData::CopyFrom(const ImuData& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:msgs_can.ImuData)
+        if (&from == this) return;
+        Clear();
+        MergeFrom(from);
+    }
+
+    bool ImuData::IsInitialized() const {
+        return true;
+    }
+
+    void ImuData::InternalSwap(ImuData* other) {
+        using std::swap;
+        _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+        swap(_has_bits_[0], other->_has_bits_[0]);
+        ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+                PROTOBUF_FIELD_OFFSET(ImuData, gyro_z_)
+                + sizeof(ImuData::gyro_z_)
+                - PROTOBUF_FIELD_OFFSET(ImuData, acc_x_)>(
+                reinterpret_cast<char*>(&acc_x_),
+                reinterpret_cast<char*>(&other->acc_x_));
+    }
+
+    ::PROTOBUF_NAMESPACE_ID::Metadata ImuData::GetMetadata() const {
+        return GetMetadataStatic();
+    }
+
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace msgs_can
 PROTOBUF_NAMESPACE_OPEN
@@ -1700,6 +2416,12 @@ PROTOBUF_NAMESPACE_OPEN
         }
         template<> PROTOBUF_NOINLINE ::msgs_can::BaseConfig* Arena::CreateMaybeMessage< ::msgs_can::BaseConfig >(Arena* arena) {
             return Arena::CreateMessageInternal< ::msgs_can::BaseConfig >(arena);
+        }
+        template<> PROTOBUF_NOINLINE ::msgs_can::RetBaseConfig* Arena::CreateMaybeMessage< ::msgs_can::RetBaseConfig >(Arena* arena) {
+            return Arena::CreateMessageInternal< ::msgs_can::RetBaseConfig >(arena);
+        }
+        template<> PROTOBUF_NOINLINE ::msgs_can::ImuData* Arena::CreateMaybeMessage< ::msgs_can::ImuData >(Arena* arena) {
+            return Arena::CreateMessageInternal< ::msgs_can::ImuData >(arena);
         }
 PROTOBUF_NAMESPACE_CLOSE
 

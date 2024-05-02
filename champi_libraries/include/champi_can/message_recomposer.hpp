@@ -47,6 +47,7 @@ public:
         msg_parts[frame_index] = std::string((char*)frame.data+2, frame.can_dlc-2);
 
         if(verbose_) {
+            std::cout << "CHAMPI_CAN: New frame. Nb data bytes: " << frame.can_dlc-2 << ". Frame index: " << frame_index << std::endl;
             for(int i=0; i<n_frames_; i++) {
                 std::cout << "CHAMPI_CAN: Frame " << i << " received: " << frames_received_[i] << std::endl;
             }

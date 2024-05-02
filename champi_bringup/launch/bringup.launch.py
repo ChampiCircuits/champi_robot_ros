@@ -29,7 +29,7 @@ def generate_launch_description():
 
     # Get the URDF file TODO faire ça dans un launch file dans champi_description plutôt
     urdf_file_path = os.path.join(get_package_share_directory('champi_description'), 'urdf', 'champi.urdf')
-    urdf_content = open(urdf_file_path).read()    
+    urdf_content = open(urdf_file_path).read()
 
     description_broadcaster = Node(
             package='robot_state_publisher',
@@ -43,6 +43,14 @@ def generate_launch_description():
         launch_description_source=PythonLaunchDescriptionSource([
             get_package_share_directory('champi_controllers'),
             '/launch/base_controller.launch.py'
+        ]),
+        condition=UnlessCondition(LaunchConfiguration('sim'))
+    )
+
+    imu_controller_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource([
+            get_package_share_directory('champi_controllers'),
+            '/launch/imu_controller.launch.py'
         ]),
         condition=UnlessCondition(LaunchConfiguration('sim'))
     )
@@ -111,16 +119,47 @@ def generate_launch_description():
         output='screen'
     )
 
+    ukf_node = Node(
+        package='robot_localization',
+        executable='ukf_node',
+        name='ukf',
+        output='screen',
+        parameters=[os.path.join(get_package_share_directory("champi_bringup"), "config", "ukf.yaml")],
+        remappings=[('/cmd_vel', '/base_controller/cmd_vel_limited')]
+    )
+
+    # Static transform map -> odom
+    static_tf_map_odom = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_transform_publisher_map_odom',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
+    )
+
+
+    robot_stopped_detector_node = Node(
+        package='champi_navigation',
+        executable='robot_stopped_detector_node.py',
+        name='robot_stopped_detector',
+        output='screen',
+        parameters=[config_file_path]
+    )
+
     return LaunchDescription([
         sim_arg,
         joy_arg,
         description_broadcaster,
         base_controller_launch,
+        imu_controller_launch,
         # ldlidar_node,
         lidar_simu_node,
         base_control_simu_node,
         cmd_vel_mux_node,
         teleop_launch,
-        pub_goal_rviz_node
+        pub_goal_rviz_node,
+        ukf_node,
+        static_tf_map_odom,
+        robot_stopped_detector_node
     ])
 

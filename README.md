@@ -46,7 +46,7 @@ des variables d'environnement et des alias dans le zshrc:
 ```bash
 ./src/champi_robot_ros/scripts/setup.sh
 ```
-depuis champi_robot_ros :
+depuis le workspace :
 ```bash
 rosdep install --from-paths src -y --ignore-src 
 ```

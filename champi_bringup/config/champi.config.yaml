@@ -9,6 +9,8 @@ base_controller_simu:
     max_acceleration_angular: 4.0 # rad/s^2
     max_deceleration_angular: 20.0 # rad/s^2
 
+    imu_vel_yaw_cov: 0.00001
+
 
 
 base_controller:
@@ -17,7 +19,7 @@ base_controller:
     topic_twist_in: "/cmd_vel"
     champi_can_verbose_mode: false
     timeout_connexion_ros: 1000000000000.0
-    timeout_connexion_stm: 1.0
+    timeout_connexion_stm: 1.2
 
     start_x: 1.825 # m
     start_y: 0.175 # m
@@ -31,12 +33,28 @@ base_controller:
     max_acceleration_angular: 4.0 # rad/s^2
     max_deceleration_angular: 20.0 # rad/s^2
 
+    covariances:
+      pose: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      velocity: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+
     base_config:
       max_accel_wheels: 10.0 # rotation des roues en rotation/s²
-      wheel_radius: 0.029 # en m
+      wheel_radius: 0.0276 # en m # 0.029
       base_radius: 0.175 # en m
       cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
-      # coin de la table
+
+
+
+
+imu_controller:
+  ros__parameters:
+    champi_can_verbose_mode: false
+    timeout_connexion_stm: 1.0
+
+    imu_covariances:
+      angular_vel: [0.00001, 0.00001, 0.00001]
+      linear_acc: [1., 1., 1.]
+
 
 
 
@@ -55,3 +73,15 @@ twist_mux:
         topic   : cmd_vel
         timeout : 0.5
         priority: 101
+
+
+robot_stopped_detector:
+  ros__parameters:
+
+    cmd_vel_topic: "/base_controller/cmd_vel_limited"
+    imu_topic: "/imu"
+    odometry_topic: "/odometry/filtered"
+    output_topic: "/robot_stopped/pose"
+    yaw_velocity_threshold: 0.005
+
+    pose_covariance: [0.000001, 0.000001, 0.000001, 0.000001, 0.000001, 0.000001]

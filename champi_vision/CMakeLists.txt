@@ -11,6 +11,12 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+
+
+# add_executable(enemy_detection_node src/enemy_detection_node.cpp)
+# ament_target_dependencies(enemy_detection_node rclcpp sensor_msgs tf2_ros)
 
 
 if(BUILD_TESTING)
@@ -26,6 +32,7 @@ if(BUILD_TESTING)
 endif()
 
 
+
 # Allow lauch files to be found when calling them with ros2 launch
 install(DIRECTORY
   launch
@@ -39,8 +46,14 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/visual_loc_node.py
-  DESTINATION lib/${PROJECT_NAME}
+        scripts/visual_loc_node.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install C++ executables
+install(TARGETS
+        # enemy_detection_node
+        DESTINATION lib/${PROJECT_NAME}
 )
 
 ament_package()

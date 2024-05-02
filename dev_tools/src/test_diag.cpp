@@ -19,7 +19,7 @@ public:
 
         // Set up diagnostics
         diag_updater_base_.setHardwareID("holo_base");
-        diag_updater_base_.add("diag_counter", this, &BaseControllerNode::test_base_status);
+        diag_updater_base_.add("diag_counter", this, &BaseControllerNode::test_stm_status);
 
         updater2_.setHardwareID("node");
         updater2_.add("diag_counter", this, &BaseControllerNode::test_node_state);
@@ -46,7 +46,7 @@ private:
 
     // Functions
 
-    void test_base_status(diagnostic_updater::DiagnosticStatusWrapper & stat)
+    void test_stm_status(diagnostic_updater::DiagnosticStatusWrapper & stat)
     {
         stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Everything is fine.");
         stat.add("counter_value", cnt);

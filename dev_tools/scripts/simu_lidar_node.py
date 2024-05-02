@@ -19,8 +19,30 @@ class LidarSimulator(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.timer = self.create_timer(0.2, self.timer_callback)  # 5Hz
         self.obstacle_position = Point(x=1.0, y=2.0, z=0.0)
+        self.target_position = self.obstacle_position
+        self.speed = 0.5  # m/s
+        self.subscription = self.create_subscription(
+            PointStamped,
+            '/clicked_point',
+            self.clicked_point_callback,
+            10)
+
+    def clicked_point_callback(self, msg):
+        self.target_position = msg.point
 
     def timer_callback(self):
+        # Move the obstacle towards the target position
+        direction = Point(
+            x=self.target_position.x - self.obstacle_position.x,
+            y=self.target_position.y - self.obstacle_position.y,
+            z=self.target_position.z - self.obstacle_position.z)
+        distance = self.calculate_distance(direction)
+        if distance > 0.1:
+            scale = self.speed * 0.2 / distance  # 0.2s time step
+            self.obstacle_position.x += direction.x * scale
+            self.obstacle_position.y += direction.y * scale
+            self.obstacle_position.z += direction.z * scale
+
         scan = LaserScan()
         scan.angle_min = -3.14  # -180 degrees
         scan.angle_max = 3.14   # 180 degrees

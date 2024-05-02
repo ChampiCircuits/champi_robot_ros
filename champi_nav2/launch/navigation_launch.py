@@ -42,11 +42,12 @@ def generate_launch_description():
     log_level = LaunchConfiguration('log_level')
 
     bt_xml_filename = os.path.join(
-        get_package_share_directory('champi_nav2'), 'config', 'behavior_trees', 'navigate_to_pose_original.xml')
+        # get_package_share_directory('champi_nav2'), 'config', 'behavior_trees', 'navigate_to_pose_original.xml')  # original
+        get_package_share_directory('champi_nav2'), 'config', 'behavior_trees', 'navigate_to_pose_smoother.xml')  # path with smoother
 
     lifecycle_nodes = ['map_server',
                        'controller_server',
-                       # 'smoother_server',
+                       'smoother_server',
                        'planner_server',
                        'behavior_server',
                        'bt_navigator']
@@ -137,16 +138,16 @@ def generate_launch_description():
                 parameters=[configured_params],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]),
-            # Node(
-            #     package='nav2_smoother',
-            #     executable='smoother_server',
-            #     name='smoother_server',
-            #     output='screen',
-            #     respawn=use_respawn,
-            #     respawn_delay=2.0,
-            #     parameters=[configured_params],
-            #     arguments=['--ros-args', '--log-level', log_level],
-            #     remappings=remappings),
+            Node(
+                package='nav2_smoother',
+                executable='smoother_server',
+                name='smoother_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings),
             Node(
                 package='nav2_planner',
                 executable='planner_server',
@@ -226,12 +227,12 @@ def generate_launch_description():
                 name='controller_server',
                 parameters=[configured_params],
                 remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]),
-            # ComposableNode(
-            #     package='nav2_smoother',
-            #     plugin='nav2_smoother::SmootherServer',
-            #     name='smoother_server',
-            #     parameters=[configured_params],
-            #     remappings=remappings),
+            ComposableNode(
+                package='nav2_smoother',
+                plugin='nav2_smoother::SmootherServer',
+                name='smoother_server',
+                parameters=[configured_params],
+                remappings=remappings),
             ComposableNode(
                 package='nav2_planner',
                 plugin='nav2_planner::PlannerServer',

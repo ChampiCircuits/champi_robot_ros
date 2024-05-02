@@ -8,4 +8,7 @@
 #define CAN_ID_BASE_RESET 0x1
 #define CAN_ID_BASE_TEST 0x200
 #define CAN_ID_RET_BASE_TEST 0x201
+#define CAN_ID_IMU_DATA 0x20
+#define CAN_ID_IMU_STATUS 0x21
+#define CAN_ID_IMU_TEST 0x202
 
