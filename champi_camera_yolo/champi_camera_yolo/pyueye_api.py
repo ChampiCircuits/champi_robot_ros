@@ -2,6 +2,7 @@ from pyueye import ueye
 import numpy as np
 import cv2
 
+print("variables")
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Variables
 hCam = ueye.HIDS(0)             #0: first available camera;  1-254: The camera with the specified camera ID
@@ -15,32 +16,33 @@ nBitsPerPixel = ueye.INT(32)    #24: bits per pixel for color mode; take 8 bits 
 # channels = 3                    #3: channels for color mode(RGB); take 1 channel for monochrome
 m_nColorMode = ueye.INT()		# Y8/RGB16/RGB24/REG32
 bytes_per_pixel = int(nBitsPerPixel / 8)
-print(sInfo)
-print(cInfo)
+# print(sInfo)
+# print(cInfo)
 #---------------------------------------------------------------------------------------------------------------------------------------
 print("START")
 print()
 
 
 # Starts the driver and establishes the connection to the camera
+print("Connecting to the camera...")
 nRet = ueye.is_InitCamera(hCam, None)
 if nRet != ueye.IS_SUCCESS:
     print("is_InitCamera ERROR")
-
+print("connected to the camera")
 # Reads out the data hard-coded in the non-volatile camera memory and writes it to the data structure that cInfo points to
 nRet = ueye.is_GetCameraInfo(hCam, cInfo)
 if nRet != ueye.IS_SUCCESS:
     print("is_GetCameraInfo ERROR")
-
+print("got cam info")
 # You can query additional information about the sensor type used in the camera
 nRet = ueye.is_GetSensorInfo(hCam, sInfo)
 if nRet != ueye.IS_SUCCESS:
     print("is_GetSensorInfo ERROR")
-
+print("got sensors info")
 nRet = ueye.is_ResetToDefault( hCam)
 if nRet != ueye.IS_SUCCESS:
     print("is_ResetToDefault ERROR")
-
+print("reset to default")
 # Set display mode to DIB
 nRet = ueye.is_SetDisplayMode(hCam, ueye.IS_SET_DM_DIB)
 
@@ -152,6 +154,8 @@ def get_image():
     #---------------------------------------------------------------------------------------------------------------------------------------
 
         return frame
+    else:
+        return None
 
 
 #---------------------------------------------------------------------------------------------------------------------------------------
@@ -162,5 +166,6 @@ def release():
     # Disables the hCam camera handle and releases the data structures and memory areas taken up by the uEye camera
     ueye.is_ExitCamera(hCam)
 
-    print()
-    print("END")
+    print("\n"*5)
+    print("RELEASED CAMERA")
+    print("\n"*5)

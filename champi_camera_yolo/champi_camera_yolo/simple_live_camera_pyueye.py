@@ -195,6 +195,8 @@ while(nRet == ueye.IS_SUCCESS):
     # Press q if you want to end the loop
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+    
+#    break
 #---------------------------------------------------------------------------------------------------------------------------------------
 
 # Releases an image memory that was allocated using is_AllocImageMem() and removes it from the driver management
