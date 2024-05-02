@@ -16,11 +16,11 @@ class TestGoal(Node):
         # pub pose stamped
         self.pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
 
-        self.goals = [[2.2, 1.0, 0.], [0.8, 1., 0.]]
+        self.goals = [[1.0, 1.0, 0.], [1.5, 1.5, 0.]]
         # self.goals = [[0., 1., -pi/2], [1., 1., 0.], [1., 0., pi/2],[0., 0., 0.]]
         self.i_goal = 0
 
-        timer_period = 10  # seconds
+        timer_period = 25  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         self.timer_callback()
@@ -30,6 +30,9 @@ class TestGoal(Node):
     def timer_callback(self):
 
         goal = PoseStamped()
+        # set timestamp 
+        goal.header.stamp = self.get_clock().now().to_msg()
+        goal.header.frame_id = "map"
         goal.pose.position.x = self.goals[self.i_goal][0]
         goal.pose.position.y = self.goals[self.i_goal][1]
         goal.pose.position.z = 0.

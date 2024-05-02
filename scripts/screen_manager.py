@@ -19,13 +19,10 @@ import time
 # Liste des fichiers de lancement ROS2
 launch_files = [
     "ros2 launch champi_bringup bringup.launch.py sim:=True",
+    "ros2 launch champi_bringup bringup.launch.py sim:=False",
     "ros2 launch champi_nav2 bringup_launch.py",
     "python3 src/champi_robot_ros/dev_tools/goals_cmd.py",
     "file4.launch.py",
-    "file4.launch.py",
-    "file4.launch.py",
-    "file4.launch.py",
-
 ]
 
 red = "#BC2023"
@@ -96,9 +93,11 @@ class Application(tk.Tk):
         super().__init__()
 
         self.title("Champi Circuits Control Panel")
-        self.geometry("800x600")
+        self.geometry("800x570")
 
         self.tabControl = ttk.Notebook(self)
+        # make the tab larger in height
+        self.tabControl.config(height=570)
 
         self.tab1 = ttk.Frame(self.tabControl)
         self.tabControl.add(self.tab1, text="LAUNCHS")
@@ -258,7 +257,7 @@ class Application(tk.Tk):
         table_frame.pack(expand=True, fill="both")
 
         # Chemin de l'image
-        image_path = "/home/etienne/ros_ws/src/champi_robot_ros/champi_simulator/blender_projects/table/table_dae/vinyle_table_2024_FINAL_V1.png"
+        image_path = "/home/champi/dev/ws_0/src/champi_robot_ros/champi_simulator/models/table_2024/meshes/vinyle_table_2024_FINAL_V1.png"
 
         # Chargement de l'image
         self.table_image = tk.PhotoImage(file=image_path)
