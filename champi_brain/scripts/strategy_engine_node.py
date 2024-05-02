@@ -93,6 +93,8 @@ class StrategyEngineNode(Node):
 
         init_robot_pose = self.strategy["init_pose"]
         self.pub_initial_pose = self.create_publisher(PoseWithCovarianceStamped, '/initialpose', 10)
+        # log init pose
+
         
 
         self.action_executor = Action_Executor(self)
@@ -182,7 +184,7 @@ class StrategyEngineNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
+    # rclpy.get_logger().info("strategy engine node started")
     strategy_engine = StrategyEngineNode()
 
     rclpy.spin(strategy_engine)

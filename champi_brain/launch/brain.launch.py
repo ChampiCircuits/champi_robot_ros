@@ -22,8 +22,15 @@ def generate_launch_description():
             output='screen',
     )
 
-    return LaunchDescription([
-        screen_manager,
-        # rviz_markers,
+    strat = Node(
+            package='champi_brain',
+            executable='strategy_engine_node.py',
+            name='strategy',
+            output='screen',
+    )
 
+    return LaunchDescription([
+        # screen_manager,
+        # rviz_markers,
+        strat
     ])
