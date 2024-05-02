@@ -158,7 +158,7 @@ def generate_launch_description():
         cmd_vel_mux_node,
         teleop_launch,
         pub_goal_rviz_node,
-        # ukf_node,
+        ukf_node,
         static_tf_map_odom,
         robot_stopped_detector_node
     ])

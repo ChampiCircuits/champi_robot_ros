@@ -26,6 +26,7 @@ from utils import State, StateTakingPlants
 import time
 from enum import Enum
 
+from robot_localization.srv import SetPose
 
 
 actions = [
@@ -58,9 +59,11 @@ actions = [
 
 ]
 
+init_pose = [1.855, 0.165, 2.6166]
+
 strategy1 = {
     "name": "strategy1",
-    "init_pose": (0.45/2., 0.5/2., 0),
+    "init_pose": (1.855, 0.165, 2.6166),
     "actions": {
         "list": ["plantes1", "plantes2", "plantes3", "poserplantes1", "poserplantes2", "panneau1", "retour_zone"],
     }
@@ -86,14 +89,38 @@ class StrategyEngineNode(Node):
         # MAIN
         self.state = State.INIT
 
-        
+
         self.start_time = None
         self.time_left = TOTAL_AVAILABLE_TIME # s, updated each iteration, considering the time to return to the zone
 
 
         init_robot_pose = self.strategy["init_pose"]
-        self.pub_initial_pose = self.create_publisher(PoseWithCovarianceStamped, '/initialpose', 10)
-        # log init pose
+        # self.pub_initial_pose = self.create_publisher(PoseWithCovarianceStamped, '/initialpose', 10)
+        # call service set_pose (0.145,0.165), theta = 30°
+        self.set_pose_client = self.create_client(SetPose, '/set_pose')
+        while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        request = SetPose.Request()
+        request.pose.header.stamp = self.get_clock().now().to_msg()
+        request.pose.header.frame_id = 'odom'
+        request.pose.pose.pose.position.x = init_robot_pose[0]
+        request.pose.pose.pose.position.y = init_robot_pose[1]
+        request.pose.pose.pose.position.z = 0.
+        request.pose.pose.pose.orientation.x = 0.
+        request.pose.pose.pose.orientation.y = 0.
+        request.pose.pose.pose.orientation.z = sin(init_robot_pose[2]/2)
+        request.pose.pose.pose.orientation.w = cos(init_robot_pose[2]/2)
+
+        future = self.set_pose_client.call_async(request)
+
+        while rclpy.ok():
+            rclpy.spin_once(self)
+            if future.done():
+                if future.result() is not None:
+                    break
+                else:
+                    self.get_logger().info('service call failed %r' % (future.exception(),))
+                    break
 
         
 
@@ -120,10 +147,10 @@ class StrategyEngineNode(Node):
                                        callback=self.callback_timer)
 
     def init(self):
-        init_robot_pose = self.strategy["init_pose"]
-        init_robot_pose = (init_robot_pose[0], init_robot_pose[1], init_robot_pose[2])
+        # init_robot_pose = self.strategy["init_pose"]
+        # init_robot_pose = (init_robot_pose[0], init_robot_pose[1], init_robot_pose[2])
 
-        self.pub_initial_pose.publish(pose_with_cov_from_position(init_robot_pose,self.get_clock().now().to_msg()))
+        # self.pub_initial_pose.publish(pose_with_cov_from_position(init_robot_pose,self.get_clock().now().to_msg()))
         self.start_time = rclpy.time.Time()
         print("strategy engine started")
 
@@ -184,7 +211,6 @@ class StrategyEngineNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    # rclpy.get_logger().info("strategy engine node started")
     strategy_engine = StrategyEngineNode()
 
     rclpy.spin(strategy_engine)

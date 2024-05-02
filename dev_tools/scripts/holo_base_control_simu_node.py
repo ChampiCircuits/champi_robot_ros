@@ -241,18 +241,18 @@ class HoloBaseControlDummy(Node):
 
 
         # Broadcast the transform
-        t = TransformStamped()
-        t.header.stamp = self.get_clock().now().to_msg()
-        t.header.frame_id = "odom"
-        t.child_frame_id = "base_link"
-        t.transform.translation.x = self.current_pose[0]
-        t.transform.translation.y = self.current_pose[1]
-        t.transform.translation.z = 0.
-        t.transform.rotation.x = 0.
-        t.transform.rotation.y = 0.
-        t.transform.rotation.z = sin(self.current_pose[2] / 2)
-        t.transform.rotation.w = cos(self.current_pose[2] / 2)
-        self.tf_broadcaster.sendTransform(t)
+        # t = TransformStamped()
+        # t.header.stamp = self.get_clock().now().to_msg()
+        # t.header.frame_id = "odom"
+        # t.child_frame_id = "base_link"
+        # t.transform.translation.x = self.current_pose[0]
+        # t.transform.translation.y = self.current_pose[1]
+        # t.transform.translation.z = 0.
+        # t.transform.rotation.x = 0.
+        # t.transform.rotation.y = 0.
+        # t.transform.rotation.z = sin(self.current_pose[2] / 2)
+        # t.transform.rotation.w = cos(self.current_pose[2] / 2)
+        # self.tf_broadcaster.sendTransform(t)
 
 
         # Broadcast zero transform between map and odom
