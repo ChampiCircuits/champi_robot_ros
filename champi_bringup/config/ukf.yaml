@@ -269,8 +269,8 @@ ukf:
       # [ADVANCED, UKF ONLY] The beta variable relates to the distribution of the state vector. Again, it's probably best to
       # leave this alone if you're uncertain. Defaults to 2 if unspecified.
         beta: 2.0
-        # initial_state: [0.145,0.165, 0.0, # x, y, z
-        #                 0.0, 0.0, 0.5235, # roll, pitch, yaw
-        #                 0.0, 0.0, 0.0,
-        #                 0.0, 0.0, 0.0,
-        #                 0.0, 0.0, 0.0]
+        initial_state: [1.855, 0.165, 0.0, # x, y, z
+                        0.0, 0.0, 2.6166, # roll, pitch, yaw
+                        0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0]

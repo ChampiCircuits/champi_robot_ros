@@ -152,7 +152,7 @@ controller_server:
         # Power order to apply to term
         cost_power: 1
         # Minimal distance between robot and goal above which angle goal cost considered
-        threshold_to_consider: 5.0 # Activé lorsque plus proche que threshold: 
+        threshold_to_consider: 1.0 # Activé lorsque plus proche que threshold: 
                                     # donc le robot commence à tourner en dessous de ce seuil. 
                                     # TODO: ce serait bien de l'active tjrs, mais cela a tendance à rendre la trajectoire un peu courbe au lieu de droite... 
                                     # Peut être qu'il faudrait augmenter la fréquence du controller ? -> j'ai testé 50Hz et du coup non
@@ -242,6 +242,8 @@ local_costmap:
       width: 3
       height: 3
       resolution: 0.05
+      robot_radius: 0.1
+      plugins: ["obstacle_layer", "inflation_layer"] # TODO add static_layer
       robot_radius: 0.15
       plugins: ["obstacle_layer", "inflation_layer","static_layer"]
       obstacle_layer:
@@ -276,7 +278,7 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       use_sim_time: False
-      robot_radius: 0.15
+      robot_radius: 0.1
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer"] #, "inflation_layer"]
