@@ -70,7 +70,7 @@ def wait_and_detect_plants(supposed_plants_center: np.ndarray, robot_pose: np.nd
     # we convert the positions in the world frame
     plants_positions = convert_robot_frame_to_world_frame(plants_positions, robot_pose)
 
-    time.sleep(4)
+    time.sleep(1)
 
     return plants_positions
 

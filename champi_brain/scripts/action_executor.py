@@ -13,6 +13,7 @@ from rclpy.node import Node
 import plants_taker_api
 from utils import draw_rviz_markers
 from utils import State, StateTakingPlants
+from rclpy.logging import get_logger
 
 
 
@@ -31,13 +32,18 @@ class Action_Executor():
         self.current_action = None
 
     def new_action(self, action:dict):
+        get_logger('rclpy').info(f"ACTION EXECUTOR NEW ACTION: {action['name']}")
         if action["type"] == "prendre_plantes":
             self.state = State.PLANTES
             self.state_taking_plants = StateTakingPlants.COMPUTE_FRONT_POSE
+        if action["type"] == "retour_zone":
+            self.state = State.RETOUR
 
     def update(self, current_action: dict):
         # print("update executor")
         self.current_action = current_action
+        
+        # get_logger('rclpy').info(f"ACTION EXECUTOR: action= {current_action['name']}")
 
         if self.state == State.PLANTES:
             self.update_taking_plants()
@@ -45,42 +51,49 @@ class Action_Executor():
         #     self.update_pose_plantes()
         # elif self.state == State.PANNEAU:
         #     self.update_panneau()
-        # elif self.state == State.RETOUR:
-        #     self.update_retour()
+        elif self.state == State.RETOUR:
+            self.update_retour()
+
+    def update_retour(self):
+        get_logger('rclpy').info(f"\Going home to {self.current_action['pose']}")
+
+        self.robot_navigator.navigate_to(self.current_action['pose'], 100) # TODO pas  100
+        self.state = State.ACTION_FINISHED
 
     def update_taking_plants(self):
         if self.state_taking_plants == StateTakingPlants.COMPUTE_FRONT_POSE:
-            print("\tComputing front pose from plants")
+            get_logger('rclpy').info(f"\tComputing front pose from plants")
             # compute the front pose from the plants
+            get_logger('rclpy').info(f"\t\t Current pose : {self.strategy_node.robot_pose}")
             self.front_pose_from_plants = plants_taker_api.compute_front_pose_from_plants_position(self.current_action["pose"], self.strategy_node.robot_pose)
             self.state_taking_plants = StateTakingPlants.NAVIGATE_TO_FRONT_POSE
         elif self.state_taking_plants == StateTakingPlants.NAVIGATE_TO_FRONT_POSE:
-            print("\tNavigating to front pose from plants: ", self.front_pose_from_plants)
+            get_logger('rclpy').info(f"\tNavigating to front pose from plants: {self.front_pose_from_plants}")
             # navigate to the front pose
             self.robot_navigator.navigate_to(self.front_pose_from_plants, self.current_action["time"])
             self.strategy_node.robot_pose = self.front_pose_from_plants
             self.state_taking_plants = StateTakingPlants.DETECT_PLANTS
         elif self.state_taking_plants == StateTakingPlants.DETECT_PLANTS:
-            print("\tDetecting plants")
+            get_logger('rclpy').info(f"\tDetecting plants")
             # wait for the plants to be detected
             self.plants_positions = plants_taker_api.wait_and_detect_plants(self.current_action["pose"], self.strategy_node.robot_pose)
             draw_rviz_markers(self.strategy_node, self.plants_positions, "/markers_plants_detected",ColorRGBA(r=0., g=1., b=0., a=1.), 0.06)
             draw_rviz_markers(self.strategy_node, [self.front_pose_from_plants], "/markers_selected_action",ColorRGBA(r=1., g=0., b=0., a=1.),0.05)
             self.state_taking_plants = StateTakingPlants.COMPUTE_TRAJECTORY
         elif self.state_taking_plants == StateTakingPlants.COMPUTE_TRAJECTORY:
-            print("\tComputing trajectory")
+            get_logger('rclpy').info(f"\tComputing trajectory")
             # compute the trajectory points
             self.front_pose_from_plants = (self.front_pose_from_plants[0], self.front_pose_from_plants[1], self.front_pose_from_plants[2])
             self.trajectory_points = plants_taker_api.compute_trajectory_points(self.plants_positions, self.front_pose_from_plants, self.current_action["pose"])
             self.state_taking_plants = StateTakingPlants.NAVIGATE_TO_TRAJECTORY_1
         elif self.state_taking_plants == StateTakingPlants.NAVIGATE_TO_TRAJECTORY_1:
-            print("\tNavigating to first point of trajectory")
+            get_logger('rclpy').info(f"\tNavigating to first point of trajectory")
             # navigate to the first point of the trajectory
             self.robot_navigator.navigate_to(self.trajectory_points[0], self.current_action["time"])
             self.publish_on_CAN("be_ready_to_grab_plants")
             self.state_taking_plants = StateTakingPlants.NAVIGATE_TO_TRAJECTORY_2
         elif self.state_taking_plants == StateTakingPlants.NAVIGATE_TO_TRAJECTORY_2:
-            print("\tNavigating to second point of trajectory")
+            get_logger('rclpy').info(f"\tNavigating to second point of trajectory")
             # navigate to the second point of the trajectory
             self.robot_navigator.navigate_to(self.trajectory_points[1], self.current_action["time"])
             self.publish_on_CAN("finished_grabbing_plants")

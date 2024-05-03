@@ -22,6 +22,7 @@ import plants_taker_api
 from action_executor import Action_Executor
 from utils import draw_rviz_markers, calc_time_of_travel, get_action_by_name, pose_with_cov_from_position
 from utils import State, StateTakingPlants
+from rclpy.logging import get_logger
 
 import time
 from enum import Enum
@@ -30,12 +31,12 @@ from robot_localization.srv import SetPose
 
 
 actions = [
-    {"name":"plantes1","type":"prendre_plantes","pose": (1.-0.3, 1.5-0.5),    "time": 10, "points": 0},
-    {"name":"plantes2","type":"prendre_plantes","pose": (1.-0.5, 1.5),        "time": 10, "points": 0},
-    {"name":"plantes3","type":"prendre_plantes","pose": (1.-0.3, 1.5+0.5),    "time": 10, "points": 0},
-    # {"name":"plantes4","type":"prendre_plantes","pose": (1000+300, 1500-500),    "time": 10, "points": 0},
-    # {"name":"plantes6","type":"prendre_plantes","pose": (1000+500, 1500),        "time": 10, "points": 0},
-    # {"name":"plantes5","type":"prendre_plantes","pose": (1000+300, 1500+500),    "time": 10, "points": 0},
+    # {"name":"plantes1","type":"prendre_plantes","pose": (1.-0.3, 1.5-0.5),    "time": 10, "points": 0},
+    # {"name":"plantes2","type":"prendre_plantes","pose": (1.-0.5, 1.5),        "time": 10, "points": 0},
+    # {"name":"plantes3","type":"prendre_plantes","pose": (1.-0.3, 1.5+0.5),    "time": 10, "points": 0},
+    {"name":"plantes4","type":"prendre_plantes","pose": (1.+0.3, 1.5-0.5),    "time": 10, "points": 0},
+    {"name":"plantes5","type":"prendre_plantes","pose": (1.+0.5, 1.5),        "time": 10, "points": 0},
+    {"name":"plantes6","type":"prendre_plantes","pose": (1.+0.3, 1.5+0.5),    "time": 10, "points": 0},
 
     {"name":"poserplantes1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2.),     "time": 10, "points": 3*6},
     {"name":"poserplantes2","type":"pose_plantes_sol","pose": (0.2-0.45/2., 0.5/2.),"time": 10, "points": 3*6},
@@ -55,17 +56,21 @@ actions = [
     # {"name":"panneau8","type":"tourner_panneau","pose": (50, 3000-275-225),      "time": 10, "points": 5},
     # {"name":"panneau9","type":"tourner_panneau","pose": (50, 3000-275-225-225),  "time": 10, "points": 5},
     
-    {"name":"retour_zone","type":"retour_zone","pose": (2.0-0.450/2., 0.5/2.),  "time": None, "points": None},
+    {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.834, 3.14),  "time": 0, "points": None},
 
 ]
-
-init_pose = [1.855, 0.165, 2.6166]
+# ZONE JAUNE BAS GAUCHE 0.145, 0.165, 0.5233
+# ZONE JAUNE BAS DROITE 1.855, 0.165, 2.6166
+# ZONE JAUNE HAUT MILIEU 1.0, 1.834, 3.14
+init_pose_yellow = [1.855, 0.165, 2.6166]
 
 strategy1 = {
     "name": "strategy1",
     "init_pose": (1.855, 0.165, 2.6166),
     "actions": {
-        "list": ["plantes1", "plantes2", "plantes3", "poserplantes1", "poserplantes2", "panneau1", "retour_zone"],
+        "list": ["plantes4","retour_zone_yellow"],
+        # "list": ["plantes4", "plantes5", "plantes6", "retour_zone_yellow"],
+        # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
     }
 }
 
@@ -73,7 +78,7 @@ current_strategy = strategy1
 TOTAL_AVAILABLE_TIME = 100 # s
 ROBOT_MEAN_SPEED = 0.3 # m/s
 
-
+RETOUR_ZONE_NAME = "retour_zone_yellow" # TODO choisir equipe
 
 
 
@@ -128,7 +133,7 @@ class StrategyEngineNode(Node):
 
         # suscribe to robot pose (x,y,theta)
         self.robot_pose = init_robot_pose
-        self.odom_subscriber = self.create_subscription(Odometry, '/odom', self.update_robot_pose, 10)
+        self.odom_subscriber = self.create_subscription(Odometry, '/odometry/filtered', self.update_robot_pose, 10)
 
         # create /CAN publisher to publish string msgs to the CAN API
         self.CAN_publisher = self.create_publisher(String, '/CAN', 10)
@@ -152,11 +157,11 @@ class StrategyEngineNode(Node):
 
         # self.pub_initial_pose.publish(pose_with_cov_from_position(init_robot_pose,self.get_clock().now().to_msg()))
         self.start_time = rclpy.time.Time()
-        print("strategy engine started")
+        get_logger('rclpy').info(f"strategy engine started")
 
     def update_robot_pose(self, msg):
         self.robot_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y, acos(msg.pose.pose.orientation.w)*2*180/3.1415)
-        # print("updated robot pose:", self.robot_pose)
+        # get_logger('rclpy').info(f"updated robot_pose: {self.robot_pose}")
 
     def callback_timer(self):
         """Execute the strategy for one iteration"""
@@ -167,45 +172,72 @@ class StrategyEngineNode(Node):
 
         elif self.state == State.IN_ACTION:
             self.action_executor.update(self.current_action_to_perform)
-            if self.action_executor.state == State.ACTION_FINISHED:
-                self.time_left = TOTAL_AVAILABLE_TIME - (rclpy.time.Time()- self.start_time).nanoseconds / 1e9
-                # the action is finished, we pop it from the list
-                print("Action finished:", self.current_action_name)
-                self.strategy["actions"]["list"].pop(0)
-                self.current_action_name = self.strategy["actions"]["list"][0]
-                self.current_action_to_perform = get_action_by_name(self.current_action_name, actions)
 
-                # print actions left
-                print("Actions left:", self.strategy["actions"]["list"])
-                print("*************************\n\n")
+            if self.action_executor.state == State.ACTION_FINISHED:
+                get_logger('rclpy').info(f"")
+                get_logger('rclpy').info(f"Action finished: {self.current_action_name}")
+                get_logger('rclpy').info(f"actions dispos: {self.strategy['actions']['list']}")
+                self.action_executor.state = State.NO_ACTION
+
+                # if the last action executed was "retour_zone" then we stop everything
+                if self.current_action_to_perform == "retour_zone":
+                    quit()
+
+                # self.time_left = TOTAL_AVAILABLE_TIME - (rclpy.time.Time()- self.start_time).nanoseconds / 1e9
+                # # the action is finished, we pop it from the list
+                # get_logger('rclpy').info(f"Action finished: {self.current_action_name}")
+                # get_logger('rclpy').info(f"actions dispos: {self.strategy['actions']['list']}")
+
+                # if len(self.strategy["actions"]["list"]) != 0:
+                #     self.strategy["actions"]["list"].pop(0)
+                #     self.current_action_name = self.strategy["actions"]["list"][0]
+                #     self.current_action_to_perform = get_action_by_name(self.current_action_name, actions)
+
+                #     # print actions left
+                #     get_logger('rclpy').info(f"Actions left: {self.strategy['actions']['list']}")
+                #     get_logger('rclpy').info(f"*************************\n\n")
+                # else:
+                #     get_logger('rclpy').info(f"No action left")
+                #     get_logger('rclpy').info(f"*************************\n\n")
+
+
 
                 self.state = State.NO_ACTION
 
 
         elif self.state == State.NO_ACTION:
             # projected time left is the time left minus the time to return to the zone
-            projected_time_left = self.time_left - calc_time_of_travel(self.robot_pose[:2], get_action_by_name("retour_zone",actions)["pose"], ROBOT_MEAN_SPEED)
-
+            projected_time_left = self.time_left - calc_time_of_travel(self.robot_pose[:2], get_action_by_name(RETOUR_ZONE_NAME,actions)["pose"], ROBOT_MEAN_SPEED)
+            
             # while the projected time left - the time to perform the current action is negative, we skip to the next action
-            while projected_time_left - self.current_action_to_perform["time"] < 0:
-                self.strategy["actions"]["list"].pop(0)
-                self.current_action_name = self.strategy["actions"]["list"][0]
-                self.current_action_to_perform = get_action_by_name(self.current_action_name)
-                projected_time_left = self.time_left - calc_time_of_travel(self.robot_pose[:2], get_action_by_name("retour_zone",actions)["pose"], ROBOT_MEAN_SPEED)
+            # while projected_time_left - self.current_action_to_perform["time"] < 0:
+            #     self.strategy["actions"]["list"].pop(0) # TODO verif que on a encore des actions dispos
+            #     self.current_action_name = self.strategy["actions"]["list"][0]
+            #     self.current_action_to_perform = get_action_by_name(self.current_action_name)
+            #     projected_time_left = self.time_left - calc_time_of_travel(self.robot_pose[:2], get_action_by_name("retour_zone",actions)["pose"], ROBOT_MEAN_SPEED)
 
             # if the time is negative we stop the effectors of the robot
             if projected_time_left < 0:
                 self.action_executor.stop_effectors()
-                print("STOPPING EFFECTORS")
+                get_logger('rclpy').info(f"STOPPING EFFECTORS")
                 quit()
             # if the time is positive we execute the action
             else:
                 # display selected action position
                 draw_rviz_markers(self, [self.current_action_to_perform["pose"]], "/markers_selected_action",ColorRGBA(r=1., g=0., b=0., a=1.),0.250)
+                if len(self.strategy["actions"]["list"]) != 0:
+                    self.current_action_name = self.strategy["actions"]["list"][0]
+                    self.current_action_to_perform = get_action_by_name(self.current_action_name, actions)
+                    self.strategy["actions"]["list"].pop(0) # TODO verif que on a encore des actions dispos
+                    get_logger('rclpy').info(f"")
+                    get_logger('rclpy').info(f"Executing action {self.current_action_name}")
+                    get_logger('rclpy').info(f"Actions left {self.strategy['actions']['list']}")
 
-                print(f"Executing action {self.current_action_name}")
-                self.state = State.IN_ACTION
-                self.action_executor.new_action(self.current_action_to_perform)
+                    self.state = State.IN_ACTION
+                    self.action_executor.new_action(self.current_action_to_perform)
+                else:
+                    get_logger('rclpy').info(f"FIN")
+                    quit()
             
         
 
