@@ -27,6 +27,10 @@ class Action_Executor():
         # PLANTS STATE MACHINE
         self.state_taking_plants = None
 
+        # PLANTS PUT STATE MACHINE
+        self.plants_put = 0
+        self.plants_put_pose = None
+
         # MAIN STATE MACHINE
         self.state = State.NO_ACTION
         self.current_action = None
@@ -38,6 +42,8 @@ class Action_Executor():
             self.state_taking_plants = StateTakingPlants.COMPUTE_FRONT_POSE
         if action["type"] == "retour_zone":
             self.state = State.RETOUR
+        if action["type"] == "pose_plantes_sol":
+            self.state = State.POSE_PLANTES
 
     def update(self, current_action: dict):
         # print("update executor")
@@ -47,18 +53,33 @@ class Action_Executor():
 
         if self.state == State.PLANTES:
             self.update_taking_plants()
-        # elif self.state == State.POSE_PLANTES:
-        #     self.update_pose_plantes()
+        elif self.state == State.POSE_PLANTES:
+            self.update_pose_plantes()
         # elif self.state == State.PANNEAU:
         #     self.update_panneau()
         elif self.state == State.RETOUR:
             self.update_retour()
+        
 
     def update_retour(self):
         get_logger('rclpy').info(f"\Going home to {self.current_action['pose']}")
 
         self.robot_navigator.navigate_to(self.current_action['pose'], 100) # TODO pas  100
         self.state = State.ACTION_FINISHED
+
+    def update_pose_plantes(self):
+        get_logger('rclpy').info(f"\Putting plants...")
+        if self.plants_put < 6:
+            if self.plants_put == 0:
+                self.plants_put_pose = self.current_action['pose']
+            else:
+                self.plants_put_pose[0] += 0.15
+                self.robot_navigator.navigate_to(self.plants_put_pose, 10)
+                self.publish_on_CAN("put one plant out")
+                get_logger('rclpy').info(f"\Put 1 plant out...")
+            self.plants_put += 1
+        else:
+            self.state = State.ACTION_FINISHED
 
     def update_taking_plants(self):
         if self.state_taking_plants == StateTakingPlants.COMPUTE_FRONT_POSE:

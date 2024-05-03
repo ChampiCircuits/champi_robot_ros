@@ -7,9 +7,20 @@
 #### boot de la rpi
  ./dev/ws_0/src/champi_robot_ros/scripts/bringup-can0.sh
 
+
+### MATCH
 ```bash
-ros2 launch champi_bringup bringup.launch.py sim:=
+ros2 launch champi_bringup bringup.launch.py sim:=False
+ros2 launch champi_nav2 bringup_launch.py
+ros2 launch champi_brain brain.launch.py
 ```
+
+
+### si besoin
+```bash
+. /home/champi/dev/ws_0/src/champi_robot_ros/scripts/kill_nodes.sh
+```
+
 *Paramètres*:
 - *sim* : `true` | `false`.
 - *joy* : `true` | `false`.

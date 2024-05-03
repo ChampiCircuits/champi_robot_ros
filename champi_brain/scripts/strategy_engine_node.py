@@ -39,7 +39,7 @@ actions = [
     {"name":"plantes6","type":"prendre_plantes","pose": (1.+0.3, 1.5+0.5),    "time": 10, "points": 0},
 
     {"name":"poserplantes1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2.),     "time": 10, "points": 3*6},
-    {"name":"poserplantes2","type":"pose_plantes_sol","pose": (0.2-0.45/2., 0.5/2.),"time": 10, "points": 3*6},
+    {"name":"poserplantes2","type":"pose_plantes_sol","pose": (2.0-0.45/2., 0.5/2.),"time": 10, "points": 3*6},
     # {"name":"poserplantes3","type":"pose_plantes_sol","pose": (2000/2, 3000-500/2),"time": 10, "points": 3*6},
     # {"name":"poserplantes3","type":"poser_plante_jardiniere","pose": (2000/2, 3000-500/2),"time": 10, "points": 3*6},
 
@@ -56,20 +56,24 @@ actions = [
     # {"name":"panneau8","type":"tourner_panneau","pose": (50, 3000-275-225),      "time": 10, "points": 5},
     # {"name":"panneau9","type":"tourner_panneau","pose": (50, 3000-275-225-225),  "time": 10, "points": 5},
     
-    {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.834, 3.14),  "time": 0, "points": None},
+    {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": None},
+    {"name":"test","type":"retour_zone","pose": (1.0, 2.0, 1.57),  "time": 0, "points": None},
 
 ]
 # ZONE JAUNE BAS GAUCHE 0.145, 0.165, 0.5233
 # ZONE JAUNE BAS DROITE 1.855, 0.165, 2.6166
-# ZONE JAUNE HAUT MILIEU 1.0, 1.834, 3.14
-init_pose_yellow = [1.855, 0.165, 2.6166]
+# ZONE JAUNE HAUT MILIEU 1.0, 2.834, 3.14
+# init_pose_yellow = [1, 1., 0.0]
+# init_pose_yellow = [1.855, 0.165, 2.6166]
 
 strategy1 = {
     "name": "strategy1",
+    # "init_pose": (1.,1.,1.57),
     "init_pose": (1.855, 0.165, 2.6166),
     "actions": {
-        "list": ["plantes4","retour_zone_yellow"],
-        # "list": ["plantes4", "plantes5", "plantes6", "retour_zone_yellow"],
+        # "list": ["test"]
+        # "list": ["plantes4","retour_zone_yellow"],
+        "list": ["plantes4", "poserplantes1", "retour_zone_yellow"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
     }
 }
@@ -128,7 +132,7 @@ class StrategyEngineNode(Node):
                     break
 
         
-
+        time.sleep(10)
         self.action_executor = Action_Executor(self)
 
         # suscribe to robot pose (x,y,theta)

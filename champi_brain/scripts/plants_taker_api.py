@@ -6,7 +6,7 @@ from sklearn import svm
 from typing import Tuple
 import time
 
-FRONT_POSE_DIST = 0.5 # m
+FRONT_POSE_DIST = 0.3 # m
 
 """
     # we first have to go in front of the supposed position of the plants

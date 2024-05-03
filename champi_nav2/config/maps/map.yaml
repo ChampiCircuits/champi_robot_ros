@@ -1,4 +1,4 @@
-image: map_40.jpg
+image: new_map.jpg
 resolution: 0.025
 origin: [0.0, 0.0, 0.0] # Substract 1px becauséof the 1px border
 # origin: [-0.025, -0.025, 0.0] # Substract 1px becauséof the 1px border

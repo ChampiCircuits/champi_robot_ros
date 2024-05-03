@@ -7,7 +7,7 @@ import os
 
 def generate_launch_description():
 
-    calib_file = 'file://' + os.path.join(get_package_share_directory('champi_vision'), 'config', 'calib', 'raspi_cam_robotik.yaml')
+    calib_file = 'file://' + os.path.join(get_package_share_directory('champi_vision'), 'config', 'calib', 'champi_cam.yaml')
 
     print(calib_file)
 
@@ -17,7 +17,7 @@ def generate_launch_description():
             executable='v4l2_camera_node',
             name='v4l2_camera_node',
             parameters=[
-                {"image_size": [1640, 1232]},
+                # {"image_size": [1640, 1232]},
                 # {"time_per_frame": [1, 5]},
                 {"camera_info_url": calib_file}
         ]
