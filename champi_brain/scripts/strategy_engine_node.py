@@ -73,7 +73,7 @@ strategy1 = {
     "actions": {
         # "list": ["test"]
         # "list": ["plantes4","retour_zone_yellow"],
-        "list": ["poserplantes1", "retour_zone_yellow"],
+        "list": ["plantes4","poserplantes1", "retour_zone_yellow"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
     }
 }

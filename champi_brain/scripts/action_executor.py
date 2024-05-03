@@ -74,7 +74,7 @@ class Action_Executor():
                 self.plants_put_pose = self.current_action['pose']
             else:
                 get_logger('rclpy').info(f"\pose: {self.plants_put_pose}")
-                new_pose = [self.plants_put_pose[0] + 0.08, self.plants_put_pose[1], 1.57]
+                new_pose = [self.plants_put_pose[0] + 0.08, self.plants_put_pose[1], 2.09]
                 self.plants_put_pose = new_pose
                 self.robot_navigator.navigate_to(new_pose, 10)
                 self.publish_on_CAN("put one plant out")
