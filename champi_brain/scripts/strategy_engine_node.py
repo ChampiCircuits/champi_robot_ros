@@ -38,9 +38,11 @@ actions = [
     {"name":"plantes5","type":"prendre_plantes","pose": (1.+0.5, 1.5),        "time": 10, "points": 0},
     {"name":"plantes6","type":"prendre_plantes","pose": (1.+0.3, 1.5+0.5),    "time": 10, "points": 0},
 
-    {"name":"poserplantes1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2.),     "time": 10, "points": 3*6},
-    {"name":"poserplantes2","type":"pose_plantes_sol","pose": (2.0-0.45/2., 0.5/2.),"time": 10, "points": 3*6},
-    # {"name":"poserplantes3","type":"pose_plantes_sol","pose": (2000/2, 3000-500/2),"time": 10, "points": 3*6},
+    {"name":"poserplantesJ1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2, -1.0466),     "time": 10, "points": 3*6, "dirs": (1,1)},
+    {"name":"poserplantesJ2","type":"pose_plantes_sol","pose": (2.0-0.45, 0.5, -1.0466),"time": 10, "points": 3*6, "dirs":(1,1)},
+    {"name":"poserplantesJ3","type":"pose_plantes_sol","pose": (1.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*6, "dirs":(-1, -1)},
+
+
     # {"name":"poserplantes3","type":"poser_plante_jardiniere","pose": (2000/2, 3000-500/2),"time": 10, "points": 3*6},
 
 
@@ -57,7 +59,9 @@ actions = [
     # {"name":"panneau9","type":"tourner_panneau","pose": (50, 3000-275-225-225),  "time": 10, "points": 5},
     
     {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": None},
-    {"name":"test","type":"retour_zone","pose": (1.0, 2.0, 1.57),  "time": 0, "points": None},
+    {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": None},
+    {"name":"move_middle","type":"just_move","pose": (1.0, 1.5, 1.57),  "time": 0, "points": None},
+    {"name":"move_test","type":"just_move","pose": (1.5, 2.0, -1.57),  "time": 0, "points": None},
 
 ]
 # ZONE JAUNE BAS GAUCHE 0.145, 0.165, 0.5233
@@ -66,24 +70,39 @@ actions = [
 # init_pose_yellow = [1, 1., 0.0]
 # init_pose_yellow = [1.855, 0.165, 2.6166]
 
-strategy1 = {
-    "name": "strategy1",
-    # "init_pose": (1.,1.,1.57),
+strategy_yellow = {
+    "name": "strategy_yellow",
     "init_pose": (1.855, 0.165, 2.6166),
     "actions": {
-        # "list": ["test"]
+        "list": ["poserplantesJ2"]
         # "list": ["plantes4","retour_zone_yellow"],
-        "list": ["plantes4","poserplantes1", "retour_zone_yellow"],
+        # "list": ["plantes4","poserplantesJ1", "retour_zone_yellow"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
     }
 }
+strategy_blue = {
+    "name": "strategy_blue",
+    "init_pose": (1.855, 2.835, 4.1866),
+    "actions": {
+        "list": ["retour_zone_blue"]
+        # "list": ["plantes4","retour_zone_blue"],
+        # "list": ["plantes4","poserplantesB1", "retour_zone_blue"],
+        # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_blue"],
+    }
+}
 
-current_strategy = strategy1
 TOTAL_AVAILABLE_TIME = 100 # s
 ROBOT_MEAN_SPEED = 0.3 # m/s
 
-RETOUR_ZONE_NAME = "retour_zone_yellow" # TODO choisir equipe
+TEAM = "YELLOW"
+# TEAM = "BLUE"
 
+if TEAM == "YELLOW":
+    current_strategy = strategy_yellow
+    RETOUR_ZONE_NAME = "retour_zone_yellow"
+else:
+    current_strategy = strategy_blue
+    RETOUR_ZONE_NAME = "retour_zone_blue"
 
 
 class StrategyEngineNode(Node):

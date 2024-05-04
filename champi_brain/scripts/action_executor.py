@@ -12,7 +12,7 @@ from rclpy.node import Node
 
 import plants_taker_api
 from utils import draw_rviz_markers
-from utils import State, StateTakingPlants
+from utils import *
 from rclpy.logging import get_logger
 
 
@@ -44,6 +44,8 @@ class Action_Executor():
             self.state = State.RETOUR
         if action["type"] == "pose_plantes_sol":
             self.state = State.POSE_PLANTES
+        if action["type"] == "just_move":
+            self.state = State.JUST_MOVE
 
     def update(self, current_action: dict):
         # print("update executor")
@@ -59,7 +61,14 @@ class Action_Executor():
         #     self.update_panneau()
         elif self.state == State.RETOUR:
             self.update_retour()
+        elif self.state == State.JUST_MOVE:
+            self.update_just_move()
         
+    def update_just_move(self):
+        get_logger('rclpy').info(f"\Moving to to {self.current_action['pose']}")
+        self.robot_navigator.navigate_to(self.current_action['pose'], 100) # TODO pas  100
+        self.state = State.ACTION_FINISHED
+
 
     def update_retour(self):
         get_logger('rclpy').info(f"\Going home to {self.current_action['pose']}")
@@ -73,12 +82,25 @@ class Action_Executor():
             if self.plants_put == 0:
                 self.plants_put_pose = self.current_action['pose']
             else:
-                get_logger('rclpy').info(f"\pose: {self.plants_put_pose}")
-                new_pose = [self.plants_put_pose[0] + 0.08, self.plants_put_pose[1], 2.09]
-                self.plants_put_pose = new_pose
-                self.robot_navigator.navigate_to(new_pose, 10)
-                self.publish_on_CAN("put one plant out")
-                get_logger('rclpy').info(f"\Put 1 plant out...")
+                if self.plants_put == 3:
+                    get_logger('rclpy').info(f"{self.current_action['dirs'][1]}Y")
+                    self.plants_put_pose = [self.plants_put_pose[0], 
+                            self.plants_put_pose[1]+OFFSET_POSE_PLANT_Y*self.current_action["dirs"][1], 
+                            self.plants_put_pose[2]]
+                    self.robot_navigator.navigate_to(self.plants_put_pose, 10)
+                    self.plants_put_pose = [self.plants_put_pose[0] - 4*OFFSET_POSE_PLANT_X*self.current_action["dirs"][0], 
+                            self.plants_put_pose[1]+OFFSET_POSE_PLANT_Y*self.current_action["dirs"][1], 
+                            self.plants_put_pose[2]]
+                
+                get_logger('rclpy').info(f"{self.current_action['dirs'][0]}X")
+                # get_logger('rclpy').info(f"\pose: {self.plants_put_pose}")
+                self.plants_put_pose = [self.plants_put_pose[0] + OFFSET_POSE_PLANT_X*self.current_action["dirs"][0], 
+                            self.plants_put_pose[1], 
+                            self.plants_put_pose[2]]
+            self.robot_navigator.navigate_to(self.plants_put_pose, 10)
+            self.publish_on_CAN("put one plant out")
+            get_logger('rclpy').info(f"#########Put 1 plant out...")
+            time.sleep(2)
             self.plants_put += 1
         else:
             self.state = State.ACTION_FINISHED

@@ -29,6 +29,10 @@ class State(Enum):
     PANNEAU = 5
     RETOUR = 6
     ACTION_FINISHED = 7
+    JUST_MOVE = 8
+
+OFFSET_POSE_PLANT_X = 0.08
+OFFSET_POSE_PLANT_Y = 0.08
 
 def draw_rviz_markers(strategy_node, positions, marker_namespace, color, size):
     marker_array = MarkerArray()
