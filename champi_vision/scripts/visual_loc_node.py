@@ -7,7 +7,6 @@ import tf2_geometry_msgs
 
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
-from nav_msgs.msg import Odometry
 
 from cv_bridge import CvBridge
 from ament_index_python.packages import get_package_share_directory
@@ -37,7 +36,7 @@ class VisualLocalizationNode(Node):
 
         # Parameters
         self.enable_viz_keypoints = self.declare_parameter('enable_viz_keypoints', True).value
-        self.enable_match_viz = self.declare_parameter('enable_match_viz', True).value
+        self.enable_match_viz = self.declare_parameter('enable_match_viz', False).value
 
         # Print parameters
         self.get_logger().info(f"enable_viz_keypoints: {self.enable_viz_keypoints}")
@@ -78,10 +77,6 @@ class VisualLocalizationNode(Node):
         ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
         self.ref_img = self.load_ref_image(ref_img_path)
         self.pxl_to_m_ref = self.ref_img.shape[1]/3.0
-        ic("pxl_to_m_ref", self.pxl_to_m_ref)
-
-        # Quick fix rotate image 180°
-        self.ref_img = cv2.rotate(self.ref_img, cv2.ROTATE_180)
 
         # detection / matching init
         self.sift_detector = cv2.SIFT_create()
@@ -99,14 +94,6 @@ class VisualLocalizationNode(Node):
             self.image_callback,
             10)
         self.subscription  # prevent unused variable warning
-
-
-        self.sub_odom = self.create_subscription(
-            Odometry,
-            '/odometry/filtered',
-            self.odom_callback,
-            10)
-        self.sub_odom  # prevent unused variable warning
 
 
     def init_bird_view(self):
@@ -130,13 +117,12 @@ class VisualLocalizationNode(Node):
             self.bird_view = bv.BirdView(K, transform_mtx, (0.5, -1.1), (2.7, 1.1), resolution=378)
 
             self.pos_cam_in_bird_view_pxls = self.bird_view.get_work_plane_pt_in_bird_img(np.array([0, 0, 1]))
-            ic(self.bird_view.M_workplane_real_to_img_)
+            ic(self.pos_cam_in_bird_view_pxls)
 
             # compute undistortion map
             self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (640,480), cv2.CV_32FC1)
 
             self.get_logger().info("Node Initialized", once=True)
-
 
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             self.get_logger().info("waiting for tf2 transform...", once=True)
@@ -154,18 +140,6 @@ class VisualLocalizationNode(Node):
             self.camera_info = msg
 
 
-    def odom_callback(self, msg):
-        pos = np.array([msg.pose.pose.position.x, msg.pose.pose.position.y])
-        rot = R.from_quat([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
-        angle = rot.as_euler('zyx')[0]
-        self.current_pos = pos
-        self.current_angle = angle
-
-        # quick fix flip x and y
-        # self.current_pos = np.array([self.current_pos[1], self.current_pos[0]])
-        # self.current_angle = -self.current_angle + np.pi
-
-
     def draw_oriented_rectangle(self, mask, pos, angle, size):
         # Convert position from meters to pixels
         pos = pos * self.pxl_to_m_ref
@@ -174,12 +148,12 @@ class VisualLocalizationNode(Node):
         R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
 
         # Compute the 4 corners of the rectangle
-        corners = np.array([[0.3, -0.31], [0.3, -1.0], [-0.3, -1.0], [-0.3, -0.31]]) * self.pxl_to_m_ref
+        corners = np.array([[0.5, 0], [0.5, -1.5], [-0.5, -1.5], [-0.5, 0]]) * self.pxl_to_m_ref
         corners = np.dot(corners, R.T) + pos
 
         self.pts_mask_viz = corners
 
-        # ic(corners)
+        ic(corners)
 
         # Draw the rectangle
         cv2.fillPoly(mask, [corners.astype(np.int32)], 1)
@@ -199,9 +173,6 @@ class VisualLocalizationNode(Node):
 
 
     def image_callback(self, msg):
-
-        # Print current robot pose
-        self.get_logger().info(f"pos: {self.current_pos}, angle: {self.current_angle}")
 
         # get camera info if not already
         if self.camera_info is None:
@@ -229,54 +200,9 @@ class VisualLocalizationNode(Node):
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
 
-        # Display bird view cv2
-        cv2.imshow("Bird view", bird_view_img)
-        cv2.waitKey(1)
-
-
-        # Print current pose of the robot
-        self.get_logger().info(f"pos: {self.current_pos}, angle: {self.current_angle}")
-
-
-        # Get the position of the point (2.7, 1.1) expressed in the robot frame, in the ref frame
-        pos_st = np.array([2.7, 1.1]) # meters
-
-
-        # Compute transform matrix between the robot frame and the ref frame
-        T = np.array([[np.cos(self.current_angle), -np.sin(self.current_angle), self.current_pos[0]],
-                        [np.sin(self.current_angle), np.cos(self.current_angle), self.current_pos[1]],
-                        [0, 0, 1]])
-
-
-
-        T = np.linalg.inv(T)
-        pos_robot_in_ref_in_robot = np.dot(T, np.hstack((self.current_pos, 1))) # On obtient 0 0
-
-        ic("pos_robot_in_ref_in_robot", pos_robot_in_ref_in_robot)
-
-
-        # Compute the position of the point (2.7, 1.1) in the ref frame
-        pos_st_in_ref = np.dot(T, np.hstack((pos_st, 1)))
-        pos_st_in_ref = pos_st_in_ref[:2]
-
-        ic("pos_st_in_ref", pos_st_in_ref)
-
-        # Compute this point in pixels
-        pos_st_in_ref_pxls = pos_st_in_ref * self.pxl_to_m_ref
-
-        ic("pos_st_in_ref_pxls", pos_st_in_ref_pxls)
-
-
-
-
-
-
-
-        return
-
 
         # Save bird view to file
-        cv2.imwrite("bird_view.png", bird_view_img)
+        # cv2.imwrite("bird_view.png", bird_view_img)
 
         self.preprocess(bird_view_img)
 
@@ -285,18 +211,15 @@ class VisualLocalizationNode(Node):
 
 
         if not ok or M is None:
-            self.get_logger().info("Not OK or M is None")
             self.visualization()
             return
 
         # get scale
         scale = np.linalg.norm(M[:2,0])
 
-        # if scale < 0.4 or scale > 0.6:
-        #
-        #     self.get_logger().info("Scale not good: {}".format(scale))
-        #     self.visualization()
-        #     return
+        if scale < 0.4 or scale > 0.6:
+            self.visualization()
+            return
 
 
         angle = self.get_angle(M)
@@ -307,8 +230,8 @@ class VisualLocalizationNode(Node):
 
         pos_cam_in_ref_m = pos_cam_in_ref_pxls / self.pxl_to_m_ref
 
-        # self.current_pos = pos_cam_in_ref_m
-        # self.current_angle = angle
+        self.current_pos = pos_cam_in_ref_m
+        self.current_angle = angle
 
         self.get_logger().info(f"angle: {angle}, pos: {pos_cam_in_ref_m}")
 
@@ -350,21 +273,16 @@ class VisualLocalizationNode(Node):
 
     def get_affine_transform_bird_to_ref(self, bird_view):
 
-        MIN_MATCH_COUNT = 1
+        MIN_MATCH_COUNT = 10
 
         # find the keypoints and descriptors with SIFT
         kp1, des1 = self.sift_detector.detectAndCompute(bird_view, None)
 
         if self.enable_masking:
             mask = self.make_mask()
-            ref_img_copy = cv2.bitwise_and(self.ref_img, mask*255)
+            # ref_img_copy = cv2.bitwise_and(self.ref_img, mask)
 
-            # save ref img copy
-            cv2.imwrite("ref.png", ref_img_copy)
-
-
-
-        self.ref_kp, self.ref_des =  self.sift_detector.detectAndCompute(self.ref_img, mask)
+            self.ref_kp, self.ref_des =  self.sift_detector.detectAndCompute(self.ref_img, mask)
 
             # cv2.imshow("mask", ref_img_copy)
             # cv2.waitKey(1)
@@ -388,19 +306,15 @@ class VisualLocalizationNode(Node):
             ok = True
             if M is not None:
                 M = np.concatenate([M, np.array([[0,0,1]])], axis=0) # TODO remove
-
-            self.get_logger().info("N matches: {}".format(len(good)))
         else:
             self.get_logger().info("Not enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT))
             matchesMask = None
 
         if self.enable_match_viz and ok:
-            matches_img = self.draw_matches(bird_view, kp1, self.ref_kp, None, good)
+            matches_img = self.draw_matches(bird_view, kp1, self.ref_kp, matchesMask, good)
             matches_img = cv2.resize(matches_img, (0,0), fx=0.5, fy=0.5)
             cv2.imshow("Matches", matches_img)
             cv2.waitKey(1)
-        else:
-            cv2.destroyWindow("Matches")
 
         return ok, M, matchesMask, kp1, self.ref_kp, good
 
@@ -424,22 +338,9 @@ class VisualLocalizationNode(Node):
 
     def visualization(self, bird_view=None, M=None, good=None, kp2=None):
 
-        return
-
         if bird_view is None or M is None or good is None or kp2 is None:
-
-            self.img_viz = self.ref_img.copy()
-            self.img_viz = cv2.cvtColor(self.img_viz, cv2.COLOR_GRAY2BGR)
-
-            # Add point where the robot is supposed to be
-            pos_pxls = self.current_pos * self.pxl_to_m_ref
-            pos_pxls = pos_pxls.astype(int)
-            cv2.circle(self.img_viz, tuple(pos_pxls), 10, (255,0,0), -1)
-
-
-            if self.pts_mask_viz is not None:
-                self.pts_mask_viz = self.pts_mask_viz.astype(int)
-                cv2.polylines(self.img_viz, [self.pts_mask_viz], True, (0,0,255), 2)
+            if self.img_viz is None:
+                return
 
             # draw 'not enough matches' on added_image
             self.get_logger().info("VIZ: Not enough matches")

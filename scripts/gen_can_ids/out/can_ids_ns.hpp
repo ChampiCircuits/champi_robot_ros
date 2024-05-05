@@ -13,4 +13,7 @@ namespace can_ids {
     int IMU_DATA = 0x20;
     int IMU_STATUS = 0x21;
     int IMU_TEST = 0x202;
+    int ACT_STATUS = 0x31;
+    int ACT_TEST = 0x203;
+    int ACT_ACTION = 0x32;
 }

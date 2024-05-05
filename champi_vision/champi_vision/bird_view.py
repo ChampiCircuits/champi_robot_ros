@@ -149,6 +149,7 @@ class BirdView:
         numpy.ndarray: The point in the source image (x, y) in pixel.
         """
         pt_ret = self.M_workplane_real_to_img_ @ pt
+        ic(self.M_workplane_real_to_img_)
         return pt_ret
 
     def get_bird_img_pt_in_work_plane(self, pt):
