@@ -53,7 +53,7 @@ class BirdView:
         pts_img = self._K @ pts_cam[:3]
         pts_img = pts_img / pts_img[2]
 
-        self.M_workplane_real_to_img_ = self.compute_M_workplane_real_to_img(self._pos_end_work_plane, self._resolution)
+        self.M_workplane_real_to_img_ = self.compute_M_robot_meters_to_bv_px(self._pos_end_work_plane, self._resolution)
 
         pts_work_plane_h = np.vstack((pts_work_plane[:2], np.ones((1,4))))
         pts_work_plane_px = self.M_workplane_real_to_img_ @ pts_work_plane_h
@@ -62,13 +62,13 @@ class BirdView:
         self._H = cv2.getPerspectiveTransform(pts_img[:2].T.astype(np.float32), pts_work_plane_px[:2].T.astype(np.float32))
 
 
-    def compute_M_workplane_real_to_img(self, end_point, resolution):
+    def compute_M_robot_meters_to_bv_px(self, end_point, resolution):
         # start_point: [x, y]
-        # end_point: [x, y]
-        # resolution: [x, y]
-        # return: M matrix
+        # end_point: [x, y] in meters (bird view origin)
+        # resolution: [x, y] in px/m
+        # return: M matrix to convert from robot meters to bird view pixels
 
-        # translation from origin to end_point
+        # translation from robot origin to end_point
         T = np.array([[1, 0, -end_point[0]],
                       [0, 1, -end_point[1]],
                       [0, 0, 1]])
@@ -89,6 +89,10 @@ class BirdView:
         M = S @ R_y @ R @ T
 
         return M
+
+
+
+
 
     def project_img_to_bird(self, img):
         """

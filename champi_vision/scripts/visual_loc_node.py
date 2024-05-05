@@ -12,7 +12,7 @@ from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 from ament_index_python.packages import get_package_share_directory
 
-import cv2
+import cv2, math
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -78,10 +78,6 @@ class VisualLocalizationNode(Node):
         ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
         self.ref_img = self.load_ref_image(ref_img_path)
 
-        # quick fix rotate ref image 180°
-        self.ref_img = cv2.rotate(self.ref_img, cv2.ROTATE_180)
-
-
         self.pxl_to_m_ref = self.ref_img.shape[1]/3.0
 
         # detection / matching init
@@ -114,10 +110,12 @@ class VisualLocalizationNode(Node):
         q = msg.pose.pose.orientation
         self.current_angle = np.arctan2(2*(q.w*q.z + q.x*q.y), 1 - 2*(q.y*q.y + q.z*q.z))
 
+        ic(self.current_pos, self.current_angle)
 
         # Quick fix flip x and y
         # self.current_pos = np.array([self.current_pos[1], self.current_pos[0]])
         # self.current_angle = -self.current_angle
+        # self.current_angle += np.pi
 
     def init_bird_view(self):
         transform = None
@@ -132,12 +130,20 @@ class VisualLocalizationNode(Node):
             rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
             rot = rot.as_matrix()
             trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
+
+
+             # Quick fix
+            trans[2] = trans[2] - 0.78539 + 0.3
+            trans[0] = trans[0] + 0.15
+
+
+
             transform_mtx = np.concatenate([rot, trans.reshape(3,1)], axis=1)
             transform_mtx = np.concatenate([transform_mtx, np.array([[0,0,0,1]])], axis=0)
 
             # initialize bird view
             K = np.array(self.camera_info.k).reshape(3,3)
-            self.bird_view = bv.BirdView(K, transform_mtx, (0.5, -1.1), (2.7, 1.1), resolution=378)
+            self.bird_view = bv.BirdView(K, transform_mtx, (0, -0.5), (1., 0.5), resolution=378)
 
             self.pos_cam_in_bird_view_pxls = self.bird_view.get_work_plane_pt_in_bird_img(np.array([0, 0, 1]))
             ic(self.pos_cam_in_bird_view_pxls)
@@ -223,11 +229,11 @@ class VisualLocalizationNode(Node):
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
 
-        cv2.imshow("bird_view_img", bird_view_img)
+        bv_pred = self.predict_bird_view(bird_view_img.shape[::-1])
+
+        # display both images in same window
+        cv2.imshow("bird_view", np.hstack((bird_view_img, bv_pred)))
         cv2.waitKey(1)
-
-
-        self.predict_bird_view(bird_view_img.shape[::-1])
 
 
         return
@@ -253,17 +259,7 @@ class VisualLocalizationNode(Node):
             self.visualization()
             return
 
-        ic("=====================================")
-
         angle = self.get_angle(M)
-
-
-        ic("POS_CAM_IN_BIRD_VIEW_PXLS AVAILABLE")
-        ic(self.pos_cam_in_bird_view_pxls)
-
-
-
-
 
         pos_cam_in_ref_pxls = np.matmul(M, self.pos_cam_in_bird_view_pxls)
         pos_cam_in_ref_pxls = pos_cam_in_ref_pxls[:2] / pos_cam_in_ref_pxls[2]
@@ -271,86 +267,82 @@ class VisualLocalizationNode(Node):
 
 
         pos_cam_in_ref_m = pos_cam_in_ref_pxls / self.pxl_to_m_ref
-
-        ic("POSE AVAILABLE")
-        ic(pos_cam_in_ref_m)
-        ic(angle)
-
         self.current_pos = pos_cam_in_ref_m
         self.current_angle = angle
-
         self.get_logger().info(f"angle: {angle}, pos: {pos_cam_in_ref_m}")
 
-
-        ic("END=====================================")
-
         self.visualization(bird_view_img, M, good, kp1)
+
 
 
     def predict_bird_view(self, shape):
 
         """
         we want to reverse this operation:
-        pos_cam_in_ref_pxls = np.matmul(M, self.pos_cam_in_bird_view_pxls)
-        pos_cam_in_ref_pxls = pos_cam_in_ref_pxls[:2] / pos_cam_in_ref_pxls[2]
-        pos_cam_in_ref_pxls = pos_cam_in_ref_pxls.astype(int)
+        pos_robot_in_ref_pxls = np.matmul(M, self.pos_cam_in_bird_view_pxls)
+        pos_robot_in_ref_pxls = pos_robot_in_ref_pxls[:2] / pos_robot_in_ref_pxls[2]
+        pos_robot_in_ref_pxls = pos_robot_in_ref_pxls.astype(int)
 
 
-        pos_cam_in_ref_m = pos_cam_in_ref_pxls / self.pxl_to_m_ref
+        pos_robot_in_ref_m = pos_robot_in_ref_pxls / self.pxl_to_m_ref
 
         ic("POSE AVAILABLE")
-        ic(pos_cam_in_ref_m)
+        ic(pos_robot_in_ref_m)
         ic(angle)
 
-        self.current_pos = pos_cam_in_ref_m
+        self.current_pos = pos_robot_in_ref_m
         self.current_angle = angle
         """
 
         # on veut la transfo
 
         angle = self.current_angle
-        pos_cam_in_ref_m = self.current_pos
-        pos_cam_in_ref_pxls = pos_cam_in_ref_m * self.pxl_to_m_ref
-        # pos_cam_in_ref_pxls = pos_cam_in_ref_pxls.astype(int)
+        pos_robot_in_ref_m = self.current_pos
+        pos_robot_in_ref_pxls = pos_robot_in_ref_m * self.pxl_to_m_ref
 
+        angle = angle-math.pi
 
-        M = np.array([[np.cos(angle), -np.sin(angle), pos_cam_in_ref_pxls[0]],
-                        [np.sin(angle), np.cos(angle), pos_cam_in_ref_pxls[1]],
+        t_ref_to_robot = np.array([[1.,0, -pos_robot_in_ref_pxls[1]],
+                                    [0, 1., -pos_robot_in_ref_pxls[0]],
+                                    [0, 0, 1]])
+        r_ref_to_robot = np.array([[np.cos(angle), -np.sin(angle),0],
+                                   [np.sin(angle), np.cos(angle), 0],
+                                   [0, 0, 1]])
+        T_ref_to_robot = r_ref_to_robot @ t_ref_to_robot
+
+        # np.linalg.inv(T_ref_to_robot) permet d'exprimer un pt de ref, dans repere cam
+
+        # # Matrix to reverse Y axis
+        # R_y = np.array([[1, 0, 0],
+        #                 [0, -1, 0],
+        #                 [0, 0, 1]])
+
+        # Matrix to rotate 90°
+        R = np.array([[0, 1, 0],
+                        [-1, 0, 0],
                         [0, 0, 1]])
-        print(M)
-        bird_view_img = cv2.warpAffine(self.ref_img, M[:2], shape)
+
+        # Matrix for translation from cam to img
+        T = np.array([[1, 0, self.pos_cam_in_bird_view_pxls[0]],
+                      [0, 1, self.pos_cam_in_bird_view_pxls[1]],
+                      [0, 0, 1]])
+
+        # T_bv_to_robot = R_y @ R @ T
+        # T_bv_to_robot = R @ T
+        # T_robot_to_bv = np.linalg.inv(T_bv_to_robot)
+
+        T_ref_to_bv =  T_ref_to_robot @ T
 
 
 
+        ic("=======================")
+        ic(pos_robot_in_ref_pxls)
+        ic(self.pos_cam_in_bird_view_pxls[:2])
+        ic("FIN=======================")
 
+        bird_view_img = cv2.warpAffine(self.ref_img, T_ref_to_bv[:2], shape)
 
-        # pos_cam_in_bv_pxl = self.pos_cam_in_bird_view_pxls
-        # pos_robot = self.current_pos
-        # angle_robot = self.current_angle
-        #
-        # pos_robot = pos_robot * self.pxl_to_m_ref
-        #
-        #
-        # T_ref_robot = np.array([[np.cos(angle_robot), -np.sin(angle_robot), pos_robot[0]],
-        #                         [np.sin(angle_robot), np.cos(angle_robot), pos_robot[1]],
-        #                         [0, 0, 1]])
-        #
-        # T_robot_ref = np.linalg.inv(T_ref_robot)
-        #
-        # T_cam_bv = self.bird_view.M_workplane_real_to_img_
-        #
-        # T_bv_cam = np.linalg.inv(T_cam_bv)
-        #
-        # # T_ref_bv = np.matmul(T_cam_bv, T_ref_robot)
-        # T_ref_bv = np.matmul(T_ref_robot, T_cam_bv)
-
-
-
-        # Compute bv image from ref using warpAffine
-        # bird_view_img = cv2.warpAffine(self.ref_img, T_ref_bv[:2], self.ref_img.shape[::-1])
-
-        cv2.imshow("bird_view_img_pred", bird_view_img)
-        cv2.waitKey(1)
+        return bird_view_img
 
 
     def draw_2D_axis(self, image, pos_pxls, angle):
