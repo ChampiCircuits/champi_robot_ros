@@ -160,9 +160,12 @@ class VisualLocalizationNode(Node):
     def preprocess(self, image):
 
         # median blur
-        # image = cv2.medianBlur(image, 11)
+        image = cv2.medianBlur(image, 3)
 
-        pass
+        image = cv2.normalize(image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+
+        return image
+
 
     def callback_cam_info(self, msg):
         if self.camera_info is None:
@@ -236,17 +239,21 @@ class VisualLocalizationNode(Node):
         cv2.waitKey(1)
 
 
+        # Save bird view to file
+        cv2.imwrite("bird_view.png", bird_view_img)
+        # Save predicted bird view to file
+        cv2.imwrite("predicted_bird_view.png", bv_pred)
+
         return
 
 
-        # Save bird view to file
-        # cv2.imwrite("bird_view.png", bird_view_img)
-
-        self.preprocess(bird_view_img)
+        bird_view_img = self.preprocess(bird_view_img)
 
         # get homography
-        ok, M, matchesMask, kp1, kp2, good = self.get_affine_transform_bird_to_ref(bird_view_img)
+        ok, M, matchesMask, kp1, kp2, good = self.get_affine_transform_bird_to_predicted(bird_view_img, bv_pred)
 
+
+        return
 
         if not ok or M is None:
             self.visualization()
@@ -282,16 +289,6 @@ class VisualLocalizationNode(Node):
         pos_robot_in_ref_pxls = np.matmul(M, self.pos_cam_in_bird_view_pxls)
         pos_robot_in_ref_pxls = pos_robot_in_ref_pxls[:2] / pos_robot_in_ref_pxls[2]
         pos_robot_in_ref_pxls = pos_robot_in_ref_pxls.astype(int)
-
-
-        pos_robot_in_ref_m = pos_robot_in_ref_pxls / self.pxl_to_m_ref
-
-        ic("POSE AVAILABLE")
-        ic(pos_robot_in_ref_m)
-        ic(angle)
-
-        self.current_pos = pos_robot_in_ref_m
-        self.current_angle = angle
         """
 
         # on veut la transfo
@@ -310,35 +307,19 @@ class VisualLocalizationNode(Node):
                                    [0, 0, 1]])
         T_ref_to_robot = r_ref_to_robot @ t_ref_to_robot
 
-        # np.linalg.inv(T_ref_to_robot) permet d'exprimer un pt de ref, dans repere cam
 
-        # # Matrix to reverse Y axis
-        # R_y = np.array([[1, 0, 0],
-        #                 [0, -1, 0],
-        #                 [0, 0, 1]])
-
-        # Matrix to rotate 90°
         R = np.array([[0, 1, 0],
                         [-1, 0, 0],
                         [0, 0, 1]])
 
         # Matrix for translation from cam to img
         T = np.array([[1, 0, self.pos_cam_in_bird_view_pxls[0]],
-                      [0, 1, self.pos_cam_in_bird_view_pxls[1]],
+                      [0, 1, self.pos_cam_in_bird_view_pxls[1]+ 0.15*self.pxl_to_m_ref],
                       [0, 0, 1]])
 
-        # T_bv_to_robot = R_y @ R @ T
-        # T_bv_to_robot = R @ T
-        # T_robot_to_bv = np.linalg.inv(T_bv_to_robot)
 
         T_ref_to_bv =  T_ref_to_robot @ T
 
-
-
-        ic("=======================")
-        ic(pos_robot_in_ref_pxls)
-        ic(self.pos_cam_in_bird_view_pxls[:2])
-        ic("FIN=======================")
 
         bird_view_img = cv2.warpAffine(self.ref_img, T_ref_to_bv[:2], shape)
 
@@ -379,21 +360,15 @@ class VisualLocalizationNode(Node):
         return image
 
 
-    def get_affine_transform_bird_to_ref(self, bird_view):
+    def get_affine_transform_bird_to_predicted(self, bird_view, predicted_bird_view):
 
         MIN_MATCH_COUNT = 3
 
         # find the keypoints and descriptors with SIFT
         kp1, des1 = self.sift_detector.detectAndCompute(bird_view, None)
 
-        if self.enable_masking:
-            mask = self.make_mask()
-            # ref_img_copy = cv2.bitwise_and(self.ref_img, mask)
+        self.ref_kp, self.ref_des = self.sift_detector.detectAndCompute(predicted_bird_view, None)
 
-            self.ref_kp, self.ref_des =  self.sift_detector.detectAndCompute(self.ref_img, mask)
-
-            # cv2.imshow("mask", ref_img_copy)
-            # cv2.waitKey(1)
 
 
         matches = self.flann_matcher.knnMatch(self.ref_des, des1, k=2)
@@ -402,6 +377,12 @@ class VisualLocalizationNode(Node):
         for m,n in matches:
             if m.distance < 0.7*n.distance:
                 good.append(m)
+
+        matches_img = self.draw_matches(bird_view, predicted_bird_view, kp1, self.ref_kp, None, good)
+        # matches_img = cv2.resize(matches_img, (0,0), fx=0.5, fy=0.5)
+        cv2.imshow("Flann matches", matches_img)
+        cv2.waitKey(1)
+
 
         M=None
         ok = False
@@ -419,7 +400,7 @@ class VisualLocalizationNode(Node):
             matchesMask = None
 
         if self.enable_match_viz and ok:
-            matches_img = self.draw_matches(bird_view, kp1, self.ref_kp, matchesMask, good)
+            matches_img = self.draw_matches(bird_view, predicted_bird_view, kp1, self.ref_kp, matchesMask, good)
             matches_img = cv2.resize(matches_img, (0,0), fx=0.5, fy=0.5)
             cv2.imshow("Matches", matches_img)
             cv2.waitKey(1)
@@ -427,14 +408,14 @@ class VisualLocalizationNode(Node):
         return ok, M, matchesMask, kp1, self.ref_kp, good
 
 
-    def draw_matches(self, bird_view, kp1, kp2, matchesMask, good):
+    def draw_matches(self, bird_view, ref_img, kp1, kp2, matchesMask, good):
 
         draw_params = dict(matchColor = (0,255,0), # draw matches in green color
                            singlePointColor = None,
                            matchesMask = matchesMask, # draw only inliers
                            flags = 2)
 
-        img_ret = cv2.drawMatches(self.ref_img, kp2, bird_view, kp1,good, None, **draw_params)
+        img_ret = cv2.drawMatches(ref_img, kp2, bird_view, kp1,good, None, **draw_params)
 
         return img_ret
 
