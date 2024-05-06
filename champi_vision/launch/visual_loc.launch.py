@@ -34,9 +34,9 @@ def generate_launch_description():
         #         "calib_yaml_path": os.path.join(get_package_share_directory('champi_vision'), 'config', 'calib', 'raspi_cam_robotik.yaml')
         #     }]
         # )
-        ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', '//home/arusso/bags/coupe/bags_loc/rosbag2_2024_05_03-20_40_15'],
-            output='screen'
-        )
+        # ExecuteProcess(
+        #     cmd=['ros2', 'bag', 'play', '//home/arusso/bags/coupe/bags_loc/rosbag2_2024_05_03-20_40_15'],
+        #     output='screen'
+        # )
 
     ])

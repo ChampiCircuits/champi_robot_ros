@@ -121,12 +121,7 @@ class VisualLocalizationNode(Node):
             rot = rot.as_matrix()
             trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
 
-
-             # Quick fix TODO
-            trans[2] = trans[2] - 0.78539 + 0.3
-            trans[0] = trans[0] + 0.15
-
-
+            ic(trans)
 
             transform_mtx = np.concatenate([rot, trans.reshape(3,1)], axis=1)
             transform_mtx = np.concatenate([transform_mtx, np.array([[0,0,0,1]])], axis=0)
@@ -183,15 +178,6 @@ class VisualLocalizationNode(Node):
         if self.bird_view is None:
             self.init_bird_view()
 
-        if not self.angle_initialized:
-            angle = self.compute_angle(self.curent_image)
-            if angle is not None:
-                self.robot_pose.theta = angle
-                self.get_logger().info("Angle initialized: " + str(angle))
-                self.angle_initialized = True
-            else:
-                self.get_logger().info("Angle not initialized")
-                return
 
         # ==================================== PREPROCESSING ====================================
 
@@ -209,8 +195,32 @@ class VisualLocalizationNode(Node):
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
 
-        # cv2.imshow("bird_view", bird_view_img)
-        # cv2.waitKey(1)
+        cv2.imwrite("bird_view.png", bird_view_img)
+        # Save predicted bird view to file
+
+
+        cv2.imshow("bird_view", bird_view_img)
+        cv2.waitKey(1)
+
+        if not self.angle_initialized:
+            angle = self.compute_angle(bird_view_img)
+            if angle is not None:
+                self.robot_pose.theta = angle - np.pi/2
+                self.get_logger().info("Angle initialized: " + str(self.robot_pose.theta) + "(" + str(self.robot_pose.theta*(180/np.pi)) + "deg)")
+                self.angle_initialized = True
+            else:
+                self.get_logger().info("Angle not initialized")
+                return
+
+        if self.enable_viz:
+            # draw initialization image
+            if self.result_init_img is not None:
+                cv2.imshow("Initialization", self.result_init_img)
+                cv2.waitKey(1)
+
+
+        return
+
 
         # # Save bird view to file
         # cv2.imwrite("bird_view.png", bird_view_img)
@@ -247,19 +257,12 @@ class VisualLocalizationNode(Node):
 
         self.pub_odom.publish(odom_msg)
 
-        # =================================== VISUALIZATION ===================================
-
-        if self.enable_viz:
-            # draw initialization image
-            if self.result_init_img is not None:
-                cv2.imshow("Initialization", self.result_init_img)
-                cv2.waitKey(1)
-
-
 
     def compute_angle(self, bird_view):
 
-        edges = cv2.Canny(bird_view, 50, 150, apertureSize=3)
+        _, img_bin = cv2.threshold(bird_view, 200, 255, cv2.THRESH_BINARY)
+
+        edges = cv2.Canny(img_bin, 50, 150, apertureSize=3)
 
         # Find lines
         lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=100, maxLineGap=10)
