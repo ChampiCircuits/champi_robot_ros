@@ -23,13 +23,12 @@ from ament_index_python.packages import get_package_share_directory
 # Liste des fichiers de lancement ROS2
 launch_files = [
     "ros2 launch champi_bringup bringup.launch.py sim:=True",
+    "ros2 launch champi_bringup bringup.launch.py sim:=False",
     "ros2 launch champi_nav2 bringup_launch.py",
-    "python3 src/champi_robot_ros/dev_tools/goals_cmd.py",
-    "python3 src/champi_robot_ros/champi_brain/scripts/rviz_markers.py",
-    "file4.launch.py",
-    "file4.launch.py",
-    "file4.launch.py",
-
+    "",
+    # "python3 src/champi_robot_ros/champi_brain/scripts/rviz_markers.py",
+    "ros2 launch champi_brain brain.launch.py color:=blue",
+    "ros2 launch champi_brain brain.launch.py color:=yellow",
 ]
 
 red = "#BC2023"

@@ -104,6 +104,9 @@ class Action_Executor():
             self.plants_put += 1
         else:
             self.state = State.ACTION_FINISHED
+            self.plants_put = 0
+            self.plants_put_pose = None
+            
 
     def update_taking_plants(self):
         if self.state_taking_plants == StateTakingPlants.COMPUTE_FRONT_POSE:

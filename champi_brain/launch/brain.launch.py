@@ -8,6 +8,11 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     
+    color_arg = DeclareLaunchArgument(
+        'color',
+        description='Color of the robot (yellow|blue)',
+    )
+    
     screen_manager = Node(
             package='champi_brain',
             executable='screen_manager.py',
@@ -27,9 +32,11 @@ def generate_launch_description():
             executable='strategy_engine_node.py',
             name='strategy',
             output='screen',
+            parameters=[{'color': LaunchConfiguration('color')}]
     )
 
     return LaunchDescription([
+        color_arg,
         # screen_manager,
         # rviz_markers,
         strat

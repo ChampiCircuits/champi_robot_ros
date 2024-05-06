@@ -9,10 +9,18 @@
 
 
 ### MATCH
+PLUS qu'à lancer :
+python3 /home/andre/dev/coupe/ros_ws/src/champi_robot_ros/champi_brain/scripts/screen_manager.py
+
+
+SINON en séparé :
+
 ```bash
 ros2 launch champi_bringup bringup.launch.py sim:=False
 ros2 launch champi_nav2 bringup_launch.py
-ros2 launch champi_brain brain.launch.py
+ros2 launch champi_brain brain.launch.py color:=blue
+OU
+ros2 launch champi_brain brain.launch.py color:=yellow
 ```
 
 

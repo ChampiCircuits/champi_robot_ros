@@ -39,14 +39,18 @@ actions = [
     {"name":"plantes6","type":"prendre_plantes","pose": (1.+0.3, 1.5+0.5),    "time": 10, "points": 0},
 
     {"name":"poserplantesJ1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2, -1.0466),     "time": 10, "points": 3*6, "dirs": (1,1)},
-    {"name":"poserplantesJ2","type":"pose_plantes_sol","pose": (2.0-0.45, 0.5, -1.0466),"time": 10, "points": 3*6, "dirs":(1,1)},
+    {"name":"poserplantesJ2","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 0.5/2, -1.0466+3.14),       "time": 10, "points": 3*6, "dirs":(-1,1)},
     {"name":"poserplantesJ3","type":"pose_plantes_sol","pose": (1.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*6, "dirs":(-1, -1)},
+    
+    {"name":"poserplantesB1","type":"pose_plantes_sol","pose": (1.0, 0.5/2, -1.0466),"time": 10, "points": 3*6, "dirs":(1, 1)},
+    {"name":"poserplantesB2","type":"pose_plantes_sol","pose": (0.45/2, 3.0-0.4/2, -1.0466),"time": 10, "points": 3*6, "dirs":(1, -1)},
+    {"name":"poserplantesB3","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*6, "dirs":(-1, -1)},
 
 
     # {"name":"poserplantes3","type":"poser_plante_jardiniere","pose": (2000/2, 3000-500/2),"time": 10, "points": 3*6},
 
 
-    {"name":"panneau1","type":"tourner_panneau","pose": (0.05, 1.5-0.225),          "time": 10, "points": 5},
+    # {"name":"panneau1","type":"tourner_panneau","pose": (0.05, 1.5-0.225),          "time": 10, "points": 5},
     # {"name":"panneau2","type":"tourner_panneau","pose": (50, 1500),              "time": 10, "points": 5},
     # {"name":"panneau3","type":"tourner_panneau","pose": (50, 1500+225),          "time": 10, "points": 5},
 
@@ -58,8 +62,8 @@ actions = [
     # {"name":"panneau8","type":"tourner_panneau","pose": (50, 3000-275-225),      "time": 10, "points": 5},
     # {"name":"panneau9","type":"tourner_panneau","pose": (50, 3000-275-225-225),  "time": 10, "points": 5},
     
-    {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": None},
-    {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": None},
+    {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": None}, #J3
+    {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": None}, #B1
     {"name":"move_middle","type":"just_move","pose": (1.0, 1.5, 1.57),  "time": 0, "points": None},
     {"name":"move_test","type":"just_move","pose": (1.5, 2.0, -1.57),  "time": 0, "points": None},
 
@@ -74,9 +78,9 @@ strategy_yellow = {
     "name": "strategy_yellow",
     "init_pose": (1.855, 0.165, 2.6166),
     "actions": {
-        "list": ["poserplantesJ2"]
+        # "list": ["poserplantesJ2"]
         # "list": ["plantes4","retour_zone_yellow"],
-        # "list": ["plantes4","poserplantesJ1", "retour_zone_yellow"],
+        "list": ["plantes4","poserplantesJ2","plantes5","poserplantesJ1","plantes6","poserplantesJ3", "retour_zone_yellow"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
     }
 }
@@ -84,7 +88,7 @@ strategy_blue = {
     "name": "strategy_blue",
     "init_pose": (1.855, 2.835, 4.1866),
     "actions": {
-        "list": ["retour_zone_blue"]
+        "list": ["plantes6","poserplantesB3","plantes5","poserplantesB2","plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4","retour_zone_blue"],
         # "list": ["plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_blue"],
@@ -94,20 +98,33 @@ strategy_blue = {
 TOTAL_AVAILABLE_TIME = 100 # s
 ROBOT_MEAN_SPEED = 0.3 # m/s
 
-TEAM = "YELLOW"
-# TEAM = "BLUE"
-
-if TEAM == "YELLOW":
-    current_strategy = strategy_yellow
-    RETOUR_ZONE_NAME = "retour_zone_yellow"
-else:
-    current_strategy = strategy_blue
-    RETOUR_ZONE_NAME = "retour_zone_blue"
-
 
 class StrategyEngineNode(Node):
     def __init__(self) -> None:
         super().__init__('strategy_engine_node')
+
+        # depending on the ros2 parameter 'color'
+        global TEAM
+        global RETOUR_ZONE_NAME
+        self.declare_parameter('color', rclpy.Parameter.Type.STRING) 
+
+        if self.get_parameter('color').get_parameter_value().string_value == 'yellow':
+            TEAM = "YELLOW"
+            self.get_logger().info("YELLOW")
+        else:
+            TEAM = "BLUE"
+            self.get_logger().info("BLUE")
+        self.get_logger().info("TEAM: "+TEAM)
+        if TEAM == "YELLOW":
+            current_strategy = strategy_yellow
+            RETOUR_ZONE_NAME = "retour_zone_yellow"
+        else:
+            current_strategy = strategy_blue
+            RETOUR_ZONE_NAME = "retour_zone_blue"
+
+        self.get_logger().info("\n\n\n\n")
+        self.get_logger().info(self.get_parameter('color').get_parameter_value().string_value)
+        self.get_logger().info("\n\n\n\n")
 
         self.strategy = current_strategy
         self.current_action_name = self.strategy["actions"]["list"][0]
