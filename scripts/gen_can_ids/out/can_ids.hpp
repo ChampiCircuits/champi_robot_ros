@@ -11,4 +11,7 @@
 #define CAN_ID_IMU_DATA 0x20
 #define CAN_ID_IMU_STATUS 0x21
 #define CAN_ID_IMU_TEST 0x202
+#define CAN_ID_ACT_STATUS 0x31
+#define CAN_ID_ACT_TEST 0x203
+#define CAN_ID_ACT_ACTION 0x32
 
