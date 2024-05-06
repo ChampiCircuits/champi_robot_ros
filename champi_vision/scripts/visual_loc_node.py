@@ -68,6 +68,8 @@ class VisualLocalizationNode(Node):
 
         self.angle_initialized = False
 
+        self.set_pose_done = False
+
         self.set_pose_client = self.create_client(SetPose, '/set_pose')
         while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
@@ -153,6 +155,9 @@ class VisualLocalizationNode(Node):
 
     def odom_callback(self, msg):
 
+        if not self.set_pose_done:
+            return
+
         if self.robot_pose is None:
             self.robot_pose = Pose(0, 0, 0)
 
@@ -174,12 +179,6 @@ class VisualLocalizationNode(Node):
             self.get_logger().info("waiting for camera info...", once=True)
             return
         self.get_logger().info("camera info received", once=True)
-
-        # Wait for robot pose
-        if self.robot_pose is None:
-            self.get_logger().info("waiting for robot pose...", once=True)
-            return
-        self.get_logger().info("robot pose received", once=True)
 
 
         # initialize bird view if not already
@@ -218,7 +217,8 @@ class VisualLocalizationNode(Node):
             self.get_logger().info("Waiting for set_pose service response...")
             return
 
-        self.get_logger().info("Starting visual localization!", once=True)
+        self.set_pose_done = True
+
 
         if self.enable_viz:
             # draw initialization image
@@ -226,8 +226,15 @@ class VisualLocalizationNode(Node):
                 cv2.imshow("Initialization", self.result_init_img)
                 cv2.waitKey(1)
 
+        # Wait for robot pose
+        if self.robot_pose is None:
+            self.get_logger().info("waiting for robot pose...", once=True)
+            return
+        self.get_logger().info("robot pose received", once=True)
 
-        return
+        self.get_logger().info("Starting visual localization!", once=True)
+
+
 
         # # Save bird view to file
         # cv2.imwrite("bird_view.png", bird_view_img)
@@ -236,11 +243,14 @@ class VisualLocalizationNode(Node):
 
         # ============================= COMPUTE POSE =================================
 
-        angle = np.pi - self.robot_pose.theta
-
+        angle = self.robot_pose.theta
         robot_pos = self.get_pos_robot(angle, bird_view_img)
+        robot_pose_computed = Pose(robot_pos[1], robot_pos[0], angle)
 
-        ic("Robot pos: ", robot_pos)
+        # Print current pose from odometry and computed pose
+        self.get_logger().info(f"Robot pose (odom): {self.robot_pose}")
+        self.get_logger().info(f"Robot pose (computed): {robot_pose_computed}")
+
 
         # ============================= PUBLISH ODOMETRY =================================
 
@@ -250,7 +260,7 @@ class VisualLocalizationNode(Node):
         odom_msg.child_frame_id = 'base_link'
         odom_msg.pose.pose.position.x = robot_pos[0]
         odom_msg.pose.pose.position.y = robot_pos[1]
-        q = R.from_euler('z', self.robot_pose.theta).as_quat()
+        q = R.from_euler('z', angle).as_quat()
         odom_msg.pose.pose.orientation.x = q[0]
         odom_msg.pose.pose.orientation.y = q[1]
         odom_msg.pose.pose.orientation.z = q[2]
@@ -297,7 +307,7 @@ class VisualLocalizationNode(Node):
     def call_set_pose(self, pose):
 
         request = SetPose.Request()
-        request.pose.header.stamp = self.get_clock().now().to_msg()
+        # request.pose.header.stamp = self.get_clock().now().to_msg()
         request.pose.header.frame_id = 'odom'
         request.pose.pose.pose.position.x = pose.x
         request.pose.pose.pose.position.y = pose.y
@@ -363,7 +373,7 @@ class VisualLocalizationNode(Node):
             min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
 
             time_end = time.time()
-            print(f"Time elapsed for {meth}: {time_end - time_start}")
+            # print(f"Time elapsed for {meth}: {time_end - time_start}")
 
             # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
             if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
@@ -373,7 +383,6 @@ class VisualLocalizationNode(Node):
 
             positions.append(top_left)
 
-            ic("Top left with method", meth, top_left)
 
         return positions
 
@@ -560,3 +569,15 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+
+
+# TODO
+#     1]     await await_or_execute(sub.callback, msg)
+#     [visual_loc_node.py-1]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 107, in await_or_execute
+#     [visual_loc_node.py-1]     return callback(*args)
+# [visual_loc_node.py-1]   File "/home/andre/dev/coupe/ros_ws/install/champi_vision/lib/champi_vision/visual_loc_node.py", line 196, in image_callback
+# [visual_loc_node.py-1]     cv_image = cv2.remap(cv_image, self.map1, self.map2, interpolation=cv2.INTER_LINEAR)
+# [visual_loc_node.py-1] cv2.error: OpenCV(4.5.4) ./modules/imgproc/src/imgwarp.cpp:1703: error: (-215:Assertion failed) !_map1.empty() in function 'remap'
+# [visual_loc_node.py-1]
+# [ERROR] [visual_loc_node.py-1]: process has died [pid 14597, exit code 1, cmd '/home/andre/dev/coupe/ros_ws/install/champi_vision/lib/champi_vision/visual_loc_node.py --ros-args -r __node:=visual_loc_node'].
