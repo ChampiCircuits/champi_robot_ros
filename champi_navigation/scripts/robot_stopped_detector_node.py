@@ -7,6 +7,7 @@ from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 import math
 from rclpy.executors import ExternalShutdownException
+from math import acos
 
 
 class MyNode(Node):
@@ -52,8 +53,21 @@ class MyNode(Node):
         self.req_odom = True
         self.req_pose = True
 
+        self.odom_subscriber = self.create_subscription(Odometry, '/odometry/filtered', self.update_robot_pose, 10)
+        self.last_robot_pose = None
+        self.robot_pose = None
+        self.has_been_set_pose = False
 
-
+    def update_robot_pose(self, msg):
+        self.robot_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y, acos(msg.pose.pose.orientation.w)*2*180/3.1415)
+        if self.diff(self.robot_pose, self.last_robot_pose) > 0.10:
+            self.has_been_set_pose = True
+            self.last_robot_pose = self.robot_pose
+        # get_logger('rclpy').info(f"updated robot_pose: {self.robot_pose}")
+        
+    def diff(self, pose, last_pose):
+        return math.sqrt(math.pow(pose[0]-last_pose[0],2) + math.pow(pose[1]-last_pose[1],2))
+    
     def cmd_vel_callback(self, msg):
         self.cmd_vel = msg
 
@@ -67,6 +81,13 @@ class MyNode(Node):
 
     def timer_callback(self):
         # if self.is_stationary() and self.is_yaw_velocity_below_threshold():
+
+        # si on a recu un appel au service set pose dans la derniere seconde, alors on republish pas la pose
+        # en fait nan, si la difference est supérieure à 10cm, c'est qu'on doit avoir recu un set pose
+        if self.has_been_set_pose:
+            self.has_been_set_pose = False
+            return
+
         if self.is_yaw_velocity_below_threshold():
             self.robot_stopped = True
             self.pose_msg.header.stamp = self.get_clock().now().to_msg()

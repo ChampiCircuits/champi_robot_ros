@@ -70,7 +70,10 @@ def generate_launch_description():
             {'laser_scan_dir': True},
             {'enable_angle_crop_func': False},
             {'angle_crop_min': 135.0},
-            {'angle_crop_max': 225.0}
+            {'angle_crop_max': 225.0},
+            # {'range_min': 1.0},
+            # {'range_max': 4.0},
+            # {'units': 'M'},
         ],
         condition=UnlessCondition(LaunchConfiguration('sim'))
     )
@@ -152,7 +155,7 @@ def generate_launch_description():
         description_broadcaster,
         base_controller_launch,
         imu_controller_launch,
-        # ldlidar_node,
+        ldlidar_node,
         lidar_simu_node,
         base_control_simu_node,
         cmd_vel_mux_node,
