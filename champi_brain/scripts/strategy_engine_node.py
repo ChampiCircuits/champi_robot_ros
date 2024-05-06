@@ -39,7 +39,7 @@ actions = [
     {"name":"plantes6","type":"prendre_plantes","pose": (1.+0.3, 1.5+0.5),    "time": 10, "points": 0},
 
     {"name":"poserplantesJ1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2, -1.0466),     "time": 10, "points": 3*6, "dirs": (1,1)},
-    {"name":"poserplantesJ2","type":"pose_plantes_sol","pose": (2.0-0.45, 0.5, -1.0466),"time": 10, "points": 3*6, "dirs":(1,1)},
+    {"name":"poserplantesJ2","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 0.5/2, -1.0466+3.14),       "time": 10, "points": 3*6, "dirs":(-1,1)},
     {"name":"poserplantesJ3","type":"pose_plantes_sol","pose": (1.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*6, "dirs":(-1, -1)},
     
     {"name":"poserplantesB1","type":"pose_plantes_sol","pose": (1.0, 0.5/2, -1.0466),"time": 10, "points": 3*6, "dirs":(1, 1)},
@@ -90,7 +90,7 @@ strategy_blue = {
     "actions": {
         "list": ["plantes6","poserplantesB3","plantes5","poserplantesB2","plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4","retour_zone_blue"],
-        "list": ["plantes4","poserplantesB1", "retour_zone_blue"],
+        # "list": ["plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_blue"],
     }
 }
