@@ -8,6 +8,7 @@ import tf2_geometry_msgs
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from nav_msgs.msg import Odometry
+from robot_localization.srv import SetPose
 
 from cv_bridge import CvBridge
 from ament_index_python.packages import get_package_share_directory
@@ -27,7 +28,7 @@ from icecream import ic
 from collections import Counter
 
 
-class pose:
+class Pose:
     def __init__(self, x, y, theta):
         self.x = x
         self.y = y
@@ -43,6 +44,7 @@ class VisualLocalizationNode(Node):
 
         # Parameters
         self.enable_viz = True
+        self.angle_offset = 0.
 
 
 
@@ -65,6 +67,12 @@ class VisualLocalizationNode(Node):
         self.result_init_img = None
 
         self.angle_initialized = False
+
+        self.set_pose_client = self.create_client(SetPose, '/set_pose')
+        while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+
+        self.future_set_pose_response = None
 
 
         ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
@@ -146,7 +154,7 @@ class VisualLocalizationNode(Node):
     def odom_callback(self, msg):
 
         if self.robot_pose is None:
-            self.robot_pose = pose(0, 0, 0)
+            self.robot_pose = Pose(0, 0, 0)
 
         self.robot_pose.x = msg.pose.pose.position.x
         self.robot_pose.y = msg.pose.pose.position.y
@@ -195,22 +203,22 @@ class VisualLocalizationNode(Node):
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
 
-        cv2.imwrite("bird_view.png", bird_view_img)
-        # Save predicted bird view to file
-
-
         cv2.imshow("bird_view", bird_view_img)
         cv2.waitKey(1)
 
         if not self.angle_initialized:
-            angle = self.compute_angle(bird_view_img)
-            if angle is not None:
-                self.robot_pose.theta = angle - np.pi/2
-                self.get_logger().info("Angle initialized: " + str(self.robot_pose.theta) + "(" + str(self.robot_pose.theta*(180/np.pi)) + "deg)")
+
+            if self.initialize_pose(bird_view_img):
                 self.angle_initialized = True
             else:
-                self.get_logger().info("Angle not initialized")
+                self.get_logger().info("Could not initialize")
                 return
+
+        if self.future_set_pose_response is None or not self.future_set_pose_response.done():
+            self.get_logger().info("Waiting for set_pose service response...")
+            return
+
+        self.get_logger().info("Starting visual localization!", once=True)
 
         if self.enable_viz:
             # draw initialization image
@@ -220,7 +228,6 @@ class VisualLocalizationNode(Node):
 
 
         return
-
 
         # # Save bird view to file
         # cv2.imwrite("bird_view.png", bird_view_img)
@@ -233,7 +240,7 @@ class VisualLocalizationNode(Node):
 
         robot_pos = self.get_pos_robot(angle, bird_view_img)
 
-        print("Robot pos: ", robot_pos)
+        ic("Robot pos: ", robot_pos)
 
         # ============================= PUBLISH ODOMETRY =================================
 
@@ -257,6 +264,51 @@ class VisualLocalizationNode(Node):
 
         self.pub_odom.publish(odom_msg)
 
+
+    def initialize_pose(self, bird_view):
+
+        # 1) Compute Angle
+        angle = self.compute_angle(bird_view)
+        if angle is None:
+            return False
+
+        self.get_logger().info("Angle initialized: " + str(angle) + "(" + str(angle*180/np.pi) + "°)")
+
+
+        # 2) Compute Pos
+
+        angle = -np.pi/2-angle
+        robot_pos = self.get_pos_robot(angle, bird_view, vote=True)
+
+        ic("Robot pos (init): ", robot_pos)
+
+        # 3) Call service set_pose
+
+        pose_init = Pose(robot_pos[1], robot_pos[0], angle+self.angle_offset) # TODO Pourquoi j'ai dû swap ??
+
+        self.call_set_pose(pose_init)
+
+        return True
+
+
+
+
+
+    def call_set_pose(self, pose):
+
+        request = SetPose.Request()
+        request.pose.header.stamp = self.get_clock().now().to_msg()
+        request.pose.header.frame_id = 'odom'
+        request.pose.pose.pose.position.x = pose.x
+        request.pose.pose.pose.position.y = pose.y
+        request.pose.pose.pose.position.z = 0.
+        request.pose.pose.pose.orientation.x = 0.
+        request.pose.pose.pose.orientation.y = 0.
+        request.pose.pose.pose.orientation.z = np.sin(pose.theta/2)
+        request.pose.pose.pose.orientation.w = np.cos(pose.theta/2)
+
+        self.get_logger().info('Calling /set_pose...')
+        self.future_set_pose_response = self.set_pose_client.call_async(request)
 
     def compute_angle(self, bird_view):
 
@@ -325,18 +377,6 @@ class VisualLocalizationNode(Node):
 
         return positions
 
-    def get_pos_with_template_matching(self, img, template):
-
-        positions = self.get_positions_with_template_matching(img, template)
-
-        counter = Counter(positions)
-        most_common = counter.most_common(1)[0][0]
-
-        # Print nb of occurences
-        print("Confidence: " + str(counter[most_common]) + "/" + str(len(positions)))
-
-        return most_common
-
 
     def display_template_in_image(self, img, template, pos):
 
@@ -352,26 +392,15 @@ class VisualLocalizationNode(Node):
         cv2.imshow("Template in image", img_cp)
         cv2.waitKey(1)
 
-    def get_pos_robot(self, angle_robot, bird_view):
 
-        # 1) Compute rotated ref image
-        M, ref_img_rot = self.get_rotated_ref_img(angle_robot)
-
-        # 2) Perform template matching to find the pos of bv in rotated ref image
-        pos_bv_in_rot_ref = self.get_pos_with_template_matching(ref_img_rot, bird_view)
-        pos_bv_in_rot_ref = np.array([pos_bv_in_rot_ref[0], pos_bv_in_rot_ref[1], 1])
-
-        if self.enable_viz:
-            self.display_template_in_image(ref_img_rot, bird_view, pos_bv_in_rot_ref[:2])
+    def pos_template_matching_to_pos_robot_m(self, M, angle, pos_template):
 
         # 3) Compute the pos of the robot in the ref image (in pixels)
 
         pos_robot_in_template = self.pos_cam_in_bird_view_pxls
-        pos_robot_in_rot_ref = [pos_bv_in_rot_ref[0] + pos_robot_in_template[0], pos_bv_in_rot_ref[1] + pos_robot_in_template[1], 1]
+        pos_robot_in_rot_ref = [pos_template[0] + pos_robot_in_template[0], pos_template[1] + pos_robot_in_template[1], 1]
 
         M_inv = np.linalg.inv(np.vstack([M, [0, 0, 1]]))
-        print("M_inv: ", M_inv)
-        print("pos_robot_in_rot_ref: ", pos_robot_in_rot_ref)
         pos_robot_in_ref_pxls = np.dot(M_inv, pos_robot_in_rot_ref)
 
         # 4) Remove border offsets and convert to meters
@@ -382,6 +411,49 @@ class VisualLocalizationNode(Node):
         pos_robot_in_ref_m = pos_robot_in_ref_no_borders_pxls / self.pxl_to_m_ref
 
         return pos_robot_in_ref_m
+
+
+
+    def get_pos_robot(self, angle_robot, bird_view, vote=False):
+
+        # 1) Compute rotated ref image
+        M, ref_img_rot = self.get_rotated_ref_img(angle_robot)
+
+
+        # 2) Perform template matching to find the pos of bv in rotated ref image
+        positions_bv_in_rot_ref = self.get_positions_with_template_matching(ref_img_rot, bird_view)
+
+        # Get closest position to the current robot position
+
+        pos_robot_in_ref_m_ret = None
+        pos_bv_in_rot_ref_ret = None
+        dist_min = 1000000.
+
+        if(vote):
+            counter = Counter(positions_bv_in_rot_ref).most_common(1)
+            pos_bv_in_rot_ref_ret = counter[0][0]
+            pos_robot_in_ref_m_ret = self.pos_template_matching_to_pos_robot_m(M, angle_robot, pos_bv_in_rot_ref_ret)
+
+        else:
+            for pos_bv_in_rot_ref in positions_bv_in_rot_ref:
+
+                pos_bv_in_rot_ref = np.array([pos_bv_in_rot_ref[0], pos_bv_in_rot_ref[1], 1])
+
+                robot_pos_m = self.pos_template_matching_to_pos_robot_m(M, angle_robot, pos_bv_in_rot_ref)
+
+                dist = np.linalg.norm(np.array([robot_pos_m[0], robot_pos_m[1]]) - np.array([self.robot_pose.x, self.robot_pose.y]))
+
+                if dist < dist_min:
+                    pos_robot_in_ref_m_ret = robot_pos_m
+                    pos_bv_in_rot_ref_ret = pos_bv_in_rot_ref
+                    dist_min = dist
+
+        if self.enable_viz:
+            self.display_template_in_image(ref_img_rot, bird_view, pos_bv_in_rot_ref_ret[:2])
+
+        return pos_robot_in_ref_m_ret
+
+
 
 
 
