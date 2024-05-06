@@ -24,25 +24,59 @@ import champi_vision.bird_view as bv
 
 from icecream import ic
 
+from collections import Counter
+
+
+class pose:
+    def __init__(self, x, y, theta):
+        self.x = x
+        self.y = y
+        self.theta = theta
+
+    def __str__(self):
+        return f"x: {self.x}, y: {self.y}, theta: {self.theta}"
+
 class VisualLocalizationNode(Node):
 
     def __init__(self):
         super().__init__('visual_loc')
 
-        self.current_pos = np.array([2.6, 1.7])
-        self.current_angle = -1.629
-
-        self.enable_masking = True
-
-
         # Parameters
-        self.enable_viz_keypoints = self.declare_parameter('enable_viz_keypoints', True).value
-        self.enable_match_viz = self.declare_parameter('enable_match_viz', False).value
+        self.enable_viz = True
 
-        # Print parameters
-        self.get_logger().info(f"enable_viz_keypoints: {self.enable_viz_keypoints}")
-        self.get_logger().info(f"enable_match_viz: {self.enable_match_viz}")
 
+
+        # transformation matrix between base_link and camera using tf2
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
+        # Map to undistort the image
+        self.map1 = None
+        self.map2 = None
+
+        self.img_viz = None
+        self.cv_bridge = CvBridge()
+        self.curent_image = None
+        self.time_last_image = time.time()
+        self.pos_cam_in_bird_view_pxls = None
+        self.bird_view = None
+        self.robot_pose = None
+
+        self.result_init_img = None
+
+        self.angle_initialized = False
+
+
+        ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
+        self.ref_img = self.load_ref_image(ref_img_path)
+
+        self.pxl_to_m_ref = self.ref_img.shape[1]/3.0
+
+        self.borders_offsets = [150, 360]
+
+        self.ref_img = cv2.copyMakeBorder(self.ref_img, self.borders_offsets[1], self.borders_offsets[1],
+                                          self.borders_offsets[0], self.borders_offsets[0],
+                                          cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
         # handle camera info
         self.camera_info = None
@@ -51,43 +85,6 @@ class VisualLocalizationNode(Node):
             '/camera_info',
             self.callback_cam_info,
             10)
-
-
-        # transformation matrix between base_link and camera using tf2
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
-        self.bird_view = None
-
-        # Map to undistort the image
-        self.map1 = None
-        self.map2 = None
-
-        # other stuff
-
-        self.img_viz = None
-
-        self.pts_mask_viz = None
-
-        self.cv_bridge = CvBridge()
-
-        self.curent_image = None
-        self.time_last_image = time.time()
-
-        self.pos_cam_in_bird_view_pxls = None
-
-        ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
-        self.ref_img = self.load_ref_image(ref_img_path)
-
-        self.pxl_to_m_ref = self.ref_img.shape[1]/3.0
-
-        # detection / matching init
-        self.sift_detector = cv2.SIFT_create()
-        self.ref_kp, self.ref_des =  self.sift_detector.detectAndCompute(self.ref_img, None)
-
-        FLANN_INDEX_KDTREE = 1
-        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-        search_params = dict(checks = 50)
-        self.flann_matcher = cv2.FlannBasedMatcher(index_params, search_params)
 
 
         self.subscription = self.create_subscription(
@@ -105,17 +102,10 @@ class VisualLocalizationNode(Node):
             10)
 
 
-    def odom_callback(self, msg):
-        self.current_pos = np.array([msg.pose.pose.position.x, msg.pose.pose.position.y])
-        q = msg.pose.pose.orientation
-        self.current_angle = np.arctan2(2*(q.w*q.z + q.x*q.y), 1 - 2*(q.y*q.y + q.z*q.z))
+        self.pub_odom = self.create_publisher(Odometry, '/odometry/visual', 10)
 
-        ic(self.current_pos, self.current_angle)
 
-        # Quick fix flip x and y
-        # self.current_pos = np.array([self.current_pos[1], self.current_pos[0]])
-        # self.current_angle = -self.current_angle
-        # self.current_angle += np.pi
+
 
     def init_bird_view(self):
         transform = None
@@ -132,7 +122,7 @@ class VisualLocalizationNode(Node):
             trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
 
 
-             # Quick fix
+             # Quick fix TODO
             trans[2] = trans[2] - 0.78539 + 0.3
             trans[0] = trans[0] + 0.15
 
@@ -143,7 +133,7 @@ class VisualLocalizationNode(Node):
 
             # initialize bird view
             K = np.array(self.camera_info.k).reshape(3,3)
-            self.bird_view = bv.BirdView(K, transform_mtx, (0, -0.5), (1., 0.5), resolution=378)
+            self.bird_view = bv.BirdView(K, transform_mtx, (0.27, -0.17), (0.82, 0.16), resolution=378)
 
             self.pos_cam_in_bird_view_pxls = self.bird_view.get_work_plane_pt_in_bird_img(np.array([0, 0, 1]))
             ic(self.pos_cam_in_bird_view_pxls)
@@ -157,68 +147,53 @@ class VisualLocalizationNode(Node):
             self.get_logger().info("waiting for tf2 transform...", once=True)
             return
 
-    def preprocess(self, image):
 
-        # median blur
-        image = cv2.medianBlur(image, 3)
+    def odom_callback(self, msg):
 
-        image = cv2.normalize(image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+        if self.robot_pose is None:
+            self.robot_pose = pose(0, 0, 0)
 
-        return image
+        self.robot_pose.x = msg.pose.pose.position.x
+        self.robot_pose.y = msg.pose.pose.position.y
+        q = msg.pose.pose.orientation
+        self.robot_pose.theta = np.arctan2(2*(q.w*q.z + q.x*q.y), 1 - 2*(q.y*q.y + q.z*q.z))
 
+        self.get_logger().info(f"Got first robot pose: {self.robot_pose}", once=True)
 
     def callback_cam_info(self, msg):
         if self.camera_info is None:
             self.camera_info = msg
-
-
-    def draw_oriented_rectangle(self, mask, pos, angle, size):
-        # Convert position from meters to pixels
-        pos = pos * self.pxl_to_m_ref
-
-        # Create a rotation matrix
-        R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
-
-        # Compute the 4 corners of the rectangle
-        corners = np.array([[0.5, 0], [0.5, -1.5], [-0.5, -1.5], [-0.5, 0]]) * self.pxl_to_m_ref
-        corners = np.dot(corners, R.T) + pos
-
-        self.pts_mask_viz = corners
-
-        ic(corners)
-
-        # Draw the rectangle
-        cv2.fillPoly(mask, [corners.astype(np.int32)], 1)
-
-
-
-    def make_mask(self):
-        """Creates a mask of the same dimension as the ref image,
-        with an oriented rectanle of ones where the robot is supposed to be."""
-
-        mask = np.zeros(self.ref_img.shape, dtype=np.uint8)
-
-        self.draw_oriented_rectangle(mask, self.current_pos, self.current_angle, np.array([0.5, 0.5]))
-
-        return mask
-
-
 
     def image_callback(self, msg):
 
         # get camera info if not already
         if self.camera_info is None:
             self.get_logger().info("waiting for camera info...", once=True)
-
             return
-
         self.get_logger().info("camera info received", once=True)
+
+        # Wait for robot pose
+        if self.robot_pose is None:
+            self.get_logger().info("waiting for robot pose...", once=True)
+            return
+        self.get_logger().info("robot pose received", once=True)
 
 
         # initialize bird view if not already
         if self.bird_view is None:
             self.init_bird_view()
 
+        if not self.angle_initialized:
+            angle = self.compute_angle(self.curent_image)
+            if angle is not None:
+                self.robot_pose.theta = angle
+                self.get_logger().info("Angle initialized: " + str(angle))
+                self.angle_initialized = True
+            else:
+                self.get_logger().info("Angle not initialized")
+                return
+
+        # ==================================== PREPROCESSING ====================================
 
         # convert to cv2
         cv_image = self.cv_bridge.imgmsg_to_cv2(msg, 'bgr8')
@@ -229,56 +204,185 @@ class VisualLocalizationNode(Node):
 
         self.curent_image = cv_image
 
+        # =================================== COMPUTE BIRD VIEW ===================================
+
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
 
-        bv_pred = self.predict_bird_view(bird_view_img.shape[::-1])
+        # cv2.imshow("bird_view", bird_view_img)
+        # cv2.waitKey(1)
 
-        # display both images in same window
-        cv2.imshow("bird_view", np.hstack((bird_view_img, bv_pred)))
+        # # Save bird view to file
+        # cv2.imwrite("bird_view.png", bird_view_img)
+        # # Save predicted bird view to file
+        # cv2.imwrite("predicted_bird_view.png", bv_pred)
+
+        # ============================= COMPUTE POSE =================================
+
+        angle = np.pi - self.robot_pose.theta
+
+        robot_pos = self.get_pos_robot(angle, bird_view_img)
+
+        print("Robot pos: ", robot_pos)
+
+        # ============================= PUBLISH ODOMETRY =================================
+
+        odom_msg = Odometry()
+        odom_msg.header.stamp = self.get_clock().now().to_msg()
+        odom_msg.header.frame_id = 'map'
+        odom_msg.child_frame_id = 'base_link'
+        odom_msg.pose.pose.position.x = robot_pos[0]
+        odom_msg.pose.pose.position.y = robot_pos[1]
+        q = R.from_euler('z', self.robot_pose.theta).as_quat()
+        odom_msg.pose.pose.orientation.x = q[0]
+        odom_msg.pose.pose.orientation.y = q[1]
+        odom_msg.pose.pose.orientation.z = q[2]
+        odom_msg.pose.pose.orientation.w = q[3]
+
+        # Very low covariance
+        cov = 0.00001
+        for i in range(36):
+            if i % 7 == 0:
+                odom_msg.pose.covariance[i] = cov
+
+        self.pub_odom.publish(odom_msg)
+
+        # =================================== VISUALIZATION ===================================
+
+        if self.enable_viz:
+            # draw initialization image
+            if self.result_init_img is not None:
+                cv2.imshow("Initialization", self.result_init_img)
+                cv2.waitKey(1)
+
+
+
+    def compute_angle(self, bird_view):
+
+        edges = cv2.Canny(bird_view, 50, 150, apertureSize=3)
+
+        # Find lines
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=100, maxLineGap=10)
+
+        if lines is None:
+            return None
+
+        # Draw lines
+        if self.enable_viz:
+            self.result_init_img = np.zeros_like(bird_view)
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                cv2.line(self.result_init_img, (x1, y1), (x2, y2), 255, 2)
+
+        # Compute angle
+        angles = []
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            angles.append(np.arctan2(y2-y1, x2-x1))
+
+        return np.median(angles)
+
+
+    def get_rotated_ref_img(self, angle):
+        rows, cols = self.ref_img.shape
+        M = cv2.getRotationMatrix2D((cols/2, rows/2), np.rad2deg(angle), 1)
+        ref_img_rot = cv2.warpAffine(self.ref_img, M, (cols, rows))
+        return M, ref_img_rot
+
+    def get_positions_with_template_matching(self, img, template):
+
+        # All the 6 methods for comparison in a list
+        methods = ['cv2.TM_CCOEFF', 'cv2.TM_CCOEFF_NORMED', 'cv2.TM_CCORR',
+                   'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
+
+        positions = []
+
+        for meth in methods:
+
+            method = eval(meth)
+
+            time_start = time.time()
+
+            # Apply template Matching
+            res = cv2.matchTemplate(img,template,method)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+
+            time_end = time.time()
+            print(f"Time elapsed for {meth}: {time_end - time_start}")
+
+            # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+            if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+                top_left = min_loc
+            else:
+                top_left = max_loc
+
+            positions.append(top_left)
+
+            ic("Top left with method", meth, top_left)
+
+        return positions
+
+    def get_pos_with_template_matching(self, img, template):
+
+        positions = self.get_positions_with_template_matching(img, template)
+
+        counter = Counter(positions)
+        most_common = counter.most_common(1)[0][0]
+
+        # Print nb of occurences
+        print("Confidence: " + str(counter[most_common]) + "/" + str(len(positions)))
+
+        return most_common
+
+
+    def display_template_in_image(self, img, template, pos):
+
+        bottom_right = (pos[0] + template.shape[1], pos[1] + template.shape[0])
+
+        img_cp = img.copy()
+        cv2.rectangle(img, pos, bottom_right, 255, 2)
+        img_cp[pos[1]:bottom_right[1], pos[0]:bottom_right[0]] = template
+
+        # Resize
+        img_cp = cv2.resize(img_cp, (0,0), fx=0.5, fy=0.5)
+
+        cv2.imshow("Template in image", img_cp)
         cv2.waitKey(1)
 
+    def get_pos_robot(self, angle_robot, bird_view):
 
-        # Save bird view to file
-        cv2.imwrite("bird_view.png", bird_view_img)
-        # Save predicted bird view to file
-        cv2.imwrite("predicted_bird_view.png", bv_pred)
+        # 1) Compute rotated ref image
+        M, ref_img_rot = self.get_rotated_ref_img(angle_robot)
 
-        return
+        # 2) Perform template matching to find the pos of bv in rotated ref image
+        pos_bv_in_rot_ref = self.get_pos_with_template_matching(ref_img_rot, bird_view)
+        pos_bv_in_rot_ref = np.array([pos_bv_in_rot_ref[0], pos_bv_in_rot_ref[1], 1])
 
+        if self.enable_viz:
+            self.display_template_in_image(ref_img_rot, bird_view, pos_bv_in_rot_ref[:2])
 
-        bird_view_img = self.preprocess(bird_view_img)
+        # 3) Compute the pos of the robot in the ref image (in pixels)
 
-        # get homography
-        ok, M, matchesMask, kp1, kp2, good = self.get_affine_transform_bird_to_predicted(bird_view_img, bv_pred)
+        pos_robot_in_template = self.pos_cam_in_bird_view_pxls
+        pos_robot_in_rot_ref = [pos_bv_in_rot_ref[0] + pos_robot_in_template[0], pos_bv_in_rot_ref[1] + pos_robot_in_template[1], 1]
 
+        M_inv = np.linalg.inv(np.vstack([M, [0, 0, 1]]))
+        print("M_inv: ", M_inv)
+        print("pos_robot_in_rot_ref: ", pos_robot_in_rot_ref)
+        pos_robot_in_ref_pxls = np.dot(M_inv, pos_robot_in_rot_ref)
 
-        return
+        # 4) Remove border offsets and convert to meters
 
-        if not ok or M is None:
-            self.visualization()
-            return
+        translation = np.array([self.borders_offsets[0], self.borders_offsets[1], 0])
+        pos_robot_in_ref_no_borders_pxls = pos_robot_in_ref_pxls - translation
 
-        # get scale
-        scale = np.linalg.norm(M[:2,0])
+        pos_robot_in_ref_m = pos_robot_in_ref_no_borders_pxls / self.pxl_to_m_ref
 
-        if scale < 0.4 or scale > 0.6:
-            self.visualization()
-            return
-
-        angle = self.get_angle(M)
-
-        pos_cam_in_ref_pxls = np.matmul(M, self.pos_cam_in_bird_view_pxls)
-        pos_cam_in_ref_pxls = pos_cam_in_ref_pxls[:2] / pos_cam_in_ref_pxls[2]
-        pos_cam_in_ref_pxls = pos_cam_in_ref_pxls.astype(int)
+        return pos_robot_in_ref_m
 
 
-        pos_cam_in_ref_m = pos_cam_in_ref_pxls / self.pxl_to_m_ref
-        self.current_pos = pos_cam_in_ref_m
-        self.current_angle = angle
-        self.get_logger().info(f"angle: {angle}, pos: {pos_cam_in_ref_m}")
 
-        self.visualization(bird_view_img, M, good, kp1)
+
 
 
 
@@ -312,16 +416,24 @@ class VisualLocalizationNode(Node):
                         [-1, 0, 0],
                         [0, 0, 1]])
 
+
+        offset_x = 0.3
+        offset_y = 1.
+
         # Matrix for translation from cam to img
-        T = np.array([[1, 0, self.pos_cam_in_bird_view_pxls[0]],
-                      [0, 1, self.pos_cam_in_bird_view_pxls[1]+ 0.15*self.pxl_to_m_ref],
+        T = np.array([[1, 0, self.pos_cam_in_bird_view_pxls[0] + offset_x*self.pxl_to_m_ref],
+                      [0, 1, self.pos_cam_in_bird_view_pxls[1]+ 0.15*self.pxl_to_m_ref + offset_y*self.pxl_to_m_ref],
                       [0, 0, 1]])
 
 
         T_ref_to_bv =  T_ref_to_robot @ T
 
 
-        bird_view_img = cv2.warpAffine(self.ref_img, T_ref_to_bv[:2], shape)
+        size_x = 2000
+        size_y = 2000
+
+
+        bird_view_img = cv2.warpAffine(self.ref_img, T_ref_to_bv[:2], (size_x, size_y))
 
         return bird_view_img
 
@@ -358,122 +470,6 @@ class VisualLocalizationNode(Node):
         image = cv2.imread(path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         return image
-
-
-    def get_affine_transform_bird_to_predicted(self, bird_view, predicted_bird_view):
-
-        MIN_MATCH_COUNT = 3
-
-        # find the keypoints and descriptors with SIFT
-        kp1, des1 = self.sift_detector.detectAndCompute(bird_view, None)
-
-        self.ref_kp, self.ref_des = self.sift_detector.detectAndCompute(predicted_bird_view, None)
-
-
-
-        matches = self.flann_matcher.knnMatch(self.ref_des, des1, k=2)
-        # store all the good matches as per Lowe's ratio test.
-        good = []
-        for m,n in matches:
-            if m.distance < 0.7*n.distance:
-                good.append(m)
-
-        matches_img = self.draw_matches(bird_view, predicted_bird_view, kp1, self.ref_kp, None, good)
-        # matches_img = cv2.resize(matches_img, (0,0), fx=0.5, fy=0.5)
-        cv2.imshow("Flann matches", matches_img)
-        cv2.waitKey(1)
-
-
-        M=None
-        ok = False
-        if len(good)>MIN_MATCH_COUNT:
-            # self.get_logger().info("Enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT))
-            src_pts = np.float32([ kp1[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
-            dst_pts = np.float32([ self.ref_kp[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
-            M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
-            matchesMask = mask.ravel().tolist()
-            ok = True
-            if M is not None:
-                M = np.concatenate([M, np.array([[0,0,1]])], axis=0) # TODO remove
-        else:
-            self.get_logger().info("Not enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT))
-            matchesMask = None
-
-        if self.enable_match_viz and ok:
-            matches_img = self.draw_matches(bird_view, predicted_bird_view, kp1, self.ref_kp, matchesMask, good)
-            matches_img = cv2.resize(matches_img, (0,0), fx=0.5, fy=0.5)
-            cv2.imshow("Matches", matches_img)
-            cv2.waitKey(1)
-
-        return ok, M, matchesMask, kp1, self.ref_kp, good
-
-
-    def draw_matches(self, bird_view, ref_img, kp1, kp2, matchesMask, good):
-
-        draw_params = dict(matchColor = (0,255,0), # draw matches in green color
-                           singlePointColor = None,
-                           matchesMask = matchesMask, # draw only inliers
-                           flags = 2)
-
-        img_ret = cv2.drawMatches(ref_img, kp2, bird_view, kp1,good, None, **draw_params)
-
-        return img_ret
-
-    def get_angle(self, M):
-        # get angle from homography matrix
-        angle = np.arctan2(M[1,0], M[0,0])
-        return angle
-
-
-    def visualization(self, bird_view=None, M=None, good=None, kp2=None):
-
-        if bird_view is None or M is None or good is None or kp2 is None:
-            if self.img_viz is None:
-                return
-
-            # draw 'not enough matches' on added_image
-            self.get_logger().info("VIZ: Not enough matches")
-            cv2.putText(self.img_viz, "Not enough matches", (10,60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-            cv2.imshow("Viz", self.img_viz)
-            cv2.waitKey(1)
-            return
-
-        bird_view_in_ref = cv2.warpPerspective(bird_view, M, self.ref_img.shape[::-1])
-        self.img_viz = cv2.addWeighted(bird_view_in_ref,0.5,self.ref_img,0.5,0)
-
-        self.img_viz = cv2.cvtColor(self.img_viz, cv2.COLOR_GRAY2BGR)
-
-        # good_matches_poses = [] # TODO il faudrait les transformer
-        # for m in good:
-        #     good_matches_poses.append(kp2[m.trainIdx].pt)
-
-        # good_matches_poses = np.array(good_matches_poses)
-
-        # # draw matches on added_image
-        # for pose in good_matches_poses:
-        #     cv2.circle(self.img_viz, tuple(pose.astype(int)), 3, (0,255, 0), -1)
-
-        if self.pts_mask_viz is not None:
-            self.pts_mask_viz = self.pts_mask_viz.astype(int)
-            cv2.polylines(self.img_viz, [self.pts_mask_viz], True, (0,0,255), 2)
-
-        # draw origin cam
-        pos_cam_in_ref_pxls = np.matmul(M, self.pos_cam_in_bird_view_pxls)
-        pos_cam_in_ref_pxls = pos_cam_in_ref_pxls[:2] / pos_cam_in_ref_pxls[2]
-        pos_cam_in_ref_pxls = pos_cam_in_ref_pxls.astype(int)
-        angle = self.get_angle(M)
-        angle += np.pi # TODO enlever
-        self.img_viz = self.draw_2D_axis(self.img_viz, pos_cam_in_ref_pxls, angle)
-
-        # draw origin ref
-        self.img_viz = self.draw_2D_axis(self.img_viz, np.array([0,0]), 0)
-
-        self.draw_fps(self.img_viz)
-
-        cv2.imshow("Viz", self.img_viz)
-        cv2.waitKey(1)
-
-
 
 
 def main(args=None):
