@@ -202,8 +202,9 @@ class VisualLocalizationNode(Node):
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
 
-        cv2.imshow("bird_view", bird_view_img)
-        cv2.waitKey(1)
+        # cv2.imshow("bird_view", bird_view_img)
+        # cv2.waitKey(1)
+
 
         if not self.angle_initialized:
 
@@ -220,11 +221,11 @@ class VisualLocalizationNode(Node):
         self.set_pose_done = True
 
 
-        if self.enable_viz:
-            # draw initialization image
-            if self.result_init_img is not None:
-                cv2.imshow("Initialization", self.result_init_img)
-                cv2.waitKey(1)
+        # if self.enable_viz:
+        #     # draw initialization image
+        #     if self.result_init_img is not None:
+        #         cv2.imshow("Initialization", self.result_init_img)
+        #         cv2.waitKey(1)
 
         # Wait for robot pose
         if self.robot_pose is None:
@@ -373,7 +374,8 @@ class VisualLocalizationNode(Node):
             min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
 
             time_end = time.time()
-            # print(f"Time elapsed for {meth}: {time_end - time_start}")
+
+            self.get_logger().info(f"fime elapsed for {meth}: {time_end - time_start}")
 
             # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
             if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
@@ -396,7 +398,7 @@ class VisualLocalizationNode(Node):
         img_cp[pos[1]:bottom_right[1], pos[0]:bottom_right[0]] = template
 
         # Resize
-        img_cp = cv2.resize(img_cp, (0,0), fx=0.5, fy=0.5)
+        img_cp = cv2.resize(img_cp, (0,0), fx=0.2, fy=0.2)
 
         cv2.imshow("Template in image", img_cp)
         cv2.waitKey(1)

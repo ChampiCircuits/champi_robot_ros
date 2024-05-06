@@ -59,7 +59,13 @@ class MyNode(Node):
         self.has_been_set_pose = False
 
     def update_robot_pose(self, msg):
+
         self.robot_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y, acos(msg.pose.pose.orientation.w)*2*180/3.1415)
+
+        if self.last_robot_pose is None:
+            self.last_robot_pose = self.robot_pose
+            return
+
         if self.diff(self.robot_pose, self.last_robot_pose) > 0.10:
             self.has_been_set_pose = True
             self.last_robot_pose = self.robot_pose
@@ -84,6 +90,11 @@ class MyNode(Node):
 
         # si on a recu un appel au service set pose dans la derniere seconde, alors on republish pas la pose
         # en fait nan, si la difference est supérieure à 10cm, c'est qu'on doit avoir recu un set pose
+        
+        if self.last_robot_pose is None or self.robot_pose is None:
+            return
+
+
         if self.has_been_set_pose:
             self.has_been_set_pose = False
             return
