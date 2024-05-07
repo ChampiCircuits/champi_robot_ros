@@ -12,6 +12,5 @@ class CanIds:
     IMU_DATA = 0x20
     IMU_STATUS = 0x21
     IMU_TEST = 0x202
-    ACT_STATUS = 0x31
-    ACT_TEST = 0x203
-    ACT_ACTION = 0x32
+    EMERGENCY_STOP = 0x5
+    TIRETTE_START = 0x6
