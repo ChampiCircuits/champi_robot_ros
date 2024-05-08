@@ -300,7 +300,13 @@ private:
         // We get gyro and accel data from the IMU board
         msg.angular_velocity.x = latest_imu_data_.gyro_x();
         msg.angular_velocity.y = latest_imu_data_.gyro_y();
-        msg.angular_velocity.z = latest_imu_data_.gyro_z();
+
+        if(latest_imu_data_.gyro_z() > 0.003) {
+            msg.angular_velocity.z = latest_imu_data_.gyro_z();
+        }
+        else {
+            msg.angular_velocity.z = 0.;
+        }
 
         msg.linear_acceleration.x = latest_imu_data_.acc_x();
         msg.linear_acceleration.y = latest_imu_data_.acc_y();
