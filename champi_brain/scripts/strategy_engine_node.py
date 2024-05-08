@@ -258,14 +258,14 @@ class StrategyEngineNode(Node):
 
         future = self.set_pose_client.call_async(request)
 
-        while rclpy.ok():
-            rclpy.spin_once(self)
-            if future.done():
-                if future.result() is not None:
-                    break
-                else:
-                    self.get_logger().info('service call failed %r' % (future.exception(),))
-                    break
+        # while rclpy.ok():
+        #     rclpy.spin_once(self)
+        #     if future.done():
+        #         if future.result() is not None:
+        #             break
+        #         else:
+        #             self.get_logger().info('service call failed %r' % (future.exception(),))
+        #             break
 
         self.robot_pose = init_robot_pose
 
@@ -295,7 +295,8 @@ class StrategyEngineNode(Node):
         #msg.data[1] = nb plantes
         self.CAN_state = msg.data[0] 
 
-    def start_match(self):
+    def start_match(self,msg):
+        get_logger('rclpy').info(f"TIRETTE !!")
         self.state = State.INIT
 
     def init(self):
@@ -314,7 +315,9 @@ class StrategyEngineNode(Node):
     def callback_timer(self):
         """Execute the strategy for one iteration"""
         if self.state == State.NOT_STARTED:
+            get_logger('rclpy').info(f"not started...")
             return
+        get_logger('rclpy').info(f"{self.state}.")
 
         if self.state == State.INIT:
             self.init()

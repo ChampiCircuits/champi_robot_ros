@@ -30,7 +30,7 @@ launch_files = [
     "ros2 launch champi_nav2 bringup_launch.py",
     "",
     # "python3 src/champi_robot_ros/champi_brain/scripts/rviz_markers.py",
-    "ros2 launch champi_brain brain.launch.py"
+    "ros2 launch champi_brain brain.launch.py",
     "ros2 launch champi_brain brain.launch.py color:=homologation",
 ]
 
