@@ -45,7 +45,44 @@ class ImuDataDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ImuData> _instance;
 } _ImuData_default_instance_;
+class ActCmdDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ActCmd> _instance;
+} _ActCmd_default_instance_;
+class ActStatusDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ActStatus> _instance;
+} _ActStatus_default_instance_;
 }  // namespace msgs_can
+static void InitDefaultsscc_info_ActCmd_msgs_5fcan_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::msgs_can::_ActCmd_default_instance_;
+    new (ptr) ::msgs_can::ActCmd();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::msgs_can::ActCmd::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ActCmd_msgs_5fcan_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ActCmd_msgs_5fcan_2eproto}, {}};
+
+static void InitDefaultsscc_info_ActStatus_msgs_5fcan_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::msgs_can::_ActStatus_default_instance_;
+    new (ptr) ::msgs_can::ActStatus();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::msgs_can::ActStatus::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ActStatus_msgs_5fcan_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_ActStatus_msgs_5fcan_2eproto}, {
+      &scc_info_Status_msgs_5fcan_2eproto.base,}};
+
 static void InitDefaultsscc_info_BaseConfig_msgs_5fcan_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -149,8 +186,8 @@ static void InitDefaultsscc_info_StatusReport_msgs_5fcan_2eproto() {
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_StatusReport_msgs_5fcan_2eproto}, {
       &scc_info_Status_msgs_5fcan_2eproto.base,}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[7];
-static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_msgs_5fcan_2eproto[2];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[9];
+static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_msgs_5fcan_2eproto[3];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_msgs_5fcan_2eproto = nullptr;
 
 const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_msgs_5fcan_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
@@ -233,6 +270,26 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_msgs_5fcan_2eproto::offsets[] 
   3,
   4,
   5,
+  PROTOBUF_FIELD_OFFSET(::msgs_can::ActCmd, _has_bits_),
+  PROTOBUF_FIELD_OFFSET(::msgs_can::ActCmd, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::msgs_can::ActCmd, action_),
+  PROTOBUF_FIELD_OFFSET(::msgs_can::ActCmd, value_),
+  0,
+  1,
+  PROTOBUF_FIELD_OFFSET(::msgs_can::ActStatus, _has_bits_),
+  PROTOBUF_FIELD_OFFSET(::msgs_can::ActStatus, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::msgs_can::ActStatus, status_),
+  PROTOBUF_FIELD_OFFSET(::msgs_can::ActStatus, action_),
+  PROTOBUF_FIELD_OFFSET(::msgs_can::ActStatus, plant_count_),
+  0,
+  1,
+  2,
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, 8, sizeof(::msgs_can::BaseVel)},
@@ -242,6 +299,8 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 40, 49, sizeof(::msgs_can::BaseConfig)},
   { 53, 60, sizeof(::msgs_can::RetBaseConfig)},
   { 62, 73, sizeof(::msgs_can::ImuData)},
+  { 79, 86, sizeof(::msgs_can::ActCmd)},
+  { 88, 96, sizeof(::msgs_can::ActStatus)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -252,6 +311,8 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_BaseConfig_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_RetBaseConfig_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ImuData_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ActCmd_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ActStatus_default_instance_),
 };
 
 const char descriptor_table_protodef_msgs_5fcan_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
@@ -276,11 +337,20 @@ const char descriptor_table_protodef_msgs_5fcan_2eproto[] PROTOBUF_SECTION_VARIA
   " \001(\0132\020.msgs_can.Status\"f\n\007ImuData\022\r\n\005acc"
   "_x\030\001 \001(\002\022\r\n\005acc_y\030\002 \001(\002\022\r\n\005acc_z\030\003 \001(\002\022\016"
   "\n\006gyro_x\030\004 \001(\002\022\016\n\006gyro_y\030\005 \001(\002\022\016\n\006gyro_z"
-  "\030\006 \001(\002"
+  "\030\006 \001(\002\"=\n\006ActCmd\022$\n\006action\030\001 \001(\0162\024.msgs_"
+  "can.ActActions\022\r\n\005value\030\002 \001(\002\"h\n\tActStat"
+  "us\022 \n\006status\030\001 \001(\0132\020.msgs_can.Status\022$\n\006"
+  "action\030\002 \001(\0162\024.msgs_can.ActActions\022\023\n\013pl"
+  "ant_count\030\003 \001(\005*~\n\nActActions\022\025\n\021START_G"
+  "RAB_PLANTS\020\000\022\024\n\020STOP_GRAB_PLANTS\020\001\022\021\n\rRE"
+  "LEASE_PLANT\020\002\022\024\n\020TURN_SOLAR_PANEL\020\003\022\020\n\014I"
+  "NITIALIZING\020\004\022\010\n\004FREE\020\005"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_msgs_5fcan_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[7] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[9] = {
+  &scc_info_ActCmd_msgs_5fcan_2eproto.base,
+  &scc_info_ActStatus_msgs_5fcan_2eproto.base,
   &scc_info_BaseConfig_msgs_5fcan_2eproto.base,
   &scc_info_BaseVel_msgs_5fcan_2eproto.base,
   &scc_info_ImuData_msgs_5fcan_2eproto.base,
@@ -291,10 +361,10 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msg
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_msgs_5fcan_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_msgs_5fcan_2eproto = {
-  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 846,
-  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 7, 0,
+  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 1143,
+  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 9, 0,
   schemas, file_default_instances, TableStruct_msgs_5fcan_2eproto::offsets,
-  file_level_metadata_msgs_5fcan_2eproto, 7, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
+  file_level_metadata_msgs_5fcan_2eproto, 9, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -360,6 +430,24 @@ constexpr Status_ErrorType Status::ErrorType_MIN;
 constexpr Status_ErrorType Status::ErrorType_MAX;
 constexpr int Status::ErrorType_ARRAYSIZE;
 #endif  // (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ActActions_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_msgs_5fcan_2eproto);
+  return file_level_enum_descriptors_msgs_5fcan_2eproto[2];
+}
+bool ActActions_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+      return true;
+    default:
+      return false;
+  }
+}
+
 
 // ===================================================================
 
@@ -2399,6 +2487,570 @@ void ImuData::InternalSwap(ImuData* other) {
 }
 
 
+// ===================================================================
+
+void ActCmd::InitAsDefaultInstance() {
+}
+class ActCmd::_Internal {
+ public:
+  using HasBits = decltype(std::declval<ActCmd>()._has_bits_);
+  static void set_has_action(HasBits* has_bits) {
+    (*has_bits)[0] |= 1u;
+  }
+  static void set_has_value(HasBits* has_bits) {
+    (*has_bits)[0] |= 2u;
+  }
+};
+
+ActCmd::ActCmd(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+  SharedCtor();
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:msgs_can.ActCmd)
+}
+ActCmd::ActCmd(const ActCmd& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      _has_bits_(from._has_bits_) {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::memcpy(&action_, &from.action_,
+    static_cast<size_t>(reinterpret_cast<char*>(&value_) -
+    reinterpret_cast<char*>(&action_)) + sizeof(value_));
+  // @@protoc_insertion_point(copy_constructor:msgs_can.ActCmd)
+}
+
+void ActCmd::SharedCtor() {
+  ::memset(&action_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&value_) -
+      reinterpret_cast<char*>(&action_)) + sizeof(value_));
+}
+
+ActCmd::~ActCmd() {
+  // @@protoc_insertion_point(destructor:msgs_can.ActCmd)
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+void ActCmd::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
+}
+
+void ActCmd::ArenaDtor(void* object) {
+  ActCmd* _this = reinterpret_cast< ActCmd* >(object);
+  (void)_this;
+}
+void ActCmd::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void ActCmd::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const ActCmd& ActCmd::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ActCmd_msgs_5fcan_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void ActCmd::Clear() {
+// @@protoc_insertion_point(message_clear_start:msgs_can.ActCmd)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  if (cached_has_bits & 0x00000003u) {
+    ::memset(&action_, 0, static_cast<size_t>(
+        reinterpret_cast<char*>(&value_) -
+        reinterpret_cast<char*>(&action_)) + sizeof(value_));
+  }
+  _has_bits_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* ActCmd::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  _Internal::HasBits has_bits{};
+  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // optional .msgs_can.ActActions action = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          if (PROTOBUF_PREDICT_TRUE(::msgs_can::ActActions_IsValid(val))) {
+            _internal_set_action(static_cast<::msgs_can::ActActions>(val));
+          } else {
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+          }
+        } else goto handle_unusual;
+        continue;
+      // optional float value = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 21)) {
+          _Internal::set_has_value(&has_bits);
+          value_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+          ptr += sizeof(float);
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  _has_bits_.Or(has_bits);
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* ActCmd::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:msgs_can.ActCmd)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  // optional .msgs_can.ActActions action = 1;
+  if (cached_has_bits & 0x00000001u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+      1, this->_internal_action(), target);
+  }
+
+  // optional float value = 2;
+  if (cached_has_bits & 0x00000002u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(2, this->_internal_value(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:msgs_can.ActCmd)
+  return target;
+}
+
+size_t ActCmd::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:msgs_can.ActCmd)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  if (cached_has_bits & 0x00000003u) {
+    // optional .msgs_can.ActActions action = 1;
+    if (cached_has_bits & 0x00000001u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_action());
+    }
+
+    // optional float value = 2;
+    if (cached_has_bits & 0x00000002u) {
+      total_size += 1 + 4;
+    }
+
+  }
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void ActCmd::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:msgs_can.ActCmd)
+  GOOGLE_DCHECK_NE(&from, this);
+  const ActCmd* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ActCmd>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:msgs_can.ActCmd)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:msgs_can.ActCmd)
+    MergeFrom(*source);
+  }
+}
+
+void ActCmd::MergeFrom(const ActCmd& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:msgs_can.ActCmd)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._has_bits_[0];
+  if (cached_has_bits & 0x00000003u) {
+    if (cached_has_bits & 0x00000001u) {
+      action_ = from.action_;
+    }
+    if (cached_has_bits & 0x00000002u) {
+      value_ = from.value_;
+    }
+    _has_bits_[0] |= cached_has_bits;
+  }
+}
+
+void ActCmd::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:msgs_can.ActCmd)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void ActCmd::CopyFrom(const ActCmd& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:msgs_can.ActCmd)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ActCmd::IsInitialized() const {
+  return true;
+}
+
+void ActCmd::InternalSwap(ActCmd* other) {
+  using std::swap;
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  swap(_has_bits_[0], other->_has_bits_[0]);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ActCmd, value_)
+      + sizeof(ActCmd::value_)
+      - PROTOBUF_FIELD_OFFSET(ActCmd, action_)>(
+          reinterpret_cast<char*>(&action_),
+          reinterpret_cast<char*>(&other->action_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata ActCmd::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
+// ===================================================================
+
+void ActStatus::InitAsDefaultInstance() {
+  ::msgs_can::_ActStatus_default_instance_._instance.get_mutable()->status_ = const_cast< ::msgs_can::Status*>(
+      ::msgs_can::Status::internal_default_instance());
+}
+class ActStatus::_Internal {
+ public:
+  using HasBits = decltype(std::declval<ActStatus>()._has_bits_);
+  static const ::msgs_can::Status& status(const ActStatus* msg);
+  static void set_has_status(HasBits* has_bits) {
+    (*has_bits)[0] |= 1u;
+  }
+  static void set_has_action(HasBits* has_bits) {
+    (*has_bits)[0] |= 2u;
+  }
+  static void set_has_plant_count(HasBits* has_bits) {
+    (*has_bits)[0] |= 4u;
+  }
+};
+
+const ::msgs_can::Status&
+ActStatus::_Internal::status(const ActStatus* msg) {
+  return *msg->status_;
+}
+ActStatus::ActStatus(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+  SharedCtor();
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:msgs_can.ActStatus)
+}
+ActStatus::ActStatus(const ActStatus& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      _has_bits_(from._has_bits_) {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  if (from._internal_has_status()) {
+    status_ = new ::msgs_can::Status(*from.status_);
+  } else {
+    status_ = nullptr;
+  }
+  ::memcpy(&action_, &from.action_,
+    static_cast<size_t>(reinterpret_cast<char*>(&plant_count_) -
+    reinterpret_cast<char*>(&action_)) + sizeof(plant_count_));
+  // @@protoc_insertion_point(copy_constructor:msgs_can.ActStatus)
+}
+
+void ActStatus::SharedCtor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ActStatus_msgs_5fcan_2eproto.base);
+  ::memset(&status_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&plant_count_) -
+      reinterpret_cast<char*>(&status_)) + sizeof(plant_count_));
+}
+
+ActStatus::~ActStatus() {
+  // @@protoc_insertion_point(destructor:msgs_can.ActStatus)
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+void ActStatus::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
+  if (this != internal_default_instance()) delete status_;
+}
+
+void ActStatus::ArenaDtor(void* object) {
+  ActStatus* _this = reinterpret_cast< ActStatus* >(object);
+  (void)_this;
+}
+void ActStatus::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void ActStatus::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const ActStatus& ActStatus::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ActStatus_msgs_5fcan_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void ActStatus::Clear() {
+// @@protoc_insertion_point(message_clear_start:msgs_can.ActStatus)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    GOOGLE_DCHECK(status_ != nullptr);
+    status_->Clear();
+  }
+  if (cached_has_bits & 0x00000006u) {
+    ::memset(&action_, 0, static_cast<size_t>(
+        reinterpret_cast<char*>(&plant_count_) -
+        reinterpret_cast<char*>(&action_)) + sizeof(plant_count_));
+  }
+  _has_bits_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* ActStatus::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  _Internal::HasBits has_bits{};
+  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // optional .msgs_can.Status status = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+          ptr = ctx->ParseMessage(_internal_mutable_status(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // optional .msgs_can.ActActions action = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+          if (PROTOBUF_PREDICT_TRUE(::msgs_can::ActActions_IsValid(val))) {
+            _internal_set_action(static_cast<::msgs_can::ActActions>(val));
+          } else {
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(2, val, mutable_unknown_fields());
+          }
+        } else goto handle_unusual;
+        continue;
+      // optional int32 plant_count = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+          _Internal::set_has_plant_count(&has_bits);
+          plant_count_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  _has_bits_.Or(has_bits);
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* ActStatus::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:msgs_can.ActStatus)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  // optional .msgs_can.Status status = 1;
+  if (cached_has_bits & 0x00000001u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        1, _Internal::status(this), target, stream);
+  }
+
+  // optional .msgs_can.ActActions action = 2;
+  if (cached_has_bits & 0x00000002u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+      2, this->_internal_action(), target);
+  }
+
+  // optional int32 plant_count = 3;
+  if (cached_has_bits & 0x00000004u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(3, this->_internal_plant_count(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:msgs_can.ActStatus)
+  return target;
+}
+
+size_t ActStatus::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:msgs_can.ActStatus)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  if (cached_has_bits & 0x00000007u) {
+    // optional .msgs_can.Status status = 1;
+    if (cached_has_bits & 0x00000001u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *status_);
+    }
+
+    // optional .msgs_can.ActActions action = 2;
+    if (cached_has_bits & 0x00000002u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_action());
+    }
+
+    // optional int32 plant_count = 3;
+    if (cached_has_bits & 0x00000004u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+          this->_internal_plant_count());
+    }
+
+  }
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void ActStatus::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:msgs_can.ActStatus)
+  GOOGLE_DCHECK_NE(&from, this);
+  const ActStatus* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ActStatus>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:msgs_can.ActStatus)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:msgs_can.ActStatus)
+    MergeFrom(*source);
+  }
+}
+
+void ActStatus::MergeFrom(const ActStatus& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:msgs_can.ActStatus)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._has_bits_[0];
+  if (cached_has_bits & 0x00000007u) {
+    if (cached_has_bits & 0x00000001u) {
+      _internal_mutable_status()->::msgs_can::Status::MergeFrom(from._internal_status());
+    }
+    if (cached_has_bits & 0x00000002u) {
+      action_ = from.action_;
+    }
+    if (cached_has_bits & 0x00000004u) {
+      plant_count_ = from.plant_count_;
+    }
+    _has_bits_[0] |= cached_has_bits;
+  }
+}
+
+void ActStatus::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:msgs_can.ActStatus)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void ActStatus::CopyFrom(const ActStatus& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:msgs_can.ActStatus)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ActStatus::IsInitialized() const {
+  return true;
+}
+
+void ActStatus::InternalSwap(ActStatus* other) {
+  using std::swap;
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  swap(_has_bits_[0], other->_has_bits_[0]);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ActStatus, plant_count_)
+      + sizeof(ActStatus::plant_count_)
+      - PROTOBUF_FIELD_OFFSET(ActStatus, status_)>(
+          reinterpret_cast<char*>(&status_),
+          reinterpret_cast<char*>(&other->status_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata ActStatus::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace msgs_can
 PROTOBUF_NAMESPACE_OPEN
@@ -2422,6 +3074,12 @@ template<> PROTOBUF_NOINLINE ::msgs_can::RetBaseConfig* Arena::CreateMaybeMessag
 }
 template<> PROTOBUF_NOINLINE ::msgs_can::ImuData* Arena::CreateMaybeMessage< ::msgs_can::ImuData >(Arena* arena) {
   return Arena::CreateMessageInternal< ::msgs_can::ImuData >(arena);
+}
+template<> PROTOBUF_NOINLINE ::msgs_can::ActCmd* Arena::CreateMaybeMessage< ::msgs_can::ActCmd >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::msgs_can::ActCmd >(arena);
+}
+template<> PROTOBUF_NOINLINE ::msgs_can::ActStatus* Arena::CreateMaybeMessage< ::msgs_can::ActStatus >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::msgs_can::ActStatus >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

@@ -16,12 +16,16 @@ find_package(Protobuf REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(diagnostic_updater REQUIRED)
+find_package(std_msgs REQUIRED)
 
 add_executable(base_controller_node src/base_controller_node.cpp)
 ament_target_dependencies(base_controller_node rclcpp geometry_msgs champi_libraries Protobuf nav_msgs tf2 tf2_ros diagnostic_updater)
 
 add_executable(imu_controller_node src/imu_controller_node.cpp)
 ament_target_dependencies(imu_controller_node rclcpp champi_libraries Protobuf diagnostic_updater sensor_msgs)
+
+add_executable(actuators_controller_node src/actuators_controller_node.cpp)
+ament_target_dependencies(actuators_controller_node rclcpp champi_libraries Protobuf diagnostic_updater std_msgs)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -46,6 +50,7 @@ install(DIRECTORY
 install(TARGETS
         base_controller_node
         imu_controller_node
+        actuators_controller_node
         DESTINATION lib/${PROJECT_NAME}
 )
 
