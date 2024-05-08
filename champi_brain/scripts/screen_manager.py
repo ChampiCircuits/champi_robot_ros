@@ -17,6 +17,7 @@ from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
 import time
+from std_msgs.msg import Int32
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -122,16 +123,21 @@ class Application(tk.Tk):
         self.tabControl.add(self.tab6, text="DIAGNOSTICS")
 
         self.tabControl.pack(expand=1, fill="both")
-
+    
         rclpy.init()
         self.node = rclpy.create_node('GUI_node')
         self.odom_subscriber = self.node.create_subscription(Odometry, '/odom', self.update_robot_position, 10)
+
+        #score subscriber
+        self.score_subscriber = self.node.create_subscription(Int32, '/final_score', self.update_score, 10)
+        self.final_score = 0
 
 
         self.create_launchs_tab()
         self.create_cpu_tab()
         self.create_ip_tab()
         self.create_table_tab()
+        self.create_match_tab()
 
         self.node_diagnostics = {}
         self.create_diagnostics_tab()
@@ -140,6 +146,15 @@ class Application(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.close_window)
 
         self.update()
+
+    def update_score(self, msg):
+        print("\n\n----> Score received\n\n")
+        self.final_score = msg.data
+        # big big text, font size = 50
+        self.score_label.config(text=f"Score: {self.final_score}")
+        # self.score_label.config(font=("Courier", 50))
+
+
 
     def close_window(self):
         # kill all processes
@@ -151,6 +166,11 @@ class Application(tk.Tk):
         self.destroy()
         quit()
 
+    def create_match_tab(self):
+        # display score, font 50, centered in the window
+        self.score_label = ttk.Label(self.tab2, text=f"Score: {self.final_score}",font=("Courier", 50))
+        self.score_label.pack(expand=True, fill="both")
+        
     def create_launchs_tab(self):
         self.launch_grid_frame = ttk.Frame(self.tab1)
         self.launch_grid_frame.pack(expand=True, fill="both")

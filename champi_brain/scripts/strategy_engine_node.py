@@ -9,7 +9,7 @@ from rclpy.node import Node
 
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 import rclpy.time
-from std_msgs.msg import String
+from std_msgs.msg import String, Int32
 from visualization_msgs.msg import Marker, MarkerArray
 
 # markers
@@ -38,13 +38,13 @@ actions = [
     {"name":"plantes5","type":"prendre_plantes","pose": (1.+0.5, 1.5),        "time": 10, "points": 0},
     {"name":"plantes6","type":"prendre_plantes","pose": (1.+0.3, 1.5+0.5),    "time": 10, "points": 0},
 
-    {"name":"poserplantesJ1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2, -1.0466),     "time": 10, "points": 3*6, "dirs": (1,1)},
-    {"name":"poserplantesJ2","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 0.5/2, -1.0466+3.14),       "time": 10, "points": 3*6, "dirs":(-1,1)},
-    {"name":"poserplantesJ3","type":"pose_plantes_sol","pose": (1.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*6, "dirs":(-1, -1)},
+    {"name":"poserplantesJ1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2, -1.0466),     "time": 10, "points": 3*3, "dirs": (1,1)},
+    {"name":"poserplantesJ2","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 0.5/2, -1.0466+3.14),       "time": 10, "points": 3*3, "dirs":(-1,1)},
+    {"name":"poserplantesJ3","type":"pose_plantes_sol","pose": (1.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*3, "dirs":(-1, -1)},
     
-    {"name":"poserplantesB1","type":"pose_plantes_sol","pose": (1.0, 0.5/2, -1.0466),"time": 10, "points": 3*6, "dirs":(1, 1)},
-    {"name":"poserplantesB2","type":"pose_plantes_sol","pose": (0.45/2, 3.0-0.4/2, -1.0466),"time": 10, "points": 3*6, "dirs":(1, -1)},
-    {"name":"poserplantesB3","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*6, "dirs":(-1, -1)},
+    {"name":"poserplantesB1","type":"pose_plantes_sol","pose": (1.0, 0.5/2, -1.0466),"time": 10, "points": 3*3, "dirs":(1, 1)},
+    {"name":"poserplantesB2","type":"pose_plantes_sol","pose": (0.45/2, 3.0-0.4/2, -1.0466),"time": 10, "points": 3*3, "dirs":(1, -1)},
+    {"name":"poserplantesB3","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*3, "dirs":(-1, -1)},
 
 
     # {"name":"poserplantes3","type":"poser_plante_jardiniere","pose": (2000/2, 3000-500/2),"time": 10, "points": 3*6},
@@ -62,8 +62,8 @@ actions = [
     # {"name":"panneau8","type":"tourner_panneau","pose": (50, 3000-275-225),      "time": 10, "points": 5},
     # {"name":"panneau9","type":"tourner_panneau","pose": (50, 3000-275-225-225),  "time": 10, "points": 5},
     
-    {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": None}, #J3
-    {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": None}, #B1
+    {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": 10}, #J3
+    {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": 10}, #B1
     {"name":"move_middle","type":"just_move","pose": (1.0, 1.5, 1.57),  "time": 0, "points": None},
     {"name":"move_test","type":"just_move","pose": (1.5, 2.0, -1.57),  "time": 0, "points": None},
 
@@ -181,6 +181,10 @@ class StrategyEngineNode(Node):
         # create /stop_using_camera publisher (String which is "stop" when we want to stop using the camera and "start" when we want to start using it again)
         self.stop_cam_publisher = self.create_publisher(String, '/stop_using_camera', 10)
 
+        # publisher for the final score
+        self.score_publisher = self.create_publisher(Int32, '/final_score', 10)
+        self.final_score = 0
+
 
         self.markers_publisher_circles = self.create_publisher(MarkerArray, 'markers_selected_action', 10)
         self.markers_publisher_plants = self.create_publisher(MarkerArray, 'markers_plants_detected', 10)
@@ -219,8 +223,18 @@ class StrategyEngineNode(Node):
                 get_logger('rclpy').info(f"actions dispos: {self.strategy['actions']['list']}")
                 self.action_executor.state = State.NO_ACTION
 
+                # add points
+                self.final_score += self.current_action_to_perform["points"]
+                self.score_publisher.publish(Int32(data=self.final_score))
+                get_logger('rclpy').info(f"----> Score SENT : {self.final_score}")
+
+
                 # if the last action executed was "retour_zone" then we stop everything
                 if self.current_action_to_perform == "retour_zone":
+                    # print("FIN DU MATCH")
+                    get_logger('rclpy').info(f"FIN DU MATCH")
+                    # publish final score
+                    self.score_publisher.publish(Int32(data=self.final_score))
                     quit()
 
                 # self.time_left = TOTAL_AVAILABLE_TIME - (rclpy.time.Time()- self.start_time).nanoseconds / 1e9
