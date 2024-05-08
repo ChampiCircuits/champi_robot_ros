@@ -202,6 +202,7 @@ class StrategyEngineNode(Node):
         # self.pub_initial_pose.publish(pose_with_cov_from_position(init_robot_pose,self.get_clock().now().to_msg()))
         self.start_time = rclpy.time.Time()
         get_logger('rclpy').info(f"strategy engine started")
+        self.score_publisher.publish(Int32(data=-1)) # = START MATCH
 
     def update_robot_pose(self, msg):
         self.robot_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y, acos(msg.pose.pose.orientation.w)*2*180/3.1415)

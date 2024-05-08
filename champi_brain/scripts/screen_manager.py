@@ -131,6 +131,8 @@ class Application(tk.Tk):
         #score subscriber
         self.score_subscriber = self.node.create_subscription(Int32, '/final_score', self.update_score, 10)
         self.final_score = 0
+        self.match_started = False
+        self.start_time = 0
 
 
         self.create_launchs_tab()
@@ -170,6 +172,26 @@ class Application(tk.Tk):
         # display score, font 50, centered in the window
         self.score_label = ttk.Label(self.tab2, text=f"Score: {self.final_score}",font=("Courier", 50))
         self.score_label.pack(expand=True, fill="both")
+        # display time left, font 50, centered in the window
+        self.time_label = ttk.Label(self.tab2, text=f"Time left: 100",font=("Courier", 50))
+        self.time_label.pack(expand=True, fill="both")
+        self.refresh_time()
+
+    def refresh_time(self):
+
+        if self.final_score == -1 and not self.match_started:
+            # match just started
+            self.match_started = True
+            self.start_time = time.time()
+
+        if self.match_started:
+            print("\n\nRECEIVED MATCH STARTED\n\n")
+            if 100 - int(time.time() - self.start_time) > 0:
+                self.time_label.config(text=f"Time left: {100 - int(time.time() - self.start_time)}")
+            else:
+                self.time_label.config(text=f"Time left: {0}")
+                
+        self.after(1000, self.refresh_time)
         
     def create_launchs_tab(self):
         self.launch_grid_frame = ttk.Frame(self.tab1)
@@ -344,6 +366,8 @@ class Application(tk.Tk):
                 if "inactive" in status.message:
                     print("inactiiiiiiiive")
                     self.node_diagnostics[name]['level'] = b'\x02'
+                else:
+                    self.node_diagnostics[name]['level'] = b'\x00'
             else:
                 # Ajouter un nouveau diagnostic avec son horodatage
                 self.node_diagnostics[name] = {'message': status.message, 'timestamp': current_time, 'level': status.level}
