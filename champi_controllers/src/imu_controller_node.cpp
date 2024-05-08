@@ -301,7 +301,7 @@ private:
         msg.angular_velocity.x = latest_imu_data_.gyro_x();
         msg.angular_velocity.y = latest_imu_data_.gyro_y();
 
-        if(latest_imu_data_.gyro_z() > 0.003) {
+        if(abs(latest_imu_data_.gyro_z()) > 0.004) {
             msg.angular_velocity.z = latest_imu_data_.gyro_z();
         }
         else {
