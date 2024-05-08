@@ -314,14 +314,19 @@ class Application(tk.Tk):
         # Mettre à jour le dictionnaire avec les nouveaux diagnostics
         for status in msg.status:
             # Vérifier si le diagnostic existe déjà dans le dictionnaire
-            if status.name in self.node_diagnostics:
+            name = status.name[status.name.find(':')+1:]
+            if name in self.node_diagnostics:
                 # Mettre à jour le diagnostic et son horodatage
-                self.node_diagnostics[status.name]['message'] = status.message
-                self.node_diagnostics[status.name]['timestamp'] = current_time
-                self.node_diagnostics[status.name]['level'] = status.level
+                self.node_diagnostics[name]['message'] = status.message
+                self.node_diagnostics[name]['timestamp'] = current_time
+                self.node_diagnostics[name]['level'] = status.level
+                # si le msg contient "inactive" on change le statut
+                if "inactive" in status.message:
+                    print("inactiiiiiiiive")
+                    self.node_diagnostics[name]['level'] = b'\x02'
             else:
                 # Ajouter un nouveau diagnostic avec son horodatage
-                self.node_diagnostics[status.name] = {'message': status.message, 'timestamp': current_time, 'level': status.level}
+                self.node_diagnostics[name] = {'message': status.message, 'timestamp': current_time, 'level': status.level}
 
         # Effacer le contenu précédent
         for text in self.diagnostics_texts.values():
@@ -336,10 +341,11 @@ class Application(tk.Tk):
             # Vérifier si un élément Text existe déjà pour ce diagnostic, sinon le créer
             if node_name not in self.diagnostics_texts:
                 self.diagnostics_texts[node_name] = tk.Text(self.diagnostics_frame, wrap="word", background=color)
-                self.diagnostics_texts[node_name].pack(fill="both", expand=True)
+                self.diagnostics_texts[node_name].pack(fill="x", expand=True)
+                self.diagnostics_texts[node_name].config(height=3)  # Ajustez la hauteur selon vos besoins
 
             # Insérer le message du diagnostic dans l'élément Text correspondant
-            self.diagnostics_texts[node_name].insert(tk.END, f"{diagnostic_message}\n")
+            self.diagnostics_texts[node_name].insert(tk.END, str(node_name) + "\t"+str(diagnostic_message)+"\n")
 
     def invalidate_old_diagnostics(self):
         current_time = time.time()
@@ -360,10 +366,10 @@ class Application(tk.Tk):
             # Vérifier si un élément Text existe déjà pour ce diagnostic, sinon le créer
             if node_name not in self.diagnostics_texts:
                 self.diagnostics_texts[node_name] = tk.Text(self.diagnostics_frame, wrap="word", background=color)
-                self.diagnostics_texts[node_name].pack(fill="both", expand=True)
+                self.diagnostics_texts[node_name].pack(fill="x", expand=True)
 
             # Insérer le message du diagnostic dans l'élément Text correspondant
-            self.diagnostics_texts[node_name].insert(tk.END, f"{diagnostic_message}\n")
+            self.diagnostics_texts[node_name].insert(tk.END, str(node_name) + "\t"+str(diagnostic_message)+"\n")
 
     def get_color_for_diagnostic_level(self, level):
         if level == b'\x00':  # OK
@@ -380,7 +386,7 @@ class Application(tk.Tk):
         # tick ros
         rclpy.spin_once(self.node, timeout_sec=0.1)
 
-        self.invalidate_old_diagnostics()
+        # self.invalidate_old_diagnostics()
 
         self.after(100, self.update)
 
