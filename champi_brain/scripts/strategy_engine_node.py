@@ -98,9 +98,16 @@ strategy_blue = {
 
 homologation_blue = {
     "name": "homologation_blue",
-    "init_pose": (1.855, 2.835, 4.1866), #B3
+    # "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["plantes4","poserplantesJ2","plantes5","poserplantesJ1","plantes6","poserplantesJ3", "retour_zone_yellow"],
+        "list": ["plantes5","poserplantesB3", "retour_zone_blue"],
+    }
+}
+homologation_yellow = {
+    "name": "homologation_yellow",
+    # "init_pose": (1.855, 2.835, 4.1866), #B3
+    "actions": {
+        "list": ["plantes5","poserplantesJ2", "retour_zone_yellow"],
     }
 }
 
@@ -112,32 +119,39 @@ class StrategyEngineNode(Node):
     def __init__(self) -> None:
         super().__init__('strategy_engine_node')
 
-        # depending on the ros2 parameter 'color'
-        global TEAM
-        global RETOUR_ZONE_NAME
+        self.received_color_and_pose = False
+
+        # # depending on the ros2 parameter 'color'
+        # global TEAM
+        # global RETOUR_ZONE_NAME
         self.declare_parameter('color', rclpy.Parameter.Type.STRING) 
 
-        if self.get_parameter('color').get_parameter_value().string_value == 'yellow':
-            TEAM = "YELLOW"
-            self.get_logger().info("YELLOW")
-        else:
-            TEAM = "BLUE"
-            self.get_logger().info("BLUE")
-        self.get_logger().info("TEAM: "+TEAM)
-        if TEAM == "YELLOW":
-            current_strategy = strategy_yellow
-            RETOUR_ZONE_NAME = "retour_zone_yellow"
-        else:
-            current_strategy = strategy_blue
-            RETOUR_ZONE_NAME = "retour_zone_blue"
+        self.IS_HOMOLOGATION = False
+        if self.get_parameter('color').get_parameter_value().string_value == 'homologation':
+            self.IS_HOMOLOGATION = True
 
-        self.get_logger().info("\n\n\n\n")
-        self.get_logger().info(self.get_parameter('color').get_parameter_value().string_value)
-        self.get_logger().info("\n\n\n\n")
 
-        self.strategy = current_strategy
-        self.current_action_name = self.strategy["actions"]["list"][0]
-        self.current_action_to_perform = get_action_by_name(self.current_action_name, actions)
+        # if self.get_parameter('color').get_parameter_value().string_value == 'yellow':
+        #     TEAM = "YELLOW"
+        #     self.get_logger().info("YELLOW")
+        # else:
+        #     TEAM = "BLUE"
+        #     self.get_logger().info("BLUE")
+        # self.get_logger().info("TEAM: "+TEAM)
+        # if TEAM == "YELLOW":
+        #     current_strategy = strategy_yellow
+        #     RETOUR_ZONE_NAME = "retour_zone_yellow"
+        # else:
+        #     current_strategy = strategy_blue
+        #     RETOUR_ZONE_NAME = "retour_zone_blue"
+
+        # self.get_logger().info("\n\n\n\n")
+        # self.get_logger().info(self.get_parameter('color').get_parameter_value().string_value)
+        # self.get_logger().info("\n\n\n\n")
+
+        # self.strategy = current_strategy
+        # self.current_action_name = self.strategy["actions"]["list"][0]
+        # self.current_action_to_perform = get_action_by_name(self.current_action_name, actions)
 
         # STATES MACHINES
         # MAIN
@@ -148,44 +162,16 @@ class StrategyEngineNode(Node):
         self.time_left = TOTAL_AVAILABLE_TIME # s, updated each iteration, considering the time to return to the zone
 
 
-        init_robot_pose = self.strategy["init_pose"]
-        # self.pub_initial_pose = self.create_publisher(PoseWithCovarianceStamped, '/initialpose', 10)
-        # call service set_pose (0.145,0.165), theta = 30°
-        self.set_pose_client = self.create_client(SetPose, '/set_pose')
-        while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        request = SetPose.Request()
-        request.pose.header.stamp = self.get_clock().now().to_msg()
-        request.pose.header.frame_id = 'odom'
-        request.pose.pose.pose.position.x = init_robot_pose[0]
-        request.pose.pose.pose.position.y = init_robot_pose[1]
-        request.pose.pose.pose.position.z = 0.
-        request.pose.pose.pose.orientation.x = 0.
-        request.pose.pose.pose.orientation.y = 0.
-        request.pose.pose.pose.orientation.z = sin(init_robot_pose[2]/2)
-        request.pose.pose.pose.orientation.w = cos(init_robot_pose[2]/2)
-
-        future = self.set_pose_client.call_async(request)
-
-        while rclpy.ok():
-            rclpy.spin_once(self)
-            if future.done():
-                if future.result() is not None:
-                    break
-                else:
-                    self.get_logger().info('service call failed %r' % (future.exception(),))
-                    break
-
+        self.start_zone_sub = self.create_subscription(String, '/start_zone', self.select_start_zone, 10)
+        self.start_zone = None
         
-        time.sleep(3)
         self.action_executor = Action_Executor(self)
 
         # suscribe to robot pose (x,y,theta)
-        self.robot_pose = init_robot_pose
         self.odom_subscriber = self.create_subscription(Odometry, '/odometry/filtered', self.update_robot_pose, 10)
 
         # create /stop_using_camera publisher (String which is "stop" when we want to stop using the camera and "start" when we want to start using it again)
-        self.stop_cam_publisher = self.create_publisher(String, '/stop_using_camera', 10)
+        # self.stop_cam_publisher = self.create_publisher(String, '/stop_using_camera', 10)
 
         # publisher for the final score
         self.score_publisher = self.create_publisher(Int32, '/final_score', 10)
@@ -204,17 +190,113 @@ class StrategyEngineNode(Node):
         self.markers_publisher_plants = self.create_publisher(MarkerArray, 'markers_plants_detected', 10)
 
         # draw init pose
-        draw_rviz_markers(self, [init_robot_pose], "/markers_selected_action",ColorRGBA(r=1., g=0., b=1., a=1.),0.050)
+        # draw_rviz_markers(self, [init_robot_pose], "/markers_selected_action",ColorRGBA(r=1., g=0., b=1., a=1.),0.050)
 
         self.timer = self.create_timer(timer_period_sec=0.02,
                                        callback=self.callback_timer)
+
+    def select_start_zone(self, msg):
+        get_logger('rclpy').info(f"\n\n\n\nRECEIVED ZONE : {msg.data}. \n\n\n\n")
+        self.start_pose = self.get_start_pose_from_start_zone(msg.data)
+
+        # depending on the ros2 parameter 'color'
+        global TEAM
+        global RETOUR_ZONE_NAME
+        
+
+        if 'J' in msg.data:
+            TEAM = "YELLOW"
+            self.get_logger().info("YELLOW")
+        else:
+            TEAM = "BLUE"
+            self.get_logger().info("BLUE")
+
+        self.get_logger().info("TEAM: "+TEAM)
+        if not self.IS_HOMOLOGATION:
+            if TEAM == "YELLOW":
+                current_strategy = strategy_yellow
+                RETOUR_ZONE_NAME = "retour_zone_yellow"
+            else:
+                current_strategy = strategy_blue
+                RETOUR_ZONE_NAME = "retour_zone_blue"
+        else:
+            if TEAM == "YELLOW":
+                current_strategy = homologation_yellow
+                RETOUR_ZONE_NAME = "retour_zone_yellow"
+            else:
+                current_strategy = homologation_blue
+                RETOUR_ZONE_NAME = "retour_zone_blue"
+
+        self.get_logger().info("\n\n\n\n")
+        self.get_logger().info(TEAM)
+        self.get_logger().info("\n\n\n\n")
+
+        self.strategy = current_strategy
+        self.current_action_name = self.strategy["actions"]["list"][0]
+        self.current_action_to_perform = get_action_by_name(self.current_action_name, actions)
+        self.received_color_and_pose = True
+
+
+        # init_robot_pose = self.strategy["init_pose"]
+        init_robot_pose = self.start_pose
+        # self.pub_initial_pose = self.create_publisher(PoseWithCovarianceStamped, '/initialpose', 10)
+        # call service set_pose (0.145,0.165), theta = 30°
+        self.set_pose_client = self.create_client(SetPose, '/set_pose')
+        while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+
+        request = SetPose.Request()
+        request.pose.header.stamp = self.get_clock().now().to_msg()
+        request.pose.header.frame_id = 'odom'
+        request.pose.pose.pose.position.x = init_robot_pose[0]
+        request.pose.pose.pose.position.y = init_robot_pose[1]
+        request.pose.pose.pose.position.z = 0.
+        request.pose.pose.pose.orientation.x = 0.
+        request.pose.pose.pose.orientation.y = 0.
+        request.pose.pose.pose.orientation.z = sin(init_robot_pose[2]/2)
+        request.pose.pose.pose.orientation.w = cos(init_robot_pose[2]/2)
+
+        future = self.set_pose_client.call_async(request)
+
+        # while rclpy.ok():
+        #     rclpy.spin_once(self)
+        #     if future.done():
+        #         if future.result() is not None:
+        #             break
+        #         else:
+        #             self.get_logger().info('service call failed %r' % (future.exception(),))
+        #             break
+
+        self.robot_pose = init_robot_pose
+
+    def get_start_pose_from_start_zone(self, start_zone): #str
+        start_pose = None
+        if start_zone == "J1":
+            start_pose = (0.145, 0.165, 1.0466) # 60°
+        elif start_zone == "J2":
+            start_pose = (1.855, 0.165, 2.0933)# 180-60° #2.6166
+        elif start_zone == "J3":
+            start_pose = (1.0, 3.0-0.165, -1.5707) #-90°
+        elif start_zone == "B1":
+            start_pose = (1.0, 0.165, 1.5707) #90°
+        elif start_zone == "B2":
+            start_pose = (0.145, 3.0-0.165, -1.0466) #-60°
+        elif start_zone == "B3":
+            start_pose = (1.855, 2.835, -2.0933)# -180+60° #-2.6166
+        else:
+            get_logger('rclpy').info(f"ERRRRRRRRRRRRRRRRRRRRRRROR start zone unvalide : {start_zone.data}. \n\n")
+            quit()
+
+        return start_pose
+        
 
     def act_sub_update(self, msg):
         # msg.data[0] = status
         #msg.data[1] = nb plantes
         self.CAN_state = msg.data[0] 
 
-    def start_match(self):
+    def start_match(self,msg):
+        get_logger('rclpy').info(f"TIRETTE !!")
         self.state = State.INIT
 
     def init(self):
@@ -233,7 +315,9 @@ class StrategyEngineNode(Node):
     def callback_timer(self):
         """Execute the strategy for one iteration"""
         if self.state == State.NOT_STARTED:
+            get_logger('rclpy').info(f"not started...")
             return
+        get_logger('rclpy').info(f"{self.state}.")
 
         if self.state == State.INIT:
             self.init()

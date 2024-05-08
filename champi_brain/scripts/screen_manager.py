@@ -17,7 +17,9 @@ from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
 import time
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, String
+
+from PIL import Image, ImageTk
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -28,14 +30,29 @@ launch_files = [
     "ros2 launch champi_nav2 bringup_launch.py",
     "",
     # "python3 src/champi_robot_ros/champi_brain/scripts/rviz_markers.py",
-    "ros2 launch champi_brain brain.launch.py color:=blue",
-    "ros2 launch champi_brain brain.launch.py color:=yellow",
+    "ros2 launch champi_brain brain.launch.py",
+    "ros2 launch champi_brain brain.launch.py color:=homologation",
 ]
 
 red = "#BC2023"
 green = "#0C6B37"
 white = "#FFFFFF"
 orange = "#FFA500"
+
+
+class ZoneButton(tk.Button):
+    def __init__(self, master, zone, node, color,row,column,sticky, **kwargs):
+        super().__init__(master, **kwargs)
+        self.zone = zone
+        self.node = node
+        self.configure(bg=color, command=self.toggle)
+        self.grid(row=row, column=column, sticky=sticky)
+
+    def toggle(self):
+        print("button toggled : ",self.zone)
+        msg = String()
+        msg.data = self.zone
+        self.node.zone_pub.publish(msg)
 
 class LaunchButton(tk.Button):
     def __init__(self, master, launch_file, **kwargs):
@@ -122,6 +139,9 @@ class Application(tk.Tk):
         self.tab6 = ttk.Frame(self.tabControl)
         self.tabControl.add(self.tab6, text="DIAGNOSTICS")
 
+        self.tab7 = ttk.Frame(self.tabControl)
+        self.tabControl.add(self.tab7, text="CHOIX ZONE")
+
         self.tabControl.pack(expand=1, fill="both")
     
         rclpy.init()
@@ -134,12 +154,16 @@ class Application(tk.Tk):
         self.match_started = False
         self.start_time = 0
 
+        self.zone_pub = self.node.create_publisher(String, '/start_zone', 10)
+
+
 
         self.create_launchs_tab()
         self.create_cpu_tab()
         self.create_ip_tab()
         self.create_table_tab()
         self.create_match_tab()
+        self.create_choix_zone_tab()
 
         self.node_diagnostics = {}
         self.create_diagnostics_tab()
@@ -156,6 +180,47 @@ class Application(tk.Tk):
         self.score_label.config(text=f"Score: {self.final_score}")
         # self.score_label.config(font=("Courier", 50))
 
+    def create_choix_zone_tab(self):
+        # create a tab with 9 buttons in 3x3 grid
+        # Couleurs et image pour les boutons
+        button_colors = [
+            'blue', 'gray', 'yellow',
+            'yellow', 'red', 'blue',
+            'blue', 'gray', 'yellow'
+        ]
+        self.button_zones = [
+            'B3', '', 'J2',
+            'J3', '', 'B1',
+            'B2', '', 'J1'
+        ]
+        self.start_zone = None
+
+        # Charger l'image à utiliser pour le bouton central
+        self.image = Image.open("champi_brain/scripts/arbre.png")
+        self.photo_image = ImageTk.PhotoImage(self.image)
+
+        # Création de la grille 3x3
+        self.create_button_grid(self.tab7, 3, 3, button_colors)
+
+
+
+    def create_button_grid(self, parent, rows, cols, button_colors):
+        for row in range(rows):
+            for col in range(cols):
+                index = row * cols + col
+                if button_colors[index] == 'red':
+                    # Si le bouton doit être rouge, affiche l'image
+                    button = tk.Button(parent, image=self.photo_image, text="Image")
+                    button.grid(row=row, column=col, sticky="nsew")
+                else:
+                    # Sinon, utilisez la couleur donnée
+                    # button = tk.Button(parent, bg=button_colors[index])
+                    # button.configure(command=self.toggle_button(self.button_zones[index]))
+                    button = ZoneButton(parent, self.button_zones[index], self, color=button_colors[index], row=row, column=col, sticky="nsew")
+                
+                # Assurer que les colonnes et les rangées peuvent se développer
+                parent.columnconfigure(col, weight=1)
+                parent.rowconfigure(row, weight=1)
 
 
     def close_window(self):
