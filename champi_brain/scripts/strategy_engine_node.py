@@ -9,7 +9,7 @@ from rclpy.node import Node
 
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 import rclpy.time
-from std_msgs.msg import String, Int32
+from std_msgs.msg import String, Int32, Empty
 from visualization_msgs.msg import Marker, MarkerArray
 
 # markers
@@ -76,7 +76,7 @@ actions = [
 
 strategy_yellow = {
     "name": "strategy_yellow",
-    "init_pose": (1.855, 0.165, 2.6166),
+    "init_pose": (1.855, 0.165, 2.6166), #J2
     "actions": {
         # "list": ["poserplantesJ2"]
         # "list": ["plantes4","retour_zone_yellow"],
@@ -84,14 +84,23 @@ strategy_yellow = {
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
     }
 }
+
 strategy_blue = {
     "name": "strategy_blue",
-    "init_pose": (1.855, 2.835, 4.1866),
+    "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
         "list": ["plantes6","poserplantesB3","plantes5","poserplantesB2","plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4","retour_zone_blue"],
         # "list": ["plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_blue"],
+    }
+}
+
+homologation_blue = {
+    "name": "homologation_blue",
+    "init_pose": (1.855, 2.835, 4.1866), #B3
+    "actions": {
+        "list": ["plantes4","poserplantesJ2","plantes5","poserplantesJ1","plantes6","poserplantesJ3", "retour_zone_yellow"],
     }
 }
 
@@ -132,7 +141,7 @@ class StrategyEngineNode(Node):
 
         # STATES MACHINES
         # MAIN
-        self.state = State.INIT
+        self.state = State.NOT_STARTED
 
 
         self.start_time = None
@@ -175,15 +184,20 @@ class StrategyEngineNode(Node):
         self.robot_pose = init_robot_pose
         self.odom_subscriber = self.create_subscription(Odometry, '/odometry/filtered', self.update_robot_pose, 10)
 
-        # create /CAN publisher to publish string msgs to the CAN API
-        self.CAN_publisher = self.create_publisher(String, '/CAN', 10)
-
         # create /stop_using_camera publisher (String which is "stop" when we want to stop using the camera and "start" when we want to start using it again)
         self.stop_cam_publisher = self.create_publisher(String, '/stop_using_camera', 10)
 
         # publisher for the final score
         self.score_publisher = self.create_publisher(Int32, '/final_score', 10)
         self.final_score = 0
+
+        # tirette de démarrage subscriber
+        self.tirette_sub = self.create_subscription(Empty, '/tirette_start', self.start_match, 10)
+
+        # ACT CAN sub and pub
+        self.CAN_pub = self.create_publisher(Int32, '/act_status', 10)
+        self.CAN_sub = self.create_subscription(Int32, '/act_cmd', self.act_sub_update, 10)
+        self.CAN_state = None
 
 
         self.markers_publisher_circles = self.create_publisher(MarkerArray, 'markers_selected_action', 10)
@@ -194,6 +208,14 @@ class StrategyEngineNode(Node):
 
         self.timer = self.create_timer(timer_period_sec=0.02,
                                        callback=self.callback_timer)
+
+    def act_sub_update(self, msg):
+        # msg.data[0] = status
+        #msg.data[1] = nb plantes
+        self.CAN_state = msg.data[0] 
+
+    def start_match(self):
+        self.state = State.INIT
 
     def init(self):
         # init_robot_pose = self.strategy["init_pose"]
@@ -210,6 +232,8 @@ class StrategyEngineNode(Node):
 
     def callback_timer(self):
         """Execute the strategy for one iteration"""
+        if self.state == State.NOT_STARTED:
+            return
 
         if self.state == State.INIT:
             self.init()

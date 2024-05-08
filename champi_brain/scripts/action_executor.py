@@ -78,6 +78,9 @@ class Action_Executor():
 
     def update_pose_plantes(self):
         get_logger('rclpy').info(f"\Putting plants...")
+        if self.strategy_node.CAN_state != CAN_MSGS.FREE:
+            return
+
         if self.plants_put < 6:
             if self.plants_put == 0:
                 self.plants_put_pose = self.current_action['pose']
@@ -98,10 +101,9 @@ class Action_Executor():
                             self.plants_put_pose[1], 
                             self.plants_put_pose[2]]
             self.robot_navigator.navigate_to(self.plants_put_pose, 10)
-            self.publish_on_CAN("put one plant out")
-            get_logger('rclpy').info(f"#########Put 1 plant out...")
-            time.sleep(2)
+            self.publish_on_CAN(CAN_MSGS.RELEASE_PLANT)
             self.plants_put += 1
+            get_logger('rclpy').info(f"#########Put 1 plant out...")
         else:
             self.state = State.ACTION_FINISHED
             self.plants_put = 0
@@ -138,13 +140,13 @@ class Action_Executor():
             get_logger('rclpy').info(f"\tNavigating to first point of trajectory")
             # navigate to the first point of the trajectory
             self.robot_navigator.navigate_to(self.trajectory_points[0], self.current_action["time"])
-            self.publish_on_CAN("be_ready_to_grab_plants")
+            self.publish_on_CAN(CAN_MSGS.START_GRAB_PLANTS)
             self.state_taking_plants = StateTakingPlants.NAVIGATE_TO_TRAJECTORY_2
         elif self.state_taking_plants == StateTakingPlants.NAVIGATE_TO_TRAJECTORY_2:
             get_logger('rclpy').info(f"\tNavigating to second point of trajectory")
             # navigate to the second point of the trajectory
             self.robot_navigator.navigate_to(self.trajectory_points[1], self.current_action["time"])
-            self.publish_on_CAN("finished_grabbing_plants")
+            self.publish_on_CAN(CAN_MSGS.STOP_GRAB_PLANTS)
             self.state_taking_plants = None
             self.state = State.NO_ACTION
             self.front_pose_from_plants = None
@@ -153,11 +155,12 @@ class Action_Executor():
             self.state = State.ACTION_FINISHED
 
 
+
     def publish_on_CAN(self, message: str):
         # publish on the topic "/CAN" to be forwarded by CAN by the API
         msg = String()
         msg.data = message
-        self.strategy_node.CAN_publisher.publish(msg)   
+        self.strategy_node.CAN_pub.publish(msg)
 
     def wait_for_ready(self):
         # check on CAN/topics that every of the 3 stm boards are ready
@@ -165,4 +168,5 @@ class Action_Executor():
         return True
 
     def stop_effectors(self):
-        self.publish_on_CAN("stop_effectors")
+        pass
+        # self.publish_on_CAN(CAN_MSGS.)

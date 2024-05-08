@@ -55,6 +55,14 @@ def generate_launch_description():
         condition=UnlessCondition(LaunchConfiguration('sim'))
     )
 
+    act_controller_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource([
+            get_package_share_directory('champi_controllers'),
+            '/launch/act_controller.launch.py'
+        ]),
+        condition=UnlessCondition(LaunchConfiguration('sim'))
+    )
+
   # LDROBOT LiDAR publisher node
     ldlidar_node = Node(
         package='ldlidar_stl_ros2',
@@ -163,6 +171,7 @@ def generate_launch_description():
         pub_goal_rviz_node,
         ukf_node,
         static_tf_map_odom,
-        # robot_stopped_detector_node
+        # robot_stopped_detector_node,
+        act_controller_launch
     ])
 

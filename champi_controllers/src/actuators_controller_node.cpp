@@ -64,7 +64,7 @@ public:
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         // Create Publishers
-        pub_tirette_start_ = this->create_publisher<std_msgs::msg::Empty>("/tirette_tart", 10);
+        pub_tirette_start_ = this->create_publisher<std_msgs::msg::Empty>("/tirette_start", 10);
         pub_act_status_ = this->create_publisher<std_msgs::msg::Int64MultiArray>("/act_status", 10);
 
         // Sub
@@ -248,6 +248,9 @@ private:
             if(!got_first_act_status_) {
                 got_first_act_status_ = true;
             }
+
+
+            publish_act_status();
         }
 
         if(champi_can_interface_.check_if_new_full_msg(can_ids::TIRETTE_START)) {
@@ -364,11 +367,6 @@ private:
         // - the node is OK or WARN ?
         bool node_ok = check_node_ok_and_update();
 
-        if(!node_ok) {
-            return;
-        }
-        // Publish IMU data
-        publish_act_status();
     }
 
 

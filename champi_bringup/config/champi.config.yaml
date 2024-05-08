@@ -56,6 +56,9 @@ imu_controller:
       linear_acc: [1., 1., 1.]
 
 
+act_controller:
+  ros__parameters:
+    champi_can_verbose_mode: false
 
 
 twist_mux:
