@@ -17,3 +17,4 @@ class CanIds:
     ACT_ACTION =  0x32
     EMERGENCY_STOP = 0x5
     TIRETTE_START = 0x6
+    ACT_RESET = 0x2

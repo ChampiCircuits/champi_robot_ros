@@ -18,4 +18,5 @@ namespace can_ids {
     int ACT_ACTION =  0x32;
     int EMERGENCY_STOP = 0x5;
     int TIRETTE_START = 0x6;
+    int ACT_RESET = 0x2;
 }

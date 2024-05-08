@@ -48,7 +48,7 @@ struct TableStruct_msgs_5fcan_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[7]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[9]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -56,6 +56,12 @@ struct TableStruct_msgs_5fcan_2eproto {
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_msgs_5fcan_2eproto;
 namespace msgs_can {
+class ActCmd;
+class ActCmdDefaultTypeInternal;
+extern ActCmdDefaultTypeInternal _ActCmd_default_instance_;
+class ActStatus;
+class ActStatusDefaultTypeInternal;
+extern ActStatusDefaultTypeInternal _ActStatus_default_instance_;
 class BaseConfig;
 class BaseConfigDefaultTypeInternal;
 extern BaseConfigDefaultTypeInternal _BaseConfig_default_instance_;
@@ -79,6 +85,8 @@ class StatusReportDefaultTypeInternal;
 extern StatusReportDefaultTypeInternal _StatusReport_default_instance_;
 }  // namespace msgs_can
 PROTOBUF_NAMESPACE_OPEN
+template<> ::msgs_can::ActCmd* Arena::CreateMaybeMessage<::msgs_can::ActCmd>(Arena*);
+template<> ::msgs_can::ActStatus* Arena::CreateMaybeMessage<::msgs_can::ActStatus>(Arena*);
 template<> ::msgs_can::BaseConfig* Arena::CreateMaybeMessage<::msgs_can::BaseConfig>(Arena*);
 template<> ::msgs_can::BaseVel* Arena::CreateMaybeMessage<::msgs_can::BaseVel>(Arena*);
 template<> ::msgs_can::ImuData* Arena::CreateMaybeMessage<::msgs_can::ImuData>(Arena*);
@@ -143,6 +151,33 @@ inline bool Status_ErrorType_Parse(
     const std::string& name, Status_ErrorType* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<Status_ErrorType>(
     Status_ErrorType_descriptor(), name, value);
+}
+enum ActActions : int {
+  START_GRAB_PLANTS = 0,
+  STOP_GRAB_PLANTS = 1,
+  RELEASE_PLANT = 2,
+  TURN_SOLAR_PANEL = 3,
+  INITIALIZING = 4,
+  FREE = 5
+};
+bool ActActions_IsValid(int value);
+constexpr ActActions ActActions_MIN = START_GRAB_PLANTS;
+constexpr ActActions ActActions_MAX = FREE;
+constexpr int ActActions_ARRAYSIZE = ActActions_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ActActions_descriptor();
+template<typename T>
+inline const std::string& ActActions_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, ActActions>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function ActActions_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    ActActions_descriptor(), enum_t_value);
+}
+inline bool ActActions_Parse(
+    const std::string& name, ActActions* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<ActActions>(
+    ActActions_descriptor(), name, value);
 }
 // ===================================================================
 
@@ -1531,6 +1566,354 @@ class ImuData PROTOBUF_FINAL :
   float gyro_z_;
   friend struct ::TableStruct_msgs_5fcan_2eproto;
 };
+// -------------------------------------------------------------------
+
+class ActCmd PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.ActCmd) */ {
+ public:
+  inline ActCmd() : ActCmd(nullptr) {};
+  virtual ~ActCmd();
+
+  ActCmd(const ActCmd& from);
+  ActCmd(ActCmd&& from) noexcept
+    : ActCmd() {
+    *this = ::std::move(from);
+  }
+
+  inline ActCmd& operator=(const ActCmd& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ActCmd& operator=(ActCmd&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const ActCmd& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const ActCmd* internal_default_instance() {
+    return reinterpret_cast<const ActCmd*>(
+               &_ActCmd_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    7;
+
+  friend void swap(ActCmd& a, ActCmd& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ActCmd* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ActCmd* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline ActCmd* New() const final {
+    return CreateMaybeMessage<ActCmd>(nullptr);
+  }
+
+  ActCmd* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<ActCmd>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const ActCmd& from);
+  void MergeFrom(const ActCmd& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ActCmd* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "msgs_can.ActCmd";
+  }
+  protected:
+  explicit ActCmd(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_msgs_5fcan_2eproto);
+    return ::descriptor_table_msgs_5fcan_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kActionFieldNumber = 1,
+    kValueFieldNumber = 2,
+  };
+  // optional .msgs_can.ActActions action = 1;
+  bool has_action() const;
+  private:
+  bool _internal_has_action() const;
+  public:
+  void clear_action();
+  ::msgs_can::ActActions action() const;
+  void set_action(::msgs_can::ActActions value);
+  private:
+  ::msgs_can::ActActions _internal_action() const;
+  void _internal_set_action(::msgs_can::ActActions value);
+  public:
+
+  // optional float value = 2;
+  bool has_value() const;
+  private:
+  bool _internal_has_value() const;
+  public:
+  void clear_value();
+  float value() const;
+  void set_value(float value);
+  private:
+  float _internal_value() const;
+  void _internal_set_value(float value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:msgs_can.ActCmd)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  int action_;
+  float value_;
+  friend struct ::TableStruct_msgs_5fcan_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ActStatus PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.ActStatus) */ {
+ public:
+  inline ActStatus() : ActStatus(nullptr) {};
+  virtual ~ActStatus();
+
+  ActStatus(const ActStatus& from);
+  ActStatus(ActStatus&& from) noexcept
+    : ActStatus() {
+    *this = ::std::move(from);
+  }
+
+  inline ActStatus& operator=(const ActStatus& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ActStatus& operator=(ActStatus&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const ActStatus& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const ActStatus* internal_default_instance() {
+    return reinterpret_cast<const ActStatus*>(
+               &_ActStatus_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    8;
+
+  friend void swap(ActStatus& a, ActStatus& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ActStatus* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ActStatus* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline ActStatus* New() const final {
+    return CreateMaybeMessage<ActStatus>(nullptr);
+  }
+
+  ActStatus* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<ActStatus>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const ActStatus& from);
+  void MergeFrom(const ActStatus& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ActStatus* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "msgs_can.ActStatus";
+  }
+  protected:
+  explicit ActStatus(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_msgs_5fcan_2eproto);
+    return ::descriptor_table_msgs_5fcan_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kStatusFieldNumber = 1,
+    kActionFieldNumber = 2,
+    kPlantCountFieldNumber = 3,
+  };
+  // optional .msgs_can.Status status = 1;
+  bool has_status() const;
+  private:
+  bool _internal_has_status() const;
+  public:
+  void clear_status();
+  const ::msgs_can::Status& status() const;
+  ::msgs_can::Status* release_status();
+  ::msgs_can::Status* mutable_status();
+  void set_allocated_status(::msgs_can::Status* status);
+  private:
+  const ::msgs_can::Status& _internal_status() const;
+  ::msgs_can::Status* _internal_mutable_status();
+  public:
+  void unsafe_arena_set_allocated_status(
+      ::msgs_can::Status* status);
+  ::msgs_can::Status* unsafe_arena_release_status();
+
+  // optional .msgs_can.ActActions action = 2;
+  bool has_action() const;
+  private:
+  bool _internal_has_action() const;
+  public:
+  void clear_action();
+  ::msgs_can::ActActions action() const;
+  void set_action(::msgs_can::ActActions value);
+  private:
+  ::msgs_can::ActActions _internal_action() const;
+  void _internal_set_action(::msgs_can::ActActions value);
+  public:
+
+  // optional int32 plant_count = 3;
+  bool has_plant_count() const;
+  private:
+  bool _internal_has_plant_count() const;
+  public:
+  void clear_plant_count();
+  ::PROTOBUF_NAMESPACE_ID::int32 plant_count() const;
+  void set_plant_count(::PROTOBUF_NAMESPACE_ID::int32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::int32 _internal_plant_count() const;
+  void _internal_set_plant_count(::PROTOBUF_NAMESPACE_ID::int32 value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:msgs_can.ActStatus)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::msgs_can::Status* status_;
+  int action_;
+  ::PROTOBUF_NAMESPACE_ID::int32 plant_count_;
+  friend struct ::TableStruct_msgs_5fcan_2eproto;
+};
 // ===================================================================
 
 
@@ -2472,9 +2855,216 @@ inline void ImuData::set_gyro_z(float value) {
   // @@protoc_insertion_point(field_set:msgs_can.ImuData.gyro_z)
 }
 
+// -------------------------------------------------------------------
+
+// ActCmd
+
+// optional .msgs_can.ActActions action = 1;
+inline bool ActCmd::_internal_has_action() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool ActCmd::has_action() const {
+  return _internal_has_action();
+}
+inline void ActCmd::clear_action() {
+  action_ = 0;
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline ::msgs_can::ActActions ActCmd::_internal_action() const {
+  return static_cast< ::msgs_can::ActActions >(action_);
+}
+inline ::msgs_can::ActActions ActCmd::action() const {
+  // @@protoc_insertion_point(field_get:msgs_can.ActCmd.action)
+  return _internal_action();
+}
+inline void ActCmd::_internal_set_action(::msgs_can::ActActions value) {
+  assert(::msgs_can::ActActions_IsValid(value));
+  _has_bits_[0] |= 0x00000001u;
+  action_ = value;
+}
+inline void ActCmd::set_action(::msgs_can::ActActions value) {
+  _internal_set_action(value);
+  // @@protoc_insertion_point(field_set:msgs_can.ActCmd.action)
+}
+
+// optional float value = 2;
+inline bool ActCmd::_internal_has_value() const {
+  bool value = (_has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool ActCmd::has_value() const {
+  return _internal_has_value();
+}
+inline void ActCmd::clear_value() {
+  value_ = 0;
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline float ActCmd::_internal_value() const {
+  return value_;
+}
+inline float ActCmd::value() const {
+  // @@protoc_insertion_point(field_get:msgs_can.ActCmd.value)
+  return _internal_value();
+}
+inline void ActCmd::_internal_set_value(float value) {
+  _has_bits_[0] |= 0x00000002u;
+  value_ = value;
+}
+inline void ActCmd::set_value(float value) {
+  _internal_set_value(value);
+  // @@protoc_insertion_point(field_set:msgs_can.ActCmd.value)
+}
+
+// -------------------------------------------------------------------
+
+// ActStatus
+
+// optional .msgs_can.Status status = 1;
+inline bool ActStatus::_internal_has_status() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || status_ != nullptr);
+  return value;
+}
+inline bool ActStatus::has_status() const {
+  return _internal_has_status();
+}
+inline void ActStatus::clear_status() {
+  if (status_ != nullptr) status_->Clear();
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline const ::msgs_can::Status& ActStatus::_internal_status() const {
+  const ::msgs_can::Status* p = status_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::msgs_can::Status*>(
+      &::msgs_can::_Status_default_instance_);
+}
+inline const ::msgs_can::Status& ActStatus::status() const {
+  // @@protoc_insertion_point(field_get:msgs_can.ActStatus.status)
+  return _internal_status();
+}
+inline void ActStatus::unsafe_arena_set_allocated_status(
+    ::msgs_can::Status* status) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(status_);
+  }
+  status_ = status;
+  if (status) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:msgs_can.ActStatus.status)
+}
+inline ::msgs_can::Status* ActStatus::release_status() {
+  auto temp = unsafe_arena_release_status();
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::msgs_can::Status* ActStatus::unsafe_arena_release_status() {
+  // @@protoc_insertion_point(field_release:msgs_can.ActStatus.status)
+  _has_bits_[0] &= ~0x00000001u;
+  ::msgs_can::Status* temp = status_;
+  status_ = nullptr;
+  return temp;
+}
+inline ::msgs_can::Status* ActStatus::_internal_mutable_status() {
+  _has_bits_[0] |= 0x00000001u;
+  if (status_ == nullptr) {
+    auto* p = CreateMaybeMessage<::msgs_can::Status>(GetArena());
+    status_ = p;
+  }
+  return status_;
+}
+inline ::msgs_can::Status* ActStatus::mutable_status() {
+  // @@protoc_insertion_point(field_mutable:msgs_can.ActStatus.status)
+  return _internal_mutable_status();
+}
+inline void ActStatus::set_allocated_status(::msgs_can::Status* status) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete status_;
+  }
+  if (status) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::GetArena(status);
+    if (message_arena != submessage_arena) {
+      status = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, status, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  status_ = status;
+  // @@protoc_insertion_point(field_set_allocated:msgs_can.ActStatus.status)
+}
+
+// optional .msgs_can.ActActions action = 2;
+inline bool ActStatus::_internal_has_action() const {
+  bool value = (_has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool ActStatus::has_action() const {
+  return _internal_has_action();
+}
+inline void ActStatus::clear_action() {
+  action_ = 0;
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline ::msgs_can::ActActions ActStatus::_internal_action() const {
+  return static_cast< ::msgs_can::ActActions >(action_);
+}
+inline ::msgs_can::ActActions ActStatus::action() const {
+  // @@protoc_insertion_point(field_get:msgs_can.ActStatus.action)
+  return _internal_action();
+}
+inline void ActStatus::_internal_set_action(::msgs_can::ActActions value) {
+  assert(::msgs_can::ActActions_IsValid(value));
+  _has_bits_[0] |= 0x00000002u;
+  action_ = value;
+}
+inline void ActStatus::set_action(::msgs_can::ActActions value) {
+  _internal_set_action(value);
+  // @@protoc_insertion_point(field_set:msgs_can.ActStatus.action)
+}
+
+// optional int32 plant_count = 3;
+inline bool ActStatus::_internal_has_plant_count() const {
+  bool value = (_has_bits_[0] & 0x00000004u) != 0;
+  return value;
+}
+inline bool ActStatus::has_plant_count() const {
+  return _internal_has_plant_count();
+}
+inline void ActStatus::clear_plant_count() {
+  plant_count_ = 0;
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 ActStatus::_internal_plant_count() const {
+  return plant_count_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 ActStatus::plant_count() const {
+  // @@protoc_insertion_point(field_get:msgs_can.ActStatus.plant_count)
+  return _internal_plant_count();
+}
+inline void ActStatus::_internal_set_plant_count(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  _has_bits_[0] |= 0x00000004u;
+  plant_count_ = value;
+}
+inline void ActStatus::set_plant_count(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  _internal_set_plant_count(value);
+  // @@protoc_insertion_point(field_set:msgs_can.ActStatus.plant_count)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
@@ -2503,6 +3093,11 @@ template <> struct is_proto_enum< ::msgs_can::Status_ErrorType> : ::std::true_ty
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::msgs_can::Status_ErrorType>() {
   return ::msgs_can::Status_ErrorType_descriptor();
+}
+template <> struct is_proto_enum< ::msgs_can::ActActions> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::msgs_can::ActActions>() {
+  return ::msgs_can::ActActions_descriptor();
 }
 
 PROTOBUF_NAMESPACE_CLOSE
