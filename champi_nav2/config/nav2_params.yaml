@@ -243,8 +243,6 @@ local_costmap:
       height: 3
       resolution: 0.05
       robot_radius: 0.1
-      plugins: ["obstacle_layer", "inflation_layer","static_layer"] # TODO add static_layer
-      robot_radius: 0.15
       plugins: ["obstacle_layer", "inflation_layer","static_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
@@ -257,9 +255,9 @@ local_costmap:
           clearing: True
           marking: True
           data_type: "LaserScan"
-          raytrace_max_range: 3.0
+          raytrace_max_range: 4.9
           raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
+          obstacle_max_range: 4.9
           obstacle_min_range: 0.07 # genere les obstacles que au dessus de cette val
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
@@ -281,24 +279,42 @@ global_costmap:
       robot_radius: 0.1
       resolution: 0.05
       track_unknown_space: true
+      # plugins: ["obstacle_layer"]
       plugins: ["static_layer", "obstacle_layer" ,"inflation_layer"]
+      # obstacle_layer:
+      #   plugin: "nav2_costmap_2d::ObstacleLayer"
+      #   enabled: True
+      #   observation_sources: scan
+      #   # observation_persistence: 1.0
+
+      #   scan:
+      #     topic: /scan
+      #     max_obstacle_height: 2.0
+      #     clearing: True
+      #     marking: True
+      #     data_type: "LaserScan"
+      #     raytrace_max_range: 20.0
+      #     raytrace_min_range: 0.0
+      #     obstacle_max_range: 1.0
+      #     obstacle_min_range: 0.07 # genere les obstacles que au dessus de cette val
+      #     inf_is_valid: true
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         observation_sources: scan
-        # observation_persistence: 1.0
-
         scan:
           topic: /scan
           max_obstacle_height: 2.0
-          clearing: True
+          observation_persistence: 0.0
+          clearing: True # which means that the costmap will be cleared to the value specified by the clear_threshold parameter
+          clear_threshold: 0
           marking: True
           data_type: "LaserScan"
-          raytrace_max_range: 201.0
+          raytrace_max_range: 4.9
           raytrace_min_range: 0.0
-          obstacle_max_range: 200.0
-          obstacle_min_range: 0.07 # genere les obstacles que au dessus de cette val
-          inf_is_valid: true
+          obstacle_max_range: 4.9
+          obstacle_min_range: 0.07
+
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -307,6 +323,9 @@ global_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 10.0
         inflation_radius: 1.0
+        # make it clear automatically
+        inflation_clears: True
+
       always_send_full_costmap: True
 
 map_server:

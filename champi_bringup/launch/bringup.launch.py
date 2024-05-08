@@ -79,8 +79,8 @@ def generate_launch_description():
             {'enable_angle_crop_func': False},
             {'angle_crop_min': 135.0},
             {'angle_crop_max': 225.0},
-            # {'range_min': 1.0},
-            # {'range_max': 4.0},
+            {'range_min': 0.05},
+            {'range_max': 5.0},
             # {'units': 'M'},
         ],
         condition=UnlessCondition(LaunchConfiguration('sim'))
