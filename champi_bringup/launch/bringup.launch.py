@@ -8,6 +8,8 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition, UnlessCondition
 
+from launch.actions import TimerAction
+
 
 def generate_launch_description():
 
@@ -157,21 +159,31 @@ def generate_launch_description():
         parameters=[config_file_path]
     )
 
+
+    delayed_10s = TimerAction(period=10., actions=[ldlidar_node])
+    delayed_5s = TimerAction(period=5., actions=[ukf_node])
+    delayed_3s = TimerAction(period=3., actions=[imu_controller_launch])
+    delayed_2s = TimerAction(period=2., actions=[act_controller_launch])
+    
+
     return LaunchDescription([
         sim_arg,
         joy_arg,
+        static_tf_map_odom,
         description_broadcaster,
         base_controller_launch,
-        imu_controller_launch,
-        ldlidar_node,
+        # imu_controller_launch,
+        # ldlidar_node,
         lidar_simu_node,
         base_control_simu_node,
         cmd_vel_mux_node,
         teleop_launch,
         pub_goal_rviz_node,
-        ukf_node,
-        static_tf_map_odom,
+        delayed_2s,
+        delayed_3s,
+        delayed_5s,
+        delayed_10s,
         # robot_stopped_detector_node,
-        act_controller_launch
+        # act_controller_launch
     ])
 

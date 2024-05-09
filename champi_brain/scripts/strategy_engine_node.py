@@ -100,14 +100,16 @@ homologation_blue = {
     "name": "homologation_blue",
     # "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["plantes5","poserplantesB3", "retour_zone_blue"],
+        "list": ["retour_zone_blue"],
+        # "list": ["plantes5","poserplantesB3", "retour_zone_blue"],
     }
 }
 homologation_yellow = {
     "name": "homologation_yellow",
     # "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["plantes5","poserplantesJ2", "retour_zone_yellow"],
+        "list": ["retour_zone_blue"], # TODO
+        # "list": ["plantes5","poserplantesJ2", "retour_zone_yellow"],
     }
 }
 
@@ -161,14 +163,16 @@ class StrategyEngineNode(Node):
         self.start_time = None
         self.time_left = TOTAL_AVAILABLE_TIME # s, updated each iteration, considering the time to return to the zone
 
-
+        time.sleep(0.5)
         self.start_zone_sub = self.create_subscription(String, '/start_zone', self.select_start_zone, 10)
         self.start_zone = None
         
+        time.sleep(0.5)
         self.action_executor = Action_Executor(self)
 
         # suscribe to robot pose (x,y,theta)
         self.odom_subscriber = self.create_subscription(Odometry, '/odometry/filtered', self.update_robot_pose, 10)
+        time.sleep(0.5)
 
         # create /stop_using_camera publisher (String which is "stop" when we want to stop using the camera and "start" when we want to start using it again)
         # self.stop_cam_publisher = self.create_publisher(String, '/stop_using_camera', 10)
@@ -176,24 +180,29 @@ class StrategyEngineNode(Node):
         # publisher for the final score
         self.score_publisher = self.create_publisher(Int32, '/final_score', 10)
         self.final_score = 0
+        time.sleep(0.5)
 
         # tirette de démarrage subscriber
         self.tirette_sub = self.create_subscription(Empty, '/tirette_start', self.start_match, 10)
+        time.sleep(0.5)
 
         # ACT CAN sub and pub
         self.CAN_pub = self.create_publisher(Int32, '/act_status', 10)
         self.CAN_sub = self.create_subscription(Int32, '/act_cmd', self.act_sub_update, 10)
         self.CAN_state = None
+        time.sleep(0.5)
 
 
         self.markers_publisher_circles = self.create_publisher(MarkerArray, 'markers_selected_action', 10)
         self.markers_publisher_plants = self.create_publisher(MarkerArray, 'markers_plants_detected', 10)
+        time.sleep(0.5)
 
         # draw init pose
         # draw_rviz_markers(self, [init_robot_pose], "/markers_selected_action",ColorRGBA(r=1., g=0., b=1., a=1.),0.050)
 
-        self.timer = self.create_timer(timer_period_sec=0.02,
+        self.timer = self.create_timer(timer_period_sec=0.5,
                                        callback=self.callback_timer)
+        get_logger('rclpy').info(f"READY TO RECEIVE ZONE")
 
     def select_start_zone(self, msg):
         get_logger('rclpy').info(f"\n\n\n\nRECEIVED ZONE : {msg.data}. \n\n\n\n")
@@ -315,9 +324,9 @@ class StrategyEngineNode(Node):
     def callback_timer(self):
         """Execute the strategy for one iteration"""
         if self.state == State.NOT_STARTED:
-            get_logger('rclpy').info(f"not started...")
+            # get_logger('rclpy').info(f"not started...", once=True)
             return
-        get_logger('rclpy').info(f"{self.state}.")
+        # get_logger('rclpy').info(f"{self.state}.")
 
         if self.state == State.INIT:
             self.init()

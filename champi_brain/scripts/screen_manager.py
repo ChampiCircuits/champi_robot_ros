@@ -23,6 +23,13 @@ from PIL import Image, ImageTk
 
 from ament_index_python.packages import get_package_share_directory
 
+
+red = "#BC2023"
+green = "#0C6B37"
+white = "#FFFFFF"
+orange = "#FFA500"
+blue = "#94C1CC"
+
 # Liste des fichiers de lancement ROS2
 launch_files = [
     "ros2 launch champi_bringup bringup.launch.py sim:=True",
@@ -30,14 +37,22 @@ launch_files = [
     "ros2 launch champi_nav2 bringup_launch.py",
     "",
     # "python3 src/champi_robot_ros/champi_brain/scripts/rviz_markers.py",
-    "ros2 launch champi_brain brain.launch.py",
-    "ros2 launch champi_brain brain.launch.py color:=homologation",
+    # "ros2 launch champi_brain brain.launch.py",
+    "python3 /home/champi/dev/ws_0/src/champi_robot_ros/scripts/kill_nodes.py",
+    # ". /home/champi/dev/ws_0/src/champi_robot_ros/scripts/kill_nodes.sh",
+    # "ros2 launch champi_brain brain.launch.py color:=homologation",
+    "ros2 run champi_brain strategy_engine_node.py --ros-args -p color:=homologation"
 ]
 
-red = "#BC2023"
-green = "#0C6B37"
-white = "#FFFFFF"
-orange = "#FFA500"
+launch_colors = [
+    white,
+    blue,
+    blue,
+    white,
+    white,
+    blue
+]
+
 
 
 class ZoneButton(tk.Button):
@@ -55,12 +70,12 @@ class ZoneButton(tk.Button):
         self.node.zone_pub.publish(msg)
 
 class LaunchButton(tk.Button):
-    def __init__(self, master, launch_file, **kwargs):
+    def __init__(self, master, launch_file,color, **kwargs):
         super().__init__(master, **kwargs)
         self.launch_file = launch_file
         self.active = False
         self.process = None  # Initialisation du processus à None
-        self.configure(bg=white)
+        self.configure(bg=color)
         self.configure(command=self.toggle)
         self.has_been_stopped_by_user = False
 
@@ -196,7 +211,8 @@ class Application(tk.Tk):
         self.start_zone = None
 
         # Charger l'image à utiliser pour le bouton central
-        self.image = Image.open("champi_brain/scripts/arbre.png")
+        self.image = Image.open("/home/champi/dev/ws_0/src/champi_robot_ros/champi_brain/scripts/arbre.png")
+        # self.image = Image.open("champi_brain/scripts/arbre.png")
         self.photo_image = ImageTk.PhotoImage(self.image)
 
         # Création de la grille 3x3
@@ -271,7 +287,7 @@ class Application(tk.Tk):
             self.launch_grid_frame.grid_rowconfigure(row, weight=1)
             self.launch_grid_frame.grid_columnconfigure(col, weight=1)  # Ajout de la configuration de la colonne
             button_text = f"{launch_file}"
-            button = LaunchButton(self.launch_grid_frame, text=button_text, launch_file=launch_file)
+            button = LaunchButton(self.launch_grid_frame, text=button_text, launch_file=launch_file, color=launch_colors[i])
             button.grid(row=row, column=col, sticky="nsew")  # Utilisation de sticky pour prendre toute la place
             col += 1
 

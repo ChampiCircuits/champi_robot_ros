@@ -156,10 +156,10 @@ class Action_Executor():
 
 
 
-    def publish_on_CAN(self, message: str):
+    def publish_on_CAN(self, message):
         # publish on the topic "/CAN" to be forwarded by CAN by the API
         msg = String()
-        msg.data = message
+        msg.data = str(int(message))
         self.strategy_node.CAN_pub.publish(msg)
 
     def wait_for_ready(self):

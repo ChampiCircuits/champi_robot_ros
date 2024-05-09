@@ -22,9 +22,23 @@ markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(frame)
 
 end = time.time()
 print("time: ",end-start)
-
+height, width, _ = frame.shape
+center_screen = (width / 2, height / 2)
+print("H, W",height,width)
 
 for i, corners in enumerate(markerCorners):
     print("corners", corners)
     print("ids", markerIds[i])
-    if (markerIds[i] >= 20)
+    if markerIds[i] >= 20 and markerIds[i]<=24:# arucos au sol
+        center_marker = np.mean(corners[0], axis=0)
+
+        # Position relative du centre du marqueur par rapport au centre de l'image
+        relative_position = center_marker - center_screen
+
+        # Angle du marqueur par rapport à l'axe horizontal (angle du premier côté)
+        dx = corners[0][1][0] - corners[0][0][0]
+        dy = corners[0][1][1] - corners[0][0][1]
+        angle_rad = np.arctan2(dy, dx)  # angle en radians
+
+        print("center_marker",center_marker)
+        print("angle",angle_rad)
