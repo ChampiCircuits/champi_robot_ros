@@ -21,7 +21,7 @@ class Action_Executor():
     def __init__(self,strategy_node: Node) -> None:
         # check that everything is ready
         self.wait_for_ready()
-        self.robot_navigator = Robot_Navigator()
+        self.robot_navigator = Robot_Navigator(strategy_node)
         self.strategy_node = strategy_node
 
         # PLANTS STATE MACHINE

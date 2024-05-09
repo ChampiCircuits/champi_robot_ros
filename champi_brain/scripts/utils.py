@@ -102,7 +102,10 @@ def pose_from_position(position, stamp):
     goal_pose.header.stamp = stamp
     goal_pose.pose.position.x = position[0]
     goal_pose.pose.position.y = position[1]
+    goal_pose.pose.position.z = 0.0
     # theta radians to quaternion
+    goal_pose.pose.orientation.z = 0.0
+    goal_pose.pose.orientation.z = 0.0
     goal_pose.pose.orientation.z = sin(position[2] / 2)
     goal_pose.pose.orientation.w = cos(position[2] / 2)
     return goal_pose

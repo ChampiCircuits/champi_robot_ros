@@ -344,7 +344,7 @@ class StrategyEngineNode(Node):
                 # add points
                 self.final_score += self.current_action_to_perform["points"]
                 self.score_publisher.publish(Int32(data=self.final_score))
-                get_logger('rclpy').info(f"----> Score SENT : {self.final_score}")
+                get_logger('rclpy').info(f"----> Score SENaT : {self.final_score}")
 
 
                 # if the last action executed was "retour_zone" then we stop everything
