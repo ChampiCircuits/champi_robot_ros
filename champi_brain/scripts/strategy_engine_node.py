@@ -9,7 +9,7 @@ from rclpy.node import Node
 
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 import rclpy.time
-from std_msgs.msg import String, Int32, Empty
+from std_msgs.msg import String, Int64, Empty, Int64MultiArray, Int32
 from visualization_msgs.msg import Marker, MarkerArray
 
 # markers
@@ -63,9 +63,12 @@ actions = [
     # {"name":"panneau9","type":"tourner_panneau","pose": (50, 3000-275-225-225),  "time": 10, "points": 5},
     
     {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": 10}, #J3
+    {"name":"retour_zone_yellow_inv","type":"retour_zone","pose": (1.0, 2.734, -3.14),  "time": 0, "points": 10}, #J3
     {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": 10}, #B1
-    {"name":"move_middle","type":"just_move","pose": (1.0, 1.5, 1.57),  "time": 0, "points": None},
-    {"name":"move_test","type":"just_move","pose": (1.5, 2.0, -1.57),  "time": 0, "points": None},
+    {"name":"retour_zone_blue_inv","type":"retour_zone","pose": (1.0, 0.265, -1.57),  "time": 0, "points": 10}, #B1
+    {"name":"move_middle","type":"just_move","pose": (1.0, 1.5, 1.57),  "time": 0, "points": 0},
+    {"name":"p5","type":"just_move","pose": (1.+0.5, 1.5, -1.57),  "time": 0, "points": 0},
+    {"name":"p6","type":"just_move","pose": (1.+0.3, 1.5+0.5, -1.57),  "time": 0, "points": 0},
 
 ]
 # ZONE JAUNE BAS GAUCHE 0.145, 0.165, 0.5233
@@ -80,7 +83,8 @@ strategy_yellow = {
     "actions": {
         # "list": ["poserplantesJ2"]
         # "list": ["plantes4","retour_zone_yellow"],
-        "list": ["plantes4","poserplantesJ2","plantes5","poserplantesJ1","plantes6","poserplantesJ3", "retour_zone_yellow"],
+        "list": ["p6","p5", "retour_zone_yellow_inv"],
+        # "list": ["plantes4","poserplantesJ2","plantes5","poserplantesJ1","plantes6","poserplantesJ3", "retour_zone_yellow"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
     }
 }
@@ -89,9 +93,10 @@ strategy_blue = {
     "name": "strategy_blue",
     "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["plantes6","poserplantesB3","plantes5","poserplantesB2","plantes4","poserplantesB1", "retour_zone_blue"],
+        "list": ["p6","p5", "retour_zone_blue_inv"],
+        # "list": ["plantes6","poserplantesB3","plantes5","poserplantesB2","plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4","retour_zone_blue"],
-        # "list": ["plantes4","poserplantesB1", "retour_zone_blue"],
+        # "list": ["plantes6","poserplantesB3", "retour_zone_blue"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_blue"],
     }
 }
@@ -108,7 +113,7 @@ homologation_yellow = {
     "name": "homologation_yellow",
     # "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["retour_zone_blue"], # TODO
+        "list": ["retour_zone_yellow"], # TODO
         # "list": ["plantes5","poserplantesJ2", "retour_zone_yellow"],
     }
 }
@@ -163,16 +168,16 @@ class StrategyEngineNode(Node):
         self.start_time = None
         self.time_left = TOTAL_AVAILABLE_TIME # s, updated each iteration, considering the time to return to the zone
 
-        time.sleep(0.5)
+        time.sleep(0.1)
         self.start_zone_sub = self.create_subscription(String, '/start_zone', self.select_start_zone, 10)
         self.start_zone = None
         
-        time.sleep(0.5)
+        time.sleep(0.1)
         self.action_executor = Action_Executor(self)
 
         # suscribe to robot pose (x,y,theta)
         self.odom_subscriber = self.create_subscription(Odometry, '/odometry/filtered', self.update_robot_pose, 10)
-        time.sleep(0.5)
+        time.sleep(0.1)
 
         # create /stop_using_camera publisher (String which is "stop" when we want to stop using the camera and "start" when we want to start using it again)
         # self.stop_cam_publisher = self.create_publisher(String, '/stop_using_camera', 10)
@@ -180,22 +185,22 @@ class StrategyEngineNode(Node):
         # publisher for the final score
         self.score_publisher = self.create_publisher(Int32, '/final_score', 10)
         self.final_score = 0
-        time.sleep(0.5)
+        time.sleep(0.1)
 
         # tirette de démarrage subscriber
         self.tirette_sub = self.create_subscription(Empty, '/tirette_start', self.start_match, 10)
-        time.sleep(0.5)
+        time.sleep(0.1)
 
         # ACT CAN sub and pub
-        self.CAN_pub = self.create_publisher(Int32, '/act_status', 10)
-        self.CAN_sub = self.create_subscription(Int32, '/act_cmd', self.act_sub_update, 10)
+        self.CAN_pub = self.create_publisher(Int64, '/act_status', 10)
+        self.CAN_sub = self.create_subscription(Int64MultiArray, '/act_cmd', self.act_sub_update, 10)
         self.CAN_state = None
-        time.sleep(0.5)
+        time.sleep(0.1)
 
 
         self.markers_publisher_circles = self.create_publisher(MarkerArray, 'markers_selected_action', 10)
         self.markers_publisher_plants = self.create_publisher(MarkerArray, 'markers_plants_detected', 10)
-        time.sleep(0.5)
+        time.sleep(0.1)
 
         # draw init pose
         # draw_rviz_markers(self, [init_robot_pose], "/markers_selected_action",ColorRGBA(r=1., g=0., b=1., a=1.),0.050)

@@ -41,6 +41,8 @@ class Robot_Navigator():
         
         while not self.navigator.isTaskComplete():
             feedback = self.navigator.getFeedback()
+            if feedback is None:
+                return True
 
             time_of_arrival = Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9
 
