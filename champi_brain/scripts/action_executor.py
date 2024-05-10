@@ -6,7 +6,7 @@ import time
 from typing import Tuple
 from enum import Enum
 
-from std_msgs.msg import String, ColorRGBA, Int64, Int64MultiArray
+from std_msgs.msg import String, ColorRGBA, Int64, Int64MultiArray, Empty
 
 from rclpy.node import Node
 
@@ -34,6 +34,22 @@ class Action_Executor():
         # MAIN STATE MACHINE
         self.state = State.NO_ACTION
         self.current_action = None
+
+        self.move_state = None
+      
+        self.gfini = self.strategy_node.create_subscription(Empty, '/gfini', self.gfini_callback, 10)
+        
+
+    def gfini_callback(self, msg):
+        if self.move_state == State.WAITING_END_MOVE:
+            self.move_state = State.FINISHED_MOVE
+
+
+        if self.state == State.JUST_MOVE:
+            self.state = State.ACTION_FINISHED
+        if self.state == State.RETOUR:
+            self.state = State.ACTION_FINISHED
+
 
     def new_action(self, action:dict):
         get_logger('rclpy').info(f"ACTION EXECUTOR NEW ACTION: {action['name']}")
@@ -67,19 +83,22 @@ class Action_Executor():
     def update_just_move(self):
         get_logger('rclpy').info(f"\Moving to to {self.current_action['pose']}")
         self.robot_navigator.navigate_to(self.current_action['pose'], 100) # TODO pas  100
-        self.state = State.ACTION_FINISHED
-
 
     def update_retour(self):
         get_logger('rclpy').info(f"\Going home to {self.current_action['pose']}")
 
         self.robot_navigator.navigate_to(self.current_action['pose'], 100) # TODO pas  100
-        self.state = State.ACTION_FINISHED
+        
 
     def update_pose_plantes(self):
         get_logger('rclpy').info(f"\Putting plants...")
         if self.strategy_node.CAN_state != CAN_MSGS.FREE:
             return
+        
+        if self.move_state == State.FINISHED_MOVE:
+            self.publish_on_CAN(CAN_MSGS.RELEASE_PLANT)
+            self.plants_put += 1
+            get_logger('rclpy').info(f"#########Put 1 plant out...")
 
         if self.plants_put < 6:
             if self.plants_put == 0:
@@ -101,9 +120,7 @@ class Action_Executor():
                             self.plants_put_pose[1], 
                             self.plants_put_pose[2]]
             self.robot_navigator.navigate_to(self.plants_put_pose, 10)
-            self.publish_on_CAN(CAN_MSGS.RELEASE_PLANT)
-            self.plants_put += 1
-            get_logger('rclpy').info(f"#########Put 1 plant out...")
+            self.move_state = State.WAITING_END_MOVE
         else:
             self.state = State.ACTION_FINISHED
             self.plants_put = 0
@@ -137,22 +154,28 @@ class Action_Executor():
             self.trajectory_points = plants_taker_api.compute_trajectory_points(self.plants_positions, self.front_pose_from_plants, self.current_action["pose"])
             self.state_taking_plants = StateTakingPlants.NAVIGATE_TO_TRAJECTORY_1
         elif self.state_taking_plants == StateTakingPlants.NAVIGATE_TO_TRAJECTORY_1:
-            get_logger('rclpy').info(f"\tNavigating to first point of trajectory")
-            # navigate to the first point of the trajectory
-            self.robot_navigator.navigate_to(self.trajectory_points[0], self.current_action["time"])
-            self.publish_on_CAN(CAN_MSGS.START_GRAB_PLANTS)
-            self.state_taking_plants = StateTakingPlants.NAVIGATE_TO_TRAJECTORY_2
+            if not self.state == State.WAITING_END_MOVE:
+                get_logger('rclpy').info(f"\tNavigating to first point of trajectory")
+                # navigate to the first point of the trajectory
+                self.robot_navigator.navigate_to(self.trajectory_points[0], self.current_action["time"])
+                self.move_state = State.WAITING_END_MOVE
+
+            if self.move_state == State.FINISHED_MOVE:
+                self.publish_on_CAN(CAN_MSGS.START_GRAB_PLANTS)
+                self.state_taking_plants = StateTakingPlants.NAVIGATE_TO_TRAJECTORY_2
         elif self.state_taking_plants == StateTakingPlants.NAVIGATE_TO_TRAJECTORY_2:
-            get_logger('rclpy').info(f"\tNavigating to second point of trajectory")
-            # navigate to the second point of the trajectory
-            self.robot_navigator.navigate_to(self.trajectory_points[1], self.current_action["time"])
-            self.publish_on_CAN(CAN_MSGS.STOP_GRAB_PLANTS)
-            self.state_taking_plants = None
-            self.state = State.NO_ACTION
-            self.front_pose_from_plants = None
-            self.plants_positions = None
-            self.trajectory_points = None
-            self.state = State.ACTION_FINISHED
+            if not self.move_state == State.WAITING_END_MOVE:
+                get_logger('rclpy').info(f"\tNavigating to second point of trajectory")
+                # navigate to the second point of the trajectory
+                self.robot_navigator.navigate_to(self.trajectory_points[1], self.current_action["time"])
+            if self.move_state == State.FINISHED_MOVE:
+                self.publish_on_CAN(CAN_MSGS.STOP_GRAB_PLANTS)
+                self.state_taking_plants = None
+                self.state = State.NO_ACTION
+                self.front_pose_from_plants = None
+                self.plants_positions = None
+                self.trajectory_points = None
+                self.state = State.ACTION_FINISHED
 
 
 

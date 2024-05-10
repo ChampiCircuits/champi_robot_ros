@@ -38,7 +38,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        base_control_simu_node,
+        # base_control_simu_node,
         planner_node,
         pose_control_node,
         # gui_node

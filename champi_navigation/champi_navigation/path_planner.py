@@ -2,7 +2,7 @@
 
 from shapely import Point
 from icecream import ic
-from math import sin, cos
+from math import sin, cos, atan2
 
 from champi_navigation import avoidance
 import champi_navigation.trajectory as trajectory
@@ -19,7 +19,7 @@ class PathPlanner:
         self.world_state = world_state
 
         self.cmd_goal = None
-        self.enable_avoidance = True
+        self.enable_avoidance = False
 
         # self.environment_state = None
         # self.robot_state = None
@@ -76,7 +76,10 @@ class PathPlanner:
     def compute_path_simple(self):
         """Return a direct path from the current robot position to the goal.
         Must be called with a goal != None."""
-        cmd_path = [self.robot_state.current_pose, self.cmd_goal]
+        p_stamped = self.world_state.self_robot.pose_stamped
+        goal = self.cmd_goal
+        cmd_path = [(p_stamped.pose.position.x,p_stamped.pose.position.y,2 * atan2(p_stamped.pose.orientation.z, p_stamped.pose.orientation.w)), 
+                    (goal.position.x, goal.position.y, 2 * atan2(goal.orientation.z, goal.orientation.w))]
         return cmd_path
 
 

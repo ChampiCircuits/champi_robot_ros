@@ -11,106 +11,113 @@ import time
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
+from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Empty
 
-# class CmdVelUpdater:
-#     def __init__(self):
-#         # PIDs
-#         self.pid_pos_x = PID(1, 0, 0)
-#         self.pid_pos_y = PID(1, 0, 0)
-#         self.pid_pos_theta = PID(1, 0, 0,)
-
-
-#     def compute_cmd_vel(self, robot_state, pose_goal, dt):
-#         # if it's shorter to turn in the other direction, we do it
-#         # TODO not always working
-#         error_theta = pose_goal[2] - robot_state.current_pose[2]
-#         if abs(error_theta) > pi:
-#             if error_theta > 0:
-#                 error_theta -= 2*pi
-#             else:
-#                 error_theta += 2*pi
-        
-#         cmd_vel = Vel()
-
-#         cmd_vel.theta = self.pid_pos_theta.update(error_theta, dt)
-
-#         # # PID
-#         cmd_vel.x = self.pid_pos_x.update(pose_goal[0] - robot_state.current_pose[0], dt)
-#         cmd_vel.y = self.pid_pos_y.update(pose_goal[1] - robot_state.current_pose[1], dt)
-
-#         return cmd_vel
-
-class CmdVelUpdater2:
+class CmdVelUpdater:
     def __init__(self):
-        self.start_pose = None
-        self.goal_pose = None
-        
-        self.vel_profile_mag = TrapezoidalVelocityProfile(0.5, 0.5)
-        self.vel_profile_theta = TrapezoidalVelocityProfile(2.0, 1.0)
+        # PIDs
+        self.pid_pos_x = PID(1, 0, 0)
+        self.pid_pos_y = PID(1, 0, 0)
+        self.pid_pos_theta = PID(1, 0, 0,)
 
-        self.pid_correct_dir = PID(2, 0, 1)
         self.last_time_called = time.time()
-    
-    def compute_cmd_vel(self, robot_current_pose, pose_goal):
+
+
+    def compute_cmd_vel(self, robot_pose, pose_goal):
         dt = time.time() - self.last_time_called
         self.last_time_called = time.time()
 
-        # Quick fix parce qu'il faut avoir la pose de depart à vitesse = 0
-        if self.goal_pose != pose_goal:
-
-            self.start_pose = robot_current_pose
-            self.goal_pose = pose_goal
-            # print("start_pose",self.start_pose)
-            # print("goal_pose",self.goal_pose)
-
-            distance_start_to_goal = ((pose_goal[0] - self.start_pose[0])**2 + (pose_goal[1] - self.start_pose[1])**2)**0.5
-            # distance_start_to_goal = ((pose_goal[0] - self.start_pose.pose.position.x)**2 + (pose_goal[1] - self.start_pose.pose.position.y)**2)**0.5
-            current_mag_speed = 0
-            if self.vel_profile_mag.t_start is not None:
-                current_mag_speed = self.vel_profile_mag.compute_vel(None)
-            self.vel_profile_mag.set_new_goal(distance_start_to_goal, 0, current_mag_speed) # TODO pareil pour theta?
-
-            # if it's shorter to turn in the other direction, we do it
-            error_theta = pose_goal[2] - robot_current_pose[2]
-            if abs(error_theta) > pi:
-                if error_theta > 0:
-                    error_theta -= 2*pi
-                else:
-                    error_theta += 2*pi
-
-            self.vel_profile_theta.set_new_goal(error_theta, 0)
-
-        # Compute distance to goal
-        # distance_to_goal = ((pose_goal[0] - robot_current_pose[0])**2 + (pose_goal[1] - robot_current_pose[1])**2)**0.5
+        # if it's shorter to turn in the other direction, we do it
+        # TODO not always working
+        error_theta = pose_goal[2] - robot_pose[2]
+        if abs(error_theta) > pi:
+            if error_theta > 0:
+                error_theta -= 2*pi
+            else:
+                error_theta += 2*pi
         
-        mag = self.vel_profile_mag.compute_vel(None)
-        theta = self.vel_profile_theta.compute_vel(None)
-        theta=0 # TODO REMETTRE
-
-        angle_vec_dir = atan2(pose_goal[1] - robot_current_pose[1], pose_goal[0] - robot_current_pose[0])
-
-
-        dist=0
-        if robot_current_pose[:2] != self.start_pose[:2]: # sinon div par 0
-            dist = dist_point_to_line_signed(robot_current_pose[:2], [self.start_pose[:2], self.goal_pose[:2]])
-        
-        correction = self.pid_correct_dir.update(dist, dt)
-
-        correction_max = 0.5
-        if correction > correction_max:
-            correction = correction_max
-        elif correction < -correction_max:
-            correction = -correction_max
-        
-        angle_vec_dir += correction
-
         cmd_vel = Vel()
-        cmd_vel.init_from_mag_ang(mag, angle_vec_dir, theta)
+
+        cmd_vel.theta = self.pid_pos_theta.update(error_theta, dt)
+
+        # # PID
+        cmd_vel.x = self.pid_pos_x.update(pose_goal[0] - robot_pose[0], dt)
+        cmd_vel.y = self.pid_pos_y.update(pose_goal[1] - robot_pose[1], dt)
 
         return cmd_vel
+
+# class CmdVelUpdater2:
+#     def __init__(self):
+#         self.start_pose = None
+#         self.goal_pose = None
+        
+#         self.vel_profile_mag = TrapezoidalVelocityProfile(0.5, 0.5)
+#         self.vel_profile_theta = TrapezoidalVelocityProfile(2.0, 1.0)
+
+#         self.pid_correct_dir = PID(2, 0, 1)
+#         self.last_time_called = time.time()
+    
+#     def compute_cmd_vel(self, robot_current_pose, pose_goal):
+#         dt = time.time() - self.last_time_called
+#         self.last_time_called = time.time()
+
+#         # Quick fix parce qu'il faut avoir la pose de depart à vitesse = 0
+#         if self.goal_pose != pose_goal:
+
+#             self.start_pose = robot_current_pose
+#             self.goal_pose = pose_goal
+#             # print("start_pose",self.start_pose)
+#             # print("goal_pose",self.goal_pose)
+
+#             distance_start_to_goal = ((pose_goal[0] - self.start_pose[0])**2 + (pose_goal[1] - self.start_pose[1])**2)**0.5
+#             # distance_start_to_goal = ((pose_goal[0] - self.start_pose.pose.position.x)**2 + (pose_goal[1] - self.start_pose.pose.position.y)**2)**0.5
+#             current_mag_speed = 0
+#             if self.vel_profile_mag.t_start is not None:
+#                 current_mag_speed = self.vel_profile_mag.compute_vel(None)
+#             self.vel_profile_mag.set_new_goal(distance_start_to_goal, 0, current_mag_speed) # TODO pareil pour theta?
+
+#             # if it's shorter to turn in the other direction, we do it
+#             error_theta = pose_goal[2] - robot_current_pose[2]
+#             if abs(error_theta) > pi:
+#                 if error_theta > 0:
+#                     error_theta -= 2*pi
+#                 else:
+#                     error_theta += 2*pi
+
+#             self.vel_profile_theta.set_new_goal(error_theta, 0)
+
+#         # Compute distance to goal
+#         # distance_to_goal = ((pose_goal[0] - robot_current_pose[0])**2 + (pose_goal[1] - robot_current_pose[1])**2)**0.5
+        
+#         mag = self.vel_profile_mag.compute_vel(None)
+#         theta = self.vel_profile_theta.compute_vel(None)
+#         theta=0 # TODO REMETTRE
+
+#         angle_vec_dir = atan2(pose_goal[1] - robot_current_pose[1], pose_goal[0] - robot_current_pose[0])
+
+
+#         dist=0
+#         if robot_current_pose[:2] != self.start_pose[:2]: # sinon div par 0
+#             dist = dist_point_to_line_signed(robot_current_pose[:2], [self.start_pose[:2], self.goal_pose[:2]])
+        
+#         correction = self.pid_correct_dir.update(dist, dt)
+
+#         correction_max = 0.5
+#         if correction > correction_max:
+#             correction = correction_max
+#         elif correction < -correction_max:
+#             correction = -correction_max
+        
+#         angle_vec_dir += correction
+
+#         cmd_vel = Vel()
+#         cmd_vel.init_from_mag_ang(mag, angle_vec_dir, theta)
+
+#         return cmd_vel
 
     
 def dist_point_to_line (point, line):
@@ -239,11 +246,19 @@ class TrapezoidalVelocityProfile:
 class PoseControl(Node):
     def __init__(self):
         super().__init__('pose_control_node')
+        self.subscription_lidar = self.create_subscription(
+            LaserScan,
+            '/scan',
+            self.lidar_callback,
+            10)
+        self.subscription_lidar  # prevent unused variable warning
+        self.stop = False
+
         self.control_loop_period = self.declare_parameter('control_loop_period', 0.1).value        
 
-        self.cmd_vel_pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
+        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.path_sub = self.create_subscription(Path, '/cmd_path', self.path_callback, 10)
-        self.current_pose_sub = self.create_subscription(Odometry, '/odom', self.current_pose_callback, 10)
+        self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
 
         # Timers
         self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
@@ -251,10 +266,15 @@ class PoseControl(Node):
         # Diagnostic
         self.last_time_ctrl_loop = None
 
+        self.gfini_pub = self.create_publisher(Empty, '/gfini', 10)
+        self.already_publised = False
+        self.new_goal = True
+
         # Objects instanciation
 
         self.robot_current_pose = None # TODO s'en debarasser ?
-        self.cmd_vel_updater = CmdVelUpdater2()
+        self.cmd_vel_updater = CmdVelUpdater()
+        # self.cmd_vel_updater = CmdVelUpdater2()
 
         # Variables related to goals
         
@@ -266,6 +286,17 @@ class PoseControl(Node):
         self.current_goal = None
         # Convenience variable that is equal to cmd_path[i_goal-1]
         # self.prev_goal = None
+
+        self.goal_reached = False
+
+    def lidar_callback(self, msg):
+        self.stop = False
+        for distance in msg.ranges:
+            # print(distance)
+            if distance < 0.5 and distance >0.1:
+                # print(f"Distance: {distance} is greater than 0.3")
+                self.stop = True
+                break
 
     def current_pose_callback(self, msg):
         """Callback for the current pose message. It is called when a new pose is received from topic."""
@@ -330,36 +361,47 @@ class PoseControl(Node):
             # self.prev_goal = self.cmd_path[0]    
 
     def control_loop_spin_once(self):
+       
         if self.i_goal is None:
             return Vel(0., 0., 0.).to_twist() # No cmd path to follow, return
         
         goal_reached = self.is_current_goal_reached()
-        if goal_reached:
+
+        if goal_reached and not self.goal_reached:
+            self.goal_reached = True
+
+            empty = Empty()
+            self.gfini_pub.publish(empty)
             self.switch_to_next_goal()
+            self.already_publised = True
+
+        elif not goal_reached and self.goal_reached:
+            self.goal_reached = False
+
         # print("i_goal:", self.i_goal)
         
         # We reached the last pose of the cmd path
         if self.i_goal is None:
             return Vel(0., 0., 0.).to_twist()
 
-        # Compute the command velocity
-        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.robot_current_pose, self.current_goal)
-        # express in the base_link frame
-        cmd_vel = Vel.to_robot_frame(self.robot_current_pose, cmd_vel)    
-        # convert to cmd_twist
-        cmd_twist = cmd_vel.to_twist()
 
-        
+        if not self.stop:
+            # Compute the command velocity
+            cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.robot_current_pose, self.current_goal)
+            # express in the base_link frame
+            cmd_vel = Vel.to_robot_frame(self.robot_current_pose, cmd_vel)    
+            # convert to cmd_twist
+            cmd_twist = cmd_vel.to_twist()
 
-        # publish the velocity
-        cmd_twist_stamped = TwistStamped()
-        cmd_twist_stamped.header.stamp = self.get_clock().now().to_msg()
-        cmd_twist_stamped.header.frame_id = "base_link"
-        cmd_twist_stamped.twist = cmd_twist
+            # Publish the command
+            self.cmd_vel_pub.publish(cmd_twist) #TODO remettre
+        else:
+            cmd_vel = Twist()
+            cmd_vel.linear.x = 0.
+            cmd_vel.linear.y = 0.
+            cmd_vel.angular.z = 0.
 
-        # Publish the command
-        self.cmd_vel_pub.publish(cmd_twist_stamped) #TODO remettre
-
+            self.cmd_vel_pub.publish(cmd_vel) #TODO remettre
         return
 
 
@@ -367,8 +409,8 @@ class PoseControl(Node):
         """Checks if the goal is reached and switch to the next one if it is the case.
         Should not be called if i_goal is None = no path to follow."""
 
-        error_max_lin = 0.001
-        error_max_ang = 0.01
+        error_max_lin = 0.02
+        error_max_ang = 0.02
 
         # ic(self.robot_current_pose)
         # ic(self.current_goal)

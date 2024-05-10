@@ -3,7 +3,11 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+
 import time
+from pid_move import *
+from math import atan2
 
 class LidarNode(Node):
     def __init__(self):
@@ -15,24 +19,27 @@ class LidarNode(Node):
             10)
         self.subscription  # prevent unused variable warning
 
+        # Publishers and subscribers
+        self.pub_cmd_vel = self.create_publisher(Twist, "/base_controller/cmd_vel", 10)
+        self.odom_subscriber = self.create_subscription(Odometry, '/odometry/filtered', self.update_robot_pose, 10)
 
-        # pub cmd vel
-        self.pub_cmd_vel = self.create_publisher(Twist,"/base_controller/cmd_vel", 10)
+        # PID controller parameters
+        self.kp = 0.5  # Proportional gain
+        self.ki = 0.1  # Integral gain
+        self.kd = 0.2  # Derivative gain
 
+        # Robot pose
+        self.robot_pose = None
 
-        self.i_vel = 0
-        
-        self.vels = [
-            [0.2, 0., 3.],
-            [0., 0.2, 7.5],
-            [-0.2, 0., 2.5]
-        ]
-        self.start_time = time.time()
-        self.last_time = time.time()
-        self.temps_deplacement = 0
+        self.current_target_pose = None
+        self.i_targets = 0
+
         self.stop_all = False
         self.first_time = True
 
+    def update_robot_pose(self, msg):
+        # Callback to update robot's current pose
+        self.robot_pose = [msg.pose.pose.position.x, msg.pose.pose.position.y, 2*atan2(msg.pose.pose.orientation.z,msg.pose.pose.orientation.w)]
 
     def listener_callback(self, msg):
         if self.first_time:
@@ -40,6 +47,7 @@ class LidarNode(Node):
             self.last_time = time.time()
             self.first_time = False
         if self.stop_all:
+            quit()
             return
         stop = False
         # Assuming the ranges array is populated
@@ -53,6 +61,7 @@ class LidarNode(Node):
             twist = Twist()
             twist.linear.x = 0.0
             twist.linear.y = 0.0
+            twist.angular.z = 0.0
             self.pub_cmd_vel.publish(twist)
 
             # si on est stopped, on décompte pas le temps
@@ -62,13 +71,13 @@ class LidarNode(Node):
                 twist = Twist()
                 twist.linear.x = 0.0
                 twist.linear.y = 0.0
+                twist.angular.z = 0.0
                 self.pub_cmd_vel.publish(twist)
                 return
             
             self.get_logger().info(f"{self.i_vel}")
-            twist = Twist()
-            twist.linear.x = self.vels[self.i_vel][0]
-            twist.linear.y = self.vels[self.i_vel][1]
+            twist = go_to_pose(self.current_target_pose, self.robot_pose)
+            
             self.pub_cmd_vel.publish(twist)
             
             if self.temps_deplacement > self.vels[self.i_vel][2]:
@@ -80,6 +89,7 @@ class LidarNode(Node):
                 twist = Twist()
                 twist.linear.x = 0.0
                 twist.linear.y = 0.0
+                twist.angular.z = 0.0
                 self.pub_cmd_vel.publish(twist)
                 self.stop_all = True
 

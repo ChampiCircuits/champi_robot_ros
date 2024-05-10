@@ -2,7 +2,7 @@
 
 from champi_navigation.path_planner import PathPlanner
 from champi_navigation.world_state import WorldState
-from champi_navigation.gui_node import GuiV2
+# from champi_navigation.gui_node import GuiV2
 
 import rclpy
 from rclpy.node import Node
@@ -11,6 +11,7 @@ from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Path
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker
+from std_msgs.msg import Empty
 
 from math import sin, cos
 from icecream import ic
@@ -24,7 +25,8 @@ class PlannerNode(Node):
         self.init_pose_sub = self.create_subscription(PoseWithCovarianceStamped, '/initialpose', self.define_init_pose_callback, 10)
 
         self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
-        self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
+        self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
+
 
         # viz only
         self.markers_pub_obstacle = self.create_publisher(Marker, "/visualization_marker_obstacle", 10)
@@ -37,9 +39,9 @@ class PlannerNode(Node):
         self.world_state = WorldState()
         self.path_planner = PathPlanner(self.world_state)
 
-        self.gui = GuiV2(self)
-        self.gui.opponent_to_draw = self.world_state.opponent_robot
-        self.gui.robot_to_draw = self.world_state.self_robot
+        # self.gui = GuiV2(self)
+        # self.gui.opponent_to_draw = self.world_state.opponent_robot
+        # self.gui.robot_to_draw = self.world_state.self_robot
 
         #debug
         self.last_path = None
@@ -128,8 +130,8 @@ class PlannerNode(Node):
         #     self.gui.add_lines_to_draw(segs)
 
         self.path_pub.publish(path_msg)
-        self.pub_rviz_obstacles()
-        self.gui.callback()
+        # self.pub_rviz_obstacles()
+        # self.gui.callback()
 
 def main(args=None):
     rclpy.init(args=args)

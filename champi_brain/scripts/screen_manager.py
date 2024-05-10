@@ -211,8 +211,8 @@ class Application(tk.Tk):
         self.start_zone = None
 
         # Charger l'image à utiliser pour le bouton central
-        self.image = Image.open("/home/champi/dev/ws_0/src/champi_robot_ros/champi_brain/scripts/arbre.png")
-        # self.image = Image.open("champi_brain/scripts/arbre.png")
+        # self.image = Image.open("/home/champi/dev/ws_0/src/champi_robot_ros/champi_brain/scripts/arbre.png")
+        self.image = Image.open("champi_brain/scripts/arbre.png")
         self.photo_image = ImageTk.PhotoImage(self.image)
 
         # Création de la grille 3x3
