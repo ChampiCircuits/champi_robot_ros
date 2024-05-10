@@ -54,6 +54,7 @@ public:
         max_decel_linear_ = this->declare_parameter<double>("max_deceleration_linear");
         max_accel_angular_ = this->declare_parameter<double>("max_acceleration_angular");
         max_decel_angular_ = this->declare_parameter<double>("max_deceleration_angular");
+        max_speed_ = this->declare_parameter<double>("max_linear_speed");
 
         // Get covariances
         cov_pose_ = this->declare_parameter<std::vector<double>>("covariances.pose");
@@ -191,6 +192,7 @@ private:
     double timeout_connexion_ros_; // receive twist from ROS
     std::vector<double> cov_pose_;
     std::vector<double> cov_vel_;
+    double max_speed_;
 
     bool enable_accel_limit_;
     double max_accel_linear_;
@@ -622,6 +624,9 @@ private:
             // Limit linear acceleration xy
             double current_speed = sqrt(pow(current_vel_.x(), 2) + pow(current_vel_.y(), 2));
             double goal_speed = sqrt(pow(latest_twist_->linear.x, 2) + pow(latest_twist_->linear.y, 2));
+            if(goal_speed > max_speed_) {
+                goal_speed = max_speed_;
+            }
             double cmd_vxy_limited = limit_accel_decel(current_speed, goal_speed, max_accel_linear_, max_decel_linear_, dt_measured_);
 
             double vel_vect_angle;

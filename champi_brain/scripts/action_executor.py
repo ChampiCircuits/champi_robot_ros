@@ -86,7 +86,6 @@ class Action_Executor():
 
     def update_retour(self):
         get_logger('rclpy').info(f"\Going home to {self.current_action['pose']}")
-
         self.robot_navigator.navigate_to(self.current_action['pose'], 100) # TODO pas  100
         
 

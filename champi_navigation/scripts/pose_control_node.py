@@ -293,7 +293,7 @@ class PoseControl(Node):
         self.stop = False
         for distance in msg.ranges:
             # print(distance)
-            if distance < 0.5 and distance >0.1:
+            if distance < 0.6 and distance >0.1:
                 # print(f"Distance: {distance} is greater than 0.3")
                 self.stop = True
                 break

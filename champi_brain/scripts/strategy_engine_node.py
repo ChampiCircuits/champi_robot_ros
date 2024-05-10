@@ -63,12 +63,14 @@ actions = [
     # {"name":"panneau9","type":"tourner_panneau","pose": (50, 3000-275-225-225),  "time": 10, "points": 5},
     
     {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": 10}, #J3
-    {"name":"retour_zone_yellow_inv","type":"retour_zone","pose": (1.0, 2.734, -3.14),  "time": 0, "points": 10}, #J3
+    {"name":"retour_zone_yellow_inv","type":"retour_zone","pose": (2.0-0.2, 0.2, -3.14),  "time": 0, "points": 10}, #J3
     {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": 10}, #B1
     {"name":"retour_zone_blue_inv","type":"retour_zone","pose": (1.0, 0.265, -1.57),  "time": 0, "points": 10}, #B1
     {"name":"move_middle","type":"just_move","pose": (1.0, 1.5, 1.57),  "time": 0, "points": 0},
     {"name":"p5","type":"just_move","pose": (1.+0.5, 1.5, -1.57),  "time": 0, "points": 0},
     {"name":"p6","type":"just_move","pose": (1.+0.3, 1.5+0.5, -1.57),  "time": 0, "points": 0},
+    {"name":"middle","type":"just_move","pose": (1., 1.5, 1.57),  "time": 0, "points": 0},
+    {"name":"A1","type":"just_move","pose": (0.5, 0.5, 1.0466),  "time": 0, "points": 0},
 
 ]
 # ZONE JAUNE BAS GAUCHE 0.145, 0.165, 0.5233
@@ -105,7 +107,7 @@ homologation_blue = {
     "name": "homologation_blue",
     # "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["retour_zone_blue"],
+        "list": ["A1","middle","retour_zone_blue_inv"],
         # "list": ["plantes5","poserplantesB3", "retour_zone_blue"],
     }
 }
@@ -113,7 +115,7 @@ homologation_yellow = {
     "name": "homologation_yellow",
     # "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["retour_zone_yellow"], # TODO
+        "list": ["A1","middle","retour_zone_yellow_inv"], # TODO
         # "list": ["plantes5","poserplantesJ2", "retour_zone_yellow"],
     }
 }
