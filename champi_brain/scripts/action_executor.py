@@ -6,7 +6,7 @@ import time
 from typing import Tuple
 from enum import Enum
 
-from std_msgs.msg import String, ColorRGBA
+from std_msgs.msg import String, ColorRGBA, Int64, Int64MultiArray
 
 from rclpy.node import Node
 
@@ -21,7 +21,7 @@ class Action_Executor():
     def __init__(self,strategy_node: Node) -> None:
         # check that everything is ready
         self.wait_for_ready()
-        self.robot_navigator = Robot_Navigator()
+        self.robot_navigator = Robot_Navigator(strategy_node)
         self.strategy_node = strategy_node
 
         # PLANTS STATE MACHINE
@@ -158,8 +158,15 @@ class Action_Executor():
 
     def publish_on_CAN(self, message):
         # publish on the topic "/CAN" to be forwarded by CAN by the API
-        msg = String()
-        msg.data = str(int(message))
+        msg = Int64()
+        if message == CAN_MSGS.START_GRAB_PLANTS:
+            msg.data = 0
+        elif message == CAN_MSGS.STOP_GRAB_PLANTS:
+            msg.data = 1
+        elif message == CAN_MSGS.RELEASE_PLANT:
+            msg.data = 2
+        elif message == CAN_MSGS.TURN_SOLAR_PANEL:
+            msg.data = 3
         self.strategy_node.CAN_pub.publish(msg)
 
     def wait_for_ready(self):

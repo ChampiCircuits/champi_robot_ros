@@ -70,13 +70,6 @@ class VisualLocalizationNode(Node):
 
         self.set_pose_done = False
 
-        self.set_pose_client = self.create_client(SetPose, '/set_pose')
-        while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-
-        self.future_set_pose_response = None
-
-
         ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
         self.ref_img = self.load_ref_image(ref_img_path)
 
@@ -87,6 +80,10 @@ class VisualLocalizationNode(Node):
         self.ref_img = cv2.copyMakeBorder(self.ref_img, self.borders_offsets[1], self.borders_offsets[1],
                                           self.borders_offsets[0], self.borders_offsets[0],
                                           cv2.BORDER_CONSTANT, value=[0, 0, 0])
+
+        self.aruco_dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        self.aruco_parameters =  cv2.aruco.DetectorParameters()
+        self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dictionary, self.aruco_parameters)
 
         # handle camera info
         self.camera_info = None
@@ -138,7 +135,7 @@ class VisualLocalizationNode(Node):
 
             # initialize bird view
             K = np.array(self.camera_info.k).reshape(3,3)
-            self.bird_view = bv.BirdView(K, transform_mtx, (0.27, -0.17), (0.82, 0.16), resolution=378)
+            self.bird_view = bv.BirdView(K, transform_mtx, (0.27, -0.4), (0.82, 0.4), resolution=378)
 
             self.pos_cam_in_bird_view_pxls = self.bird_view.get_work_plane_pt_in_bird_img(np.array([0, 0, 1]))
             ic(self.pos_cam_in_bird_view_pxls)
@@ -168,9 +165,13 @@ class VisualLocalizationNode(Node):
 
         self.get_logger().info(f"Got first robot pose: {self.robot_pose}", once=True)
 
+
+
     def callback_cam_info(self, msg):
         if self.camera_info is None:
             self.camera_info = msg
+
+
 
     def image_callback(self, msg):
 
@@ -184,6 +185,9 @@ class VisualLocalizationNode(Node):
         # initialize bird view if not already
         if self.bird_view is None:
             self.init_bird_view()
+
+        if self.map1 is None:
+            return
 
 
         # ==================================== PREPROCESSING ====================================
@@ -202,104 +206,83 @@ class VisualLocalizationNode(Node):
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
 
-        # cv2.imshow("bird_view", bird_view_img)
-        # cv2.waitKey(1)
-
-
-        if not self.angle_initialized:
-
-            if self.initialize_pose(bird_view_img):
-                self.angle_initialized = True
-            else:
-                self.get_logger().info("Could not initialize")
-                return
-
-        if self.future_set_pose_response is None or not self.future_set_pose_response.done():
-            self.get_logger().info("Waiting for set_pose service response...")
-            return
-
-        self.set_pose_done = True
-
-
-        # if self.enable_viz:
-        #     # draw initialization image
-        #     if self.result_init_img is not None:
-        #         cv2.imshow("Initialization", self.result_init_img)
-        #         cv2.waitKey(1)
-
-        # Wait for robot pose
-        if self.robot_pose is None:
-            self.get_logger().info("waiting for robot pose...", once=True)
-            return
-        self.get_logger().info("robot pose received", once=True)
-
-        self.get_logger().info("Starting visual localization!", once=True)
+        cv2.imshow("bird_view", bird_view_img)
+        cv2.waitKey(1)
 
 
 
-        # # Save bird view to file
-        # cv2.imwrite("bird_view.png", bird_view_img)
-        # # Save predicted bird view to file
-        # cv2.imwrite("predicted_bird_view.png", bv_pred)
+        # ================================== DETECTION =========================================
 
-        # ============================= COMPUTE POSE =================================
+        markerCorners, markerIds, rejectedCandidates = self.aruco_detector.detectMarkers(bird_view_img)
 
-        angle = self.robot_pose.theta
-        robot_pos = self.get_pos_robot(angle, bird_view_img)
-        robot_pose_computed = Pose(robot_pos[1], robot_pos[0], angle)
+        for i, corners in enumerate(markerCorners):
+            # self.get_logger().info(f"corners {corners}")
+            # self.get_logger().info(f"ids {markerIds[i]}")
+        
+            if markerIds[i] >= 20 and markerIds[i]<=23:# arucos au sol
+                center_marker = np.mean(corners[0], axis=0)
 
-        # Print current pose from odometry and computed pose
-        self.get_logger().info(f"Robot pose (odom): {self.robot_pose}")
-        self.get_logger().info(f"Robot pose (computed): {robot_pose_computed}")
+                # Angle du marqueur par rapport à l'axe horizontal (angle du premier côté)
+                dx = corners[0][1][0] - corners[0][0][0]
+                dy = corners[0][1][1] - corners[0][0][1]
+                angle_rad = np.arctan2(dy, dx)  # angle en radians
 
+                self.get_logger().info(f"center_marker {center_marker}, angle {angle_rad*180/3.14}°")
 
-        # ============================= PUBLISH ODOMETRY =================================
+                pos_px_in_bv = np.array([center_marker[0], center_marker[1], 1])
 
-        odom_msg = Odometry()
-        odom_msg.header.stamp = self.get_clock().now().to_msg()
-        odom_msg.header.frame_id = 'map'
-        odom_msg.child_frame_id = 'base_link'
-        odom_msg.pose.pose.position.x = robot_pos[0]
-        odom_msg.pose.pose.position.y = robot_pos[1]
-        q = R.from_euler('z', angle).as_quat()
-        odom_msg.pose.pose.orientation.x = q[0]
-        odom_msg.pose.pose.orientation.y = q[1]
-        odom_msg.pose.pose.orientation.z = q[2]
-        odom_msg.pose.pose.orientation.w = q[3]
+                pos_m = np.linalg.inv(self.bird_view.M_workplane_real_to_img_) @ pos_px_in_bv
+                # pos_m = pos_m[:2]
+                ic(pos_m)
 
-        # Very low covariance
-        cov = 0.00001
-        for i in range(36):
-            if i % 7 == 0:
-                odom_msg.pose.covariance[i] = cov
+                if markerIds[i]==20:
+                    x = 2.-0.45-0.12/2.
+                    y = 3.-0.7-0.12/2.
+                    angle = 0.
 
-        self.pub_odom.publish(odom_msg)
+                elif markerIds[i]==21:
+                    x = 2.-0.45-0.12/2.
+                    y = 0.7+0.12/2.
+                    angle = 0.
+                elif markerIds[i]==22:
+                    x = 0.5+0.12/2
+                    y = 3.-0.7-0.12/2.
+                    angle = 0.
+                elif markerIds[i]==23:
+                    x = 0.5+0.12/2
+                    y = 0.7+0.12/2.
+                    angle = 0.
+                
+                transf = np.array([[np.cos(angle), np.sin(angle), x],
+                    [-np.sin(angle), np.cos(angle), y],
+                    [0, 0, 1]])
 
+                pose_robot = transf @ pos_m
 
-    def initialize_pose(self, bird_view):
+                ic(pose_robot)
 
-        # 1) Compute Angle
-        angle = self.compute_angle(bird_view)
-        if angle is None:
-            return False
+                odom_msg = Odometry()
+                odom_msg.header.stamp = self.get_clock().now().to_msg()
+                odom_msg.header.frame_id = 'map'
+                odom_msg.child_frame_id = 'base_link'
+                odom_msg.pose.pose.position.x = pose_robot[0]
+                odom_msg.pose.pose.position.y = pose_robot[1]
+                q = R.from_euler('z', angle_rad).as_quat()
+                odom_msg.pose.pose.orientation.x = q[0]
+                odom_msg.pose.pose.orientation.y = q[1]
+                odom_msg.pose.pose.orientation.z = q[2]
+                odom_msg.pose.pose.orientation.w = q[3]
 
-        self.get_logger().info("Angle initialized: " + str(angle) + "(" + str(angle*180/np.pi) + "°)")
+                # Very low covariance
+                cov = 0.00001
+                for i in range(36):
+                    if i % 7 == 0:
+                        odom_msg.pose.covariance[i] = cov
 
+                self.pub_odom.publish(odom_msg)
 
-        # 2) Compute Pos
+                break
 
-        angle = -np.pi/2-angle
-        robot_pos = self.get_pos_robot(angle, bird_view, vote=True)
-
-        ic("Robot pos (init): ", robot_pos)
-
-        # 3) Call service set_pose
-
-        pose_init = Pose(robot_pos[1], robot_pos[0], angle+self.angle_offset) # TODO Pourquoi j'ai dû swap ??
-
-        self.call_set_pose(pose_init)
-
-        return True
 
 
 
@@ -320,6 +303,9 @@ class VisualLocalizationNode(Node):
 
         self.get_logger().info('Calling /set_pose...')
         self.future_set_pose_response = self.set_pose_client.call_async(request)
+
+
+
 
     def compute_angle(self, bird_view):
 
@@ -349,11 +335,14 @@ class VisualLocalizationNode(Node):
         return np.median(angles)
 
 
+
     def get_rotated_ref_img(self, angle):
         rows, cols = self.ref_img.shape
         M = cv2.getRotationMatrix2D((cols/2, rows/2), np.rad2deg(angle), 1)
         ref_img_rot = cv2.warpAffine(self.ref_img, M, (cols, rows))
         return M, ref_img_rot
+
+
 
     def get_positions_with_template_matching(self, img, template):
 
