@@ -120,8 +120,8 @@ class Action_Executor():
         elif self.state_taking_plants == StateTakingPlants.NAVIGATE_TO_FRONT_POSE:
             get_logger('rclpy').info(f"\tNavigating to front pose from plants: {self.front_pose_from_plants}")
             # navigate to the front pose
-            self.robot_navigator.navigate_to(self.front_pose_from_plants, self.current_action["time"])
-            self.strategy_node.robot_pose = self.front_pose_from_plants
+            # self.robot_navigator.navigate_to(self.front_pose_from_plants, self.current_action["time"])
+            # self.strategy_node.robot_pose = self.front_pose_from_plants
             self.state_taking_plants = StateTakingPlants.DETECT_PLANTS
         elif self.state_taking_plants == StateTakingPlants.DETECT_PLANTS:
             get_logger('rclpy').info(f"\tDetecting plants")
