@@ -17,9 +17,10 @@ from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
 import time
-from std_msgs.msg import Int32, String
+from std_msgs.msg import Int32, String, Empty
 
 from PIL import Image, ImageTk
+from icecream import ic
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -170,8 +171,10 @@ class Application(tk.Tk):
         self.start_time = 0
 
         self.zone_pub = self.node.create_publisher(String, '/start_zone', 10)
+        self.tirette_pub = self.node.create_publisher(Empty, '/tirette_start', 10)
 
 
+        self.pub_STOP_FIN = self.node.create_publisher(Empty,'/STOP_FIN',10)
 
         self.create_launchs_tab()
         self.create_cpu_tab()
@@ -205,19 +208,22 @@ class Application(tk.Tk):
         ]
         self.button_zones = [
             'B3', '', 'J2',
-            'J3', '', 'B1',
+            'J3', 'T', 'B1',
             'B2', '', 'J1'
         ]
         self.start_zone = None
 
         # Charger l'image à utiliser pour le bouton central
-        self.image = Image.open("/home/champi/dev/ws_0/src/champi_robot_ros/champi_brain/scripts/arbre.png")
-        # self.image = Image.open("champi_brain/scripts/arbre.png")
+        # self.image = Image.open("/home/champi/dev/ws_0/src/champi_robot_ros/champi_brain/scripts/arbre.png")
+        self.image = Image.open("champi_brain/scripts/arbre.png")
         self.photo_image = ImageTk.PhotoImage(self.image)
 
         # Création de la grille 3x3
         self.create_button_grid(self.tab7, 3, 3, button_colors)
 
+    def tirette_start_pub(self):
+        e = Empty()
+        self.tirette_pub.publish(e)
 
 
     def create_button_grid(self, parent, rows, cols, button_colors):
@@ -226,7 +232,7 @@ class Application(tk.Tk):
                 index = row * cols + col
                 if button_colors[index] == 'red':
                     # Si le bouton doit être rouge, affiche l'image
-                    button = tk.Button(parent, image=self.photo_image, text="Image")
+                    button = tk.Button(parent, image=self.photo_image, text="Image", command=self.tirette_start_pub)
                     button.grid(row=row, column=col, sticky="nsew")
                 else:
                     # Sinon, utilisez la couleur donnée
@@ -259,18 +265,22 @@ class Application(tk.Tk):
         self.refresh_time()
 
     def refresh_time(self):
-
+        # ic(self.match_started)
+        # ic(int(time.time() - self.start_time))
         if self.final_score == -1 and not self.match_started:
+            print("\n\nRECEIVED MATCH STARTED\n\n")
             # match just started
             self.match_started = True
             self.start_time = time.time()
 
         if self.match_started:
-            print("\n\nRECEIVED MATCH STARTED\n\n")
             if 100 - int(time.time() - self.start_time) > 0:
                 self.time_label.config(text=f"Time left: {100 - int(time.time() - self.start_time)}")
             else:
                 self.time_label.config(text=f"Time left: {0}")
+
+                e = Empty()
+                self.pub_STOP_FIN.publish(e)
                 
         self.after(1000, self.refresh_time)
         

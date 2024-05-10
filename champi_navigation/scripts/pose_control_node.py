@@ -259,6 +259,8 @@ class PoseControl(Node):
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.path_sub = self.create_subscription(Path, '/cmd_path', self.path_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
+        self.STOP_FIN_sub = self.create_subscription(Empty, '/STOP_FIN', self.STOP_FIN, 10)
+        self.STOP_FIN = False
 
         # Timers
         self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
@@ -288,6 +290,9 @@ class PoseControl(Node):
         # self.prev_goal = None
 
         self.goal_reached = False
+
+    def STOP_FIN(self, msg):
+        self.STOP_FIN = True
 
     def lidar_callback(self, msg):
         self.stop = False
@@ -361,9 +366,24 @@ class PoseControl(Node):
             # self.prev_goal = self.cmd_path[0]    
 
     def control_loop_spin_once(self):
-       
+        if self.STOP_FIN: # publish 0 cmd vel
+            cmd_vel = Twist()
+            cmd_vel.linear.x = 0.
+            cmd_vel.linear.y = 0.
+            cmd_vel.angular.z = 0.
+
+            self.cmd_vel_pub.publish(cmd_vel) #TODO remettre
+            ic("cmd_vel  0")
+            return
+
         if self.i_goal is None:
-            return Vel(0., 0., 0.).to_twist() # No cmd path to follow, return
+            cmd_vel = Twist()
+            cmd_vel.linear.x = 0.
+            cmd_vel.linear.y = 0.
+            cmd_vel.angular.z = 0.
+
+            self.cmd_vel_pub.publish(cmd_vel) #TODO remettre
+            return
         
         goal_reached = self.is_current_goal_reached()
 
@@ -394,6 +414,7 @@ class PoseControl(Node):
             cmd_twist = cmd_vel.to_twist()
 
             # Publish the command
+            # ic(cmd_twist)
             self.cmd_vel_pub.publish(cmd_twist) #TODO remettre
         else:
             cmd_vel = Twist()
