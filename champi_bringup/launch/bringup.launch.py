@@ -159,8 +159,14 @@ def generate_launch_description():
         parameters=[config_file_path]
     )
 
+    laser_filter = Node(
+            package="laser_filters",
+            executable="scan_to_scan_filter_chain",
+            parameters=[config_file_path]
+        )
 
-    delayed_10s = TimerAction(period=10., actions=[ldlidar_node])
+
+    delayed_10s = TimerAction(period=10., actions=[ldlidar_node, laser_filter])
     delayed_5s = TimerAction(period=5., actions=[ukf_node])
     delayed_3s = TimerAction(period=3., actions=[imu_controller_launch])
     delayed_2s = TimerAction(period=2., actions=[act_controller_launch])
