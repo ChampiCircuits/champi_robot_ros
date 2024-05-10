@@ -14,21 +14,27 @@
                             <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
                             <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}"/>
                         </Sequence>
-                        <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+                        <Sequence name="empty">
+                            <Wait wait_duration="1"/>
+                        </Sequence>
+                        <!-- <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/> -->
                     </RecoveryNode>
                 </RateController>
                 <RecoveryNode number_of_retries="1" name="FollowPath">
                     <FollowPath path="{path}" controller_id="FollowPath"/>
-                    <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+                    <Sequence name="empty">
+                        <Wait wait_duration="1"/>
+                    </Sequence>
+                    <!-- <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/> -->
                 </RecoveryNode>
             </PipelineSequence>
             <ReactiveFallback name="RecoveryFallback">
                 <GoalUpdated/>
                 <RoundRobin name="RecoveryActions">
-                    <Sequence name="ClearingActions">
+                    <!-- <Sequence name="ClearingActions">
                         <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
                         <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
-                    </Sequence>
+                    </Sequence> -->
                     <!-- <Spin spin_dist="1.57"/> -->
                     <Wait wait_duration="1"/>
                     <Wait wait_duration="1"/>
