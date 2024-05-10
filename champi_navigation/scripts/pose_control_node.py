@@ -248,7 +248,7 @@ class PoseControl(Node):
         super().__init__('pose_control_node')
         self.subscription_lidar = self.create_subscription(
             LaserScan,
-            '/scan',
+            '/scan_filtered',
             self.lidar_callback,
             10)
         self.subscription_lidar  # prevent unused variable warning

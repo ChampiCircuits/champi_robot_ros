@@ -80,6 +80,23 @@ twist_mux:
         priority: 101
 
 
+scan_to_scan_filter_chain:
+  ros__parameters:
+    filter1:
+      name: box_filter
+      type: laser_filters/LaserScanBoxFilter
+      params:
+        box_frame: map
+        max_x: 2.
+        max_y: 3.
+        max_z: 0.5
+        min_x: 0.
+        min_y: 0.
+        min_z: -0.5
+        
+        invert: true # activate to remove all points outside of the box
+
+
 robot_stopped_detector:
   ros__parameters:
 
