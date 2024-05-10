@@ -138,7 +138,6 @@ class BirdView:
         if pt[2] == 0:
             return None
         pt = pt / pt[2]
-        pt = pt[:2]
         pt = np.linalg.inv(self.M_workplane_real_to_img_) @ pt # TODO tester
         return pt
 
