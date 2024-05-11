@@ -224,51 +224,44 @@ class VisualLocalizationNode(Node):
                 # Angle du marqueur par rapport à l'axe horizontal (angle du premier côté)
                 dx = corners[0][1][0] - corners[0][0][0]
                 dy = corners[0][1][1] - corners[0][0][1]
-                angle_rad = np.arctan2(dy, dx)  # angle en radians
+                angle_aruco_in_bv = np.arctan2(dy, dx)  # angle en radians
 
                 # self.get_logger().info(f"center_marker {center_marker}, angle {angle_rad*180/3.14}°")
 
-                pos_px_in_bv = np.array([center_marker[0], center_marker[1], 1])
+                pos_aruco_in_bv = np.array([center_marker[0], center_marker[1], 1])
 
-                pos_m = np.linalg.inv(self.bird_view.M_workplane_real_to_img_) @ pos_px_in_bv
-                ic(pos_m)
+                pos_aruco_in_bv_m = np.linalg.inv(self.bird_view.M_workplane_real_to_img_) @ pos_aruco_in_bv
+                # ic(pos_aruco_in_bv_m)
                 # pos_m = pos_m[:2]
                 # ic(pos_m)
 
                 if markerIds[i]==20:
                     x = 2.-0.45-0.12/2.
                     y = 3.-0.7-0.12/2.
-                    angle = 0.
                 elif markerIds[i]==21:
                     x = 2.-0.45-0.12/2.
                     y = 0.7+0.12/2.
-                    angle = 0.
                 elif markerIds[i]==22:
                     x = 0.5+0.12/2
                     y = 3.-0.7-0.12/2.
-                    angle = 0.
                 elif markerIds[i]==23:
                     x = 0.5+0.12/2
                     y = 0.7+0.12/2.
-                    angle = 0.
                 
-__annotations__
+                pos_aruco_in_world = np.array([x, y, 1])
+    
+                # Now we have the position of the aruco tag relative to the robot, and we know the position of the tag in the world.
+                # We can compute the position of the robot in the world frame. We do this computation using pos_aruco_in_bv_m, pos_aruco_in_world and angle_aruco_in_bv
 
+                # ic(pos_aruco_in_bv_m, pos_aruco_in_world, angle_aruco_in_bv)
 
+                # Compute the position of the robot in the world frame
+                pos_robot_in_world = pos_aruco_in_world - np.matmul(R.from_euler('z', angle_aruco_in_bv, degrees=False).as_matrix(), pos_aruco_in_bv_m[:2])
 
+                # ic(pos_robot_in_world)
 
+                pose_robot = pos_robot_in_world
 
-
-
-
-
-
-
-
-
-        
-
-                pose_robot = pos_m @ np.linalg.inv(transf)
 
                 # ic(pose_robot, markerIds[i])
 
@@ -280,8 +273,8 @@ __annotations__
                 pose_msg.pose.pose.position.z = 0.
                 pose_msg.pose.pose.orientation.x = 0.
                 pose_msg.pose.pose.orientation.y = 0.
-                pose_msg.pose.pose.orientation.z = np.sin(angle_rad/2)
-                pose_msg.pose.pose.orientation.w = np.cos(angle_rad/2)
+                pose_msg.pose.pose.orientation.z = np.sin(angle_aruco_in_bv/2)
+                pose_msg.pose.pose.orientation.w = np.cos(angle_aruco_in_bv/2)
 
 
                 # Very low covariance
@@ -296,7 +289,7 @@ __annotations__
                 if self.enable_viz:
 
                     # draw 2D axis
-                    img_viz = self.draw_2D_axis(img_viz, pos_px_in_bv[:2], angle_rad)
+                    img_viz = self.draw_2D_axis(img_viz, pos_aruco_in_bv[:2], angle_aruco_in_bv)
                 
                 break
 
