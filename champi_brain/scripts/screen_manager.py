@@ -6,6 +6,8 @@ import psutil
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.animation as animation
+from ament_index_python.packages import get_package_share_directory
+import os
 
 import subprocess
 import netifaces
@@ -69,6 +71,10 @@ class ZoneButton(tk.Button):
         msg = String()
         msg.data = self.zone
         self.node.zone_pub.publish(msg)
+
+        self.node.final_score = 0
+        self.node.match_started = False
+        self.node.start_time = 0
 
 class LaunchButton(tk.Button):
     def __init__(self, master, launch_file,color, **kwargs):
@@ -202,9 +208,9 @@ class Application(tk.Tk):
         # create a tab with 9 buttons in 3x3 grid
         # Couleurs et image pour les boutons
         button_colors = [
-            'blue', 'gray', 'yellow',
-            'yellow', 'red', 'blue',
-            'blue', 'gray', 'yellow'
+            '#477792', 'gray', '#CEAB47',
+            '#CEAB47', 'red', '#477792',
+            '#477792', 'gray', '#CEAB47'
         ]
         self.button_zones = [
             'B3', '', 'J2',
@@ -213,9 +219,12 @@ class Application(tk.Tk):
         ]
         self.start_zone = None
 
+
+        arbre_file_path = os.path.join(get_package_share_directory('champi_brain'), 'scripts', 'arbre.png')
+
         # Charger l'image à utiliser pour le bouton central
         # self.image = Image.open("/home/champi/dev/ws_0/src/champi_robot_ros/champi_brain/scripts/arbre.png")
-        self.image = Image.open("champi_brain/scripts/arbre.png")
+        self.image = Image.open(arbre_file_path)
         self.photo_image = ImageTk.PhotoImage(self.image)
 
         # Création de la grille 3x3
