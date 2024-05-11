@@ -61,13 +61,6 @@ class VisualLocalizationNode(Node):
         self.time_last_image = time.time()
         self.pos_cam_in_bird_view_pxls = None
         self.bird_view = None
-        self.robot_pose = None
-
-        self.result_init_img = None
-
-        self.angle_initialized = False
-
-        self.set_pose_done = False
 
         ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
         self.ref_img = self.load_ref_image(ref_img_path)
@@ -83,6 +76,11 @@ class VisualLocalizationNode(Node):
         self.aruco_dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         self.aruco_parameters =  cv2.aruco.DetectorParameters()
         self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dictionary, self.aruco_parameters)
+
+
+        self.timer = self.create_timer(0.1, self.timer_callback)  # 5Hz
+
+
 
         # handle camera info
         self.camera_info = None
@@ -100,81 +98,17 @@ class VisualLocalizationNode(Node):
             10)
         self.subscription  # prevent unused variable warning
 
-
-        self.sub_odom = self.create_subscription(
-            Odometry,
-            '/odometry/filtered',
-            self.odom_callback,
-            10)
-
-
         self.pub_odom = self.create_publisher(PoseWithCovarianceStamped, '/pose/visual_loc', 10)
 
         self.pub_image = self.create_publisher(Image, '/image_viz', 10)
 
+        self.latest_img = None
 
 
-
-    def init_bird_view(self):
-        transform = None
-        try:
-            # get transform, which is what we need to wait for
-            transform = self.tf_buffer.lookup_transform('base_link', 'camera',rclpy.time.Time().to_msg()) # todo use camera info
-
-            # # unsubscribe from camera info (can't do that in the callback otherwise the nodes crashes) TODO IT MAKES THE NODE CRASH
-            # self.subscription_cam_info.destroy()
-
-            # compute transform between the 2 frames as 1 matrix
-            rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
-            rot = rot.as_matrix()
-            trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
-
-            ic(trans)
-
-            transform_mtx = np.concatenate([rot, trans.reshape(3,1)], axis=1)
-            transform_mtx = np.concatenate([transform_mtx, np.array([[0,0,0,1]])], axis=0)
-
-            # initialize bird view
-            K = np.array(self.camera_info.k).reshape(3,3)
-            self.bird_view = bv.BirdView(K, transform_mtx, (0.27, -0.4), (0.82, 0.4), resolution=378)
-
-            self.pos_cam_in_bird_view_pxls = self.bird_view.get_work_plane_pt_in_bird_img(np.array([0, 0, 1]))
-            ic(self.pos_cam_in_bird_view_pxls)
-
-            # compute undistortion map
-            self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (640,480), cv2.CV_32FC1)
-
-            self.get_logger().info("Node Initialized", once=True)
-
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            self.get_logger().info("waiting for tf2 transform...", once=True)
+    def timer_callback(self):
+        if self.latest_img is None:
             return
-
-
-    def odom_callback(self, msg):
-
-        if not self.set_pose_done:
-            return
-
-        if self.robot_pose is None:
-            self.robot_pose = Pose(0, 0, 0)
-
-        self.robot_pose.x = msg.pose.pose.position.x
-        self.robot_pose.y = msg.pose.pose.position.y
-        q = msg.pose.pose.orientation
-        self.robot_pose.theta = np.arctan2(2*(q.w*q.z + q.x*q.y), 1 - 2*(q.y*q.y + q.z*q.z))
-
-        self.get_logger().info(f"Got first robot pose: {self.robot_pose}", once=True)
-
-
-
-    def callback_cam_info(self, msg):
-        if self.camera_info is None:
-            self.camera_info = msg
-
-
-
-    def image_callback(self, msg):
+        
 
         # get camera info if not already
         if self.camera_info is None:
@@ -194,7 +128,7 @@ class VisualLocalizationNode(Node):
         # ==================================== PREPROCESSING ====================================
 
         # convert to cv2
-        cv_image = self.cv_bridge.imgmsg_to_cv2(msg, 'bgr8')
+        cv_image = self.cv_bridge.imgmsg_to_cv2(self.latest_img, 'bgr8')
         cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
         # undistort
@@ -256,7 +190,7 @@ class VisualLocalizationNode(Node):
                 # ic(pos_aruco_in_bv_m, pos_aruco_in_world, angle_aruco_in_bv)
 
                 # Compute the position of the robot in the world frame
-                pos_robot_in_world = pos_aruco_in_world - np.matmul(R.from_euler('z', angle_aruco_in_bv, degrees=False).as_matrix(), pos_aruco_in_bv_m[:2])
+                pos_robot_in_world = pos_aruco_in_world - np.matmul(R.from_euler('z', angle_aruco_in_bv, degrees=False).as_matrix(), pos_aruco_in_bv_m)
 
                 # ic(pos_robot_in_world)
 
@@ -297,6 +231,54 @@ class VisualLocalizationNode(Node):
 
             # publish image
             self.publish_image(img_viz)
+
+
+
+    def init_bird_view(self):
+        transform = None
+        try:
+            # get transform, which is what we need to wait for
+            transform = self.tf_buffer.lookup_transform('base_link', 'camera',rclpy.time.Time().to_msg()) # todo use camera info
+
+            # # unsubscribe from camera info (can't do that in the callback otherwise the nodes crashes) TODO IT MAKES THE NODE CRASH
+            # self.subscription_cam_info.destroy()
+
+            # compute transform between the 2 frames as 1 matrix
+            rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
+            rot = rot.as_matrix()
+            trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
+
+            ic(trans)
+
+            transform_mtx = np.concatenate([rot, trans.reshape(3,1)], axis=1)
+            transform_mtx = np.concatenate([transform_mtx, np.array([[0,0,0,1]])], axis=0)
+
+            # initialize bird view
+            K = np.array(self.camera_info.k).reshape(3,3)
+            self.bird_view = bv.BirdView(K, transform_mtx, (0.27, -0.4), (0.82, 0.4), resolution=378)
+
+            self.pos_cam_in_bird_view_pxls = self.bird_view.get_work_plane_pt_in_bird_img(np.array([0, 0, 1]))
+            ic(self.pos_cam_in_bird_view_pxls)
+
+            # compute undistortion map
+            self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (640,480), cv2.CV_32FC1)
+
+            self.get_logger().info("Node Initialized", once=True)
+
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            self.get_logger().info("waiting for tf2 transform...", once=True)
+            return
+
+    def callback_cam_info(self, msg):
+        if self.camera_info is None:
+            self.camera_info = msg
+
+
+
+    def image_callback(self, msg):
+
+        self.latest_img = msg
+
 
 
 
