@@ -33,6 +33,8 @@ class State(Enum):
     NOT_STARTED = 9
     WAITING_END_MOVE = 10
     FINISHED_MOVE = 11
+    WAITING_PLANT_PUT = 12
+    FINISHED_PLANT_PUT = 13
 
 class CAN_MSGS(Enum):
     START_GRAB_PLANTS = 0

@@ -27,11 +27,9 @@ class Robot_Navigator():
 
 
     def navigate_to(self, destination: Tuple[float, float, float], max_time_allowed) -> bool:
-        # log 
-        self.node.get_logger().info(f"RECEVUED DEST: {destination}")
-        if destination == None:
+        if destination is None:
             return
-        if not self.last_goal == None and self.last_goal[0] == destination[0] and self.last_goal[1] == destination[1] and self.last_goal[2] == destination[2]:
+        if not self.last_goal is None and self.last_goal[0] == destination[0] and self.last_goal[1] == destination[1] and self.last_goal[2] == destination[2]:
             return
         self.last_goal = destination
 

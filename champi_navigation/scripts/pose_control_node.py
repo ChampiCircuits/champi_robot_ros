@@ -386,6 +386,10 @@ class PoseControl(Node):
             return
         
         goal_reached = self.is_current_goal_reached()
+        if not goal_reached:
+            dist_to_goal = sqrt((self.robot_current_pose[0] - self.current_goal[0])**2 + (self.robot_current_pose[1] - self.current_goal[1])**2)
+            angle_to_do = abs(self.robot_current_pose[2] - self.current_goal[2])
+            ic(dist_to_goal,"m to do left", angle_to_do,"rad to do left")
 
         if goal_reached and not self.goal_reached:
             self.goal_reached = True
@@ -437,7 +441,7 @@ class PoseControl(Node):
         # ic(self.current_goal)
         if abs(self.robot_current_pose[0] - self.current_goal[0]) < error_max_lin and abs(self.robot_current_pose[1] - self.current_goal[1]) < error_max_lin:
             if self.check_angle(self.robot_current_pose[2], self.current_goal[2], error_max_ang):
-                print("CURRENT GOAL REACHED")
+                ic("CURRENT GOAL REACHED")
                 return True
     
         return False
