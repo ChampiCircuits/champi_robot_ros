@@ -11,6 +11,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 import rclpy.time
 from std_msgs.msg import String, Int64, Empty, Int64MultiArray, Int32
 from visualization_msgs.msg import Marker, MarkerArray
+from utils import CAN_MSGS
 
 # markers
 from std_msgs.msg import ColorRGBA
@@ -23,6 +24,7 @@ from action_executor import Action_Executor
 from utils import draw_rviz_markers, calc_time_of_travel, get_action_by_name, pose_with_cov_from_position
 from utils import State, StateTakingPlants
 from rclpy.logging import get_logger
+from icecream import ic
 
 import time
 from enum import Enum
@@ -31,9 +33,9 @@ from robot_localization.srv import SetPose
 
 
 actions = [
-    # {"name":"plantes1","type":"prendre_plantes","pose": (1.-0.3, 1.5-0.5),    "time": 10, "points": 0},
-    # {"name":"plantes2","type":"prendre_plantes","pose": (1.-0.5, 1.5),        "time": 10, "points": 0},
-    # {"name":"plantes3","type":"prendre_plantes","pose": (1.-0.3, 1.5+0.5),    "time": 10, "points": 0},
+    {"name":"plantes1","type":"prendre_plantes","pose": (1.-0.3, 1.5-0.5),    "time": 10, "points": 0},
+    {"name":"plantes2","type":"prendre_plantes","pose": (1.-0.5, 1.5),        "time": 10, "points": 0},
+    {"name":"plantes3","type":"prendre_plantes","pose": (1.-0.3, 1.5+0.5),    "time": 10, "points": 0},
     {"name":"plantes4","type":"prendre_plantes","pose": (1.+0.3, 1.5-0.5),    "time": 10, "points": 0},
     {"name":"plantes5","type":"prendre_plantes","pose": (1.+0.5, 1.5),        "time": 10, "points": 0},
     {"name":"plantes6","type":"prendre_plantes","pose": (1.+0.3, 1.5+0.5),    "time": 10, "points": 0},
@@ -88,8 +90,8 @@ strategy_yellow = {
     "init_pose": (1.855, 0.165, 2.6166), #J2
     "actions": {
         # "list": ["poserplantesJ2"]
-        "list": ["p2","p3","retour_zone_yellow_inv"],
-        # "list": ["plantes2","plantes3","retour_zone_yellow_inv"],
+        # "list": ["p2","p3","retour_zone_yellow_inv"],
+        "list": ["plantes2","plantes3","poserplantesJ3","retour_zone_yellow_inv"],
         # "list": ["p6","p5", "retour_zone_yellow_inv"],
         # "list": ["plantes4","poserplantesJ2","plantes5","poserplantesJ1","plantes6","poserplantesJ3", "retour_zone_yellow"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
@@ -101,8 +103,9 @@ strategy_blue = {
     "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
         # "list": ["p6","p5", "retour_zone_blue_inv"],
-        "list": ["p5","p4", "retour_zone_blue_inv"],
-        # "list": ["plantes5","plantes4", "retour_zone_blue_inv"],
+        # "list": ["p5","p4", "retour_zone_blue_inv"],
+        # "list": ["poserplantesB1", "retour_zone_blue_inv"],
+        "list": ["plantes5","plantes4","poserplantesB1", "retour_zone_blue_inv"],
         # "list": ["plantes6","poserplantesB3","plantes5","poserplantesB2","plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4","retour_zone_blue"],
         # "list": ["plantes6","poserplantesB3", "retour_zone_blue"],
@@ -201,8 +204,8 @@ class StrategyEngineNode(Node):
         time.sleep(0.1)
 
         # ACT CAN sub and pub
-        self.CAN_pub = self.create_publisher(Int64, '/act_status', 10)
-        self.CAN_sub = self.create_subscription(Int64MultiArray, '/act_cmd', self.act_sub_update, 10)
+        self.CAN_pub = self.create_publisher(Int64, '/act_cmd', 10)
+        self.CAN_sub = self.create_subscription(Int64MultiArray, '/act_status', self.act_sub_update, 10)
         self.CAN_state = None
         time.sleep(0.1)
 
@@ -331,12 +334,23 @@ class StrategyEngineNode(Node):
             quit()
 
         return start_pose
-        
 
     def act_sub_update(self, msg):
         # msg.data[0] = status
         #msg.data[1] = nb plantes
-        self.CAN_state = msg.data[0] 
+        if msg.data[0] == 0:
+            self.CAN_state = CAN_MSGS.START_GRAB_PLANTS
+        elif msg.data[0] == 1:
+            self.CAN_state = CAN_MSGS.STOP_GRAB_PLANTS
+        elif msg.data[0] == 2:
+            self.CAN_state = CAN_MSGS.RELEASE_PLANT
+        elif msg.data[0] == 3:
+            self.CAN_state = CAN_MSGS.TURN_SOLAR_PANEL
+        elif msg.data[0] == 4:
+            self.CAN_state = CAN_MSGS.INITIALIZING
+        elif msg.data[0] == 5:
+            self.CAN_state = CAN_MSGS.FREE
+        ic(self.CAN_state)
 
     def start_match(self,msg):
         get_logger('rclpy').info(f"TIRETTE !!")

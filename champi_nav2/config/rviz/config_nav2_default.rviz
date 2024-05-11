@@ -94,13 +94,7 @@ Visualization Manager:
       Tree:
         map:
           odom:
-            base_link:
-              base_laser:
-                {}
-              camera:
-                {}
-              imu_link:
-                {}
+            {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -430,7 +424,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -1.5700347423553467
+      Angle: -4.680046081542969
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -440,7 +434,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 174.15130615234375
+      Scale: 53.36822509765625
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
       X: 1.0421725511550903
