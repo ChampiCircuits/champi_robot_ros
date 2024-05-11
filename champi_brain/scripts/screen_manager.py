@@ -20,6 +20,7 @@ from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
 import time
 from std_msgs.msg import Int32, String, Empty
+from geometry_msgs.msg import Twist
 
 from PIL import Image, ImageTk
 from icecream import ic
@@ -181,7 +182,8 @@ class Application(tk.Tk):
         self.tirette_pub = self.node.create_publisher(Empty, '/tirette_start', 10)
 
 
-        self.pub_STOP_FIN = self.node.create_publisher(Empty,'/STOP_FIN',10)
+        # self.pub_STOP_FIN = self.node.create_publisher(Empty,'/STOP_FIN',10)
+        self.pub_STOP_FIN = self.node.create_publisher(Twist,'/cmd_vel_stop',10)
 
         self.create_launchs_tab()
         self.create_cpu_tab()
@@ -289,8 +291,11 @@ class Application(tk.Tk):
             else:
                 self.time_label.config(text=f"Time left: {0}")
 
-                e = Empty()
-                self.pub_STOP_FIN.publish(e)
+                t = Twist()
+                t.linear.x = 0.
+                t.linear.y = 0.
+                t.angular.z = 0.
+                self.pub_STOP_FIN.publish(t)
                 
         self.after(1000, self.refresh_time)
         

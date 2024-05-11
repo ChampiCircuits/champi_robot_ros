@@ -212,7 +212,7 @@ class VisualLocalizationNode(Node):
 
 
                 # Very low covariance
-                cov = 0.00001
+                cov = 0.02
                 for i in range(36):
                     if i % 7 == 0:
                         pose_msg.pose.covariance[i] = cov

@@ -98,6 +98,9 @@ class Action_Executor():
         if self.strategy_node.CAN_state == CAN_MSGS.RELEASE_PLANT and self.state == State.WAITING_PLANT_PUT:
             ic("FINISHED PLANT PUT")
             self.state = State.FINISHED_PLANT_PUT
+        if self.strategy_node.nb_plants == 0 and self.state == State.WAITING_PLANT_PUT:
+            ic("FINISHED PLANT PUT BUT EMPTY")
+            self.state = State.FINISHED_PLANT_PUT
         
         if self.move_state == State.FINISHED_MOVE:
             self.publish_on_CAN(CAN_MSGS.RELEASE_PLANT)

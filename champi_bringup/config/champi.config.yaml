@@ -33,7 +33,7 @@ base_controller:
     max_acceleration_angular: 1.0 # rad/s^2
     max_deceleration_angular: 20.0 # rad/s^2
 
-    max_linear_speed: 0.3
+    max_linear_speed: 0.4
 
     covariances:
       pose: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
@@ -67,9 +67,9 @@ twist_mux:
   ros__parameters:
     topics:
       navigation:
-        topic   : cmd_vel_nav
-        timeout : 0.5
-        priority: 10
+        topic   : cmd_vel_stop
+        timeout : 3.0
+        priority: 102
       joystick:
         topic   : cmd_vel_joy
         timeout : 0.5
@@ -87,11 +87,11 @@ scan_to_scan_filter_chain:
       type: laser_filters/LaserScanBoxFilter
       params:
         box_frame: map
-        max_x: 2.
-        max_y: 3.
+        max_x: 1.8
+        max_y: 2.8
         max_z: 0.5
-        min_x: 0.
-        min_y: 0.
+        min_x: 0.2
+        min_y: 0.2
         min_z: -0.5
         
         invert: true # activate to remove all points outside of the box

@@ -42,9 +42,9 @@ actions = [
 
     {"name":"poserplantesJ1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2, -1.0466),     "time": 10, "points": 3*3, "dirs": (1,1)},
     {"name":"poserplantesJ2","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 0.5/2, -1.0466+3.14),       "time": 10, "points": 3*3, "dirs":(-1,1)},
-    {"name":"poserplantesJ3","type":"pose_plantes_sol","pose": (1.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*3, "dirs":(-1, -1)},
+    {"name":"poserplantesJ3","type":"pose_plantes_sol","pose": (1.0-0.5, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*3, "dirs":(-1, -1)},
     
-    {"name":"poserplantesB1","type":"pose_plantes_sol","pose": (1.0, 0.5/2, -1.0466),"time": 10, "points": 3*3, "dirs":(1, 1)},
+    {"name":"poserplantesB1","type":"pose_plantes_sol","pose": (1.0+0.5/2, 0.5/2, -1.0466),"time": 10, "points": 3*3, "dirs":(1, 1)},
     {"name":"poserplantesB2","type":"pose_plantes_sol","pose": (0.45/2, 3.0-0.4/2, -1.0466),"time": 10, "points": 3*3, "dirs":(1, -1)},
     {"name":"poserplantesB3","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*3, "dirs":(-1, -1)},
 
@@ -67,7 +67,8 @@ actions = [
     {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": 10}, #J3
     {"name":"retour_zone_yellow_inv","type":"retour_zone","pose": (1.0, 2.73, 1.57),  "time": 0, "points": 10}, #J3
     {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": 10}, #B1
-    {"name":"retour_zone_blue_inv","type":"retour_zone","pose": (1.0, 0.265, -1.57),  "time": 0, "points": 10}, #B1
+    {"name":"retour_zone_blue_inv","type":"retour_zone","pose": (0.265, 3.0-0.265, 1.57),  "time": 0, "points": 10}, #B1
+    # {"name":"retour_zone_blue_inv","type":"retour_zone","pose": (1.0, 0.265, -1.57),  "time": 0, "points": 10}, #B1
     {"name":"move_middle","type":"just_move","pose": (1.0, 1.5, 1.57),  "time": 0, "points": 0},
     {"name":"p1","type":"just_move","pose": (1.-0.3, 1.5-0.5, 1.57),  "time": 0, "points": 0},
     {"name":"p2","type":"just_move","pose": (1.-0.5, 1.5, 1.57),  "time": 0, "points": 0},
@@ -91,7 +92,7 @@ strategy_yellow = {
     "actions": {
         # "list": ["poserplantesJ2"]
         # "list": ["p2","p3","retour_zone_yellow_inv"],
-        "list": ["plantes2","plantes3","poserplantesJ3","retour_zone_yellow_inv"],
+        "list": ["plantes2","plantes3","poserplantesJ3","plantes5","plantes4","retour_zone_yellow_inv"],
         # "list": ["p6","p5", "retour_zone_yellow_inv"],
         # "list": ["plantes4","poserplantesJ2","plantes5","poserplantesJ1","plantes6","poserplantesJ3", "retour_zone_yellow"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
@@ -105,7 +106,7 @@ strategy_blue = {
         # "list": ["p6","p5", "retour_zone_blue_inv"],
         # "list": ["p5","p4", "retour_zone_blue_inv"],
         # "list": ["poserplantesB1", "retour_zone_blue_inv"],
-        "list": ["plantes5","plantes4","poserplantesB1", "retour_zone_blue_inv"],
+        "list": ["plantes5","plantes4","poserplantesB1","plantes2","plantes3", "retour_zone_blue_inv"],
         # "list": ["plantes6","poserplantesB3","plantes5","poserplantesB2","plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4","retour_zone_blue"],
         # "list": ["plantes6","poserplantesB3", "retour_zone_blue"],
@@ -207,6 +208,7 @@ class StrategyEngineNode(Node):
         self.CAN_pub = self.create_publisher(Int64, '/act_cmd', 10)
         self.CAN_sub = self.create_subscription(Int64MultiArray, '/act_status', self.act_sub_update, 10)
         self.CAN_state = None
+        self.nb_plants = 0
         time.sleep(0.1)
 
         self.pub_STOP_FIN = self.create_publisher(Empty,'/STOP_FIN',10)
@@ -338,6 +340,7 @@ class StrategyEngineNode(Node):
     def act_sub_update(self, msg):
         # msg.data[0] = status
         #msg.data[1] = nb plantes
+        self.nb_plants = int(msg.data[1])
         if msg.data[0] == 0:
             self.CAN_state = CAN_MSGS.START_GRAB_PLANTS
         elif msg.data[0] == 1:

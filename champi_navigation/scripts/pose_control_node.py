@@ -259,8 +259,8 @@ class PoseControl(Node):
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.path_sub = self.create_subscription(Path, '/cmd_path', self.path_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
-        self.STOP_FIN_sub = self.create_subscription(Empty, '/STOP_FIN', self.STOP_FIN, 10)
-        self.STOP_FIN = False
+        # self.STOP_FIN_sub = self.create_subscription(Empty, '/STOP_FIN', self.STOP_FIN, 10)
+        # self.STOP_FIN = False
 
         # Timers
         self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
@@ -291,16 +291,17 @@ class PoseControl(Node):
 
         self.goal_reached = False
 
-    def STOP_FIN(self, msg):
-        self.STOP_FIN = True
+    # def STOP_FIN(self, msg):
+    #     self.STOP_FIN = True
 
     def lidar_callback(self, msg):
         self.stop = False
         for distance in msg.ranges:
             # print(distance)
-            if distance < 0.6 and distance >0.1:
+            if distance < 0.5 and distance >0.1:
                 # print(f"Distance: {distance} is greater than 0.3")
                 self.stop = True
+                ic("stop because of lidar...")
                 break
 
     def current_pose_callback(self, msg):
@@ -366,15 +367,15 @@ class PoseControl(Node):
             # self.prev_goal = self.cmd_path[0]    
 
     def control_loop_spin_once(self):
-        if self.STOP_FIN: # publish 0 cmd vel
-            cmd_vel = Twist()
-            cmd_vel.linear.x = 0.
-            cmd_vel.linear.y = 0.
-            cmd_vel.angular.z = 0.
+        # if self.STOP_FIN: # publish 0 cmd vel
+        #     cmd_vel = Twist()
+        #     cmd_vel.linear.x = 0.
+        #     cmd_vel.linear.y = 0.
+        #     cmd_vel.angular.z = 0.
 
-            self.cmd_vel_pub.publish(cmd_vel) #TODO remettre
-            ic("cmd_vel  0")
-            return
+        #     self.cmd_vel_pub.publish(cmd_vel) #TODO remettre
+        #     ic("cmd_vel  0")
+        #     return
 
         if self.i_goal is None:
             cmd_vel = Twist()
@@ -434,8 +435,8 @@ class PoseControl(Node):
         """Checks if the goal is reached and switch to the next one if it is the case.
         Should not be called if i_goal is None = no path to follow."""
 
-        error_max_lin = 0.02
-        error_max_ang = 0.02
+        error_max_lin = 0.05
+        error_max_ang = 0.05
 
         # ic(self.robot_current_pose)
         # ic(self.current_goal)
