@@ -63,10 +63,14 @@ actions = [
     # {"name":"panneau9","type":"tourner_panneau","pose": (50, 3000-275-225-225),  "time": 10, "points": 5},
     
     {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": 10}, #J3
-    {"name":"retour_zone_yellow_inv","type":"retour_zone","pose": (2.0-0.2, 0.2, -3.14),  "time": 0, "points": 10}, #J3
+    {"name":"retour_zone_yellow_inv","type":"retour_zone","pose": (1.0, 2.73, 1.57),  "time": 0, "points": 10}, #J3
     {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": 10}, #B1
     {"name":"retour_zone_blue_inv","type":"retour_zone","pose": (1.0, 0.265, -1.57),  "time": 0, "points": 10}, #B1
     {"name":"move_middle","type":"just_move","pose": (1.0, 1.5, 1.57),  "time": 0, "points": 0},
+    {"name":"p1","type":"just_move","pose": (1.-0.3, 1.5-0.5, 1.57),  "time": 0, "points": 0},
+    {"name":"p2","type":"just_move","pose": (1.-0.5, 1.5, 1.57),  "time": 0, "points": 0},
+    {"name":"p3","type":"just_move","pose": (1.-0.3, 1.5+0.5, 1.57),  "time": 0, "points": 0},
+    {"name":"p4","type":"just_move","pose": (1.+0.3, 1.5-0.5, -1.57),  "time": 0, "points": 0},
     {"name":"p5","type":"just_move","pose": (1.+0.5, 1.5, -1.57),  "time": 0, "points": 0},
     {"name":"p6","type":"just_move","pose": (1.+0.3, 1.5+0.5, -1.57),  "time": 0, "points": 0},
     {"name":"middle","type":"just_move","pose": (1., 1.5, 1.57),  "time": 0, "points": 0},
@@ -84,8 +88,9 @@ strategy_yellow = {
     "init_pose": (1.855, 0.165, 2.6166), #J2
     "actions": {
         # "list": ["poserplantesJ2"]
-        # "list": ["plantes4","retour_zone_yellow"],
-        "list": ["p6","p5", "retour_zone_yellow_inv"],
+        "list": ["p2","p3","retour_zone_yellow_inv"],
+        # "list": ["plantes2","plantes3","retour_zone_yellow_inv"],
+        # "list": ["p6","p5", "retour_zone_yellow_inv"],
         # "list": ["plantes4","poserplantesJ2","plantes5","poserplantesJ1","plantes6","poserplantesJ3", "retour_zone_yellow"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
     }
@@ -95,7 +100,9 @@ strategy_blue = {
     "name": "strategy_blue",
     "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["p6","p5", "retour_zone_blue_inv"],
+        # "list": ["p6","p5", "retour_zone_blue_inv"],
+        "list": ["p5","p4", "retour_zone_blue_inv"],
+        # "list": ["plantes5","plantes4", "retour_zone_blue_inv"],
         # "list": ["plantes6","poserplantesB3","plantes5","poserplantesB2","plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4","retour_zone_blue"],
         # "list": ["plantes6","poserplantesB3", "retour_zone_blue"],
@@ -107,7 +114,7 @@ homologation_blue = {
     "name": "homologation_blue",
     # "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["A1","middle","retour_zone_blue_inv"],
+        "list": ["middle","retour_zone_blue_inv"],
         # "list": ["plantes5","poserplantesB3", "retour_zone_blue"],
     }
 }
@@ -115,14 +122,14 @@ homologation_yellow = {
     "name": "homologation_yellow",
     # "init_pose": (1.855, 2.835, 4.1866), #B3
     "actions": {
-        "list": ["A1","middle","retour_zone_yellow_inv"], # TODO
+        "list": ["middle","retour_zone_yellow_inv"], # TODO
         # "list": ["plantes5","poserplantesJ2", "retour_zone_yellow"],
     }
 }
 
 TOTAL_AVAILABLE_TIME = 100 # s
 ROBOT_MEAN_SPEED = 0.3 # m/s
-
+MIDDLE_OF_TABLE = (2.0/2, 3.0/2)
 
 class StrategyEngineNode(Node):
     def __init__(self) -> None:
@@ -199,6 +206,8 @@ class StrategyEngineNode(Node):
         self.CAN_state = None
         time.sleep(0.1)
 
+        self.pub_STOP_FIN = self.create_publisher(Empty,'/STOP_FIN',10)
+
 
         self.markers_publisher_circles = self.create_publisher(MarkerArray, 'markers_selected_action', 10)
         self.markers_publisher_plants = self.create_publisher(MarkerArray, 'markers_plants_detected', 10)
@@ -210,6 +219,13 @@ class StrategyEngineNode(Node):
         self.timer = self.create_timer(timer_period_sec=0.5,
                                        callback=self.callback_timer)
         get_logger('rclpy').info(f"READY TO RECEIVE ZONE")
+
+    def get_offset_start_pose(self, start_pose):
+        # on décale de 0.2m dans la direction du centre de la table
+        vector = (MIDDLE_OF_TABLE[0]-start_pose[0], MIDDLE_OF_TABLE[1]-start_pose[1])
+        unit_vector = (vector[0]/(vector[0]**2+vector[1]**2)**0.5, vector[1]/(vector[0]**2+vector[1]**2)**0.5)
+        resized_vector = (unit_vector[0]*0.2, unit_vector[1]*0.2)
+        return (start_pose[0]+resized_vector[0], start_pose[1]+resized_vector[1], start_pose[2])
 
     def select_start_zone(self, msg):
         get_logger('rclpy').info(f"\n\n\n\nRECEIVED ZONE : {msg.data}. \n\n\n\n")
@@ -284,6 +300,17 @@ class StrategyEngineNode(Node):
         #             break
 
         self.robot_pose = init_robot_pose
+
+        # insert the get_offset_start_pose() at the beginning of the list strategy
+        offset_start = self.get_offset_start_pose(self.start_pose)
+        # {"name":"offset_start","type":"just_move","pose": (x,y,theta),  "time": 0, "points": 0},
+        action = {"name":"offset_start","type":"just_move","pose": offset_start,  "time": 0, "points": 0}
+        actions.append(action)
+        self.strategy["actions"]["list"].insert(0, action["name"])
+
+        # print
+        get_logger('rclpy').info(f"strategy: {self.strategy}")
+        
 
     def get_start_pose_from_start_zone(self, start_zone): #str
         start_pose = None
@@ -397,7 +424,9 @@ class StrategyEngineNode(Node):
 
             # if the time is negative we stop the effectors of the robot
             if projected_time_left < 0:
-                self.action_executor.stop_effectors()
+                # self.action_executor.stop_effectors()
+                e = Empty()
+                self.pub_STOP_FIN.publish(e)
                 get_logger('rclpy').info(f"STOPPING EFFECTORS")
                 quit()
             # if the time is positive we execute the action
