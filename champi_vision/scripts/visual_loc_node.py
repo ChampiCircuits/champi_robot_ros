@@ -207,6 +207,7 @@ class VisualLocalizationNode(Node):
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
 
+        img_viz = bird_view_img.copy()
 
         # ================================== DETECTION =========================================
 
@@ -230,14 +231,14 @@ class VisualLocalizationNode(Node):
                 pos_px_in_bv = np.array([center_marker[0], center_marker[1], 1])
 
                 pos_m = np.linalg.inv(self.bird_view.M_workplane_real_to_img_) @ pos_px_in_bv
-                # pos_m = pos_m[:2]
                 ic(pos_m)
+                # pos_m = pos_m[:2]
+                # ic(pos_m)
 
                 if markerIds[i]==20:
                     x = 2.-0.45-0.12/2.
                     y = 3.-0.7-0.12/2.
                     angle = 0.
-
                 elif markerIds[i]==21:
                     x = 2.-0.45-0.12/2.
                     y = 0.7+0.12/2.
@@ -251,13 +252,25 @@ class VisualLocalizationNode(Node):
                     y = 0.7+0.12/2.
                     angle = 0.
                 
-                transf = np.array([[np.cos(angle), np.sin(angle), x],
-                    [-np.sin(angle), np.cos(angle), y],
-                    [0, 0, 1]])
+__annotations__
 
-                pose_robot = transf @ pos_m
 
-                ic(pose_robot)
+
+
+
+
+
+
+
+
+
+
+
+        
+
+                pose_robot = pos_m @ np.linalg.inv(transf)
+
+                # ic(pose_robot, markerIds[i])
 
                 pose_msg = PoseWithCovarianceStamped()
                 pose_msg.header.stamp = self.get_clock().now().to_msg()
@@ -282,18 +295,15 @@ class VisualLocalizationNode(Node):
     
                 if self.enable_viz:
 
-                    img_viz = bird_view_img.copy()
-
-                    # draw fps
-                    # self.draw_fps(img_viz)
-
                     # draw 2D axis
-                    img_viz = self.draw_2D_axis(img_viz, pos_px_in_bv, angle_rad)
-
-                    # publish image
-                    self.publish_image(img_viz)
+                    img_viz = self.draw_2D_axis(img_viz, pos_px_in_bv[:2], angle_rad)
                 
                 break
+
+        if self.enable_viz:
+
+            # publish image
+            self.publish_image(img_viz)
 
 
 
@@ -323,7 +333,8 @@ class VisualLocalizationNode(Node):
 
     def draw_2D_axis(self, image, pos_pxls, angle):
         img = image.copy()
-        cv2.circle(img, tuple(pos_pxls), 10, (255,0,0), -1)
+        pos_pxls = (int(pos_pxls[0]), int(pos_pxls[1]))
+        cv2.circle(img, pos_pxls, 10, (255,0,0), -1)
 
         # axis
         axis_len = 100

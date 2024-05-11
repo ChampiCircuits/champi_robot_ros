@@ -42,7 +42,8 @@ launch_files = [
     "python3 /home/champi/dev/ws_0/src/champi_robot_ros/scripts/kill_nodes.py",
     # ". /home/champi/dev/ws_0/src/champi_robot_ros/scripts/kill_nodes.sh",
     # "ros2 launch champi_brain brain.launch.py color:=homologation",
-    "ros2 run champi_brain strategy_engine_node.py --ros-args -p color:=homologation"
+    "ros2 run champi_brain strategy_engine_node.py --ros-args -p color:=blue"
+    "ros2 launch champi_navigation control_pose_simulation.launch.py"
 ]
 
 launch_colors = [
