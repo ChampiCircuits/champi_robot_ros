@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from champi_navigation.utils import Vel
-from champi_navigation.cmd_vel_updaters import CmdVelUpdaterPID
-from champi_navigation.utils import dist_point_to_line
+from champi_navigation.utils import Vel, dist_point_to_line, RobotState
+from champi_navigation.cmd_vel_updaters import CmdVelUpdaterPID, CmdVelUpdaterWPILib
+
 
 from math import pi, atan2, sqrt
 from icecream import ic
@@ -39,8 +39,8 @@ class PoseControl(Node):
 
         # Objects instanciation
 
-        self.robot_current_pose = None # TODO s'en debarasser ?
-        self.cmd_vel_updater = CmdVelUpdaterPID()
+        self.robot_current_state = None
+        self.cmd_vel_updater = CmdVelUpdaterWPILib()
 
         # Variables related to goals
         
@@ -57,18 +57,24 @@ class PoseControl(Node):
 
     def current_pose_callback(self, msg):
         """Callback for the current pose message. It is called when a new pose is received from topic."""
-        self.robot_current_pose = [msg.pose.pose.position.x, msg.pose.pose.position.y, 2*atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)]
-        # ic("pc: RECEIVED CURRENT POSE :")
-        # ic(self.robot_current_pose)
+        pose = [msg.pose.pose.position.x, msg.pose.pose.position.y, 2*atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)]
+        vel = Vel(msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.angular.z)
+        vel = Vel.to_global_frame(pose, vel)
+        self.robot_current_state = RobotState(pose, vel)
 
     def path_callback(self, msg):
         """Callback for the path message. It is called when a new path is received from topic."""
+
+        # Return if we have already received the robot current pose (set_cmd_path needs it)
+        if self.robot_current_state is None:
+            return
+
         self.set_cmd_path(msg.poses)
-        s = "RECEIVED PATH : "
-        for p in msg.poses:
-            x,y = p.pose.position.x, p.pose.position.y
-            s+=f"({x:.5f}, {y:.5f}) "
-        self.get_logger().info(s)
+        # s = "RECEIVED PATH : "
+        # for p in msg.poses:
+        #     x,y = p.pose.position.x, p.pose.position.y
+        #     s+=f"({x:.5f}, {y:.5f}) "
+        # self.get_logger().info(s)
 
 
 
@@ -95,8 +101,8 @@ class PoseControl(Node):
         for seg in segs:
             # si dist point to line
             if seg[0] != seg[1]: # division par 0
-                if dist_point_to_line(self.robot_current_pose[:2], [seg[0], seg[1]]) < min_dist:
-                    min_dist = dist_point_to_line(self.robot_current_pose[:2], [seg[0], seg[1]])
+                if dist_point_to_line(self.robot_current_state.pose[:2], [seg[0], seg[1]]) < min_dist:
+                    min_dist = dist_point_to_line(self.robot_current_state.pose[:2], [seg[0], seg[1]])
                     min_i = segs.index(seg)
 
         self.i_goal = min_i+1
@@ -106,6 +112,9 @@ class PoseControl(Node):
                              2*atan2(cmd_path[1].pose.orientation.z, cmd_path[self.i_goal].pose.orientation.w)]
 
     def control_loop_spin_once(self):
+
+        if self.robot_current_state is None:
+            return
 
         if self.i_goal is None:
             cmd_vel = Twist()
@@ -117,10 +126,6 @@ class PoseControl(Node):
             return
         
         goal_reached = self.is_current_goal_reached()
-        if not goal_reached:
-            dist_to_goal = sqrt((self.robot_current_pose[0] - self.current_goal[0])**2 + (self.robot_current_pose[1] - self.current_goal[1])**2)
-            angle_to_do = abs(self.robot_current_pose[2] - self.current_goal[2])
-            # ic(dist_to_goal,"m to do left", angle_to_do,"rad to do left")
 
         if goal_reached and not self.goal_reached:
             self.goal_reached = True
@@ -133,17 +138,21 @@ class PoseControl(Node):
         elif not goal_reached and self.goal_reached:
             self.goal_reached = False
 
-        # print("i_goal:", self.i_goal)
-        
         # We reached the last pose of the cmd path
         if self.i_goal is None:
             return Vel(0., 0., 0.).to_twist()
 
 
+        # if it's not the last goal: arrival speed is 0.3 m/s
+        arrival_speed = 0.3
+        if self.i_goal == len(self.cmd_path)-1:
+            arrival_speed = 0.
+
+
         # Compute the command velocity
-        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.robot_current_pose, self.current_goal)
+        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.robot_current_state, self.current_goal, arrival_speed)
         # express in the base_link frame
-        cmd_vel = Vel.to_robot_frame(self.robot_current_pose, cmd_vel)
+        cmd_vel = Vel.to_robot_frame(self.robot_current_state.pose, cmd_vel)
         # convert to cmd_twist
         cmd_twist = cmd_vel.to_twist()
 
@@ -160,10 +169,8 @@ class PoseControl(Node):
         error_max_lin = 0.05
         error_max_ang = 0.05
 
-        # ic(self.robot_current_pose)
-        # ic(self.current_goal)
-        if abs(self.robot_current_pose[0] - self.current_goal[0]) < error_max_lin and abs(self.robot_current_pose[1] - self.current_goal[1]) < error_max_lin:
-            if self.check_angle(self.robot_current_pose[2], self.current_goal[2], error_max_ang):
+        if abs(self.robot_current_state.pose[0] - self.current_goal[0]) < error_max_lin and abs(self.robot_current_state.pose[1] - self.current_goal[1]) < error_max_lin:
+            if self.check_angle(self.robot_current_state.pose[2], self.current_goal[2], error_max_ang):
                 return True
     
         return False

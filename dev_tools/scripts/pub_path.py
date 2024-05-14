@@ -3,6 +3,16 @@ from rclpy.node import Node
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from math import sin, cos
+import numpy as np
+
+def generate_ellipse(a, b, h=0, k=0, num_points=100):
+    t = np.linspace(0, 2*np.pi, num_points)
+    x = h + a * np.cos(t)
+    y = k + b * np.sin(t)
+    return np.column_stack((x, y))
+
+ellipse_points = generate_ellipse(a=2, b=1, h=1, k=1, num_points=20)
+
 
 class PathPublisher(Node):
     def __init__(self):
@@ -12,9 +22,10 @@ class PathPublisher(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         # Define your list of poses here. Each pose is a list of [x, y, theta].
-        self.poses = [[0.0, 0.0, 0.0],
-                      [1.0, 0.0, 1.57],
-                      [2.0, 1.0, -1.57]]
+        # self.poses = [[0.0, 0.0, 0.0],
+        #               [1.0, 0.0, 1.57],
+        #               [2.0, 1.0, -1.57]]
+        self.poses = np.column_stack((ellipse_points, np.zeros(ellipse_points.shape[0])))
 
     def timer_callback(self):
         path = Path()

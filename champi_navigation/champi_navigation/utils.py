@@ -48,10 +48,10 @@ class Vel:
         theta = cmd_vel.theta
         return Vel(x, y, theta)
 
-# class RobotState:
-#     def __init__(self, pose: np.array, vel: Vel):
-#         self.current_pose = pose
-#         self.current_vel = vel 
+class RobotState:
+    def __init__(self, pose: np.array, vel: Vel):
+        self.pose = pose
+        self.vel = vel
 
 
 def dist_point_to_line (point, line):

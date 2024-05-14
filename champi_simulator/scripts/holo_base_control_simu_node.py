@@ -89,9 +89,12 @@ class HoloBaseControlDummy(Node):
         self.dt_ = 0.02
         self.last_time_ = 0.0
 
+        self.t_last_cmd_vel_ = 0.0
+
       
     def listener_callback(self, msg):
         self.latest_cmd_vel = [msg.linear.x, msg.linear.y, msg.angular.z]
+        self.t_last_cmd_vel_ = time.time()
 
     def initial_pose_callback(self, msg):
         self.current_pose[0] = msg.pose.pose.position.x
@@ -162,6 +165,10 @@ class HoloBaseControlDummy(Node):
 
             
     def timer_callback(self):
+
+        # if no cmd_vel received for 0.5s, set cmd_vel to 0
+        if time.time() - self.t_last_cmd_vel_ > 0.5:
+            self.latest_cmd_vel = [0., 0., 0.]
 
         # comppute speed of the robot and print it
         speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
