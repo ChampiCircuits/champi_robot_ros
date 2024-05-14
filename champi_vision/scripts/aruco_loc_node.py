@@ -354,15 +354,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-
-
-# TODO
-#     1]     await await_or_execute(sub.callback, msg)
-#     [visual_loc_node.py-1]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 107, in await_or_execute
-#     [visual_loc_node.py-1]     return callback(*args)
-# [visual_loc_node.py-1]   File "/home/andre/dev/coupe/ros_ws/install/champi_vision/lib/champi_vision/visual_loc_node.py", line 196, in image_callback
-# [visual_loc_node.py-1]     cv_image = cv2.remap(cv_image, self.map1, self.map2, interpolation=cv2.INTER_LINEAR)
-# [visual_loc_node.py-1] cv2.error: OpenCV(4.5.4) ./modules/imgproc/src/imgwarp.cpp:1703: error: (-215:Assertion failed) !_map1.empty() in function 'remap'
-# [visual_loc_node.py-1]
-# [ERROR] [visual_loc_node.py-1]: process has died [pid 14597, exit code 1, cmd '/home/andre/dev/coupe/ros_ws/install/champi_vision/lib/champi_vision/visual_loc_node.py --ros-args -r __node:=visual_loc_node'].
