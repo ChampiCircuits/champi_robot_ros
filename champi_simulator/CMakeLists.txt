@@ -24,21 +24,17 @@ if(BUILD_TESTING)
 endif()
 
 # Allow lauch files to be found when calling them with ros2 launch
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}
-)
-install(DIRECTORY
-  models
-  DESTINATION share/${PROJECT_NAME}
-)
-install(DIRECTORY
-  worlds
-  DESTINATION share/${PROJECT_NAME}
-)
-install(DIRECTORY
-  blender_projects
-  DESTINATION share/${PROJECT_NAME}
+#install(DIRECTORY
+#  launch
+#  DESTINATION share/${PROJECT_NAME}
+#)
+
+
+# Install Python executables
+install(PROGRAMS
+        scripts/holo_base_control_simu_node.py
+        scripts/simu_lidar_node.py
+        DESTINATION lib/${PROJECT_NAME}
 )
 
 ament_package()

@@ -89,7 +89,7 @@ def generate_launch_description():
     )
 
     lidar_simu_node = Node(
-        package='dev_tools',
+        package='champi_simulator',
         executable='simu_lidar_node.py',
         name='simu_lidar_node',
         output='screen',
@@ -97,7 +97,7 @@ def generate_launch_description():
     )
 
     base_control_simu_node = Node(
-        package='dev_tools',
+        package='champi_simulator',
         executable='holo_base_control_simu_node.py',
         name='base_controller_simu',
         output='screen',
@@ -126,7 +126,7 @@ def generate_launch_description():
     )
 
     pub_goal_rviz_node = Node(
-        package='dev_tools',
+        package='champi_nav2',
         executable='pub_goal_rviz.py',
         name='pub_goal_rviz',
         output='screen'

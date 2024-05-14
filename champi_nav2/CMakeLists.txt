@@ -121,4 +121,11 @@ install(DIRECTORY
         DESTINATION share/${PROJECT_NAME}
 )
 
+# Python
+install(PROGRAMS
+        scripts/pub_goal_rviz.py
+        DESTINATION lib/${PROJECT_NAME}
+)
+
+
 ament_package()
