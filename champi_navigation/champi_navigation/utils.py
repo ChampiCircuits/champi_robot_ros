@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from math import atan2, cos, sin
+from math import atan2, cos, sin, sqrt
 import numpy as np
 from geometry_msgs.msg import Twist
 
@@ -52,5 +52,16 @@ class Vel:
 #     def __init__(self, pose: np.array, vel: Vel):
 #         self.current_pose = pose
 #         self.current_vel = vel 
-    
 
+
+def dist_point_to_line (point, line):
+    x0, y0 = point
+    x1, y1 = line[0]
+    x2, y2 = line[1]
+    return abs((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
+
+def dist_point_to_line_signed ( point, line):
+    x0, y0 = point
+    x1, y1 = line[0]
+    x2, y2 = line[1]
+    return ((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)

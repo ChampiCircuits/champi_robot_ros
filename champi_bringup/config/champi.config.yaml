@@ -3,10 +3,10 @@ base_controller_simu:
   ros__parameters:
     enable_accel_limits: true
 
-    max_acceleration_linear: 0.02 # m/s^2
+    max_acceleration_linear: 2.0 # m/s^2
     max_deceleration_linear: 2.0 # m/s^2
 
-    max_acceleration_angular: 0.1 # rad/s^2
+    max_acceleration_angular: 20.0 # rad/s^2
     max_deceleration_angular: 20.0 # rad/s^2
 
     imu_vel_yaw_cov: 0.00001
