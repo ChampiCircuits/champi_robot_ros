@@ -6,6 +6,8 @@ from rclpy.node import Node
 from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
 
+from scipy.ndimage import gaussian_filter
+
 from math import sin, cos, pi, sqrt, atan2, hypot
 from icecream import ic
 import numpy as np
@@ -13,6 +15,12 @@ import numpy as np
 from astar import AStar
 
 import time
+
+from scipy.interpolate import CubicSpline
+import numpy as np
+
+from bresenham import bresenham
+from rdp import rdp
 
 class CostmapPathFinder(AStar):
 
@@ -69,7 +77,7 @@ class PlannerNode(Node):
     def __init__(self):
         super().__init__('planner_node')
 
-        self.path_pub = self.create_publisher(Path, '/cmd_path', 10)
+        self.path_pub = self.create_publisher(Path, '/plan', 10)
 
         self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
         self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
@@ -114,17 +122,35 @@ class PlannerNode(Node):
         self.costmap_path_finder.update_costmap(self.costmap)
         t_start = time.time()
         path = self.costmap_path_finder.astar(start, goal)
-        self.get_logger().info(f'Path found in {time.time() - t_start:.3f}s')
+
         if path is None:
-            self.get_logger().warn('No path found')
+            self.get_logger().warn('No path found (time elapsed: {:.3f}s)'.format(time.time() - t_start))
             return
+
+        path = list(path)
+
+        path = self.optimize_path(path)
 
         path_m = [self.pixel_to_m(p) for p in path]
 
+        # Replace start and end with the actual start and end
+        path_m[0] = self.robot_pos
+        path_m[-1] = self.goal
+
+        # path_m = self.smooth_path_rdp(path_m, 0.1)
+
+        path_msg = self.path_to_msg(path_m)
+        self.path_pub.publish(path_msg)
+
+        # path_m = self.cubic_spline_interpolation(path_m)
+        #
+        self.get_logger().info(f'Path found in {time.time() - t_start:.3f}s')
+
+    def path_to_msg(self, path):
         path_msg = Path()
         path_msg.header.frame_id = 'map'
         path_msg.header.stamp = self.get_clock().now().to_msg()
-        for p in path_m:
+        for p in path:
             pose = PoseStamped()
             pose.pose.position.x = p[0]
             pose.pose.position.y = p[1]
@@ -135,8 +161,28 @@ class PlannerNode(Node):
             pose.pose.orientation.w = 1.
             path_msg.poses.append(pose)
 
-        self.path_pub.publish(path_msg)
+        return path_msg
 
+
+    def is_line_free(self, start, end):
+        for p in bresenham(int(start[0]), int(start[1]), int(end[0]), int(end[1])):
+            if self.costmap[p[1], p[0]] != 0:
+                return False
+
+        return True
+
+    def optimize_path(self, path):
+        current_start = path[0]
+
+        new_path = [current_start]
+
+
+        for current_end in path[1:]:
+            if not self.is_line_free(current_start, current_end):
+                new_path.append(current_end)
+                current_start = current_end
+
+        return new_path
 
     def m_to_pixel(self, pos):
         return pos / self.m_per_pixel
