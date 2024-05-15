@@ -42,6 +42,7 @@ install(PROGRAMS
         scripts/path_controller.py
         scripts/robot_stopped_detector_node.py
         scripts/costmap_updater.py
+        scripts/a_star_path_planner.py
  # scripts/gui_node.py
   DESTINATION lib/${PROJECT_NAME}
 )

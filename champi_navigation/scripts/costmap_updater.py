@@ -20,7 +20,7 @@ class ImageToCostmapNode(Node):
         # Parameter for grid width and height (meters) and resolution (m/pixel)
         self.grid_width = self.declare_parameter('grid_width', 2.0).value
         self.grid_height = self.declare_parameter('grid_height', 3.0).value
-        self.resolution = self.declare_parameter('resolution', 0.02).value
+        self.resolution = self.declare_parameter('resolution', 0.05).value
 
         self.robot_radius = self.declare_parameter('robot_radius', 0.2).value
         self.enemy_robot_radius = self.declare_parameter('enemy_robot_radius', 0.2).value

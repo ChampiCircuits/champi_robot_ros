@@ -50,6 +50,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
         scripts/holo_teleop_joy_node.py
         scripts/pub_goal_poses.py
+        scripts/call_set_pose.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
