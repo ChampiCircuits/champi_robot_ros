@@ -359,7 +359,7 @@ class Application(tk.Tk):
             self.launch_grid_frame.grid_rowconfigure(row, weight=1)
             self.launch_grid_frame.grid_columnconfigure(col, weight=1)  # Ajout de la configuration de la colonne
             button_text = f"{launch_file}"
-            button = LaunchButton(self.launch_grid_frame, text=button_text, launch_file=launch_file, color=launch_colors[i])
+            button = LaunchButton(self.launch_grid_frame, text=button_text, launch_file=launch_file, color=launch_colors[i],wraplength=350)
             button.grid(row=row, column=col, sticky="nsew")  # Utilisation de sticky pour prendre toute la place
             col += 1
 
@@ -401,21 +401,15 @@ class Application(tk.Tk):
         ip_frame = ttk.Frame(self.tab5)
         ip_frame.pack(expand=True, fill="both")
 
-        self.ip_label = ttk.Label(ip_frame, text="\n\nAdresse IP:")
-        self.ip_label.pack()
+        ip_label = ttk.Label(ip_frame, text="\n\nAdresse IP:",font=("Futura Gabriola Garamond",30)).pack()
+        self.ip_address = ttk.Label(ip_frame, text=self.get_ip_addresses(),font=("Futura Gabriola Garamond",20)).pack()
 
-        self.ip_address = ttk.Label(ip_frame, text=self.get_ip_addresses())
-        self.ip_address.pack()
-
-        self.wifi_label = ttk.Label(ip_frame, text="\n\nNom du réseau WiFi actuel:")
-        self.wifi_label.pack()
-
-        self.wifi_name = ttk.Label(ip_frame, text=self.get_wifi_name())
-        self.wifi_name.pack()
+        wifi_label = ttk.Label(ip_frame, text="\n\nNom du réseau WiFi actuel:",font=("Futura Gabriola Garamond",30)).pack()
+        wifi_name = ttk.Label(ip_frame, text=self.get_wifi_name(),font=("Futura Gabriola Garamond",20)).pack()
 
         # Bouton Actualiser
-        refresh_button = ttk.Button(ip_frame, text="Actualiser", command=self.refresh_ip_tab)
-        refresh_button.pack()
+
+        refresh_button = ttk.Button(ip_frame, text="Actualiser", command=self.refresh_ip_tab, width = 150, padding=(30,30)).pack()
 
     def refresh_ip_tab(self):
         self.ip_address.config(text=self.get_ip_addresses())
