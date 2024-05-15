@@ -45,8 +45,8 @@ launch_files = [
     "python3 /home/champi/dev/ws_0/src/champi_robot_ros/scripts/kill_nodes.py",
     # ". /home/champi/dev/ws_0/src/champi_robot_ros/scripts/kill_nodes.sh",
     # "ros2 launch champi_brain brain.launch.py color:=homologation",
-    "ros2 run champi_brain strategy_engine_node.py --ros-args -p color:=blue"
-    "ros2 launch champi_navigation control_pose_simulation.launch.py"
+    "ros2 run champi_brain strategy_engine_node.py --ros-args -p color:=blue",
+    # "ros2 launch champi_navigation control_pose_simulation.launch.py",
 ]
 
 launch_colors = [
@@ -61,12 +61,17 @@ launch_colors = [
 
 
 class ZoneButton(tk.Button):
-    def __init__(self, master, zone, node, color,row,column,sticky, **kwargs):
-        super().__init__(master, **kwargs)
+    def __init__(self, parent, zone, node, color,x,y,table_img_height, **kwargs):
+        w = int(0.45*table_img_height/2.0)
+        h = w
+ 
+        super().__init__(parent,width=w,height=h, **kwargs)
         self.zone = zone
         self.node = node
         self.configure(bg=color, command=self.toggle)
-        self.grid(row=row, column=column, sticky=sticky)
+        # self.grid(row=row, column=column, sticky=sticky)
+        parent.create_window( x,y,anchor = "nw", window = self,width=w,height=h) 
+                    # button.grid(row=row, column=col, sticky=
 
     def toggle(self):
         print("button toggled : ",self.zone)
@@ -143,19 +148,21 @@ class Application(tk.Tk):
         self.title("Champi Circuits Control Panel")
         self.geometry("800x600")
 
+        style = ttk.Style()                     
+        current_theme =style.theme_use()
+        style.theme_settings(current_theme, {"TNotebook.Tab": {"configure": {"padding": [20, 20]}}}) 
+
         self.tabControl = ttk.Notebook(self)
 
         self.tab1 = ttk.Frame(self.tabControl)
         self.tabControl.add(self.tab1, text="LAUNCHS")
 
-        self.tab2 = ttk.Frame(self.tabControl)
-        self.tabControl.add(self.tab2, text="MATCH")
 
         self.tab3 = ttk.Frame(self.tabControl)
         self.tabControl.add(self.tab3, text="CPU")
 
-        self.tab4 = ttk.Frame(self.tabControl)
-        self.tabControl.add(self.tab4, text="TABLE DE JEU")
+        # self.tab4 = ttk.Frame(self.tabControl)
+        # self.tabControl.add(self.tab4, text="TABLE DE JEU")
 
         self.tab5 = ttk.Frame(self.tabControl)
         self.tabControl.add(self.tab5, text="IP")
@@ -165,6 +172,9 @@ class Application(tk.Tk):
 
         self.tab7 = ttk.Frame(self.tabControl)
         self.tabControl.add(self.tab7, text="CHOIX ZONE")
+
+        self.tab2 = ttk.Frame(self.tabControl)
+        self.tabControl.add(self.tab2, text="MATCH")
 
         self.tabControl.pack(expand=1, fill="both")
     
@@ -188,7 +198,7 @@ class Application(tk.Tk):
         self.create_launchs_tab()
         self.create_cpu_tab()
         self.create_ip_tab()
-        self.create_table_tab()
+        # self.create_table_tab()
         self.create_match_tab()
         self.create_choix_zone_tab()
 
@@ -230,8 +240,25 @@ class Application(tk.Tk):
         self.image = Image.open(arbre_file_path)
         self.photo_image = ImageTk.PhotoImage(self.image)
 
+
+        frame = ttk.Frame(self.tab7)
+        frame.pack(expand=True, fill="both")
+
+        # Chemin de l'image
+        image_path = get_package_share_directory('champi_brain') + "/scripts/vinyle_table_2024_FINAL_V1.png"
+
+        # Chargement de l'image
+        self.table_image = tk.PhotoImage(file=image_path)
+
+        self.table_image = self.table_image.subsample(17,17)
+
+        # Création du canvas pour afficher l'image
+        self.canvas = tk.Canvas(frame, width=self.table_image.width(), height=self.table_image.height())
+        self.canvas.pack()
+        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.table_image)
+
         # Création de la grille 3x3
-        self.create_button_grid(self.tab7, 3, 3, button_colors)
+        self.create_button_grid(self.canvas, 3, 3, button_colors)
 
     def tirette_start_pub(self):
         e = Empty()
@@ -244,17 +271,39 @@ class Application(tk.Tk):
                 index = row * cols + col
                 if button_colors[index] == 'red':
                     # Si le bouton doit être rouge, affiche l'image
-                    button = tk.Button(parent, image=self.photo_image, text="Image", command=self.tirette_start_pub)
-                    button.grid(row=row, column=col, sticky="nsew")
+                    button = tk.Button(parent, text="Tirette", command=self.tirette_start_pub, background=orange)
+                    parent.create_window(
+                        int(3/2*self.table_image.width()/3), 
+                        int(1.5*self.table_image.height()/2),  
+                        anchor = "center", 
+                        window = button,
+                        width=150,
+                        height=70)
+                    # button.grid(row=row, column=col, sticky="nsew")
                 else:
                     # Sinon, utilisez la couleur donnée
                     # button = tk.Button(parent, bg=button_colors[index])
                     # button.configure(command=self.toggle_button(self.button_zones[index]))
-                    button = ZoneButton(parent, self.button_zones[index], self, color=button_colors[index], row=row, column=col, sticky="nsew")
+
+                    if col == 0:
+                        x = 0
+                    elif col == 2:
+                        x = (3-0.45)*self.table_image.width()/3
+
+                    if row == 0:
+                        y = 0
+                    elif row == 1:
+                        y = (1-0.45/2)*self.table_image.height()/2
+                    elif row == 2:
+                        y = (2-0.45)*self.table_image.height()/2
+
+                    if col == 0 or col == 2:
+                        button = ZoneButton(parent, self.button_zones[index], self, color=button_colors[index], x=x,y=y, table_img_height=self.table_image.height())
+                        
                 
                 # Assurer que les colonnes et les rangées peuvent se développer
-                parent.columnconfigure(col, weight=1)
-                parent.rowconfigure(row, weight=1)
+                # parent.columnconfigure(col, weight=1)
+                # parent.rowconfigure(row, weight=1)
 
 
     def close_window(self):
@@ -269,11 +318,9 @@ class Application(tk.Tk):
 
     def create_match_tab(self):
         # display score, font 50, centered in the window
-        self.score_label = ttk.Label(self.tab2, text=f"Score: {self.final_score}",font=("Courier", 50))
-        self.score_label.pack(expand=True, fill="both")
+        self.score_label = ttk.Label(self.tab2, text=f"Score: {self.final_score}",font=("Futura Gabriola Garamond", 50), justify=tk.CENTER,padding=(10,50)).pack()
         # display time left, font 50, centered in the window
-        self.time_label = ttk.Label(self.tab2, text=f"Time left: 100",font=("Courier", 50))
-        self.time_label.pack(expand=True, fill="both")
+        self.time_label = ttk.Label(self.tab2, text=f"Time left: 100",font=("Futura Gabriola Garamond", 50), justify=tk.CENTER,padding=(10,50)).pack()
         self.refresh_time()
 
     def refresh_time(self):
@@ -404,22 +451,22 @@ class Application(tk.Tk):
         network_name = subprocess_output[0].decode('utf-8')
         return network_name
 
-    def create_table_tab(self):
-        table_frame = ttk.Frame(self.tab4)
-        table_frame.pack(expand=True, fill="both")
+    # def create_table_tab(self):
+    #     table_frame = ttk.Frame(self.tab4)
+    #     table_frame.pack(expand=True, fill="both")
 
-        # Chemin de l'image
-        image_path = get_package_share_directory('champi_simulator') + "/blender_projects/table/table_dae/vinyle_table_2024_FINAL_V1.png"
+    #     # Chemin de l'image
+    #     image_path = get_package_share_directory('champi_brain') + "/scripts/vinyle_table_2024_FINAL_V1.png"
 
-        # Chargement de l'image
-        self.table_image = tk.PhotoImage(file=image_path)
+    #     # Chargement de l'image
+    #     self.table_image = tk.PhotoImage(file=image_path)
 
-        self.table_image = self.table_image.subsample(17,17)
+    #     self.table_image = self.table_image.subsample(17,17)
 
-        # Création du canvas pour afficher l'image
-        self.canvas = tk.Canvas(table_frame, width=self.table_image.width(), height=self.table_image.height())
-        self.canvas.pack()
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.table_image)
+    #     # Création du canvas pour afficher l'image
+    #     self.canvas = tk.Canvas(table_frame, width=self.table_image.width(), height=self.table_image.height())
+    #     self.canvas.pack()
+    #     self.canvas.create_image(0, 0, anchor=tk.NW, image=self.table_image)
 
     def update_robot_position(self,odom_msg):
         # erase previous position
