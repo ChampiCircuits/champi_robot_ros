@@ -48,7 +48,7 @@ class LidarSimulator(Node):
         scan.angle_max = 3.14   # 180 degrees
         scan.angle_increment = 6.28 / 1024  # 360 degrees / 1024 points
         scan.range_min = 0.0
-        scan.range_max = 5.0
+        scan.range_max = 100.0
         scan.ranges = [scan.range_max-0.01] * 1024  # Initialize all ranges to max
 
         obstacle_point = PointStamped()
@@ -56,7 +56,7 @@ class LidarSimulator(Node):
         obstacle_point.point = self.obstacle_position
 
         try:
-            transformed_point = self.tf_buffer.transform(obstacle_point, 'base_link')
+            transformed_point = self.tf_buffer.transform(obstacle_point, 'base_laser')
             angle = self.calculate_angle(transformed_point.point)
             index = int((angle - scan.angle_min) / scan.angle_increment)
             distance = self.calculate_distance(transformed_point.point)
@@ -70,7 +70,7 @@ class LidarSimulator(Node):
         except Exception as e:
             self.get_logger().warn('Could not transform obstacle point: ' + str(e))
 
-        scan.header.frame_id = 'base_link'
+        scan.header.frame_id = 'base_laser'
         scan.header.stamp = self.get_clock().now().to_msg()
         self.publisher.publish(scan)
 

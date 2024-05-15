@@ -79,31 +79,25 @@ twist_mux:
         timeout : 0.5
         priority: 101
 
-
-scan_to_scan_filter_chain:
+ld_lidar:
   ros__parameters:
-    filter1:
-      name: box_filter
-      type: laser_filters/LaserScanBoxFilter
-      params:
-        box_frame: map
-        max_x: 1.8
-        max_y: 2.8
-        max_z: 0.5
-        min_x: 0.2
-        min_y: 0.2
-        min_z: -0.5
-        
-        invert: true # activate to remove all points outside of the box
+    product_name: 'LDLiDAR_LD19'
+    topic_name: 'scan'
+    frame_id: 'base_laser'
+    port_name: '/dev/ttyUSB0'
+    port_baudrate: 230400
+    laser_scan_dir: true
+    enable_angle_crop_func: false
+    angle_crop_min: 135.0
+    angle_crop_max: 225.0
+    range_min: 0.05
+    range_max: 5.0
+    # units: 'M'
 
-
-robot_stopped_detector:
+enemy_tracker:
   ros__parameters:
-
-    cmd_vel_topic: "/base_controller/cmd_vel_limited"
-    imu_topic: "/imu"
-    odometry_topic: "/odometry/filtered"
-    output_topic: "/robot_stopped/pose"
-    yaw_velocity_threshold: 0.005
-
-    pose_covariance: [0.000001, 0.000001, 0.000001, 0.000001, 0.000001, 0.000001]
+    crop_box:
+        x_min: 0.1
+        x_max: 1.9
+        y_min: 0.1
+        y_max: 2.9

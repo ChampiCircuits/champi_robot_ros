@@ -49,6 +49,7 @@ install(PROGRAMS
         scripts/aruco_loc_node.py
         scripts/camera_info_publisher_node.py
         scripts/cv2_camera_publisher_node.py
+        scripts/enemy_tracker_node.py
         DESTINATION lib/${PROJECT_NAME}
 )
 
