@@ -72,6 +72,12 @@ class CostmapPathFinder(AStar):
 
         return neighbors
 
+
+class Pose2D:
+    def __init__(self, pos, theta):
+        self.pos = pos
+        self.theta = theta
+
 class PlannerNode(Node):
 
     def __init__(self):
@@ -87,8 +93,8 @@ class PlannerNode(Node):
         self.timer = self.create_timer(timer_period_sec=0.2,
                                        callback=self.timer_callback)
 
-        self.robot_pos = None
-        self.goal = None
+        self.robot_pose = None
+        self.goal_pose = None
 
         self.m_per_pixel = None
 
@@ -96,10 +102,10 @@ class PlannerNode(Node):
 
 
     def odom_callback(self, msg):
-        self.robot_pos = np.array([msg.pose.pose.position.x, msg.pose.pose.position.y])
+        self.robot_pose = Pose2D((msg.pose.pose.position.x, msg.pose.pose.position.y), 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w))
 
     def goal_callback(self, msg):
-        self.goal = np.array([msg.pose.position.x, msg.pose.position.y])
+        self.goal_pose = Pose2D((msg.pose.position.x, msg.pose.position.y), 2 * atan2(msg.pose.orientation.z, msg.pose.orientation.w))
 
     def costmap_callback(self, msg):
 
@@ -111,13 +117,34 @@ class PlannerNode(Node):
 
     def timer_callback(self):
 
-        if self.robot_pos is None or self.goal is None or self.costmap is None:
+        # Init
+        if self.robot_pose is None or self.goal_pose is None or self.costmap is None:
             return
 
-        start = self.m_to_pixel(self.robot_pos)
-        start = (int(start[0]), int(start[1]))
-        goal = self.m_to_pixel(self.goal)
-        goal = (int(goal[0]), int(goal[1]))
+        start = self.m_to_pixel(self.robot_pose.pos)
+        goal = self.m_to_pixel(self.goal_pose.pos)
+
+        # If start or goal are not in the costmap, return
+        if not (0 <= start[0] < self.costmap.shape[1] and 0 <= start[1] < self.costmap.shape[0]):
+            self.get_logger().warn('Start not in costmap')
+            return
+        if not (0 <= goal[0] < self.costmap.shape[1] and 0 <= goal[1] < self.costmap.shape[0]):
+            self.get_logger().warn('Goal not in costmap')
+            return
+
+        # If start or goal are in an occupied cell, return
+        if self.costmap[start[1], start[0]] != 0:
+            self.get_logger().warn('Start in occupied cell')
+            return
+        if self.costmap[goal[1], goal[0]] != 0:
+            self.get_logger().warn('Goal in occupied cell')
+            return
+
+        # If line is free, just go straight
+        if self.is_line_free(start, goal):
+            path_msg = self.path_to_msg([self.robot_pose.pos, self.goal_pose.pos], self.goal_pose.theta)
+            self.path_pub.publish(path_msg)
+            return
 
         self.costmap_path_finder.update_costmap(self.costmap)
         t_start = time.time()
@@ -134,19 +161,19 @@ class PlannerNode(Node):
         path_m = [self.pixel_to_m(p) for p in path]
 
         # Replace start and end with the actual start and end
-        path_m[0] = self.robot_pos
-        path_m[-1] = self.goal
+        path_m[0] = self.robot_pose.pos
+        path_m[-1] = self.goal_pose.pos
 
         # path_m = self.smooth_path_rdp(path_m, 0.1)
 
-        path_msg = self.path_to_msg(path_m)
+        path_msg = self.path_to_msg(path_m, self.goal_pose.theta)
         self.path_pub.publish(path_msg)
 
         # path_m = self.cubic_spline_interpolation(path_m)
         #
-        self.get_logger().info(f'Path found in {time.time() - t_start:.3f}s')
+        # self.get_logger().info(f'Path found in {time.time() - t_start:.3f}s')
 
-    def path_to_msg(self, path):
+    def path_to_msg(self, path, angle):
         path_msg = Path()
         path_msg.header.frame_id = 'map'
         path_msg.header.stamp = self.get_clock().now().to_msg()
@@ -161,6 +188,9 @@ class PlannerNode(Node):
             pose.pose.orientation.w = 1.
             path_msg.poses.append(pose)
 
+        # Set the latest pose orientation
+        path_msg.poses[-1].pose.orientation.z = sin(angle / 2)
+        path_msg.poses[-1].pose.orientation.w = cos(angle / 2)
         return path_msg
 
 
@@ -185,7 +215,7 @@ class PlannerNode(Node):
         return new_path
 
     def m_to_pixel(self, pos):
-        return pos / self.m_per_pixel
+        return (int(pos[0] / self.m_per_pixel), int(pos[1] / self.m_per_pixel))
 
     def pixel_to_m(self, pos):
         return (pos[0] * self.m_per_pixel, pos[1] * self.m_per_pixel)
