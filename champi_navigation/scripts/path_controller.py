@@ -134,7 +134,7 @@ class PoseControl(Node):
         if self.robot_current_state is None:
             return
 
-        if self.i_goal is None:
+        if self.i_goal is None or self.cmd_path == []:
             cmd_vel = Twist()
             cmd_vel.linear.x = 0.
             cmd_vel.linear.y = 0.
@@ -154,7 +154,7 @@ class PoseControl(Node):
 
         # We reached the last pose of the cmd path
         if self.i_goal is None:
-            return Vel(0., 0., 0.).to_twist()
+            return
 
 
         # if it's not the last goal: arrival speed is 0.3 m/s

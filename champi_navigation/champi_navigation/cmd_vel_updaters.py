@@ -55,8 +55,6 @@ class CmdVelUpdaterWPILib:
 
         correction = self.pid_correct_dir.update(dist, 0.1)
 
-        ic(pose_prev, pose_goal, robot_state.pose, dist, correction)
-
         correction_max = 0.1
         if correction > correction_max:
             correction = correction_max

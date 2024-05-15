@@ -6,6 +6,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from tf2_ros import TransformListener, Buffer
 from geometry_msgs.msg import PoseStamped, PointStamped, Point
+from nav_msgs.msg import Odometry
 from tf2_geometry_msgs import do_transform_point
 
 from math import cos, sin, atan2
@@ -23,8 +24,7 @@ class EnemyTracker(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # Publish enemy position
-        self.enemy_pos_pub = self.create_publisher(PoseStamped, '/enemy_pose', 10)
-
+        self.enemy_pos_pub = self.create_publisher(Odometry, '/enemy_pose', 10)
 
         # Get crop box parameters
         self.x_min_box = self.declare_parameter('crop_box.x_min',rclpy.Parameter.Type.DOUBLE).value
@@ -38,14 +38,23 @@ class EnemyTracker(Node):
                                                                                                         self.y_min_box,
                                                                                                         self.y_max_box))
 
-        self.prev_enemy_pose = None
+        self.prev_enemy_odom_msg = None
+
+        self.last_measurement_time = self.get_clock().now()
 
     def scan_callback(self, msg):
+
+        # Compute dt
+        current_time = self.get_clock().now()
+        dt = (current_time - self.last_measurement_time).nanoseconds / 1e9
+        self.last_measurement_time = current_time
+
+
         points = []
         for i in range(len(msg.ranges)):
             angle = msg.angle_min + i * msg.angle_increment
 
-            if(msg.ranges[i] > 30.0):
+            if(msg.ranges[i] > 5.0):
                 continue
 
             x = msg.ranges[i] * cos(angle)
@@ -72,32 +81,34 @@ class EnemyTracker(Node):
         if len(points) > 0:
             center_of_mass = self.get_center_of_mass(points)
 
-            enemy_pose_msg = PoseStamped()
-            enemy_pose_msg.pose.position = center_of_mass
-            enemy_pose_msg.header.frame_id = 'odom'
-            enemy_pose_msg.header.stamp = self.get_clock().now().to_msg()
+            enemy_odom_msg = Odometry()
+            enemy_odom_msg.pose.pose.position = center_of_mass
+            enemy_odom_msg.header.frame_id = 'odom'
+            enemy_odom_msg.header.stamp = self.get_clock().now().to_msg()
 
-            if self.prev_enemy_pose is None:
-                enemy_pose_msg.pose.orientation.x = 0.
-                enemy_pose_msg.pose.orientation.y = 0.
-                enemy_pose_msg.pose.orientation.z = 0.
-                enemy_pose_msg.pose.orientation.w = 1.
+            if self.prev_enemy_odom_msg is None:
+                enemy_odom_msg.pose.pose.orientation.x = 0.
+                enemy_odom_msg.pose.pose.orientation.y = 0.
+                enemy_odom_msg.pose.pose.orientation.z = 0.
+                enemy_odom_msg.pose.pose.orientation.w = 1.
 
             elif self.is_steady(center_of_mass):
-                enemy_pose_msg.pose.orientation = self.prev_enemy_pose.pose.orientation
+                enemy_odom_msg.pose.pose.orientation = self.prev_enemy_odom_msg.pose.pose.orientation
 
             else:
-                enemy_yaw = atan2(center_of_mass.y - self.prev_enemy_pose.pose.position.y, center_of_mass.x - self.prev_enemy_pose.pose.position.x)
-                enemy_pose_msg.pose.orientation.x = 0.
-                enemy_pose_msg.pose.orientation.y = 0.
-                enemy_pose_msg.pose.orientation.z = sin(enemy_yaw/2)
-                enemy_pose_msg.pose.orientation.w = cos(enemy_yaw/2)
+                enemy_yaw = atan2(center_of_mass.y - self.prev_enemy_odom_msg.pose.pose.position.y, center_of_mass.x - self.prev_enemy_odom_msg.pose.pose.position.x)
+                enemy_odom_msg.pose.pose.orientation.x = 0.
+                enemy_odom_msg.pose.pose.orientation.y = 0.
+                enemy_odom_msg.pose.pose.orientation.z = sin(enemy_yaw/2)
+                enemy_odom_msg.pose.pose.orientation.w = cos(enemy_yaw/2)
 
+                # Compute enemy velocity (in it's local frame)
+                dist = ((center_of_mass.x - self.prev_enemy_odom_msg.pose.pose.position.x) ** 2 + (center_of_mass.y - self.prev_enemy_odom_msg.pose.pose.position.y) ** 2) ** 0.5
+                enemy_odom_msg.twist.twist.linear.x = dist / dt
 
-            self.prev_enemy_pose = enemy_pose_msg
+            self.prev_enemy_odom_msg = enemy_odom_msg
 
-            self.enemy_pos_pub.publish(enemy_pose_msg)
-
+            self.enemy_pos_pub.publish(enemy_odom_msg)
 
 
     def is_point_in_box(self, point):
@@ -112,8 +123,8 @@ class EnemyTracker(Node):
         return Point(x=x_sum/len(points), y=y_sum/len(points))
 
     def is_steady(self, point):
-        return (self.prev_enemy_pose is not None and abs(point.x - self.prev_enemy_pose.pose.position.x) < 0.01
-                and abs(point.y - self.prev_enemy_pose.pose.position.y) < 0.01)
+        return (self.prev_enemy_odom_msg is not None and abs(point.x - self.prev_enemy_odom_msg.pose.pose.position.x) < 0.02
+                and abs(point.y - self.prev_enemy_odom_msg.pose.pose.position.y) < 0.02)
 
 def main(args=None):
     rclpy.init(args=args)
