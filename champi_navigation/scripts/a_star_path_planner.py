@@ -92,7 +92,6 @@ class PlannerNode(Node):
 
         self.timer = self.create_timer(timer_period_sec=0.2,
                                        callback=self.timer_callback)
-
         self.robot_pose = None
         self.goal_pose = None
 
@@ -132,13 +131,23 @@ class PlannerNode(Node):
             self.get_logger().warn('Goal not in costmap')
             return
 
-        # If start or goal are in an occupied cell, return
-        if self.costmap[start[1], start[0]] != 0:
-            self.get_logger().warn('Start in occupied cell')
-            return
+        # If goal is in an occupied cell, return
         if self.costmap[goal[1], goal[0]] != 0:
             self.get_logger().warn('Goal in occupied cell')
+            # Publish empty path
+            path_msg = self.path_to_msg([], self.robot_pose.theta)
+            self.path_pub.publish(path_msg)
             return
+
+        # If start is in an occupied cell, clear costmap around start to allow pathfinding
+        # Clear a circle of radius 0.1m around the robot
+        start = self.m_to_pixel(self.robot_pose.pos)
+        start = (int(start[0]), int(start[1]))
+        radius = int(0.1 / self.m_per_pixel)
+        for i in range(-radius, radius + 1):
+            for j in range(-radius, radius + 1):
+                if 0 <= start[0] + i < self.costmap.shape[1] and 0 <= start[1] + j < self.costmap.shape[0]:
+                    self.costmap[start[1] + j, start[0] + i] = 0
 
         # If line is free, just go straight
         if self.is_line_free(start, goal):
@@ -177,6 +186,10 @@ class PlannerNode(Node):
         path_msg = Path()
         path_msg.header.frame_id = 'map'
         path_msg.header.stamp = self.get_clock().now().to_msg()
+
+        if len(path) == 0:
+            return path_msg
+
         for p in path:
             pose = PoseStamped()
             pose.pose.position.x = p[0]
