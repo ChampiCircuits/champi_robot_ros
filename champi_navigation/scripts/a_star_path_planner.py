@@ -6,26 +6,16 @@ from rclpy.node import Node
 from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
 
-from scipy.ndimage import gaussian_filter
-
-from math import sin, cos, pi, sqrt, atan2, hypot
-from icecream import ic
+from math import sin, cos, atan2, hypot
 import numpy as np
-
-from astar import AStar
-
 import time
 
-from scipy.interpolate import CubicSpline
-import numpy as np
-
+from astar import AStar
 from bresenham import bresenham
-from rdp import rdp
+
+
 
 class CostmapPathFinder(AStar):
-
-    """sample use of the astar algorithm. In this exemple we work on a maze made of ascii characters,
-    and a 'node' is just a (x,y) tuple that represents a reachable position"""
 
     def __init__(self, width, height):
         # Costmap is a np array
@@ -89,8 +79,9 @@ class PlannerNode(Node):
         self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
         self.costmap_sub = self.create_subscription(OccupancyGrid, '/costmap', self.costmap_callback, 10)
 
+        loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
 
-        self.timer = self.create_timer(timer_period_sec=0.2,
+        self.timer = self.create_timer(timer_period_sec=loop_period,
                                        callback=self.timer_callback)
         self.robot_pose = None
         self.goal_pose = None

@@ -17,14 +17,14 @@ class ImageToCostmapNode(Node):
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
 
         # Parameter for grid width and height (meters) and resolution (m/pixel)
-        self.grid_width = self.declare_parameter('grid_width', 2.0).value
-        self.grid_height = self.declare_parameter('grid_height', 3.0).value
-        self.resolution = self.declare_parameter('resolution', 0.05).value
+        self.grid_width = self.declare_parameter('grid_width', rclpy.Parameter.Type.DOUBLE).value
+        self.grid_height = self.declare_parameter('grid_height', rclpy.Parameter.Type.DOUBLE).value
+        self.resolution = self.declare_parameter('grid_resolution', rclpy.Parameter.Type.DOUBLE).value
 
-        self.robot_radius = self.declare_parameter('robot_radius', 0.2).value
-        self.enemy_robot_radius = self.declare_parameter('enemy_robot_radius', 0.2).value
+        self.robot_radius = self.declare_parameter('robot_radius', rclpy.Parameter.Type.DOUBLE).value
+        self.enemy_robot_radius = self.declare_parameter('enemy_robot_radius', rclpy.Parameter.Type.DOUBLE).value
 
-        self.enemy_prediction_time = self.declare_parameter('enemy_prediction_time', 0).value
+        self.enemy_prediction_time = self.declare_parameter('enemy_pos_prediction_time', rclpy.Parameter.Type.DOUBLE).value
 
         # Create a black image with the specified width and height
         self.static_layer_img = np.zeros((int(self.grid_height / self.resolution), int(self.grid_width / self.resolution)), np.uint8)
