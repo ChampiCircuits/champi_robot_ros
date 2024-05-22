@@ -48,6 +48,7 @@ class Vel:
         theta = cmd_vel.theta
         return Vel(x, y, theta)
 
+
 class RobotState:
     def __init__(self, pose: np.array, vel: Vel):
         self.pose = pose
@@ -88,12 +89,12 @@ class PathFollowParams:
         self.max_acc_angular = None
 
 
-
 def dist_point_to_line(point, line):
     x0, y0 = point
     x1, y1 = line[0]
     x2, y2 = line[1]
     return abs((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
+
 
 def dist_point_to_line_signed(point, line):
     x0, y0 = point

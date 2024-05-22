@@ -14,10 +14,13 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
-        
+
+
 class PathControllerNode(Node):
     def __init__(self):
         super().__init__('pose_control_node')
+
+        # Parameters
 
         self.control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
         self.max_linear_speed = self.declare_parameter('max_linear_speed', rclpy.Parameter.Type.DOUBLE).value
@@ -25,14 +28,13 @@ class PathControllerNode(Node):
         self.max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
         self.max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
 
+        # ROS subscriptions, publishers and timers
+        self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.path_sub = self.create_subscription(Path, '/plan', self.path_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
 
-        # Timers
-        self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
-
-        # Objects instantiation
+        # Other objects instantiation
 
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
 
@@ -75,15 +77,16 @@ class PathControllerNode(Node):
         
         self.path_helper.update_goal(self.robot_current_state)
 
+        # Maybe, when calling update_goal, we found that the robot is already at the goal
         if self.path_helper.robot_should_stop():
             return
 
-        # Compute the command velocity
+        # Compute the command velocity (get required parameters from path_helper)
         path_follow_params = self.path_helper.get_path_follow_params(self.robot_current_state)
 
         cmd_vel = self.cmd_vel_updater.compute_cmd_vel(path_follow_params)
 
-        # express in the base_link frame
+        # express cmd in the base_link frame
         cmd_vel = Vel.to_robot_frame(self.robot_current_state.pose, cmd_vel)
         # convert to cmd_twist
         cmd_twist = cmd_vel.to_twist()
@@ -98,6 +101,7 @@ def main(args=None):
     rclpy.spin(pose_control_node)
     pose_control_node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

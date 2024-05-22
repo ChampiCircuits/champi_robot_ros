@@ -5,16 +5,27 @@ from champi_navigation.utils import Vel, dist_point_to_line_signed, PathFollowPa
 
 from wpimath.trajectory import TrapezoidProfile
 
-class CmdVelUpdaterWPILib:
+
+class CmdVelUpdaterInterface:
+
+    """
+    Interface for the CmdVelUpdater classes. This interface defines the method compute_cmd_vel that must be implemented.
+    This method takes a PathFollowParams object as argument and returns a Vel object that represents the velocity to
+    apply to the robot to follow the objectives defined in the PathFollowParams object. The method must be called
+    periodically to update the velocity of the robot.
+    """
+
+    def compute_cmd_vel(self, p: PathFollowParams):
+        pass
+
+
+class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
     def __init__(self):
 
         self.constraints_mag = TrapezoidProfile.Constraints(0.5, 0.5)
         self.constraints_theta = TrapezoidProfile.Constraints(3., 1.)
 
         self.pid_correct_dir = PID(5, 0, 1)
-
-
-
 
     def compute_cmd_vel(self, p: PathFollowParams):
 
@@ -43,8 +54,6 @@ class CmdVelUpdaterWPILib:
         profile_theta = TrapezoidProfile(self.constraints_theta, goal_state_theta, current_state_theta)
         cmd_vel_theta = profile_theta.calculate(0.1).velocity
 
-
-
         dist = 0
         if p.robot_state.pose[:2] != p.segment_start[:2]:
             dist = dist_point_to_line_signed(p.robot_state.pose[:2], [p.segment_start[:2], p.segment_end[:2]])
@@ -58,8 +67,6 @@ class CmdVelUpdaterWPILib:
             correction = -correction_max
 
         angle_vec_dir += correction
-
-
 
         # Fill cmd_vel
         cmd_vel = Vel()
