@@ -12,7 +12,6 @@ def generate_launch_description():
     # Get configuration file
     config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
 
-
     raspi_cam_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource([
             get_package_share_directory('champi_vision'),
@@ -20,16 +19,12 @@ def generate_launch_description():
         ])
     )
 
-
     visual_loc = Node(
             package="champi_vision",
             executable="visual_loc_node.py",
             name='visual_loc',
             output='screen'
     )
-
-
-    
 
     return LaunchDescription([
         raspi_cam_launch,

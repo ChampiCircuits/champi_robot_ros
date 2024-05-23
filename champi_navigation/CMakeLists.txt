@@ -38,7 +38,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-        scripts/path_planner.py
+        scripts/path_planner_node.py
         scripts/path_controller.py
         scripts/robot_stopped_detector_node.py
         scripts/costmap_updater.py

@@ -48,19 +48,55 @@ class Vel:
         theta = cmd_vel.theta
         return Vel(x, y, theta)
 
+
 class RobotState:
     def __init__(self, pose: np.array, vel: Vel):
-        self.pose = pose
+        self.pose = pose  # a list of 3 elements [x, y, theta]
         self.vel = vel
 
 
-def dist_point_to_line (point, line):
+class PathFollowParams:
+    """This class is used to store the parameters of a CmdVelUpdater class.
+    We need to pass this class each time we call compute_cmd_vel, so we can change the parameters easily.
+
+    The parameters are:
+    - Robot Pose
+    - Segment Start Pose (note: the segment is the line that is currently being followed)
+    - Segment End Pose (goal)
+    - Arrival Speed (at goal)
+    - Arrival Angle
+
+    - max_speed_linear
+    - max_speed_angular
+    - max_acc_linear
+    - max_acc_angular
+
+
+    For segment start and end pose, only the x and y coordinates are used. The goal orientation is given by the
+    arrival angle.
+
+    """
+
+    def __init__(self):
+        self.robot_state = None  # type RobotState
+        self.segment_start = None # type Pose
+        self.segment_end = None # type Pose
+        self.arrival_speed = None
+        self.arrival_angle = None
+        self.max_speed_linear = None
+        self.max_speed_angular = None
+        self.max_acc_linear = None
+        self.max_acc_angular = None
+
+
+def dist_point_to_line(point, line):
     x0, y0 = point
     x1, y1 = line[0]
     x2, y2 = line[1]
     return abs((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
 
-def dist_point_to_line_signed ( point, line):
+
+def dist_point_to_line_signed(point, line):
     x0, y0 = point
     x1, y1 = line[0]
     x2, y2 = line[1]

@@ -2,8 +2,7 @@
 
 import rclpy
 from rclpy.node import Node
-from nav_msgs.msg import OccupancyGrid
-from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import OccupancyGrid, Odometry
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -18,12 +17,14 @@ class ImageToCostmapNode(Node):
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
 
         # Parameter for grid width and height (meters) and resolution (m/pixel)
-        self.grid_width = self.declare_parameter('grid_width', 2.0).value
-        self.grid_height = self.declare_parameter('grid_height', 3.0).value
-        self.resolution = self.declare_parameter('resolution', 0.02).value
+        self.grid_width = self.declare_parameter('grid_width', rclpy.Parameter.Type.DOUBLE).value
+        self.grid_height = self.declare_parameter('grid_height', rclpy.Parameter.Type.DOUBLE).value
+        self.resolution = self.declare_parameter('grid_resolution', rclpy.Parameter.Type.DOUBLE).value
 
-        self.robot_radius = self.declare_parameter('robot_radius', 0.2).value
-        self.enemy_robot_radius = self.declare_parameter('enemy_robot_radius', 0.2).value
+        self.robot_radius = self.declare_parameter('robot_radius', rclpy.Parameter.Type.DOUBLE).value
+        self.enemy_robot_radius = self.declare_parameter('enemy_robot_radius', rclpy.Parameter.Type.DOUBLE).value
+
+        self.enemy_prediction_time = self.declare_parameter('enemy_pos_prediction_time', rclpy.Parameter.Type.DOUBLE).value
 
         # Create a black image with the specified width and height
         self.static_layer_img = np.zeros((int(self.grid_height / self.resolution), int(self.grid_width / self.resolution)), np.uint8)
@@ -39,7 +40,7 @@ class ImageToCostmapNode(Node):
 
         # Subscribe to the enemy position
         self.enemy_position = None
-        self.enemy_position_sub = self.create_subscription(PoseStamped, '/enemy_pose', self.enemy_position_callback, 10)
+        self.enemy_position_sub = self.create_subscription(Odometry, '/enemy_pose', self.enemy_position_callback, 10)
 
 
     def enemy_position_callback(self, msg):
@@ -50,12 +51,12 @@ class ImageToCostmapNode(Node):
         if self.enemy_position is not None:
             self.clear_obstacle_layer()
 
-            enemy_x = int(round(self.enemy_position.pose.position.x / self.resolution))
-            enemy_y = int(round(self.enemy_position.pose.position.y / self.resolution))
-            radius = int(np.ceil((self.enemy_robot_radius + self.robot_radius) / self.resolution))
+            self.draw_enemy_robot(self.obstacle_layer_img, self.enemy_position.pose.pose.position.x, self.enemy_position.pose.pose.position.y)
 
-            # Draw enemy robot
-            cv2.circle(self.obstacle_layer_img, (enemy_x, enemy_y), radius, 100, -1)
+            if self.enemy_prediction_time > 0:
+                x_pred, y_pred = self.predict_enemy_pos(self.enemy_prediction_time)
+
+                self.draw_enemy_robot(self.obstacle_layer_img, x_pred, y_pred)
 
         occupancy_img = self.combine_layers()
 
@@ -79,6 +80,27 @@ class ImageToCostmapNode(Node):
         # ic((255 - 128 - img.flatten()).tolist())
         occupancy_grid.data = (img.flatten()).tolist()  # invert colors and flatten the image
         return occupancy_grid
+
+
+    def draw_enemy_robot(self, img, x, y):
+        enemy_x = int(round(x / self.resolution))
+        enemy_y = int(round(y / self.resolution))
+        radius = int(np.ceil((self.enemy_robot_radius + self.robot_radius) / self.resolution))
+
+        # Draw enemy robot
+        cv2.circle(img, (enemy_x, enemy_y), radius, 100, -1)
+
+    def predict_enemy_pos(self, dt):
+
+        # self.enemy_position.pose.pose.position.x is the speed of the enemy robot in its own frame.
+
+        theta = 2 * np.arctan2(self.enemy_position.pose.pose.orientation.z, self.enemy_position.pose.pose.orientation.w)
+
+        x_pred = self.enemy_position.pose.pose.position.x + dt * np.cos(theta) * self.enemy_position.twist.twist.linear.x
+        y_pred = self.enemy_position.pose.pose.position.y + dt * np.sin(theta) * self.enemy_position.twist.twist.linear.x
+
+        return x_pred, y_pred
+
 
 def main(args=None):
     rclpy.init(args=args)
