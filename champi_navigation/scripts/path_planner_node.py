@@ -2,10 +2,12 @@
 
 import rclpy
 from rclpy.node import Node
+from rclpy.action import ActionServer, GoalResponse, CancelResponse
 
 from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
 from std_msgs.msg import String
+from champi_interfaces.action import Navigate
 
 from math import sin, cos, atan2, hypot, pi
 import numpy as np
@@ -23,15 +25,12 @@ class PlannerNode(Node):
 
         self.path_pub = self.create_publisher(Path, '/plan', 10)
 
-        self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
         self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
         self.costmap_sub = self.create_subscription(OccupancyGrid, '/costmap', self.costmap_callback, 10)
 
-        # String publisher for feedback TODO implement Actions later
-        self.feedback_pub = self.create_publisher(String, '/planner_feedback', 10)
+        self.action_server_navigate = ActionServer(self, Navigate, '/navigate', self.execute_callback, goal_callback=self.goal_callback, cancel_callback=self.cancel_callback)
 
         loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
-
 
         self.timer = self.create_timer(timer_period_sec=loop_period,
                                        callback=self.timer_callback)
@@ -50,12 +49,32 @@ class PlannerNode(Node):
             2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
         ]
 
-    def goal_callback(self, msg):
+    def goal_callback(self, goal):
+        self.get_logger().info(f'New goal received!')
+
         self.goal_pose = [
-            msg.pose.position.x,
-            msg.pose.position.y,
-            2 * atan2(msg.pose.orientation.z, msg.pose.orientation.w)
+            goal.poses[0].position.x,
+            goal.poses[0].position.y,
+            2 * atan2(goal.poses[0].orientation.z, goal.poses[0].orientation.w)
         ]
+
+        return GoalResponse.ACCEPT
+    
+    def execute_callback(self, goal_handle):
+        self.get_logger().info(f'Goal accepted!')
+
+        while rclpy.ok() and not goal_handle.is_cancel_requested():
+            if self.is_current_goal_reached():
+                goal_handle.succeed()
+                return Navigate.Result()
+
+            time.sleep(0.1)
+
+    
+    def cancel_callback(self, goal_handle):
+        self.get_logger().info(f'Goal canceled!')
+    
+
 
     def costmap_callback(self, msg):
 
@@ -70,11 +89,11 @@ class PlannerNode(Node):
 
         # We're still waiting for first messages (init)
         if self.robot_pose is None or self.costmap is None:
-            self.feedback_pub.publish(String(data='INIT'))
+            # self.feedback_pub.publish(String(data='INIT'))
             return
 
         if self.goal_pose is None:
-            self.feedback_pub.publish(String(data='FREE'))
+            # self.feedback_pub.publish(String(data='FREE'))
             return
 
         # Check if the goal is reached
@@ -90,7 +109,7 @@ class PlannerNode(Node):
 
         # Publish the path and feedback
         self.path_pub.publish(path_msg)
-        self.feedback_pub.publish(String(data=result.name))
+        # self.feedback_pub.publish(String(data=result.name))
 
     # ====================================== Utils ==========================================
 

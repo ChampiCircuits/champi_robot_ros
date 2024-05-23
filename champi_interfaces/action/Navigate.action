@@ -1,0 +1,13 @@
+# Request
+# Waypoints... -> goal
+geometry_msgs/Pose[] poses
+---
+# Result
+string result
+---
+# Feedback
+# Estimated Time of Arrival (seconds)
+float32 eta
+int32 goal_index
+string path_compute_status
+
