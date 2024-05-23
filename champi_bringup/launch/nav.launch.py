@@ -27,7 +27,7 @@ def generate_launch_description():
 
     a_star_path_planner_node = Node(
         package='champi_navigation',
-        executable='a_star_path_planner.py',
+        executable='path_planner_node.py',
         name='path_planner',
         output='screen',
         parameters=[config_file_path]
@@ -39,7 +39,6 @@ def generate_launch_description():
         name='call_set_pose',
         output='screen',
     )
-
 
     return LaunchDescription([
         path_controller_node,

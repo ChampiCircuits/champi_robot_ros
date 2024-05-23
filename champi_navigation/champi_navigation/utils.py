@@ -51,7 +51,7 @@ class Vel:
 
 class RobotState:
     def __init__(self, pose: np.array, vel: Vel):
-        self.pose = pose
+        self.pose = pose  # a list of 3 elements [x, y, theta]
         self.vel = vel
 
 
