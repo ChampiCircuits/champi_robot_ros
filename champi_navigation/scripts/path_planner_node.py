@@ -69,7 +69,11 @@ class PlannerNode(Node):
     def timer_callback(self):
 
         # We're still waiting for first messages (init)
-        if self.robot_pose is None or self.goal_pose is None or self.costmap is None:
+        if self.robot_pose is None or self.costmap is None:
+            self.feedback_pub.publish(String(data='INIT'))
+            return
+
+        if self.goal_pose is None:
             self.feedback_pub.publish(String(data='FREE'))
             return
 
