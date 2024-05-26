@@ -28,6 +28,14 @@ class PathControllerNode(Node):
         self.max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
         self.max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
 
+        # Print parameters
+        self.get_logger().info('Path Controller started with the following parameters:')
+        self.get_logger().info(f'control_loop_period: {self.control_loop_period}')
+        self.get_logger().info(f'max_linear_speed: {self.max_linear_speed}')
+        self.get_logger().info(f'max_angular_speed: {self.max_angular_speed}')
+        self.get_logger().info(f'max_linear_acceleration: {self.max_linear_acceleration}')
+        self.get_logger().info(f'max_angular_acceleration: {self.max_angular_acceleration}')
+
         # ROS subscriptions, publishers and timers
         self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)

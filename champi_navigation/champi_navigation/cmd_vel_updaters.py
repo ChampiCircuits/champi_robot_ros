@@ -22,12 +22,17 @@ class CmdVelUpdaterInterface:
 class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
     def __init__(self):
 
-        self.constraints_mag = TrapezoidProfile.Constraints(0.5, 0.5)
-        self.constraints_theta = TrapezoidProfile.Constraints(3., 1.)
+        self.constraints_mag = None
+        self.constraints_theta = None
 
         self.pid_correct_dir = PID(5, 0, 1)
 
     def compute_cmd_vel(self, p: PathFollowParams):
+
+        # TODO update constraints if needed
+        self.constraints_mag = TrapezoidProfile.Constraints(p.max_speed_linear, p.max_acc_linear)
+        self.constraints_theta = TrapezoidProfile.Constraints(p.max_speed_angular, p.max_acc_angular)
+
 
         angle_vec_dir = atan2(p.segment_end[1] - p.robot_state.pose[1], p.segment_end[0] - p.robot_state.pose[0])
         dist_robot_to_goal = sqrt((p.segment_end[0] - p.robot_state.pose[0]) ** 2 + (p.segment_end[1] - p.robot_state.pose[1]) ** 2)
