@@ -69,9 +69,8 @@ class ZoneButton(tk.Button):
         self.zone = zone
         self.node = node
         self.configure(bg=color, command=self.toggle)
-        # self.grid(row=row, column=column, sticky=sticky)
         parent.create_window( x,y,anchor = "nw", window = self,width=w,height=h) 
-                    # button.grid(row=row, column=col, sticky=
+        print("button: ",zone," created at ",x,y)
 
     def toggle(self):
         print("button toggled : ",self.zone)
@@ -180,7 +179,7 @@ class Application(tk.Tk):
     
         rclpy.init()
         self.node = rclpy.create_node('GUI_node')
-        self.odom_subscriber = self.node.create_subscription(Odometry, '/odom', self.update_robot_position, 10)
+        # self.odom_subscriber = self.node.create_subscription(Odometry, '/odom', self.update_robot_position, 10)
 
         #score subscriber
         self.score_subscriber = self.node.create_subscription(Int32, '/final_score', self.update_score, 10)
@@ -232,20 +231,11 @@ class Application(tk.Tk):
         ]
         self.start_zone = None
 
-
-        arbre_file_path = os.path.join(get_package_share_directory('champi_brain'), 'scripts', 'arbre.png')
-
-        # Charger l'image à utiliser pour le bouton central
-        # self.image = Image.open("/home/champi/dev/ws_0/src/champi_robot_ros/champi_brain/scripts/arbre.png")
-        self.image = Image.open(arbre_file_path)
-        self.photo_image = ImageTk.PhotoImage(self.image)
-
-
         frame = ttk.Frame(self.tab7)
         frame.pack(expand=True, fill="both")
 
         # Chemin de l'image
-        image_path = get_package_share_directory('champi_brain') + "/scripts/vinyle_table_2024_FINAL_V1.png"
+        image_path = get_package_share_directory('champi_brain') + "/resources/table.png"
 
         # Chargement de l'image
         self.table_image = tk.PhotoImage(file=image_path)
@@ -253,12 +243,12 @@ class Application(tk.Tk):
         self.table_image = self.table_image.subsample(17,17)
 
         # Création du canvas pour afficher l'image
-        self.canvas = tk.Canvas(frame, width=self.table_image.width(), height=self.table_image.height())
-        self.canvas.pack()
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.table_image)
+        self.canvas_table = tk.Canvas(frame, width=self.table_image.width(), height=self.table_image.height())
+        self.canvas_table.create_image(0, 0, anchor=tk.NW, image=self.table_image)
 
         # Création de la grille 3x3
-        self.create_button_grid(self.canvas, 3, 3, button_colors)
+        self.create_button_grid(self.canvas_table, 3, 3, button_colors)
+        self.canvas_table.pack()
 
     def tirette_start_pub(self):
         e = Empty()
@@ -279,12 +269,8 @@ class Application(tk.Tk):
                         window = button,
                         width=150,
                         height=70)
-                    # button.grid(row=row, column=col, sticky="nsew")
-                else:
-                    # Sinon, utilisez la couleur donnée
-                    # button = tk.Button(parent, bg=button_colors[index])
-                    # button.configure(command=self.toggle_button(self.button_zones[index]))
 
+                else:
                     if col == 0:
                         x = 0
                     elif col == 2:
@@ -299,12 +285,6 @@ class Application(tk.Tk):
 
                     if col == 0 or col == 2:
                         button = ZoneButton(parent, self.button_zones[index], self, color=button_colors[index], x=x,y=y, table_img_height=self.table_image.height())
-                        
-                
-                # Assurer que les colonnes et les rangées peuvent se développer
-                # parent.columnconfigure(col, weight=1)
-                # parent.rowconfigure(row, weight=1)
-
 
     def close_window(self):
         # kill all processes
@@ -445,49 +425,33 @@ class Application(tk.Tk):
         network_name = subprocess_output[0].decode('utf-8')
         return network_name
 
-    # def create_table_tab(self):
-    #     table_frame = ttk.Frame(self.tab4)
-    #     table_frame.pack(expand=True, fill="both")
 
-    #     # Chemin de l'image
-    #     image_path = get_package_share_directory('champi_brain') + "/scripts/vinyle_table_2024_FINAL_V1.png"
+    # def update_robot_position(self,odom_msg):
+    #     # erase previous position
+    #     # delete all but the image
+    #     for item in self.canvas_table.find_all():
+    #         if item >= 9:
+    #             self.canvas_table.delete(item)
 
-    #     # Chargement de l'image
-    #     self.table_image = tk.PhotoImage(file=image_path)
+    #     x,y,z,w = odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y, odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w
+    #     theta = -2*acos(w)+1.57
 
-    #     self.table_image = self.table_image.subsample(17,17)
+    #     y_pixel = int((x / 2) * self.table_image.height())
+    #     x_pixel = int((y / 3) * self.table_image.width())
 
-    #     # Création du canvas pour afficher l'image
-    #     self.canvas = tk.Canvas(table_frame, width=self.table_image.width(), height=self.table_image.height())
-    #     self.canvas.pack()
-    #     self.canvas.create_image(0, 0, anchor=tk.NW, image=self.table_image)
+    #     r=7
+    #     self.canvas_table.create_oval(x_pixel - r, y_pixel - r, x_pixel + r, y_pixel + r, fill="red")
 
-    def update_robot_position(self,odom_msg):
-        # erase previous position
-        # delete all but the image
-        for item in self.canvas.find_all():
-            if item != 1:
-                self.canvas.delete(item)
+    #     r=int(0.3/2/3.0*self.table_image.width())
+    #     self.canvas_table.create_oval(x_pixel - r, y_pixel - r, x_pixel + r, y_pixel + r, outline="green", width=4)
 
-        x,y,z,w = odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y, odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w
-        theta = -2*acos(w)+1.57
-
-        y_pixel = int((x / 2) * self.table_image.height())
-        x_pixel = int((y / 3) * self.table_image.width())
-
-        r=7
-        self.canvas.create_oval(x_pixel - r, y_pixel - r, x_pixel + r, y_pixel + r, fill="red")
-
-        r=int(0.3/2/3.0*self.table_image.width())
-        self.canvas.create_oval(x_pixel - r, y_pixel - r, x_pixel + r, y_pixel + r, outline="green", width=4)
-
-        # ligne en fonction de theta
-        self.canvas.create_line(x_pixel, y_pixel, x_pixel + r *cos(theta), y_pixel + r *sin(theta), fill="red", width=4)
-        self.canvas.create_line(x_pixel, y_pixel, x_pixel + r *cos(theta-1.57), y_pixel + r *sin(theta-1.57), fill="green", width=4)
+    #     # ligne en fonction de theta
+    #     self.canvas_table.create_line(x_pixel, y_pixel, x_pixel + r *cos(theta), y_pixel + r *sin(theta), fill="red", width=4)
+    #     self.canvas_table.create_line(x_pixel, y_pixel, x_pixel + r *cos(theta-1.57), y_pixel + r *sin(theta-1.57), fill="green", width=4)
 
 
-        self.canvas.create_oval(0 - r, 0 - r, 0 + r, 0 + r, outline="green", width=4)
-        self.canvas.create_oval(2 - r, 3 - r, 2 + r, 3 + r, outline="green", width=4)
+    #     self.canvas_table.create_oval(0 - r, 0 - r, 0 + r, 0 + r, outline="green", width=4)
+    #     self.canvas_table.create_oval(2 - r, 3 - r, 2 + r, 3 + r, outline="green", width=4)
 
     def create_diagnostics_tab(self):
         self.diagnostics_frame = ttk.Frame(self.tab6)

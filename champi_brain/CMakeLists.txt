@@ -37,7 +37,7 @@ install(DIRECTORY
   launch
   scripts
   # config
-  # ressources
+  resources
   DESTINATION share/${PROJECT_NAME}
 )
 
