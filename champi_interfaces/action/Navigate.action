@@ -3,7 +3,8 @@
 geometry_msgs/Pose[] poses
 ---
 # Result
-string result
+bool success
+string message
 ---
 # Feedback
 # Estimated Time of Arrival (seconds)

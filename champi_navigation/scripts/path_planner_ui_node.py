@@ -31,6 +31,7 @@ class PathPlannerUINode(Node):
         self.get_logger().info('Action client for /navigate is ready!')
 
         self.future_navigate_result = None
+        self.get_result_future = None
     
 
     # ==================================== ROS2 Callbacks ==========================================
@@ -48,7 +49,7 @@ class PathPlannerUINode(Node):
         self.future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
 
         # Add done callback
-        self.future_navigate_result.add_done_callback(self.goal_reached_callback)
+        self.future_navigate_result.add_done_callback(self.goal_response_callback)
 
         self.get_logger().info('Goal sent!')
 
@@ -59,9 +60,24 @@ class PathPlannerUINode(Node):
 
     # ==================================== Done Callback ==========================================
 
-    def goal_reached_callback(self, future):
-        self.get_logger().info(f'Action ended! Result: {future.result()}')
+    def goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('Goal rejected :(')
+            return
+
+        self.get_logger().info('Goal accepted :)')
+
+        self.get_result_future = goal_handle.get_result_async()
+        self.get_result_future.add_done_callback(self.get_result_callback)
         
+
+    def get_result_callback(self, future):
+        result = future.result().result
+        self.get_logger().info(f'Result: {result.success}, {result.message}')
+
+
+
 
 
 
