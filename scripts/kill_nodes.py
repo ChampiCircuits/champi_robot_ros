@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import psutil
 
 def kill_ros_nodes():

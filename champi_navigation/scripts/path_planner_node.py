@@ -48,6 +48,8 @@ class PlannerNode(Node):
 
         self.path_planner = None
 
+        self.planning = False
+
     # ==================================== ROS2 Callbacks ==========================================
 
     def odom_callback(self, msg):
@@ -67,10 +69,12 @@ class PlannerNode(Node):
         ]
 
         # Cancel the current goal if there is one
-        ic(self.goal_handle_navigate)
-        if self.goal_handle_navigate is not None:
+        if self.planning:
             self.goal_handle_navigate.abort()
             self.get_logger().info('Received a new goal, cancelling the current one!')
+
+        
+        self.planning = True
 
         return GoalResponse.ACCEPT
     
@@ -80,12 +84,12 @@ class PlannerNode(Node):
         self.goal_handle_navigate = goal_handle
 
          # We're still waiting for first messages (init)
-        while rclpy.ok() and goal_handle.is_active and (self.robot_pose is None or self.costmap is None):
+        while rclpy.ok() and self.planning and (self.robot_pose is None or self.costmap is None):
             self.get_logger().info('Waiting for init messages', throttle_duration_sec=1.)
             # TODO feedback
             time.sleep(self.loop_period)
 
-        while rclpy.ok() and goal_handle.is_active and not self.is_current_goal_reached():
+        while rclpy.ok() and self.planning and not self.is_current_goal_reached():
 
 
             t_loop_start = time.time()
@@ -102,9 +106,15 @@ class PlannerNode(Node):
             # TODO feedback
 
             time.sleep(self.loop_period - (time.time() - t_loop_start))
-        
-        self.goal_handle_navigate = None
-        
+
+
+        # Publish a final empty path
+        path = Path()
+        path.header.stamp = self.get_clock().now().to_msg()
+        self.path_pub.publish(path)
+
+
+        self.planning = False
 
         if not goal_handle.is_active:
             self.get_logger().info('Action execution stopped because goal was aborted!!')
@@ -125,6 +135,8 @@ class PlannerNode(Node):
 
     def cancel_callback(self, goal_handle):
         self.get_logger().info('Goal cancelled!')
+        self.goal_handle_navigate.abort()
+        self.planning = False
         return CancelResponse.ACCEPT
 
     # ====================================== Utils ==========================================

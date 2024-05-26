@@ -30,8 +30,9 @@ class PathPlannerUINode(Node):
         self.action_client_navigate.wait_for_server()
         self.get_logger().info('Action client for /navigate is ready!')
 
-        self.future_navigate_result = None
-        self.get_result_future = None
+        self.goal_handle_navigate = None
+
+        self.goal_pose = None
     
 
     # ==================================== ROS2 Callbacks ==========================================
@@ -39,37 +40,37 @@ class PathPlannerUINode(Node):
     def goal_pose_callback(self, msg):
         self.get_logger().info(f'New goal received!')
 
-        # TODO cancel current if self.future_navigate_result not None
+        self.goal_pose = msg.pose
+
+        # Cancel current if self.future_navigate_result not None
+        if self.goal_handle_navigate is not None:
+            self.get_logger().info('Cancelling current goal...')
+
+            future = self.goal_handle_navigate.cancel_goal_async()
+            future.add_done_callback(self.cancel_done_callback)
+        else:
+            self.send_goal(self.goal_pose)
         
-        # Create a Navigate request
-        goal = Navigate.Goal()
-        goal.poses = [msg.pose]
-
-        # Send the goal to the action server
-        self.future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
-
-        # Add done callback
-        self.future_navigate_result.add_done_callback(self.goal_response_callback)
-
-        self.get_logger().info('Goal sent!')
 
 
     def feedback_callback(self, feedback_msg):
         self.get_logger().info(f'Feedback received! Feedback: {feedback_msg}')
 
 
-    # ==================================== Done Callback ==========================================
+    # ==================================== Done Callbacks ==========================================
 
     def goal_response_callback(self, future):
         goal_handle = future.result()
         if not goal_handle.accepted:
             self.get_logger().info('Goal rejected :(')
             return
+        
+        self.goal_handle_navigate = goal_handle
 
         self.get_logger().info('Goal accepted :)')
 
-        self.get_result_future = goal_handle.get_result_async()
-        self.get_result_future.add_done_callback(self.get_result_callback)
+        get_result_future = goal_handle.get_result_async()
+        get_result_future.add_done_callback(self.get_result_callback)
         
 
     def get_result_callback(self, future):
@@ -77,8 +78,26 @@ class PathPlannerUINode(Node):
         self.get_logger().info(f'Result: {result.success}, {result.message}')
 
 
+    def cancel_done_callback(self, future):
+        self.get_logger().info('Goal cancelled succesfully!')
+        self.send_goal(self.goal_pose)
 
 
+# ============================================ Utils ==============================================
+
+
+    def send_goal(self, goal_pose):
+        # Create a Navigate request
+        goal = Navigate.Goal()
+        goal.poses = [goal_pose]
+
+        # Send the goal to the action server
+        future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
+
+        # Add done callback
+        future_navigate_result.add_done_callback(self.goal_response_callback)
+
+        self.get_logger().info('Goal sent!')
 
 
  
