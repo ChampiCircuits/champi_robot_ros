@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.animation as animation
 from ament_index_python.packages import get_package_share_directory
+from utils import CAN_MSGS
 
 import subprocess, netifaces, time, matplotlib, psutil
 from signal import SIGINT
@@ -14,8 +15,9 @@ import rclpy
 from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
-from std_msgs.msg import Int32, String, Empty
+from std_msgs.msg import Int32, String, Empty, Int64, Int64MultiArray
 from geometry_msgs.msg import Twist
+
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -168,6 +170,9 @@ class Application(tk.Tk):
         self.tab2 = ttk.Frame(self.tabControl)
         self.tabControl.add(self.tab2, text="MATCH")
 
+        self.tab8 = ttk.Frame(self.tabControl)
+        self.tabControl.add(self.tab8, text="DEBUG")
+
         self.tabControl.pack(expand=1, fill="both")
     
         rclpy.init()
@@ -196,6 +201,7 @@ class Application(tk.Tk):
 
         self.node_diagnostics = {}
         self.create_diagnostics_tab()
+        self.create_debug_tab()
 
         # Ajout du gestionnaire d'événement pour la fermeture de la fenêtre
         self.protocol("WM_DELETE_WINDOW", self.close_window)
@@ -368,6 +374,79 @@ class Application(tk.Tk):
         canvas = FigureCanvasTkAgg(fig, master=cpu_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+    def create_debug_tab(self):
+        debug_frame = ttk.Frame(self.tab8)
+        debug_frame.pack(expand=True, fill="both")
+
+        self.CAN_pub = self.node.create_publisher(Int64, '/act_cmd', 10)
+        self.CAN_sub = self.node.create_subscription(Int64MultiArray, '/act_status', self.act_sub_update, 10)
+        self.CAN_state = None
+        self.nb_plants = 0
+
+        # button start_grab_plants
+        start_grab_plants_button = ttk.Button(debug_frame, text="start_grab_plants", command=self.start_grab_plants, width = 150, padding=(30,30)).pack()
+        # button stop_grab_plants
+        stop_grab_plants_button = ttk.Button(debug_frame, text="stop_grab_plants", command=self.stop_grab_plants, width = 150, padding=(30,30)).pack()
+        # button release_plant
+        release_plant_button = ttk.Button(debug_frame, text="release_plant", command=self.release_plant, width = 150, padding=(30,30)).pack()
+
+        # text CAN state
+        CAN_state_label = ttk.Label(debug_frame, text="CAN state: ",font=("Futura Gabriola Garamond",30)).pack()
+        self.CAN_state_label = ttk.Label(debug_frame, text=self.CAN_state,font=("Futura Gabriola Garamond",20)).pack()
+        # text nb_plants
+        nb_plants_label = ttk.Label(debug_frame, text="nb_plants: ",font=("Futura Gabriola Garamond",30)).pack()
+        self.nb_plants_label = ttk.Label(debug_frame, text=self.nb_plants,font=("Futura Gabriola Garamond",20)).pack()
+
+        
+    def act_sub_update(self, msg):
+        CAN_state = msg.data[0]
+        self.nb_plants = msg.data[1]
+            # START_GRAB_PLANTS = 0
+            # STOP_GRAB_PLANTS = 1
+            # RELEASE_PLANT = 2
+            # TURN_SOLAR_PANEL = 3
+            # INITIALIZING = 4
+            # FREE = 5
+
+        if CAN_state == 0:
+            self.CAN_state = "START_GRAB_PLANTS"
+        elif CAN_state == 1:
+            self.CAN_state = "STOP_GRAB_PLANTS"
+        elif CAN_state == 2:
+            self.CAN_state = "RELEASE_PLANT"
+        elif CAN_state == 3:
+            self.CAN_state = "TURN_SOLAR_PANEL"
+        elif CAN_state == 4:
+            self.CAN_state = "INITIALIZING"
+        elif CAN_state == 5:
+            self.CAN_state = "FREE"
+
+
+    def start_grab_plants(self):
+        print("start_grab_plants")
+        self.publish_on_CAN(CAN_MSGS.START_GRAB_PLANTS)
+
+    def stop_grab_plants(self):
+        print("stop_grab_plants")
+        self.publish_on_CAN(CAN_MSGS.STOP_GRAB_PLANTS)
+
+    def release_plant(self):
+        print("release_plant")
+        self.publish_on_CAN(CAN_MSGS.RELEASE_PLANT)
+
+    def publish_on_CAN(self, message):
+        # publish on the topic "/CAN" to be forwarded by CAN by the API
+        msg = Int64()
+        if message == CAN_MSGS.START_GRAB_PLANTS:
+            msg.data = 0
+        elif message == CAN_MSGS.STOP_GRAB_PLANTS:
+            msg.data = 1
+        elif message == CAN_MSGS.RELEASE_PLANT:
+            msg.data = 2
+        elif message == CAN_MSGS.TURN_SOLAR_PANEL:
+            msg.data = 3
+        self.CAN_pub.publish(msg)
 
     def create_ip_tab(self):
         # Votre code pour l'onglet "IP"
