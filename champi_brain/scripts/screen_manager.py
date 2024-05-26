@@ -2,31 +2,25 @@
 
 import tkinter as tk
 from tkinter import ttk
-import psutil
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.animation as animation
 from ament_index_python.packages import get_package_share_directory
-import os
 
-import subprocess
-import netifaces
+import subprocess, netifaces, time, matplotlib, psutil
 from signal import SIGINT
 
-from math import acos, cos, sin
 import rclpy
 from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
-import time
 from std_msgs.msg import Int32, String, Empty
 from geometry_msgs.msg import Twist
 
-from PIL import Image, ImageTk
-from icecream import ic
-
 from ament_index_python.packages import get_package_share_directory
 
+
+matplotlib.use("TkAgg")
 
 red = "#BC2023"
 green = "#0C6B37"
@@ -70,7 +64,6 @@ class ZoneButton(tk.Button):
         self.node = node
         self.configure(bg=color, command=self.toggle)
         parent.create_window( x,y,anchor = "nw", window = self,width=w,height=h) 
-        print("button: ",zone," created at ",x,y)
 
     def toggle(self):
         print("button toggled : ",self.zone)
@@ -240,7 +233,7 @@ class Application(tk.Tk):
         # Chargement de l'image
         self.table_image = tk.PhotoImage(file=image_path)
 
-        self.table_image = self.table_image.subsample(17,17)
+        self.table_image = self.table_image.subsample(21,21)
 
         # Création du canvas pour afficher l'image
         self.canvas_table = tk.Canvas(frame, width=self.table_image.width(), height=self.table_image.height())
@@ -253,6 +246,7 @@ class Application(tk.Tk):
     def tirette_start_pub(self):
         e = Empty()
         self.tirette_pub.publish(e)
+        print("published tirette !")
 
 
     def create_button_grid(self, parent, rows, cols, button_colors):
@@ -352,9 +346,8 @@ class Application(tk.Tk):
         ram_plot, = ax.plot([], [], label='RAM')
         ax.set_ylim(0, 100)
         ax.set_xlim(0, 100)
-        ax.set_title('Utilisation du CPU et de la RAM en temps réel')
         ax.set_xlabel('Temps (s)')
-        ax.set_ylabel('Utilisation (%)')
+        ax.set_ylabel('(%)')
         ax.legend()
 
         def animate(i):
