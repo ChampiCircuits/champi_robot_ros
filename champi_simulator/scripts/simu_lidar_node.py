@@ -48,8 +48,8 @@ class LidarSimulator(Node):
         scan.angle_max = 3.14   # 180 degrees
         scan.angle_increment = 6.28 / 1024  # 360 degrees / 1024 points
         scan.range_min = 0.0
-        scan.range_max = 100.0
-        scan.ranges = [scan.range_max-0.01] * 1024  # Initialize all ranges to max
+        scan.range_max = 5.
+        scan.ranges = [scan.range_max] * 1024  # Initialize all ranges to max
 
         obstacle_point = PointStamped()
         obstacle_point.header.frame_id = 'odom'
