@@ -8,6 +8,7 @@ from tf2_ros import TransformListener, Buffer
 from geometry_msgs.msg import PoseStamped, PointStamped, Point
 from nav_msgs.msg import Odometry
 from tf2_geometry_msgs import do_transform_point
+import time
 
 from math import cos, sin, atan2
 
@@ -41,8 +42,22 @@ class EnemyTracker(Node):
         self.prev_enemy_odom_msg = None
 
         self.last_measurement_time = self.get_clock().now()
+        self.scan_msg = None
+
+        self.timer = self.create_timer(0.5, self.timer_callback)
+
 
     def scan_callback(self, msg):
+        self.scan_msg = msg
+
+
+    def timer_callback(self):
+
+
+        t_start = time.time()
+
+        if self.scan_msg is None:
+            return
 
         # Compute dt
         current_time = self.get_clock().now()
@@ -51,14 +66,14 @@ class EnemyTracker(Node):
 
 
         points = []
-        for i in range(len(msg.ranges)):
-            angle = msg.angle_min + i * msg.angle_increment
+        for i in range(len(self.scan_msg.ranges)):
+            angle = self.scan_msg.angle_min + i * self.scan_msg.angle_increment
 
-            if(msg.ranges[i] > 5.0):
+            if self.scan_msg.ranges[i] > 5.0 or self.scan_msg.ranges[i] < 0.1:
                 continue
 
-            x = msg.ranges[i] * cos(angle)
-            y = msg.ranges[i] * sin(angle)
+            x = self.scan_msg.ranges[i] * cos(angle)
+            y = self.scan_msg.ranges[i] * sin(angle)
             point_stamped = PointStamped()
             point_stamped.point = Point(x=x, y=y, z=0.)
             point_stamped.header.frame_id = 'base_laser'
@@ -109,6 +124,10 @@ class EnemyTracker(Node):
             self.prev_enemy_odom_msg = enemy_odom_msg
 
             self.enemy_pos_pub.publish(enemy_odom_msg)
+            
+        
+        self.get_logger().info(f'Enemy Tracker loop took {time.time()-t_start}s')
+
 
 
     def is_point_in_box(self, point):

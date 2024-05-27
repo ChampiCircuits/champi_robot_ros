@@ -21,8 +21,8 @@ def generate_launch_description():
 
     visual_loc = Node(
             package="champi_vision",
-            executable="visual_loc_node.py",
-            name='visual_loc',
+            executable="aruco_loc_node.py",
+            name='aruco_loc',
             output='screen'
     )
 

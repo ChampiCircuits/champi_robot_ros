@@ -113,16 +113,18 @@ class PlannerNode(Node):
         path.header.stamp = self.get_clock().now().to_msg()
         self.path_pub.publish(path)
 
+        result = None
 
-        self.planning = False
-
-        if not goal_handle.is_active:
+        if not self.planning:
             self.get_logger().info('Action execution stopped because goal was aborted!!')
-            return Navigate.Result(success=False, message='Goal aborted!')
+            result =  Navigate.Result(success=False, message='Goal aborted!')
         else:
             goal_handle.succeed()
             self.get_logger().info('Goal reached!')
-            return Navigate.Result(success=True, message='Goal reached!')
+            result = Navigate.Result(success=True, message='Goal reached!')
+        
+        self.planning = False
+        return result
 
 
     def costmap_callback(self, msg):

@@ -25,7 +25,7 @@ base_controller:
     start_y: 0.175 # m
     start_theta: 1.57 # rad
 
-    enable_accel_limits: true
+    enable_accel_limits: false
 
     max_acceleration_linear: 0.1 # m/s^2
     max_deceleration_linear: 2.0 # m/s^2

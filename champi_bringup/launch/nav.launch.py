@@ -40,9 +40,18 @@ def generate_launch_description():
         output='screen',
     )
 
+    path_planner_ui_node = Node(
+        package='champi_navigation',
+        executable='path_planner_ui_node.py',
+        name='path_planner_ui',
+        output='screen',
+    )
+
     return LaunchDescription([
         path_controller_node,
         costmap_updater_node,
         a_star_path_planner_node,
-        call_set_pose_node
+        call_set_pose_node,
+        path_planner_ui_node
+
     ])

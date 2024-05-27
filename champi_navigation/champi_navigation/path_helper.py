@@ -76,7 +76,11 @@ class PathHelper:
         return self.path == [] or not self.are_points_close(path[1], self.path[1])
 
     def are_points_close(self, p1, p2):
-        return abs(p1.pose.position.x - p2.pose.position.x) < 0.1 and abs(p1.pose.position.y - p2.pose.position.y) < 0.1
+        return abs(p1.pose.position.x - p2.pose.position.x) < 0.1 and abs(p1.pose.position.y - p2.pose.position.y) < 0.1 and self.check_angle(self.get_yaw(p1), self.get_yaw(p2), 0.001)
+
+    def get_yaw(self, pose_stamped):
+        return 2 * atan2(pose_stamped.pose.orientation.z, pose_stamped.pose.orientation.w)
+
 
     def pose_stamped_to_array(self, pose_stamped):
         return [pose_stamped.pose.position.x,

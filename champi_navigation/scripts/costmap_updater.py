@@ -7,6 +7,7 @@ from cv_bridge import CvBridge
 import cv2
 import numpy as np
 from icecream import ic
+import time
 
 class ImageToCostmapNode(Node):
     def __init__(self):
@@ -40,15 +41,22 @@ class ImageToCostmapNode(Node):
 
         # Subscribe to the enemy position
         self.enemy_position = None
+        self.enemy_position_last_time = None
         self.enemy_position_sub = self.create_subscription(Odometry, '/enemy_pose', self.enemy_position_callback, 10)
 
 
     def enemy_position_callback(self, msg):
         self.enemy_position = msg
+        self.enemy_position_last_time = time.time()
+        
 
     def timer_callback(self):
 
-        if self.enemy_position is not None:
+        if self.enemy_position is not None and time.time() - self.enemy_position_last_time > 1.:
+           self.clear_obstacle_layer()
+           self.enemy_position = None 
+
+        if self.enemy_position is not None:        
             self.clear_obstacle_layer()
 
             self.draw_enemy_robot(self.obstacle_layer_img, self.enemy_position.pose.pose.position.x, self.enemy_position.pose.pose.position.y)
