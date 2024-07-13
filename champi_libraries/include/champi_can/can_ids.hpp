@@ -19,4 +19,5 @@ namespace can_ids {
     int EMERGENCY_STOP = 0x5;
     int TIRETTE_START = 0x6;
     int ACT_RESET = 0x2;
+    int LED_RING_DISTANCES =  0x210;
 }

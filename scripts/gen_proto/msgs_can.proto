@@ -89,3 +89,7 @@ message ActStatus {
   optional ActActions action = 2;
   optional int32 plant_count = 3;
 }
+
+message LedRingDistances {
+  repeated float distances = 1;
+}

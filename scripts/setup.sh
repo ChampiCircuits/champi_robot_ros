@@ -50,7 +50,7 @@ rosdep install --from src --ignore-src -y
 # Install dependencies
 echo "Installing dependencies..."
 sudo apt update
-sudo apt install -y libprotobuf-dev libudev-dev
+sudo apt install -y libprotobuf-dev libudev-dev protobuf-compiler
 
 
 # Check if the repository ldlidar_stl_ros2 already exists

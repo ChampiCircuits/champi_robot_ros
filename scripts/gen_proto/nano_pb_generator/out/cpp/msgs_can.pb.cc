@@ -53,6 +53,10 @@ class ActStatusDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ActStatus> _instance;
 } _ActStatus_default_instance_;
+class LedRingDistancesDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LedRingDistances> _instance;
+} _LedRingDistances_default_instance_;
 }  // namespace msgs_can
 static void InitDefaultsscc_info_ActCmd_msgs_5fcan_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -125,6 +129,20 @@ static void InitDefaultsscc_info_ImuData_msgs_5fcan_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ImuData_msgs_5fcan_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ImuData_msgs_5fcan_2eproto}, {}};
 
+static void InitDefaultsscc_info_LedRingDistances_msgs_5fcan_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::msgs_can::_LedRingDistances_default_instance_;
+    new (ptr) ::msgs_can::LedRingDistances();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::msgs_can::LedRingDistances::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LedRingDistances_msgs_5fcan_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_LedRingDistances_msgs_5fcan_2eproto}, {}};
+
 static void InitDefaultsscc_info_Log_msgs_5fcan_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -186,7 +204,7 @@ static void InitDefaultsscc_info_StatusReport_msgs_5fcan_2eproto() {
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_StatusReport_msgs_5fcan_2eproto}, {
       &scc_info_Status_msgs_5fcan_2eproto.base,}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[9];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[10];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_msgs_5fcan_2eproto[3];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_msgs_5fcan_2eproto = nullptr;
 
@@ -290,6 +308,12 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_msgs_5fcan_2eproto::offsets[] 
   0,
   1,
   2,
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::msgs_can::LedRingDistances, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::msgs_can::LedRingDistances, distances_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, 8, sizeof(::msgs_can::BaseVel)},
@@ -301,6 +325,7 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 62, 73, sizeof(::msgs_can::ImuData)},
   { 79, 86, sizeof(::msgs_can::ActCmd)},
   { 88, 96, sizeof(::msgs_can::ActStatus)},
+  { 99, -1, sizeof(::msgs_can::LedRingDistances)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -313,6 +338,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ImuData_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ActCmd_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ActStatus_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_LedRingDistances_default_instance_),
 };
 
 const char descriptor_table_protodef_msgs_5fcan_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
@@ -341,19 +367,21 @@ const char descriptor_table_protodef_msgs_5fcan_2eproto[] PROTOBUF_SECTION_VARIA
   "can.ActActions\022\r\n\005value\030\002 \001(\002\"h\n\tActStat"
   "us\022 \n\006status\030\001 \001(\0132\020.msgs_can.Status\022$\n\006"
   "action\030\002 \001(\0162\024.msgs_can.ActActions\022\023\n\013pl"
-  "ant_count\030\003 \001(\005*~\n\nActActions\022\025\n\021START_G"
-  "RAB_PLANTS\020\000\022\024\n\020STOP_GRAB_PLANTS\020\001\022\021\n\rRE"
-  "LEASE_PLANT\020\002\022\024\n\020TURN_SOLAR_PANEL\020\003\022\020\n\014I"
-  "NITIALIZING\020\004\022\010\n\004FREE\020\005"
+  "ant_count\030\003 \001(\005\"%\n\020LedRingDistances\022\021\n\td"
+  "istances\030\001 \003(\002*~\n\nActActions\022\025\n\021START_GR"
+  "AB_PLANTS\020\000\022\024\n\020STOP_GRAB_PLANTS\020\001\022\021\n\rREL"
+  "EASE_PLANT\020\002\022\024\n\020TURN_SOLAR_PANEL\020\003\022\020\n\014IN"
+  "ITIALIZING\020\004\022\010\n\004FREE\020\005"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_msgs_5fcan_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[9] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[10] = {
   &scc_info_ActCmd_msgs_5fcan_2eproto.base,
   &scc_info_ActStatus_msgs_5fcan_2eproto.base,
   &scc_info_BaseConfig_msgs_5fcan_2eproto.base,
   &scc_info_BaseVel_msgs_5fcan_2eproto.base,
   &scc_info_ImuData_msgs_5fcan_2eproto.base,
+  &scc_info_LedRingDistances_msgs_5fcan_2eproto.base,
   &scc_info_Log_msgs_5fcan_2eproto.base,
   &scc_info_RetBaseConfig_msgs_5fcan_2eproto.base,
   &scc_info_Status_msgs_5fcan_2eproto.base,
@@ -361,10 +389,10 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msg
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_msgs_5fcan_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_msgs_5fcan_2eproto = {
-  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 1143,
-  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 9, 0,
+  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 1182,
+  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 10, 0,
   schemas, file_default_instances, TableStruct_msgs_5fcan_2eproto::offsets,
-  file_level_metadata_msgs_5fcan_2eproto, 9, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
+  file_level_metadata_msgs_5fcan_2eproto, 10, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -3051,6 +3079,211 @@ void ActStatus::InternalSwap(ActStatus* other) {
 }
 
 
+// ===================================================================
+
+void LedRingDistances::InitAsDefaultInstance() {
+}
+class LedRingDistances::_Internal {
+ public:
+};
+
+LedRingDistances::LedRingDistances(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena),
+  distances_(arena) {
+  SharedCtor();
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:msgs_can.LedRingDistances)
+}
+LedRingDistances::LedRingDistances(const LedRingDistances& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      distances_(from.distances_) {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  // @@protoc_insertion_point(copy_constructor:msgs_can.LedRingDistances)
+}
+
+void LedRingDistances::SharedCtor() {
+}
+
+LedRingDistances::~LedRingDistances() {
+  // @@protoc_insertion_point(destructor:msgs_can.LedRingDistances)
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+void LedRingDistances::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
+}
+
+void LedRingDistances::ArenaDtor(void* object) {
+  LedRingDistances* _this = reinterpret_cast< LedRingDistances* >(object);
+  (void)_this;
+}
+void LedRingDistances::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void LedRingDistances::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const LedRingDistances& LedRingDistances::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LedRingDistances_msgs_5fcan_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void LedRingDistances::Clear() {
+// @@protoc_insertion_point(message_clear_start:msgs_can.LedRingDistances)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  distances_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* LedRingDistances::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // repeated float distances = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 13)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            _internal_add_distances(::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr));
+            ptr += sizeof(float);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<13>(ptr));
+        } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10) {
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedFloatParser(_internal_mutable_distances(), ptr, ctx);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* LedRingDistances::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:msgs_can.LedRingDistances)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // repeated float distances = 1;
+  for (int i = 0, n = this->_internal_distances_size(); i < n; i++) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(1, this->_internal_distances(i), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:msgs_can.LedRingDistances)
+  return target;
+}
+
+size_t LedRingDistances::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:msgs_can.LedRingDistances)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated float distances = 1;
+  {
+    unsigned int count = static_cast<unsigned int>(this->_internal_distances_size());
+    size_t data_size = 4UL * count;
+    total_size += 1 *
+                  ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(this->_internal_distances_size());
+    total_size += data_size;
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void LedRingDistances::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:msgs_can.LedRingDistances)
+  GOOGLE_DCHECK_NE(&from, this);
+  const LedRingDistances* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<LedRingDistances>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:msgs_can.LedRingDistances)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:msgs_can.LedRingDistances)
+    MergeFrom(*source);
+  }
+}
+
+void LedRingDistances::MergeFrom(const LedRingDistances& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:msgs_can.LedRingDistances)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  distances_.MergeFrom(from.distances_);
+}
+
+void LedRingDistances::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:msgs_can.LedRingDistances)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void LedRingDistances::CopyFrom(const LedRingDistances& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:msgs_can.LedRingDistances)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool LedRingDistances::IsInitialized() const {
+  return true;
+}
+
+void LedRingDistances::InternalSwap(LedRingDistances* other) {
+  using std::swap;
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  distances_.InternalSwap(&other->distances_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata LedRingDistances::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace msgs_can
 PROTOBUF_NAMESPACE_OPEN
@@ -3080,6 +3313,9 @@ template<> PROTOBUF_NOINLINE ::msgs_can::ActCmd* Arena::CreateMaybeMessage< ::ms
 }
 template<> PROTOBUF_NOINLINE ::msgs_can::ActStatus* Arena::CreateMaybeMessage< ::msgs_can::ActStatus >(Arena* arena) {
   return Arena::CreateMessageInternal< ::msgs_can::ActStatus >(arena);
+}
+template<> PROTOBUF_NOINLINE ::msgs_can::LedRingDistances* Arena::CreateMaybeMessage< ::msgs_can::LedRingDistances >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::msgs_can::LedRingDistances >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 
