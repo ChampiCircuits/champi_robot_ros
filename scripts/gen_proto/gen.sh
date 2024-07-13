@@ -9,4 +9,4 @@ protoc --python_out=out/python/ *.proto
 protoc --cpp_out=out/cpp/ *.proto
 
 # Generate nanopb files
-./protoc --nanopb_out=./out/nanopb/ *.proto
+./nano_pb_generator/protoc --nanopb_out=./out/nanopb/ *.proto

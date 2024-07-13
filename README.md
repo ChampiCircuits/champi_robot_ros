@@ -89,6 +89,8 @@ cd scripts/gen_proto
 chmod +x gen.sh
 ./gen.sh
 ```
+@See the comment  // comment me when compile for cpp and python
+
 
 ### Generate Msg IDs for the CAN Bus
 Add the msg id in the .csv file, and then :

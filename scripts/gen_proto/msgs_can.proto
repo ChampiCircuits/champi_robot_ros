@@ -1,4 +1,5 @@
 syntax = "proto2";
+import "nanopb.proto"; // comment me when compile for cpp and python
 
 package msgs_can;
 
@@ -91,5 +92,5 @@ message ActStatus {
 }
 
 message LedRingDistances {
-  repeated float distances = 1;
+  repeated float distances = 1 [(nanopb).max_count = 24, (nanopb).fixed_count = true];  // comment me when compile for cpp and python
 }

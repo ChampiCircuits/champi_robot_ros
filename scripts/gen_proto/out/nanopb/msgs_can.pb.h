@@ -123,7 +123,7 @@ typedef struct _msgs_can_ActStatus {
 } msgs_can_ActStatus;
 
 typedef struct _msgs_can_LedRingDistances {
-    pb_callback_t distances;
+    float distances[24];
 } msgs_can_LedRingDistances;
 
 
@@ -169,7 +169,7 @@ extern "C" {
 #define msgs_can_ImuData_init_default            {false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define msgs_can_ActCmd_init_default             {false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_ActStatus_init_default          {false, msgs_can_Status_init_default, false, _msgs_can_ActActions_MIN, false, 0}
-#define msgs_can_LedRingDistances_init_default   {{{NULL}, NULL}}
+#define msgs_can_LedRingDistances_init_default   {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 #define msgs_can_BaseVel_init_zero               {false, 0, false, 0, false, 0}
 #define msgs_can_Status_init_zero                {false, 0, false, _msgs_can_Status_StatusType_MIN, false, _msgs_can_Status_ErrorType_MIN, {{NULL}, NULL}}
 #define msgs_can_StatusReport_init_zero          {false, msgs_can_Status_init_zero}
@@ -179,7 +179,7 @@ extern "C" {
 #define msgs_can_ImuData_init_zero               {false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define msgs_can_ActCmd_init_zero                {false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_ActStatus_init_zero             {false, msgs_can_Status_init_zero, false, _msgs_can_ActActions_MIN, false, 0}
-#define msgs_can_LedRingDistances_init_zero      {{{NULL}, NULL}}
+#define msgs_can_LedRingDistances_init_zero      {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define msgs_can_BaseVel_x_tag                   1
@@ -282,8 +282,8 @@ X(a, STATIC,   OPTIONAL, INT32,    plant_count,       3)
 #define msgs_can_ActStatus_status_MSGTYPE msgs_can_Status
 
 #define msgs_can_LedRingDistances_FIELDLIST(X, a) \
-X(a, CALLBACK, REPEATED, FLOAT,    distances,         1)
-#define msgs_can_LedRingDistances_CALLBACK pb_default_field_callback
+X(a, STATIC,   FIXARRAY, FLOAT,    distances,         1)
+#define msgs_can_LedRingDistances_CALLBACK NULL
 #define msgs_can_LedRingDistances_DEFAULT NULL
 
 extern const pb_msgdesc_t msgs_can_BaseVel_msg;
@@ -315,12 +315,12 @@ extern const pb_msgdesc_t msgs_can_LedRingDistances_msg;
 /* msgs_can_Log_size depends on runtime parameters */
 /* msgs_can_RetBaseConfig_size depends on runtime parameters */
 /* msgs_can_ActStatus_size depends on runtime parameters */
-/* msgs_can_LedRingDistances_size depends on runtime parameters */
-#define MSGS_CAN_MSGS_CAN_PB_H_MAX_SIZE          msgs_can_ImuData_size
+#define MSGS_CAN_MSGS_CAN_PB_H_MAX_SIZE          msgs_can_LedRingDistances_size
 #define msgs_can_ActCmd_size                     7
 #define msgs_can_BaseConfig_size                 20
 #define msgs_can_BaseVel_size                    15
 #define msgs_can_ImuData_size                    30
+#define msgs_can_LedRingDistances_size           120
 
 #ifdef __cplusplus
 } /* extern "C" */
