@@ -18,9 +18,13 @@ find_package(Protobuf REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(diagnostic_updater REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 add_executable(test_diag src/test_diag.cpp)
 ament_target_dependencies(test_diag rclcpp diagnostic_updater)
+
+add_executable(fun_node src/fun_node.cpp)
+ament_target_dependencies(fun_node rclcpp geometry_msgs nav_msgs sensor_msgs champi_libraries)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -57,6 +61,7 @@ install(PROGRAMS
 # Install C++ executables
 install(TARGETS
         test_diag
+        fun_node
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

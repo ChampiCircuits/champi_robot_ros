@@ -20,9 +20,11 @@ using namespace std;
 class FunNode : public rclcpp::Node
 {
 public:
-    FunNode() :
-            Node("fun_node")
-    {
+    FunNode() : Node("fun_node"),
+    champi_can_interface_(
+                    this->declare_parameter<std::string>("can_interface_name"),
+                    {can_ids::ACT_STATUS},
+                    this->declare_parameter<bool>("champi_can_verbose_mode")) {
         // ================================ Get parameters =================================
         double loop_freq = this->declare_parameter<double>("loop_freq", 10.0);
 
@@ -60,7 +62,7 @@ private:
     }
 
     void loop_callback() {
-        int tab_distances[LED_COUNT];
+        float tab_distances[LED_COUNT];
 
         for (int i=0;i<LED_COUNT;i++) {
             tab_distances[i] = this->last_msg->ranges[i* ANGLE_STEP];
@@ -68,9 +70,11 @@ private:
         send_by_CAN(tab_distances);
     }
 
-    void send_by_CAN(int tab_distances[LED_COUNT]) {
+    void send_by_CAN(float tab_distances[LED_COUNT]) {
         for (int i=0; i<LED_COUNT;i++) {
-            this->led_ring_distances_msg.set_distances(i, tab_distances[i]);
+            float d = tab_distances[i];
+            // this->led_ring_distances_msg.set_distances(i, d);
+            this->led_ring_distances_msg.
         }
 
         // Send message
