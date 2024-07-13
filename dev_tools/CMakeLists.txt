@@ -24,7 +24,7 @@ add_executable(test_diag src/test_diag.cpp)
 ament_target_dependencies(test_diag rclcpp diagnostic_updater)
 
 add_executable(fun_node src/fun_node.cpp)
-ament_target_dependencies(fun_node rclcpp geometry_msgs nav_msgs sensor_msgs champi_libraries)
+ament_target_dependencies(fun_node rclcpp geometry_msgs nav_msgs sensor_msgs champi_libraries Protobuf)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

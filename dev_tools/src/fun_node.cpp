@@ -72,9 +72,7 @@ private:
 
     void send_by_CAN(float tab_distances[LED_COUNT]) {
         for (int i=0; i<LED_COUNT;i++) {
-            float d = tab_distances[i];
-            // this->led_ring_distances_msg.set_distances(i, d);
-            this->led_ring_distances_msg.
+            this->led_ring_distances_msg.add_distances(tab_distances[i]);
         }
 
         // Send message
