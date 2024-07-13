@@ -22,12 +22,11 @@ class FunNode : public rclcpp::Node
 public:
     FunNode() : Node("fun_node"),
     champi_can_interface_(
-                    this->declare_parameter<std::string>("can_interface_name"),
-                    {can_ids::ACT_STATUS},
-                    this->declare_parameter<bool>("champi_can_verbose_mode")) {
+                    "can0",
+                    {can_ids::LED_RING_DISTANCES},
+                    false) {
         // ================================ Get parameters =================================
         double loop_freq = this->declare_parameter<double>("loop_freq", 10.0);
-
 
         // ================================ Initialize ROS related ===================================
 
@@ -40,6 +39,7 @@ public:
         loop_timer_ = this->create_wall_timer(
             1s/loop_freq, std::bind(&FunNode::loop_callback, this)
         );
+        RCLCPP_INFO(this->get_logger(), "Launched Fun Node !");
     }
 
 private:
@@ -62,6 +62,9 @@ private:
     }
 
     void loop_callback() {
+        if (this->last_msg == nullptr)
+            return;
+            
         float tab_distances[LED_COUNT];
 
         for (int i=0;i<LED_COUNT;i++) {
