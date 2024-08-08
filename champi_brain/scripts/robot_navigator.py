@@ -16,6 +16,7 @@ from utils import pose_from_position
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
+from rclpy.logging import get_logger
 
 from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
@@ -27,20 +28,25 @@ import numpy as np
 
 import time
 from icecream import ic
+from rclpy.logging import get_logger
 
 class Robot_Navigator():
     def __init__(self, node):
+        get_logger('rclpy').info(f"\tLaunching Robot Navigator...")
+        
         self.node = node
 
         # Action client for /navigate
         self.action_client_navigate = ActionClient(self.node, Navigate, '/navigate')
+        get_logger('rclpy').info('\t\tWaiting for Action Server /navigate...')
         self.action_client_navigate.wait_for_server()
-        self.node.get_logger().info('Action client for /navigate is ready!')
+        get_logger('rclpy').info('\t\tAction client for /navigate is ready!')
 
         self.goal_handle_navigate = None
 
         self.goal_pose = None
         self.last_goal = None
+        get_logger('rclpy').info(f"\tRobot Navigator launched !")
 
 
     def navigate_to(self, destination: Tuple[float, float, float], max_time_allowed) -> bool:
@@ -50,6 +56,14 @@ class Robot_Navigator():
             return
         self.last_goal = destination
 
+        # publish pose /goal_pose
+        pose = PoseStamped()
+        pose.header.stamp.sec = 0
+        pose.header.stamp.nanosec = 0
+        pose.pose.position.x = destination[0]
+        pose.pose.position.y = destination[1]
+        pose.pose.orientation.z = sin(destination[2]/2)
+        pose.pose.orientation.w = cos(destination[2]/2)
 
     # ==================================== ROS2 Callbacks ==========================================
 

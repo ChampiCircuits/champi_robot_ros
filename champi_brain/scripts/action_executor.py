@@ -20,6 +20,8 @@ from icecream import ic
 
 class Action_Executor():
     def __init__(self,strategy_node: Node) -> None:
+        get_logger('rclpy').info(f"\tLaunching Action Executor...")
+
         # check that everything is ready
         self.wait_for_ready()
         self.robot_navigator = Robot_Navigator(strategy_node)
@@ -39,7 +41,8 @@ class Action_Executor():
         self.move_state = None
       
         self.gfini = self.strategy_node.create_subscription(Empty, '/gfini', self.gfini_callback, 10)
-        
+        get_logger('rclpy').info(f"\tAction Executor launched !")
+
 
     def gfini_callback(self, msg):
         ic("GFINIIIIIIIIIIIIIIIII")

@@ -21,12 +21,15 @@ import time
 from icecream import ic
 
 from champi_navigation.path_planner import AStarPathPlanner, ComputePathResult
+from rclpy.logging import get_logger
 
 
 class PlannerNode(Node):
 
     def __init__(self):
         super().__init__('planner_node')
+        get_logger('rclpy').info(f"\tLaunching Path planner NODE...")
+
 
         self.path_pub = self.create_publisher(Path, '/plan', 10)
 
@@ -49,6 +52,7 @@ class PlannerNode(Node):
         self.path_planner = None
 
         self.planning = False
+        get_logger('rclpy').info(f"\tPath planner NODE launched!")
 
     # ==================================== ROS2 Callbacks ==========================================
 
@@ -80,6 +84,7 @@ class PlannerNode(Node):
     
 
     async def execute_callback(self, goal_handle):
+        self.get_logger().info("callback")
 
         self.goal_handle_navigate = goal_handle
 

@@ -138,6 +138,7 @@ MIDDLE_OF_TABLE = (2.0/2, 3.0/2)
 class StrategyEngineNode(Node):
     def __init__(self) -> None:
         super().__init__('strategy_engine_node')
+        get_logger('rclpy').info(f"Launched strategy node !")
 
         self.received_color_and_pose = False
 
