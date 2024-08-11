@@ -1,8 +1,9 @@
 import theme
-from message import message
 
 from nicegui import ui
 import subprocess, netifaces
+
+label_ip, label_wifi_name = None, None
 
 #################################################
 #################### PAGE #######################
@@ -11,20 +12,26 @@ import subprocess, netifaces
 def create() -> None:
     @ui.page('/ip')
     def page_a():
+        global label_ip, label_wifi_name
         with theme.frame('IP Page'):
-            message('IP')
-            with ui.element('div').classes('p-3 bg-blue-100'):
-                label_ip = ui.label(get_ip_addresses())
-            ui.timer(1.0, lambda: label_ip.set_text(get_ip_addresses()))
-            message('WiFi Network')
-            with ui.element('div').classes('p-3 bg-blue-100'):
-                label_wifi_name = ui.label(get_wifi_name())
-            ui.timer(1.0, lambda: label_wifi_name.set_text(get_wifi_name()))
+            with ui.row():
+                ui.label('IP: ').classes('text-h4 text-grey-8')
+                label_ip = ui.label(get_ip_addresses()).classes('text-h4 text-dark-8')
+
+            with ui.row():        
+                ui.label('WiFi Network: ').classes('text-h4 text-grey-8')
+                label_wifi_name = ui.label(get_wifi_name()).classes('text-h4 text-dark-8')
+
+            ui.button("Update", on_click=update)
 
 
 #################################################
 #################### UTILS ######################
 #################################################
+
+def update():
+    label_ip.set_text(get_ip_addresses())
+    label_wifi_name.set_text(get_wifi_name())
 
 def get_ip_address(interface):
     try:
@@ -48,11 +55,11 @@ def get_ip_addresses():
         ip_address = get_ip_address(interface_name)
         ip_addresses.append(f"{interface_name}: {ip_address}")
 
-    return " ; ".join(ip_addresses)
+    # return " ; ".join(ip_addresses)
+    return ip_addresses[1].split(": ")[1]
 
 def get_wifi_name():
     subprocess_result = subprocess.Popen('iwgetid',shell=True,stdout=subprocess.PIPE)
     subprocess_output = subprocess_result.communicate()[0],subprocess_result.returncode
     network_name = subprocess_output[0].decode('utf-8')
-    return network_name
-
+    return network_name.split(':')[1][1:-2] #1:-2 to remove the " character

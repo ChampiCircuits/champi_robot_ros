@@ -1,5 +1,4 @@
 import theme
-from message import message
 
 from nicegui import ui, events
 
@@ -73,51 +72,51 @@ def create() -> None:
 
             container = ui.column().classes('w-full; items-center').style('padding-top:50px')
             with container:        
-                message('Match')
+                ui.label('Match').classes('text-h4 text-grey-8')
                 stepper = ui.stepper().props('vertical').classes('')
                 with stepper:
-                    with ui.step('Positionning the robot'):
-                        ui.label('Robot')
+                    with ui.step('Positionner le robot sur la table'):
                         with ui.stepper_navigation():
-                            ui.button('Next', on_click=stepper.next)
+                            ui.button('Robot placé ✓', on_click=stepper.next)
 
-                    with ui.step('Choose start position'):
+                    with ui.step('Choisir la position de départ'):
                         interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay).on('svg:pointerdown', zone_chosen).style('width:50%')
                         def next_if_zone_chosen():
                             if zone_has_been_chosen:
                                 stepper.next()
                             else:
-                                ui.notify('Please choose a zone...')
+                                ui.notify('Choisir une zone...')
 
                         with ui.stepper_navigation():
-                            ui.button('Next', on_click=next_if_zone_chosen)
+                            ui.button('Suivant', on_click=next_if_zone_chosen)
+                            ui.button('Retour', on_click=stepper.previous).props('flat')
 
-                    with ui.step('Choose strategy'):
-                        radio_strategy_selection = ui.radio(['Homologation', 'Soft','Aggressive', 'OnlyHalfTable'], value='Homologation')
+                    with ui.step('Choisir la strategie'):
+                        radio_strategy_selection = ui.radio(['Homologation', 'Soft','Agressive', 'Demi-table'], value='Homologation')
                         with ui.stepper_navigation():
-                            ui.button('Next', on_click=stepper.next)
+                            ui.button('Suivant', on_click=stepper.next)
+                            ui.button('Retour', on_click=stepper.previous).props('flat')
 
-                    with ui.step('Launching nodes'):
-                        ui.label('Launch nodes')
+                    with ui.step('Lancement des nodes'):
                         ui.label('TODO') # TODO
                         print("TODO launch correct nodes")
                         with ui.stepper_navigation():
-                            ui.button('Next', on_click=stepper.next)
-                            ui.button('Back', on_click=stepper.previous).props('flat')
+                            ui.button('Suivant', on_click=stepper.next)
+                            ui.button('Retour', on_click=stepper.previous).props('flat')
 
-                    with ui.step('Checking tirette'):
-                        ui.label('tirette TODO')
-                        print("TODO check tirette") # TODO
+                    with ui.step('Vérification de la tirette'):
+                        ui.label('Vérifier la tirette')
+                        print("TODO check tirette auto") # TODO
                         with ui.stepper_navigation():
-                            ui.button('Next', on_click=stepper.next)
-                            ui.button('Back', on_click=stepper.previous).props('flat')
+                            ui.button('Suivant', on_click=stepper.next)
+                            ui.button('Retour', on_click=stepper.previous).props('flat')
 
-                    with ui.step('Deactivating BAU'):
-                        ui.label('Please check the BAU')
+                    with ui.step('Désactivation du BAU'):
+                        ui.label('Vérifier le BAU')
                         print("TODO auto check the BAU") # TODO
                         with ui.stepper_navigation():
-                            ui.button('Done', on_click=ready_to_launch_match)
-                            ui.button('Back', on_click=stepper.previous).props('flat')
+                            ui.button('Terminé', on_click=ready_to_launch_match)
+                            ui.button('Retour', on_click=stepper.previous).props('flat')
 
 
 

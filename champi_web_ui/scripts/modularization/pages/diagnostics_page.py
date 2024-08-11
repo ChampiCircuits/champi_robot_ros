@@ -1,5 +1,4 @@
 import theme
-from message import message
 
 from nicegui import ui
 from diagnostic_msgs.msg import DiagnosticArray
@@ -14,7 +13,7 @@ def create() -> None:
     @ui.page('/diagnostics')
     def page_diagnostics():
         with theme.frame('Diagnostics'):
-            message('Diagnostics')
+            ui.label('Diagnostics').classes('text-h4 text-grey-8')
             global diagnostics_dic
             diagnostics_dic = {} # bc each time the page is loaded, it calls create(), deletes the content of the aggrid, so we need to reset global vars
             global grid
@@ -88,7 +87,7 @@ def level_to_color(level):
         return "red"
     elif level == "\x03":
         return "grey"
-        
+
 
 grid = None
 # bind the line number in the grid with the name of the diagnostic, and the level, message, hardware_id
