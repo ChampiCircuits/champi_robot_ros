@@ -29,3 +29,6 @@ usages_page.create()
 
 
 ui.run(title='Champi Web UI')
+
+print('TODO voir pour le storage') # TODO
+print('TODO ajouter la page de gestion des strategies et ajout')

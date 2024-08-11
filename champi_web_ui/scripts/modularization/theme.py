@@ -16,5 +16,5 @@ def frame(navigation_title: str):
         ui.space()
         with ui.row():
             menu()
-    with ui.column().classes('absolute-center items-center').style('width: 90%'):
+    with ui.column().classes('absolute-center items-center').style('width: 99%'):
         yield
