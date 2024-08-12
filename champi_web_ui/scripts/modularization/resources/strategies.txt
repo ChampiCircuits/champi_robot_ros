@@ -1,0 +1,18 @@
+[
+    {
+        "name": "Homologation",
+        "points": "10"
+    },
+    {
+        "name": "Soft",
+        "points": "30"
+    },
+    {
+        "name": "Demie Table",
+        "points": 0
+    },
+    {
+        "name": "Test",
+        "points": 0
+    }
+]
