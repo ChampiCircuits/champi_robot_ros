@@ -47,6 +47,8 @@ def update_time():
     global score, match_started, time_left_label, start_time, score_label
 
     if score == -1 and not match_started: # TODO faire mieux en publiant un Empty msg pour dire start
+        if score_label is None:
+            pass
         print("\n\nRECEIVED MATCH STARTED\n\n")
         # match just started
         match_started = True
@@ -54,6 +56,8 @@ def update_time():
         score_label.set_text("0 points")
 
     if match_started:
+        if time_left_label is None:
+            pass
         if 100 - int(time.time() - start_time) > 0:
             time_left_label.set_text(f"Temps restant: {100 - int(time.time() - start_time)} secondes")
         else:

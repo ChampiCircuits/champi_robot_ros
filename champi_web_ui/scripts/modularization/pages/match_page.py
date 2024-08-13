@@ -1,8 +1,12 @@
 import theme
 
 from nicegui import ui, events
+from std_msgs.msg import String
+
+from node import init_ros_node
 
 zone_has_been_chosen = False
+chosen_zone = None
 
 container = None
 stepper = None
@@ -59,8 +63,9 @@ def zone_chosen(args: events.GenericEventArguments):
             y=5855+1700//2
 
     interactive_image_table.content = svg_zones_overlay + '''<circle id="P3" cx="{x}" cy="{y}" r="470" fill="black" stroke="black" />'''.format(x=x,y=y)
-    global zone_has_been_chosen
+    global zone_has_been_chosen, chosen_zone
     zone_has_been_chosen = True
+    chosen_zone = id
 
 def create() -> None:
     @ui.page('/match')
@@ -83,6 +88,10 @@ def create() -> None:
                         interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay).on('svg:pointerdown', zone_chosen).style('width:50%')
                         def next_if_zone_chosen():
                             if zone_has_been_chosen:
+                                msg = String()
+                                msg.data = chosen_zone
+                                ros_node.zone_pub.publish(msg)
+                                print("pub ID")
                                 stepper.next()
                             else:
                                 ui.notify('Choisir une zone...')
@@ -120,3 +129,6 @@ def create() -> None:
 
 
 
+
+ros_node = init_ros_node()
+ros_node.zone_pub = ros_node.create_publisher(String, '/start_zone', 10)

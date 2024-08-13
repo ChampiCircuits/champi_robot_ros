@@ -320,11 +320,11 @@ class StrategyEngineNode(Node):
 
     def get_start_pose_from_start_zone(self, start_zone): #str
         start_pose = None
-        if start_zone == "J1":
+        if start_zone == "J1" or start_zone == "Y1":
             start_pose = (0.165, 0.165, 1.0466) # 60°
-        elif start_zone == "J2":
+        elif start_zone == "J2" or start_zone == "Y2":
             start_pose = (2.0-0.165, 0.165, 2.0933)# 180-60° #2.6166
-        elif start_zone == "J3":
+        elif start_zone == "J3" or start_zone == "Y3":
             start_pose = (1.0, 3.0-0.165, -1.5707) #-90°
         elif start_zone == "B1":
             start_pose = (1.0, 0.165, 1.5707) #90°
@@ -333,7 +333,7 @@ class StrategyEngineNode(Node):
         elif start_zone == "B3":
             start_pose = (2.0-0.165, 3.0-0.165, -2.0933)# -180+60° #-2.6166
         else:
-            get_logger('rclpy').info(f"ERRRRRRRRRRRRRRRRRRRRRRROR start zone unvalide : {start_zone.data}. \n\n")
+            get_logger('rclpy').info(f"ERRRRRRRRRRRRRRRRRRRRRRROR start zone unvalide : "+start_zone)
             quit()
 
         return start_pose

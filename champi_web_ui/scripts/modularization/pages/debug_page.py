@@ -1,12 +1,30 @@
 import theme
 
 from nicegui import ui, events
-from std_msgs.msg import Int64, Int64MultiArray, Empty
+from std_msgs.msg import Int64, Int64MultiArray, Empty, String
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped
 from enum import Enum
-from math import acos
+from math import acos, sin, cos
 
 from node import init_ros_node
+
+TABLE_WIDTH_PX = 9640+1700
+TABLE_HEIGHT_PX = 5855+1700
+
+def pose_from_position(position, stamp): # TODO, à importer de utils dans champi_brain
+    goal_pose_msg = PoseStamped()
+    goal_pose_msg.header.frame_id = 'map'
+    goal_pose_msg.header.stamp = stamp
+    goal_pose_msg.pose.position.x = position[0]
+    goal_pose_msg.pose.position.y = position[1]
+    goal_pose_msg.pose.position.z = 0.0
+    # theta radians to quaternion
+    goal_pose_msg.pose.orientation.z = 0.0
+    goal_pose_msg.pose.orientation.z = 0.0
+    goal_pose_msg.pose.orientation.z = sin(position[2] / 2)
+    goal_pose_msg.pose.orientation.w = cos(position[2] / 2)
+    return goal_pose_msg
 
 class CAN_MSGS(Enum): #TODO jsp comment l'importer de champi_brain.utils
     START_GRAB_PLANTS = 0
@@ -16,8 +34,8 @@ class CAN_MSGS(Enum): #TODO jsp comment l'importer de champi_brain.utils
     INITIALIZING = 4
     FREE = 5
 
+toggle_pose_effect_value = False
 interactive_image_table = None
-
 src = 'champi_web_ui/scripts/modularization/resources/table_2024.png'
 
 svg_zones_overlay = '''
@@ -38,6 +56,9 @@ svg_plants_overlay = '''
                 <circle id="P5" cx="5675" cy="5660" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
                 <circle id="P6" cx="7560" cy="4910" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
             '''
+
+MOVE_ROBOT_STRING = "Déplacer le robot"
+INIT_ROBOT_POSE_STRING = "Choisir la position de départ"
 
 #################################################
 #################### PAGE #######################
@@ -68,12 +89,13 @@ class ToggleButtonGrabPlants(ui.button):
 def zone_chosen(args: events.GenericEventArguments):
     id = args.args['element_id']
     print(id)
+    a= 1700
     match id:
         case "B1":
-            x=1700//2
-            y=1700//2
+            x=1700//2+a
+            y=1700//2+a
         case "B2":
-            x=850
+            x=1700//2
             y=5855+1700//2
         case "B3":
             x=9640+1700//2
@@ -87,8 +109,39 @@ def zone_chosen(args: events.GenericEventArguments):
         case "Y3":
             x=9640+1700//2
             y=5855+1700//2
+        case _:
+            x=(9640+1700)//2
+            y=(5855+1700)//2
 
     interactive_image_table.content = svg_zones_overlay + svg_plants_overlay + '''<circle id="P3" cx="{x}" cy="{y}" r="470" fill="black" stroke="black" />'''.format(x=x,y=y)
+
+    print(px_to_real((x, y, 0)))
+    print(toggle_pose_effect_value)
+    if toggle_pose_effect_value == INIT_ROBOT_POSE_STRING:
+        msg = String()
+        msg.data = id
+        zone_pub.publish(msg)
+    elif toggle_pose_effect_value == MOVE_ROBOT_STRING:
+        goal_pose_publisher.publish(pose_from_position(px_to_real((x, y, 0)), ros_node.get_clock().now().to_msg()))
+
+"""
+px real
+Wpx   W
+x
+"""
+
+def real_to_px(pose: tuple) -> tuple:
+    x, y, theta = pose
+    x_px = TABLE_WIDTH_PX - y * TABLE_WIDTH_PX / 3.0
+    y_px = TABLE_HEIGHT_PX - x * TABLE_HEIGHT_PX / 2.0
+    x_px, y_px = int(x_px), int(y_px)
+    return (x_px, y_px, theta)
+
+def px_to_real(pose_px: tuple) -> tuple:
+    x_px, y_px, theta = pose_px
+    y = 3.0 - x_px * 3.0 / TABLE_WIDTH_PX
+    x = 2.0 - y_px * 2.0 / TABLE_HEIGHT_PX
+    return (x, y, theta)
 
 def update_robot_position(odom_msg: Odometry):
     if interactive_image_table is None:
@@ -97,15 +150,11 @@ def update_robot_position(odom_msg: Odometry):
     x,y,z,w = odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y, odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w
     theta = -2*acos(w)+1.57
 
-    table_width_px = 9640+1700
-    table_height_px = 5855+1700
-    x_px = table_width_px - y * table_width_px / 3.0
-    y_px = table_height_px - x * table_height_px / 2.0
-    x_px, y_px = int(x_px), int(y_px)
-
+    x_px, y_px, theta = real_to_px((x, y, theta))
 
     interactive_image_table.content = svg_zones_overlay + svg_plants_overlay + '''<circle id="robot" cx="{x_px}" cy="{y_px}" r="150" fill="red" stroke="red" />'''.format(x_px=x_px,y_px=y_px)
     interactive_image_table.update()
+
 
 @ui.refreshable
 def create() -> None:
@@ -167,7 +216,7 @@ def create() -> None:
 
                 with ui.column():
                     with ui.card().style('align-items: center'):
-                        ui.label("TODO : choix zone et tirette simu")
+                        ui.toggle([MOVE_ROBOT_STRING, INIT_ROBOT_POSE_STRING], value=MOVE_ROBOT_STRING).bind_value_to(globals(), 'toggle_pose_effect_value')
                         global interactive_image_table
                         interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay+svg_plants_overlay).on('svg:pointerdown', zone_chosen).style('width:100%')
 
@@ -248,6 +297,8 @@ ros_node = init_ros_node()
 ros_node.create_subscription(Int64MultiArray, '/act_status', act_sub_update, 10)
 tirette_pub = ros_node.create_publisher(Empty, '/tirette_start', 10)
 odom_subscriber = ros_node.create_subscription(Odometry, '/odometry/filtered', update_robot_position, 10)
+goal_pose_publisher = ros_node.create_publisher(PoseStamped, '/goal_pose', 10)
+zone_pub = ros_node.create_publisher(String, '/start_zone', 10)
 
 
 # TODO update CAN state et nb plants
