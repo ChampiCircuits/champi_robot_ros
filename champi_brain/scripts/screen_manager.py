@@ -409,7 +409,7 @@ class Application(tk.Tk):
         table_frame.pack(expand=True, fill="both")
 
         # Chemin de l'image
-        image_path = get_package_share_directory('champi_simulator') + "/blender_projects/table/table_dae/vinyle_table_2024_FINAL_V1.png"
+        image_path = get_package_share_directory('champi_navigation') + "/resources/table.png"
 
         # Chargement de l'image
         self.table_image = tk.PhotoImage(file=image_path)
