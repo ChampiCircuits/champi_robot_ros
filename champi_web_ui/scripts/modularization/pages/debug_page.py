@@ -1,8 +1,10 @@
 import theme
 
 from nicegui import ui, events
-from std_msgs.msg import Int64, Int64MultiArray
+from std_msgs.msg import Int64, Int64MultiArray, Empty
+from nav_msgs.msg import Odometry
 from enum import Enum
+from math import acos
 
 from node import init_ros_node
 
@@ -88,6 +90,23 @@ def zone_chosen(args: events.GenericEventArguments):
 
     interactive_image_table.content = svg_zones_overlay + svg_plants_overlay + '''<circle id="P3" cx="{x}" cy="{y}" r="470" fill="black" stroke="black" />'''.format(x=x,y=y)
 
+def update_robot_position(odom_msg: Odometry):
+    if interactive_image_table is None:
+        return
+    
+    x,y,z,w = odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y, odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w
+    theta = -2*acos(w)+1.57
+
+    table_width_px = 9640+1700
+    table_height_px = 5855+1700
+    x_px = table_width_px - y * table_width_px / 3.0
+    y_px = table_height_px - x * table_height_px / 2.0
+    x_px, y_px = int(x_px), int(y_px)
+
+
+    interactive_image_table.content = svg_zones_overlay + svg_plants_overlay + '''<circle id="robot" cx="{x_px}" cy="{y_px}" r="150" fill="red" stroke="red" />'''.format(x_px=x_px,y_px=y_px)
+    interactive_image_table.update()
+
 @ui.refreshable
 def create() -> None:
     @ui.page('/debug')
@@ -152,9 +171,15 @@ def create() -> None:
                         global interactive_image_table
                         interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay+svg_plants_overlay).on('svg:pointerdown', zone_chosen).style('width:100%')
 
-                        ui.button('Tirette')
                     with ui.card().style('align-items: center'):
-                        "..."
+                        def tirette_publish():
+                            e = Empty()
+                            tirette_pub.publish(e)
+                        ui.button('Tirette', on_click=tirette_publish)
+
+                        with ui.card().style('align-items: center'):
+                            ui.joystick(color='green', size=100, on_move=lambda e: ui.notify('TODO')).style('width:95%')
+                            ui.label('joystick').classes('text-h6 text-grey-8')
                 
                 
                 with ui.card().style('align-items: center'):
@@ -221,6 +246,8 @@ nb_plants = 0
 
 ros_node = init_ros_node()
 ros_node.create_subscription(Int64MultiArray, '/act_status', act_sub_update, 10)
+tirette_pub = ros_node.create_publisher(Empty, '/tirette_start', 10)
+odom_subscriber = ros_node.create_subscription(Odometry, '/odometry/filtered', update_robot_position, 10)
 
 
 # TODO update CAN state et nb plants

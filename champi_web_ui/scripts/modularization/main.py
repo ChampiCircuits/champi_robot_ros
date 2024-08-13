@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.executors import ExternalShutdownException
 import threading
-from pages import launch_page, match_page, debug_page, diagnostics_page, ip_page, usages_page, in_match_page
+from pages import launch_page, match_page, debug_page, diagnostics_page, ip_page, usages_page, in_match_page, strategies_page
 
 from nicegui import ui
 from node import init_ros_node
@@ -21,6 +21,7 @@ threading.Thread(target=ros_spin, daemon=True).start()
 
 launch_page.create()
 match_page.create()
+strategies_page.create()
 in_match_page.create()
 debug_page.create()
 diagnostics_page.create()
@@ -29,6 +30,3 @@ usages_page.create()
 
 
 ui.run(title='Champi Web UI')
-
-print('TODO voir pour le storage') # TODO
-print('TODO ajouter la page de gestion des strategies et ajout')
