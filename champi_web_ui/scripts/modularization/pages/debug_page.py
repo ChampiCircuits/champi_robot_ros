@@ -3,14 +3,13 @@ import theme
 from nicegui import ui, events
 from std_msgs.msg import Int64, Int64MultiArray, Empty, String
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Twist
 from enum import Enum
-from math import acos, sin, cos
+from math import acos, sin, cos, pi
 
 from node import init_ros_node
+from utils import real_to_px, px_to_real, id_to_coords
 
-TABLE_WIDTH_PX = 9640+1700
-TABLE_HEIGHT_PX = 5855+1700
 
 def pose_from_position(position, stamp): # TODO, à importer de utils dans champi_brain
     goal_pose_msg = PoseStamped()
@@ -60,6 +59,9 @@ svg_plants_overlay = '''
 MOVE_ROBOT_STRING = "Déplacer le robot"
 INIT_ROBOT_POSE_STRING = "Choisir la position de départ"
 
+robot_rotation_normalized_to_one = 0
+robot_pose = None
+
 #################################################
 #################### PAGE #######################
 #################################################
@@ -89,29 +91,8 @@ class ToggleButtonGrabPlants(ui.button):
 def zone_chosen(args: events.GenericEventArguments):
     id = args.args['element_id']
     print(id)
-    a= 1700
-    match id:
-        case "B1":
-            x=1700//2+a
-            y=1700//2+a
-        case "B2":
-            x=1700//2
-            y=5855+1700//2
-        case "B3":
-            x=9640+1700//2
-            y=2925+1700//2
-        case "Y1":
-            x=1700//2
-            y=2925+1700//2
-        case "Y2":
-            x=9640+1700//2
-            y=1700//2
-        case "Y3":
-            x=9640+1700//2
-            y=5855+1700//2
-        case _:
-            x=(9640+1700)//2
-            y=(5855+1700)//2
+
+    x,y = id_to_coords(id)
 
     interactive_image_table.content = svg_zones_overlay + svg_plants_overlay + '''<circle id="P3" cx="{x}" cy="{y}" r="470" fill="black" stroke="black" />'''.format(x=x,y=y)
 
@@ -124,24 +105,6 @@ def zone_chosen(args: events.GenericEventArguments):
     elif toggle_pose_effect_value == MOVE_ROBOT_STRING:
         goal_pose_publisher.publish(pose_from_position(px_to_real((x, y, 0)), ros_node.get_clock().now().to_msg()))
 
-"""
-px real
-Wpx   W
-x
-"""
-
-def real_to_px(pose: tuple) -> tuple:
-    x, y, theta = pose
-    x_px = TABLE_WIDTH_PX - y * TABLE_WIDTH_PX / 3.0
-    y_px = TABLE_HEIGHT_PX - x * TABLE_HEIGHT_PX / 2.0
-    x_px, y_px = int(x_px), int(y_px)
-    return (x_px, y_px, theta)
-
-def px_to_real(pose_px: tuple) -> tuple:
-    x_px, y_px, theta = pose_px
-    y = 3.0 - x_px * 3.0 / TABLE_WIDTH_PX
-    x = 2.0 - y_px * 2.0 / TABLE_HEIGHT_PX
-    return (x, y, theta)
 
 def update_robot_position(odom_msg: Odometry):
     if interactive_image_table is None:
@@ -150,11 +113,44 @@ def update_robot_position(odom_msg: Odometry):
     x,y,z,w = odom_msg.pose.pose.position.x, odom_msg.pose.pose.position.y, odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w
     theta = -2*acos(w)+1.57
 
+    global robot_pose
+    robot_pose = (x,y,theta)
+
+    global robot_rotation_normalized_to_one
+    robot_rotation_normalized_to_one = abs(theta % 2*pi)/(2*pi)
+    # print(robot_rotation_normalized_to_one, theta)
+
     x_px, y_px, theta = real_to_px((x, y, theta))
 
-    interactive_image_table.content = svg_zones_overlay + svg_plants_overlay + '''<circle id="robot" cx="{x_px}" cy="{y_px}" r="150" fill="red" stroke="red" />'''.format(x_px=x_px,y_px=y_px)
+    interactive_image_table.content = svg_zones_overlay + '''<circle id="robot" cx="{x_px}" cy="{y_px}" r="150" fill="red" stroke="red" />'''.format(x_px=x_px,y_px=y_px)
+    if toggle_pose_effect_value == MOVE_ROBOT_STRING:
+        interactive_image_table.content += svg_plants_overlay
     interactive_image_table.update()
 
+def joystick_update(event):
+    x, y = event.x, event.y # ]-1,1[ both
+    print(x,y)
+
+    msg = Twist()
+    msg.linear.x = x//10
+    msg.linear.y = -y//10
+    msg.angular.z = 0.
+    cmd_vel_publisher.publish(msg)
+
+def knob_update(event):
+    theta = event.value * 2*pi - pi
+
+    x, y = robot_pose[0], robot_pose[1]
+    print(x,y,theta)
+
+    msg = PoseStamped()
+    msg.header.stamp = ros_node.get_clock().now().to_msg()
+    msg.pose.position.x = x
+    msg.pose.position.y = y
+    msg.pose.orientation.z = sin(theta/2)
+    msg.pose.orientation.w = cos(theta/2)
+
+    goal_pose_publisher.publish(msg)
 
 @ui.refreshable
 def create() -> None:
@@ -168,14 +164,14 @@ def create() -> None:
                             ui.label('START_GRAB_PLANTS = 0; STOP_GRAB_PLANTS = 1; RELEASE_PLANT = 2; TURN_SOLAR_PANEL = 3; INITIALIZING = 4; FREE = 5')
                             ui.label('CAN State:').classes('text-h4 text-grey-8')
                             with ui.element('div'):
-                                label_CAN_state = ui.label(CAN_state).classes('text-h4 text-black-8')
+                                ui.label().classes('text-h4 text-black-8').bind_text_from(globals(), 'CAN_state')
 
                         ToggleButtonGrabPlants('Start Grabbing Plants...')
 
                     with ui.card().style('align-items: center'):
                         with ui.row():
                             ui.label('Plants in the robot:').classes('text-h4 text-grey-8')
-                            label_CAN_state = ui.label(nb_plants).classes('text-h4 text-black-8')
+                            ui.label().classes('text-h4 text-black-8').bind_text_from(globals(), 'nb_plants')
                         ui.button('Release 1 plant',on_click= release_plant).props('color=pink')
 
                     with ui.card().style('align-items: center'):
@@ -226,9 +222,13 @@ def create() -> None:
                             tirette_pub.publish(e)
                         ui.button('Tirette', on_click=tirette_publish)
 
-                        with ui.card().style('align-items: center'):
-                            ui.joystick(color='green', size=100, on_move=lambda e: ui.notify('TODO')).style('width:95%')
-                            ui.label('joystick').classes('text-h6 text-grey-8')
+                        with ui.row():
+                            with ui.column():
+                                ui.joystick(color='green', size=100, on_move=joystick_update).style('width:95%')
+                                ui.label('joystick').classes('text-h6 text-grey-8')
+
+                            with ui.knob(color='orange', track_color='blue', size='9vmax', on_change=knob_update).bind_value(globals(), robot_rotation_normalized_to_one):
+                                ui.icon('3d_rotation')
                 
                 
                 with ui.card().style('align-items: center'):
@@ -250,19 +250,18 @@ def act_sub_update(msg):
         # INITIALIZING = 4
         # FREE = 5
 
-    if CAN_state == 0:
+    if CAN_state == CAN_MSGS.START_GRAB_PLANTS:
         CAN_state = "START_GRAB_PLANTS"
-    elif CAN_state == 1:
+    elif CAN_state == CAN_MSGS.STOP_GRAB_PLANTS:
         CAN_state = "STOP_GRAB_PLANTS"
-    elif CAN_state == 2:
+    elif CAN_state == CAN_MSGS.RELEASE_PLANT:
         CAN_state = "RELEASE_PLANT"
-    elif CAN_state == 3:
+    elif CAN_state == CAN_MSGS.TURN_SOLAR_PANEL:
         CAN_state = "TURN_SOLAR_PANEL"
-    elif CAN_state == 4:
+    elif CAN_state == CAN_MSGS.INITIALIZING:
         CAN_state = "INITIALIZING"
-    elif CAN_state == 5:
+    elif CAN_state == CAN_MSGS.FREE:
         CAN_state = "FREE"
-    # CAN_state_label.config(text=CAN_state) # TODO
 
 def start_grab_plants():
     print("start_grab_plants")
@@ -299,6 +298,7 @@ tirette_pub = ros_node.create_publisher(Empty, '/tirette_start', 10)
 odom_subscriber = ros_node.create_subscription(Odometry, '/odometry/filtered', update_robot_position, 10)
 goal_pose_publisher = ros_node.create_publisher(PoseStamped, '/goal_pose', 10)
 zone_pub = ros_node.create_publisher(String, '/start_zone', 10)
+cmd_vel_publisher = ros_node.create_publisher(Twist,'/cmd_vel_stop',10)
 
 
 # TODO update CAN state et nb plants

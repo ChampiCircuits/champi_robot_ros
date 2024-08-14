@@ -3,9 +3,13 @@ import theme
 from nicegui import ui, events
 from std_msgs.msg import Int64, Int64MultiArray
 import json
+from enum import Enum
 
 from node import init_ros_node
+from utils import real_to_px, id_to_coords, action_type_to_color
 
+STRATEGIES_FILE_PATH = 'champi_web_ui/scripts/modularization/resources/strategies.json'
+TABLE_IMAGE_PATH = 'champi_web_ui/scripts/modularization/resources/table_2024.png'
 
 # strategies
 strategies_dics = []
@@ -13,13 +17,13 @@ is_creating_a_strategy = False
 new_strategy_name = ""
 
 def save_json_strategies():
-    with open('champi_web_ui/scripts/modularization/resources/strategies.txt', 'w') as fp:
+    with open(STRATEGIES_FILE_PATH, 'w') as fp:
         json.dump(strategies_dics, fp, indent=4)
 
 
 def open_json_strategies():
     global strategies_dics
-    with open('champi_web_ui/scripts/modularization/resources/strategies.txt', 'r') as fp:
+    with open(STRATEGIES_FILE_PATH, 'r') as fp:
         strategies_dics = json.load(fp)
 
 open_json_strategies()
@@ -27,7 +31,6 @@ open_json_strategies()
 
 
 interactive_image_table = None
-src = 'champi_web_ui/scripts/modularization/resources/table_2024.png'
 
 svg_zones_overlay = '''
                 <rect id="B1" x="0" y="0" width="1700" height="1700" stroke="#4E84A2" fill="#4E84A2" pointer-events="all" cursor="pointer" />
@@ -48,9 +51,12 @@ svg_plants_overlay = '''
                 <circle id="P6" cx="7560" cy="4910" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
             '''
 
+svg_current_strat_overlay = ''''''
+
 #################################################
 #################### PAGE #######################
 #################################################
+
 class ToggleButtonAddStrat(ui.button):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -83,42 +89,87 @@ class ToggleButtonAddStrat(ui.button):
     def update(self) -> None:
         super().update()
 
+def update_table_display(str_additional=""):
+    for strat_ui in stratUIs_list:
+        if strat_ui.is_being_seen:
+            interactive_image_table.content = svg_current_strat_overlay + str_additional
+            return
+    interactive_image_table.content = svg_zones_overlay + svg_plants_overlay + svg_current_strat_overlay + str_additional
+
+
 def zone_chosen(args: events.GenericEventArguments):
     if not is_creating_a_strategy:
         return
     
     id = args.args['element_id']
 
-    match id:
-        case "B1":
-            x=1700//2
-            y=1700//2
-        case "B2":
-            x=850
-            y=5855+1700//2
-        case "B3":
-            x=9640+1700//2
-            y=2925+1700//2
-        case "Y1":
-            x=1700//2
-            y=2925+1700//2
-        case "Y2":
-            x=9640+1700//2
-            y=1700//2
-        case "Y3":
-            x=9640+1700//2
-            y=5855+1700//2
+    x,y = id_to_coords(id)
+    update_table_display('''<circle id="P3" cx="{x}" cy="{y}" r="470" fill="black" stroke="black" />'''.format(x=x,y=y))
 
-    interactive_image_table.content = svg_zones_overlay + svg_plants_overlay + '''<circle id="P3" cx="{x}" cy="{y}" r="470" fill="black" stroke="black" />'''.format(x=x,y=y)
+class StratUI():
+    def __init__(self, strat_dic):
+        self.strat_dic = strat_dic
+
+        ui.label(self.strat_dic['name'])
+        ui.label(self.strat_dic['points'])
+        self.see_button = ui.button("Voir", on_click=self.see_button_clicked).props('color=blue')
+        self.edit_button = ui.button("Modifier", on_click=self.edit_button_clicked).props('color=orange')
+        self.del_button = ui.button("Supprimer", on_click=self.delete_button_clicked).props('color=red')
+
+        self.is_being_seen = False
+
+    def see_button_clicked(self):
+        if not 'path_with_actions' in self.strat_dic.keys():
+            ui.notify('Aucune action pour cette stratégie...')
+            return
+        
+        self.is_being_seen = not self.is_being_seen
+        global svg_current_strat_overlay
+        
+        # CHANGE STYLE
+        if not self.is_being_seen:
+            self.see_button.props('color=blue')
+            svg_current_strat_overlay = ""
+            update_table_display()
+            return
+        
+        self.see_button.props('color=purple')
+
+        # DISPLAY ACTIONS AND PATH
+        last_px_coords = None
+        for action in self.strat_dic['path_with_actions']:
+            x,y,theta = real_to_px((action['x'], action['y'], 0))
+            action_type = action["action"]
+
+            svg_current_strat_overlay += '''<circle id="ps" cx={x} cy={y} r="250" fill="{color}" pointer-events="all" cursor="pointer" />'''.format(x=x, y=y, color=action_type_to_color(action_type))
+            
+            if last_px_coords is not None:
+                svg_current_strat_overlay += '''<line x1={x1} y1={y1} x2={x2} y2={y2} style="stroke:black;stroke-width:50"/>'''.format(x1=last_px_coords[0],y1=last_px_coords[1], x2=x, y2=y)
+            last_px_coords = (x,y,theta)
+            
+        update_table_display()
+
+    def edit_button_clicked(self):
+        print("Modifier : "+self.strat_dic['name']) # TODO
+
+    def delete_button_clicked(self):
+        ui.notify("Suppression de : "+self.strat_dic['name']+"...")
+        for i in range(len(strategies_dics)):
+            if strategies_dics[i]['name'] == self.strat_dic['name']:
+                del strategies_dics[i]
+                break
+        
+        save_json_strategies()
+        display_strats.refresh()
+        
+
+stratUIs_list = []
 
 @ui.refreshable
 def display_strats():
     for strat_dic in strategies_dics:
-        ui.label(strat_dic['name'])
-        ui.label(strat_dic['points'])
-        ui.button("Voir").props('color=blue') # TODO
-        ui.button("Modifier").props('color=orange') # TODO
-        ui.button("Supprimer").props('color=red') # TODO
+        stratUIs_list.append(StratUI(strat_dic=strat_dic))
+
 
 
 @ui.refreshable
@@ -130,7 +181,7 @@ def create() -> None:
                 with ui.column():
                     with ui.element("div"):
                         global interactive_image_table
-                        interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay+svg_plants_overlay).on('svg:pointerdown', zone_chosen).style('width:100%')
+                        interactive_image_table = ui.interactive_image(TABLE_IMAGE_PATH, content=svg_zones_overlay+svg_plants_overlay).on('svg:pointerdown', zone_chosen).style('width:100%')
                     with ui.row():
                         ToggleButtonAddStrat("Ajouter une strategie")
                         ui.input(label="Nom", placeholder="Nom de la strategie...")\
@@ -154,61 +205,3 @@ def create() -> None:
 #################### UTILS ######################
 #################################################
 
-def act_sub_update(msg):
-    global CAN_state, nb_plants
-    CAN_state = msg.data[0]
-    nb_plants = msg.data[1]
-        # START_GRAB_PLANTS = 0
-        # STOP_GRAB_PLANTS = 1
-        # RELEASE_PLANT = 2
-        # TURN_SOLAR_PANEL = 3
-        # INITIALIZING = 4
-        # FREE = 5
-
-    if CAN_state == 0:
-        CAN_state = "START_GRAB_PLANTS"
-    elif CAN_state == 1:
-        CAN_state = "STOP_GRAB_PLANTS"
-    elif CAN_state == 2:
-        CAN_state = "RELEASE_PLANT"
-    elif CAN_state == 3:
-        CAN_state = "TURN_SOLAR_PANEL"
-    elif CAN_state == 4:
-        CAN_state = "INITIALIZING"
-    elif CAN_state == 5:
-        CAN_state = "FREE"
-    # CAN_state_label.config(text=CAN_state) # TODO
-
-def start_grab_plants():
-    print("start_grab_plants")
-    publish_on_CAN(CAN_MSGS.START_GRAB_PLANTS) # TODO
-
-def stop_grab_plants():
-    print("stop_grab_plants")
-    publish_on_CAN(CAN_MSGS.STOP_GRAB_PLANTS)
-
-def release_plant():
-    print("release_plant")
-    publish_on_CAN(CAN_MSGS.RELEASE_PLANT)
-
-def publish_on_CAN( message):
-    # publish on the topic "/CAN" to be forwarded by CAN by the API
-    msg = Int64()
-    if message == CAN_MSGS.START_GRAB_PLANTS:
-        msg.data = 0
-    elif message == CAN_MSGS.STOP_GRAB_PLANTS:
-        msg.data = 1
-    elif message == CAN_MSGS.RELEASE_PLANT:
-        msg.data = 2
-    elif message == CAN_MSGS.TURN_SOLAR_PANEL:
-        msg.data = 3
-    ros_node.CAN_pub.publish(msg)
-
-
-CAN_state = "?"
-nb_plants = 0
-
-ros_node = init_ros_node()
-ros_node.create_subscription(Int64MultiArray, '/act_status', act_sub_update, 10)
-
-# TODO update CAN state et nb plants
