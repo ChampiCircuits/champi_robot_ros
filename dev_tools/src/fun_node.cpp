@@ -14,7 +14,6 @@ using namespace std;
 
 // LED RING
 #define LED_COUNT 24
-#define ANGLE_STEP 360 / LED_COUNT
 
 
 class FunNode : public rclcpp::Node
@@ -26,7 +25,7 @@ public:
                     {can_ids::LED_RING_DISTANCES},
                     false) {
         // ================================ Get parameters =================================
-        double loop_freq = this->declare_parameter<double>("loop_freq", 10.0);
+        double loop_freq = this->declare_parameter<double>("loop_freq", 1.0);
 
         // ================================ Initialize ROS related ===================================
 
@@ -39,6 +38,21 @@ public:
         loop_timer_ = this->create_wall_timer(
             1s/loop_freq, std::bind(&FunNode::loop_callback, this)
         );
+
+
+        // Start the CAN interface
+        int ret = champi_can_interface_.start();
+
+        if(ret == 0) {
+            RCLCPP_INFO(this->get_logger(), "CAN interface started successfully");
+
+        }
+        else {
+            RCLCPP_ERROR(this->get_logger(), "Error starting CAN interface");
+            exit(1);// TODO handle error
+        }
+
+        
         RCLCPP_INFO(this->get_logger(), "Launched Fun Node !");
     }
 
@@ -66,17 +80,21 @@ private:
             return;
             
         float tab_distances[LED_COUNT];
-
+        size_t s = this->last_msg->ranges.size();
         for (int i=0;i<LED_COUNT;i++) {
-            tab_distances[i] = this->last_msg->ranges[i* ANGLE_STEP];
+            tab_distances[i] = this->last_msg->ranges[i* s/24];
+            std::cout << (int)(tab_distances[i]*100.)<<"\t";
         }
+        std::cout << std::endl;
         send_by_CAN(tab_distances);
     }
 
     void send_by_CAN(float tab_distances[LED_COUNT]) {
+        this->led_ring_distances_msg.clear_distances();
         for (int i=0; i<LED_COUNT;i++) {
             this->led_ring_distances_msg.add_distances(tab_distances[i]);
         }
+
 
         // Send message
         if(champi_can_interface_.send(can_ids::LED_RING_DISTANCES, led_ring_distances_msg.SerializeAsString()) != 0) {

@@ -17,7 +17,6 @@ SINON en séparé :
 
 ```bash
 ros2 launch champi_bringup bringup.launch.py sim:=False
-ros2 launch champi_nav2 bringup_launch.py
 ros2 launch champi_brain brain.launch.py color:=blue
 OU
 ros2 launch champi_brain brain.launch.py color:=yellow
@@ -44,11 +43,9 @@ ros2 launch bringup teleop.launch.py
 
 ### Navigation
 ```bash
-ros2 launch champi_nav2 bringup_launch.py
+
 ```
-```bash
-python3 dev_tools/goals_cmd.py
-```
+
 
 
 ## Requirements
