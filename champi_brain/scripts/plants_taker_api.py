@@ -4,7 +4,7 @@ import numpy as np
 import yolo_api, camera_api
 from sklearn import svm
 from typing import Tuple
-import time
+from rclpy.logging import get_logger
 
 FRONT_POSE_DIST = 0.3 # m
 
@@ -28,7 +28,7 @@ def compute_front_pose_from_plants_position(plants_position, robot_pose) -> np.n
     # we know the robot pose, and the plants central position
     # we create a vector from the robot to the plants
     vector_robot_plants = plants_position - robot_pose
-    print("\t\t","plants:",plants_position,"robot:", robot_pose,"vec:", vector_robot_plants)
+    get_logger('plant_taker').info("\t\t"+"plants: "+str(plants_position)+" robot: "+ str(robot_pose)+" vec: "+ str(vector_robot_plants))
     # we normalize the vector
     vector_robot_plants = vector_robot_plants / np.linalg.norm(vector_robot_plants)
 
@@ -93,10 +93,10 @@ def compute_line(plants_positions:np.ndarray, front_pose_from_plants: np.ndarray
     # TODO ajuster la distance de filtrage
     plants_positions, filtered_out = filter_coords(dist=2.0, coords=plants_positions, research_zone_center=research_zone_center)
 
-    print("###################")
-    print("###################")
-    print(plants_positions, filtered_out)
-    print(coord_robot, research_zone_center)
+    get_logger('plant_taker').info("###################")
+    get_logger('plant_taker').info("###################")
+    get_logger('plant_taker').info(str(plants_positions)+"\t" +str(filtered_out))
+    get_logger('plant_taker').info(str(coord_robot) + "\t" + str(research_zone_center))
 
     # Calculer le milieu des six points
     midpoint = np.mean(plants_positions, axis=0)
@@ -124,18 +124,18 @@ def compute_line(plants_positions:np.ndarray, front_pose_from_plants: np.ndarray
 
         # on regarde si il y a bien trois points de chaque côté
         nb_to_get_each_side = len(plants_positions) // 2
-        # print("nb to get each side: ", nb_to_get_each_side)
+        # get_logger('plant_taker').info("nb to get each side: ", nb_to_get_each_side)
         if len(above) >= nb_to_get_each_side and len(below) >= nb_to_get_each_side:
             # on regarde si c'est le meilleur angle
-            # print("angle: ", np.degrees(angle), "nb above/below: ", len(above), len(below),"angle", abs(angle - angle_robot_midpoint))
+            # get_logger('plant_taker').info("angle: ", np.degrees(angle), "nb above/below: ", len(above), len(below),"angle", abs(angle - angle_robot_midpoint))
             if abs(angle - angle_robot_midpoint) < best_angle_dist:
                 best_angle = angle
-                # print("\n\n####MEILLEUR ANGLE: ", np.degrees(best_angle))
+                # get_logger('plant_taker').info("\n\n####MEILLEUR ANGLE: ", np.degrees(best_angle))
                 found = True
                 best_angle_dist = abs(angle - angle_robot_midpoint)
 
     if not found:
-        print("Pas d'angle trouvé")
+        get_logger('plant_taker').info("Pas d'angle trouvé")
         quit()
     
     # on calcule la droite à l'angle best_angle
@@ -169,8 +169,8 @@ def compute_line(plants_positions:np.ndarray, front_pose_from_plants: np.ndarray
 
 def project_point_on_line(x1, y1, slope, intercept):
     m, b = slope, intercept  # Pente et ordonnée à l'origine de la droite
-    print("m: ", m, "b: ", b)
-    print("x1: ", x1, "y1: ", y1)
+    get_logger('plant_taker').info("m: "+  str(m)+ "\tb: "+ str(b))
+    get_logger('plant_taker').info("x1: "+str(x1)+ "\ty1: "+ str(y1))
     point = np.array([x1, y1])
     # Calcul du vecteur directeur de la droite
     vecteur_directeur = np.array([1, m])
@@ -180,7 +180,7 @@ def project_point_on_line(x1, y1, slope, intercept):
 
     # Calcul de la projection orthogonale du point sur la droite
     projection = vecteur_droite + np.dot(point - vecteur_droite, vecteur_directeur) / np.dot(vecteur_directeur, vecteur_directeur) * vecteur_directeur
-    print("\t\t\t\tProjection du point sur la droite: ", projection)
+    get_logger('plant_taker').info("\t\t\t\tProjection du point sur la droite: "+ str(projection))
     # return np.asarray([18,28.65])
     return projection
 
@@ -230,8 +230,8 @@ def generate_start_end_points(group1, group2, slope2, intercept2, coord_robot):
     else:
         end_proj = end_proj - d * n
 
-    print("\t\t\tstart: ", start_proj)
-    print("\t\t\tend: ", end_proj)
+    get_logger('plant_taker').info("\t\t\tstart: "+ str(start_proj))
+    get_logger('plant_taker').info("\t\t\tend: "+ str(end_proj))
     
     return start_proj, end_proj
 
@@ -243,11 +243,11 @@ def compute_trajectory_points(plants_positions:np.ndarray, front_pose_from_plant
     # We have the x positions of the plants, we want to compute the two points trajectory to grab the plants
     # We first compute the line that separates the plants in two groups
     # time.sleep(2)
-    print("\t\tcompute line...")
+    get_logger('plant_taker').info("\t\tcompute line...")
     slope, intercept, group1, group2 = compute_line(plants_positions, front_pose_from_plants, research_zone_center)
 
     # We compute the two points
-    print("\t\tgenerate start and end points...")
+    get_logger('plant_taker').info("\t\tgenerate start and end points...")
     start, end = generate_start_end_points(group1, group2, slope, intercept, front_pose_from_plants)
 
     # start, end are only x,y coordinates, we need to add the theta
@@ -258,6 +258,6 @@ def compute_trajectory_points(plants_positions:np.ndarray, front_pose_from_plant
     start = np.append(start, angle)
     end = np.append(end, angle)
 
-    print("\t\tstart: ", start, "end: ", end)
+    get_logger('plant_taker').info("\t\tstart: "+ str(start) +"end: "+ str(end))
 
     return start, end

@@ -5,6 +5,7 @@ https://www.youtube.com/watch?v=4PUiDmD5dkg
 cd
 sudo apt-get install libzmq3-dev libboost-dev
 git clone https://github.com/BehaviorTree/BehaviorTree.CPP.git
+cd BehaviorTree.CPP
 mkdir build ; cd build
 cmake ..
 make

@@ -34,7 +34,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/web_interface.py
+  # scripts/web_interface.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

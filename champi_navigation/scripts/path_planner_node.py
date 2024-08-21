@@ -84,7 +84,7 @@ class PlannerNode(Node):
     
 
     async def execute_callback(self, goal_handle):
-        self.get_logger().info("callback")
+        self.get_logger().info(f"callback")
 
         self.goal_handle_navigate = goal_handle
 
@@ -110,6 +110,7 @@ class PlannerNode(Node):
 
             # TODO feedback
 
+            self.get_logger().info(f'.')
             time.sleep(self.loop_period - (time.time() - t_loop_start))
 
 
@@ -126,6 +127,7 @@ class PlannerNode(Node):
         else:
             goal_handle.succeed()
             self.get_logger().info('Goal reached!')
+            self.get_logger().warn('')
             result = Navigate.Result(success=True, message='Goal reached!')
         
         self.planning = False

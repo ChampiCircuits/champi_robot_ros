@@ -10,7 +10,6 @@ from typing import Tuple
 from math import sin, cos
 from std_msgs.msg import Empty
 import rclpy
-from icecream import ic
 
 from utils import pose_from_position
 import rclpy
@@ -27,26 +26,28 @@ from math import sin, cos, atan2, hypot, pi
 import numpy as np
 
 import time
-from icecream import ic
 from rclpy.logging import get_logger
 
 class Robot_Navigator():
     def __init__(self, node):
-        get_logger('rclpy').info(f"\tLaunching Robot Navigator...")
+        get_logger('robot_navigator').info(f"\tLaunching Robot Navigator...")
         
         self.node = node
 
         # Action client for /navigate
         self.action_client_navigate = ActionClient(self.node, Navigate, '/navigate')
-        get_logger('rclpy').info('\t\tWaiting for Action Server /navigate...')
+        get_logger('robot_navigator').info('\t\tWaiting for Action Server /navigate...')
         self.action_client_navigate.wait_for_server()
-        get_logger('rclpy').info('\t\tAction client for /navigate is ready!')
+        get_logger('robot_navigator').info('\t\tAction client for /navigate is ready!')
+
+        self.gfini_pub = self.node.create_publisher(Empty, '/gfini', 10)
+
 
         self.goal_handle_navigate = None
 
         self.goal_pose = None
         self.last_goal = None
-        get_logger('rclpy').info(f"\tRobot Navigator launched !")
+        get_logger('robot_navigator').info(f"\tRobot Navigator launched !")
 
 
     def navigate_to(self, destination: Tuple[float, float, float], max_time_allowed) -> bool:
@@ -57,18 +58,29 @@ class Robot_Navigator():
         self.last_goal = destination
 
         # publish pose /goal_pose
-        pose = PoseStamped()
-        pose.header.stamp.sec = 0
-        pose.header.stamp.nanosec = 0
-        pose.pose.position.x = destination[0]
-        pose.pose.position.y = destination[1]
-        pose.pose.orientation.z = sin(destination[2]/2)
-        pose.pose.orientation.w = cos(destination[2]/2)
+        pose = Pose()
+        # pose.header.stamp.sec = 0
+        # pose.header.stamp.nanosec = 0
+        pose.position.x = destination[0]
+        pose.position.y = destination[1]
+        pose.orientation.z = sin(destination[2]/2)
+        pose.orientation.w = cos(destination[2]/2)
+
+        goal = Navigate.Goal()
+        goal.poses = [pose]
+
+        # Send the goal to the action server
+        future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
+
+        # Add done callback
+        future_navigate_result.add_done_callback(self.goal_response_callback)
+
+        get_logger('robot_navigator').info('Goal sent from robot_navigator!')
 
     # ==================================== ROS2 Callbacks ==========================================
 
     def feedback_callback(self, feedback_msg):
-        self.node.get_logger().info(f'Feedback received! Feedback: {feedback_msg}')
+        get_logger('robot_navigator').info(f'Feedback received! Feedback: {feedback_msg}')
 
 
     # ==================================== Done Callbacks ==========================================
@@ -76,24 +88,29 @@ class Robot_Navigator():
     def goal_response_callback(self, future):
         goal_handle = future.result()
         if not goal_handle.accepted:
-            self.node.get_logger().info('Goal rejected :(')
+            get_logger('robot_navigator').info('Goal rejected :(')
             return
         
         self.goal_handle_navigate = goal_handle
 
-        self.node.get_logger().info('Goal accepted :)')
+        get_logger('robot_navigator').info('Goal accepted :)')
 
         get_result_future = goal_handle.get_result_async()
         get_result_future.add_done_callback(self.get_result_callback)
         
 
     def get_result_callback(self, future):
+        get_logger('robot_navigator').error(f'Received a result !')
         result = future.result().result
-        self.node.get_logger().info(f'Result: {result.success}, {result.message}')
-
+        get_logger('robot_navigator').warn(f'Result: {result.success}, {result.message}')
+        if result.success:
+            msg = Empty()
+            self.gfini_pub.publish(msg)
+        # else:
+        #     print(result.)
 
     def cancel_done_callback(self, future):
-        self.node.get_logger().info('Goal cancelled succesfully!')
+        get_logger('robot_navigator').info('Goal cancelled succesfully!')
         self.send_goal(self.goal_pose)
 
 
@@ -111,5 +128,5 @@ class Robot_Navigator():
         # Add done callback
         future_navigate_result.add_done_callback(self.goal_response_callback)
 
-        self.node.get_logger().info('Goal sent!')
+        get_logger('robot_navigator').info('Goal sent!')
 
