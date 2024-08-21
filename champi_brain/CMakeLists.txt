@@ -61,6 +61,7 @@ install(PROGRAMS
         scripts/screen_manager.py
         scripts/rviz_markers.py
         scripts/strategy_engine_node.py
+        scripts/simu_act_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
