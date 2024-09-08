@@ -113,6 +113,9 @@ class PlannerNode(Node):
 
         while rclpy.ok() and self.planning and not self.is_current_goal_reached():
 
+            # TODO ici, il faudrait plutôt construire le path planning en prennant en compte le ChampiPath donné en entrée, plutôt qu'un simple goal
+            # ptet concaténer des compute_path entre chaque ChampiPoint
+            # Dans un champiPath, le end d'un segment est le start du segment suivant
 
             t_loop_start = time.time()
             

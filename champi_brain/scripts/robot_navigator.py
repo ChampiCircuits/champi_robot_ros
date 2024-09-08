@@ -1,32 +1,19 @@
 #!/usr/bin/env python3
 
-from rclpy.duration import Duration
 from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
-from builtin_interfaces.msg import Time
 
 from typing import Tuple
 from math import sin, cos
 from std_msgs.msg import Empty
-import rclpy
-
-from utils import pose_from_position
-import rclpy
-from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.logging import get_logger
 
-from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
-from nav_msgs.msg import Path, OccupancyGrid, Odometry
-from std_msgs.msg import String
+from geometry_msgs.msg import Pose
 from champi_interfaces.action import Navigate
 
-from math import sin, cos, atan2, hypot, pi
-import numpy as np
+from math import sin, cos
 
-import time
 from rclpy.logging import get_logger
 
 class Robot_Navigator():
@@ -51,22 +38,23 @@ class Robot_Navigator():
         get_logger('robot_navigator').info(f"\tRobot Navigator launched !")
 
 
-    def navigate_to(self, destination: Tuple[float, float, float], max_time_allowed) -> bool:
+    def navigate_to_tuple(self, destination: Tuple[float, float, float], max_time_allowed:float): # TODO change calls to Pose msg
         if destination is None:
             return
         if self.last_goal is not None and self.last_goal[0] == destination[0] and self.last_goal[1] == destination[1] and self.last_goal[2] == destination[2]:
             return
         self.last_goal = destination
 
-        # publish pose /goal_pose
         pose = Pose()
-        # pose.header.stamp.sec = 0
-        # pose.header.stamp.nanosec = 0
         pose.position.x = destination[0]
         pose.position.y = destination[1]
         pose.orientation.z = sin(destination[2]/2)
         pose.orientation.w = cos(destination[2]/2)
 
+        self.navigate_to_pose(pose, max_time_allowed)
+
+
+    def navigate_to_pose(self, pose:Pose, max_time_allowed:float):
         goal_pose = ChampiPoint()
         goal_pose.name = ""
         goal_pose.pose = pose
@@ -81,13 +69,12 @@ class Robot_Navigator():
         segment.speed = 0.3
         segment.look_at_point = goal_pose
 
-        path = Navigate.Goal()
+        path = Navigate.Goal() # = ChampiPath type
         path.path.name = ""
         path.path.segments = [segment]
-        path.path.max_time_allowed = max_time_allowed
+        path.path.max_time_allowed = float(max_time_allowed)
 
 
-        print(path)
         # Send the goal to the action server
         future_navigate_result = self.action_client_navigate.send_goal_async(path, feedback_callback=self.feedback_callback)
 
@@ -130,23 +117,5 @@ class Robot_Navigator():
 
     def cancel_done_callback(self, future):
         get_logger('robot_navigator').info('Goal cancelled succesfully!')
-        get_logger('robot_navigator').error('TODO FINIR ICI')
-        # self.send_goal(self.goal_pose)
-
-
-# ============================================ Utils ==============================================
-
-
-    def send_goal(self, goal_pose):
-        # Create a Navigate request
-        goal = Navigate.Goal()
-        goal.poses = [goal_pose]
-
-        # Send the goal to the action server
-        future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
-
-        # Add done callback
-        future_navigate_result.add_done_callback(self.goal_response_callback)
-
-        get_logger('robot_navigator').info('Goal sent!')
+        self.navigate_to_pose(self.goal_pose, 100000.) # TODO WHY??
 

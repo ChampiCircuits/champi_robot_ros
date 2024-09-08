@@ -94,11 +94,11 @@ class Action_Executor():
         
     def update_just_move(self):
         get_logger('action_exec').info(f"\Moving to to {self.current_action['pose']}")
-        self.robot_navigator.navigate_to(self.current_action['pose'], 100) # TODO pas  100
+        self.robot_navigator.navigate_to_tuple(self.current_action['pose'], 100) # TODO pas  100
 
     def update_retour(self):
         get_logger('action_exec').info(f"\Going home to {self.current_action['pose']}")
-        self.robot_navigator.navigate_to(self.current_action['pose'], 100) # TODO pas  100
+        self.robot_navigator.navigate_to_tuple(self.current_action['pose'], 100) # TODO pas  100
         
 
     def update_pose_plantes(self):
@@ -153,7 +153,7 @@ class Action_Executor():
                     self.plants_put_pose[1],
                     self.plants_put_pose[2],
                 ]
-                self.robot_navigator.navigate_to(pose, 10)
+                self.robot_navigator.navigate_to_tuple(pose, 10)
                 self.state = State.LAST_MOVE_AFTER_PUT_PLANTS
                 self.move_state = State.WAITING_END_MOVE
                 return
@@ -192,7 +192,7 @@ class Action_Executor():
                         self.plants_put_pose = [self.plants_put_pose[0], 
                                 self.plants_put_pose[1]+OFFSET_POSE_PLANT_Y*self.current_action["dirs"][1], 
                                 self.plants_put_pose[2]]
-                        self.robot_navigator.navigate_to(self.plants_put_pose, 10)
+                        self.robot_navigator.navigate_to_tuple(self.plants_put_pose, 10)
                         self.plants_put_pose = [self.plants_put_pose[0] - 4*OFFSET_POSE_PLANT_X*self.current_action["dirs"][0], 
                                 self.plants_put_pose[1]+OFFSET_POSE_PLANT_Y*self.current_action["dirs"][1], 
                                 self.plants_put_pose[2]]
@@ -203,7 +203,7 @@ class Action_Executor():
                                 self.plants_put_pose[1], 
                                 self.plants_put_pose[2]]
                 get_logger('action_exec').info(f"navigate to {self.plants_put_pose}")
-                self.robot_navigator.navigate_to(self.plants_put_pose, 10)
+                self.robot_navigator.navigate_to_tuple(self.plants_put_pose, 10)
                 self.move_state = State.WAITING_END_MOVE
                 self.state = State.MOVING_BEFORE_PLANT_PUT
                 return
@@ -239,7 +239,7 @@ class Action_Executor():
             if not self.move_state == State.WAITING_END_MOVE and not self.move_state == State.FINISHED_MOVE:
                 get_logger('action_exec').info(f"\tNavigating to first point of trajectory")
                 # navigate to the first point of the trajectory
-                self.robot_navigator.navigate_to(self.trajectory_points[0], self.current_action["time"])
+                self.robot_navigator.navigate_to_tuple(self.trajectory_points[0], self.current_action["time"])
                 self.move_state = State.WAITING_END_MOVE
 
             if self.move_state == State.FINISHED_MOVE:
@@ -250,7 +250,7 @@ class Action_Executor():
             if not self.move_state == State.WAITING_END_MOVE and not self.move_state == State.FINISHED_MOVE:
                 get_logger('action_exec').info(f"\tNavigating to second point of trajectory")
                 # navigate to the second point of the trajectory
-                self.robot_navigator.navigate_to(self.trajectory_points[1], self.current_action["time"])
+                self.robot_navigator.navigate_to_tuple(self.trajectory_points[1], self.current_action["time"])
                 self.move_state = State.WAITING_END_MOVE
             if self.move_state == State.FINISHED_MOVE:
                 get_logger('action_exec').info(f"\tEnd of taking plants")
