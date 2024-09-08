@@ -8,23 +8,35 @@ from rclpy.action import ActionServer, GoalResponse, CancelResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 
-from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
-from std_msgs.msg import String
 from champi_interfaces.action import Navigate
 
 
-from math import sin, cos, atan2, hypot, pi
+from math import atan2, pi
 import numpy as np
 
 import time
-from icecream import ic
 
 from champi_navigation.path_planner import AStarPathPlanner, ComputePathResult
 from rclpy.logging import get_logger
 
 
 class PlannerNode(Node):
+    """
+    SUBS :
+        - odom
+        - costmap
+    PUB :
+        - Path
+
+    ACTION SERVER /navigate
+
+    When action server is called with a goal:
+        While goal not reached:
+            Compute a path and publish it to /plan which will be followed by the path controller
+    
+
+    """
 
     def __init__(self):
         super().__init__('planner_node')
@@ -52,7 +64,7 @@ class PlannerNode(Node):
         self.path_planner = None
 
         self.planning = False
-        get_logger('rclpy').info(f"\tPath planner NODE launched!")
+        get_logger('rclpy').info("\tPath planner NODE launched!")
 
     # ==================================== ROS2 Callbacks ==========================================
 
@@ -64,7 +76,7 @@ class PlannerNode(Node):
         ]
 
     def goal_callback(self, goal):
-        self.get_logger().info(f'New goal received!')
+        self.get_logger().info('New goal received!')
 
         self.goal_pose = [
             goal.poses[0].position.x,
@@ -84,7 +96,7 @@ class PlannerNode(Node):
     
 
     async def execute_callback(self, goal_handle):
-        self.get_logger().info(f"callback")
+        self.get_logger().info("callback")
 
         self.goal_handle_navigate = goal_handle
 
