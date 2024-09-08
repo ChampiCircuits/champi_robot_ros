@@ -1,6 +1,5 @@
 # Request
-# Waypoints... -> goal
-geometry_msgs/Pose[] poses
+ChampiPath path
 ---
 # Result
 bool success

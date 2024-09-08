@@ -10,6 +10,7 @@ from rclpy.executors import MultiThreadedExecutor
 
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
 from champi_interfaces.action import Navigate
+from champi_interfaces.msg import ChampiPath
 
 
 from math import atan2, pi
@@ -50,7 +51,7 @@ class PlannerNode(Node):
 
         self.action_server_navigate = ActionServer(self, Navigate, '/navigate',
                                                    self.execute_callback,
-                                                   goal_callback=self.goal_callback,
+                                                   goal_callback=self.path_callback,
                                                    cancel_callback=self.cancel_callback,
                                                    callback_group=ReentrantCallbackGroup())
         self.goal_handle_navigate = None
@@ -75,14 +76,18 @@ class PlannerNode(Node):
             2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
         ]
 
-    def goal_callback(self, goal):
+    def path_callback(self, path:Navigate.Goal):
         self.get_logger().info('New goal received!')
+        
+        # TODO prendre en compte un path plutôt qu'un goal
 
+        path = path.path
+        
         self.goal_pose = [
-            goal.poses[0].position.x,
-            goal.poses[0].position.y,
-            2 * atan2(goal.poses[0].orientation.z, goal.poses[0].orientation.w)
-        ]
+            path.segments[0].start.pose.position.x,
+            path.segments[0].start.pose.position.y,
+            2 * atan2(path.segments[0].start.pose.orientation.z, path.segments[0].start.pose.orientation.w)
+        ] 
 
         # Cancel the current goal if there is one
         if self.planning:

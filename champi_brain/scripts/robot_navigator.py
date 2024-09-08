@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from rclpy.duration import Duration
+from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
@@ -53,7 +54,7 @@ class Robot_Navigator():
     def navigate_to(self, destination: Tuple[float, float, float], max_time_allowed) -> bool:
         if destination is None:
             return
-        if not self.last_goal is None and self.last_goal[0] == destination[0] and self.last_goal[1] == destination[1] and self.last_goal[2] == destination[2]:
+        if self.last_goal is not None and self.last_goal[0] == destination[0] and self.last_goal[1] == destination[1] and self.last_goal[2] == destination[2]:
             return
         self.last_goal = destination
 
@@ -66,11 +67,29 @@ class Robot_Navigator():
         pose.orientation.z = sin(destination[2]/2)
         pose.orientation.w = cos(destination[2]/2)
 
-        goal = Navigate.Goal()
-        goal.poses = [pose]
+        goal_pose = ChampiPoint()
+        goal_pose.name = ""
+        goal_pose.pose = pose
+        goal_pose.point_type = 1 # TODO use enum
+        goal_pose.tolerance = 0.5 # TODO use enum
+        goal_pose.robot_should_stop_here = True
 
+        segment = ChampiSegment()
+        segment.name = ""
+        segment.start = goal_pose
+        segment.end = goal_pose
+        segment.speed = 0.3
+        segment.look_at_point = goal_pose
+
+        path = Navigate.Goal()
+        path.path.name = ""
+        path.path.segments = [segment]
+        path.path.max_time_allowed = max_time_allowed
+
+
+        print(path)
         # Send the goal to the action server
-        future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
+        future_navigate_result = self.action_client_navigate.send_goal_async(path, feedback_callback=self.feedback_callback)
 
         # Add done callback
         future_navigate_result.add_done_callback(self.goal_response_callback)
@@ -111,7 +130,8 @@ class Robot_Navigator():
 
     def cancel_done_callback(self, future):
         get_logger('robot_navigator').info('Goal cancelled succesfully!')
-        self.send_goal(self.goal_pose)
+        get_logger('robot_navigator').error('TODO FINIR ICI')
+        # self.send_goal(self.goal_pose)
 
 
 # ============================================ Utils ==============================================
