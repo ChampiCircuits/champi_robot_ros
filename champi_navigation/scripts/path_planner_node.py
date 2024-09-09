@@ -11,6 +11,7 @@ from rclpy.executors import MultiThreadedExecutor
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import ChampiPath
+from geometry_msgs.msg import Pose
 
 
 from math import atan2, pi
@@ -58,8 +59,8 @@ class PlannerNode(Node):
 
         self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
 
-        self.robot_pose = None
-        self.goal_pose = None
+        self.robot_pose: Pose = None 
+        self.asked_from_client_champi_path :ChampiPath = None
         self.costmap = None
 
         self.path_planner = None
@@ -70,11 +71,10 @@ class PlannerNode(Node):
     # ==================================== ROS2 Callbacks ==========================================
 
     def odom_callback(self, msg):
-        self.robot_pose = [
-            msg.pose.pose.position.x,
-            msg.pose.pose.position.y,
-            2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
-        ]
+        self.robot_pose = Pose()
+        self.robot_pose.position = msg.pose.pose.position
+        self.robot_pose.orientation = msg.pose.pose.orientation
+    
 
     def path_callback(self, navigate_goal:Navigate.Goal):
         self.get_logger().info('New goal received!')
@@ -83,11 +83,7 @@ class PlannerNode(Node):
 
         champi_path : ChampiPath = navigate_goal.path
         
-        self.goal_pose = [
-            champi_path.segments[0].start.pose.position.x,
-            champi_path.segments[0].start.pose.position.y,
-            2 * atan2(champi_path.segments[0].start.pose.orientation.z, champi_path.segments[0].start.pose.orientation.w)
-        ]
+        self.asked_from_client_champi_path = champi_path
 
         # Cancel the current goal if there is one
         if self.planning:
@@ -119,14 +115,30 @@ class PlannerNode(Node):
 
             t_loop_start = time.time()
             
-            # Compute the path
-            champi_path_msg, result = self.path_planner.compute_path(self.robot_pose, self.goal_pose, self.costmap)
+            # Compute the path, see Readme.md
+            global_champi_path = ChampiPath()
+            for i, champi_segment in enumerate(self.asked_from_client_champi_path.segments):
+                # for each segment, we compute the path
 
-            if result != ComputePathResult.SUCCESS:
-                self.get_logger().warn(f'Path computation failed: {result.name}', throttle_duration_sec=0.5)
+                if i==0:
+                    # for first one we create a first segment from robot_pose
+                    local_champi_path, result = self.path_planner.compute_path(self.robot_pose, champi_segment.start.pose, self.costmap)
+                else:
+                    local_champi_path, result = self.path_planner.compute_path(champi_segment.start.pose, champi_segment.end.pose, self.costmap)
+
+                if result != ComputePathResult.SUCCESS:
+                    self.get_logger().warn(f'Path computation failed: {result.name}', throttle_duration_sec=0.5)
+                    # TODO gérer la situation
+
+                # then we concatenate all paths in a global one
+                for local_sub_champi_segment in local_champi_path.segments:
+                    global_champi_path.segments.append(local_sub_champi_segment)
+            global_champi_path.max_time_allowed = self.asked_from_client_champi_path.max_time_allowed
+
 
             # Publish the path and feedback
-            self.champi_path_pub.publish(champi_path_msg)
+            self.champi_path_pub.publish(global_champi_path)
+            self.get_logger().warn(f'champi path global: {global_champi_path}')
 
             # TODO feedback
 
@@ -155,8 +167,7 @@ class PlannerNode(Node):
 
 
     def costmap_callback(self, msg):
-
-        if self.path_planner is None: # TODO pourquoi instancier ici et pas dans l'__init__?
+        if self.path_planner is None:
             self.path_planner = AStarPathPlanner(msg.info.width, msg.info.height, msg.info.resolution)
 
         self.costmap = np.array(msg.data).reshape(msg.info.height, msg.info.width)
@@ -175,17 +186,22 @@ class PlannerNode(Node):
         Checks if the goal is reached and switch to the next one if it is the case.
         """
 
-        if self.robot_pose is None or self.goal_pose is None:
+        last_goal_pose_of_global_path = self.asked_from_client_champi_path.segments[-1].end
+
+        if self.robot_pose is None or last_goal_pose_of_global_path is None:
             return False
 
         error_max_lin = 0.05
         error_max_ang = 0.05
 
-        return (abs(self.robot_pose[0] - self.goal_pose[0]) < error_max_lin
-                and abs(self.robot_pose[1] - self.goal_pose[1]) < error_max_lin
-                and self.check_angle(self.robot_pose[2], self.goal_pose[2], error_max_ang))
+        theta_robot_pose = 2 * atan2(self.robot_pose.orientation.z, self.robot_pose.orientation.w)
+        theta_current_goal_pose = 2 * atan2(last_goal_pose_of_global_path.pose.orientation.z, last_goal_pose_of_global_path.pose.orientation.w)
 
-    def check_angle(self, angle1, angle2, error_max):
+        return (abs(self.robot_pose.position.x - last_goal_pose_of_global_path.pose.position.x) < error_max_lin
+                and abs(self.robot_pose.position.y - last_goal_pose_of_global_path.pose.position.y) < error_max_lin
+                and self.check_angle(theta_robot_pose, theta_current_goal_pose, error_max_ang))
+
+    def check_angle(self, angle1:float, angle2:float, error_max:float):
         # check that the angle error is less than error_max
         error = abs(angle1 - angle2)
         if abs(2 * pi - error) < 0.01:

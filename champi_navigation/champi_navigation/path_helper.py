@@ -68,6 +68,8 @@ class PathHelper:
         self.current_seg_end = self.pose_to_array(path[1])
         self.path = path
 
+        print(self.path)
+
     def is_this_a_new_path(self, path):
         # The path is simply an updated version of the previous path if the second points are (almost) the same.
 
@@ -82,10 +84,10 @@ class PathHelper:
         return 2 * atan2(pose_stamped.orientation.z, pose_stamped.orientation.w)
 
 
-    def pose_to_array(self, pose_stamped):
-        return [pose_stamped.position.x,
-                pose_stamped.position.y,
-                2 * atan2(pose_stamped.orientation.z, pose_stamped.orientation.w)]
+    def pose_to_array(self, pose:Pose):
+        return [pose.position.x,
+                pose.position.y,
+                2 * atan2(pose.orientation.z, pose.orientation.w)]
 
 
     def pose_stamped_to_array(self, pose_stamped):

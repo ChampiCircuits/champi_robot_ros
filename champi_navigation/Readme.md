@@ -43,3 +43,14 @@ PATH CONTROLLER
     - vitesse du segment
     - vitesse au waypoint
     - tolérance au waypoint
+
+
+
+
+## Notes
+
+[
+    msg.pose.pose.position.x,
+    msg.pose.pose.position.y,
+    2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
+]

@@ -63,22 +63,23 @@ class PathControllerNode(Node):
         vel = Vel.to_global_frame(pose, vel)
         self.robot_current_state = RobotState(pose, vel)
 
-    def champi_path_callback(self, msg: ChampiPath):
+    def champi_path_callback(self, champi_path: ChampiPath):
         """Callback for the path message. It is called when a new path is received from topic."""
 
         if self.robot_current_state is None:
             return
         
-        if len(msg.segments) == 0:
+        if len(champi_path.segments) == 0:
             self.path_helper.set_path([], self.robot_current_state)
             return
         
         # TODO, pour le moment on récup que les poses pour faire comme avant avec un Path
         poses: list[Pose] = []
-        for champi_segment in msg.segments:
+        for champi_segment in champi_path.segments:
             poses.append(champi_segment.start.pose)
-        poses.append(msg.segments[-1].end.pose)
+        poses.append(champi_path.segments[-1].end.pose)
 
+        self.get_logger().warn(f'GLOBAL PATH {len(poses)}')
         self.path_helper.set_path(poses, self.robot_current_state)
 
     def control_loop_spin_once(self):
