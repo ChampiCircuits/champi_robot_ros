@@ -13,7 +13,8 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-from nav_msgs.msg import Path
+from geometry_msgs.msg import Pose
+from champi_interfaces.msg import ChampiPath
 
 
 class PathControllerNode(Node):
@@ -39,7 +40,7 @@ class PathControllerNode(Node):
         # ROS subscriptions, publishers and timers
         self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.path_sub = self.create_subscription(Path, '/plan', self.path_callback, 10)
+        self.champi_path_sub = self.create_subscription(ChampiPath, '/plan', self.champi_path_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
 
         # Other objects instantiation
@@ -62,13 +63,23 @@ class PathControllerNode(Node):
         vel = Vel.to_global_frame(pose, vel)
         self.robot_current_state = RobotState(pose, vel)
 
-    def path_callback(self, msg):
+    def champi_path_callback(self, msg: ChampiPath):
         """Callback for the path message. It is called when a new path is received from topic."""
 
         if self.robot_current_state is None:
             return
+        
+        if len(msg.segments) == 0:
+            self.path_helper.set_path([], self.robot_current_state)
+            return
+        
+        # TODO, pour le moment on récup que les poses pour faire comme avant avec un Path
+        poses: list[Pose] = []
+        for champi_segment in msg.segments:
+            poses.append(champi_segment.start.pose)
+        poses.append(msg.segments[-1].end.pose)
 
-        self.path_helper.set_path(msg.poses, self.robot_current_state)
+        self.path_helper.set_path(poses, self.robot_current_state)
 
     def control_loop_spin_once(self):
 

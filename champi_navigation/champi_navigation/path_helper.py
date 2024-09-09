@@ -1,6 +1,6 @@
 import rclpy
 from math import atan2, pi
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose
 from champi_navigation.utils import dist_point_to_line, PathFollowParams
 
 
@@ -8,7 +8,7 @@ class PathHelper:
     """
     This class is used to store the path and compute the parameters needed to follow it.
 
-
+    
     The path is a list of PoseStamped from ROS2 nav_msgs.msg.Path. This class sees the path as consecutive segments.
     The idea is to store here the advancement of the path following, then compute the parameters needed, which are
     - the start and end of the current segment
@@ -34,7 +34,7 @@ class PathHelper:
         self.max_linear_acceleration = max_linear_acceleration
         self.max_angular_acceleration = max_angular_acceleration
 
-    def set_path(self, path, robot_current_state):
+    def set_path(self, path: list[Pose], robot_current_state):
 
         """
         Give to this method the path to follow and the current state of the robot. The path may be a new one or an
@@ -64,8 +64,8 @@ class PathHelper:
         # If we are here, the path is a new one.
 
         self.i_goal = 1
-        self.current_seg_start = self.pose_stamped_to_array(path[0])
-        self.current_seg_end = self.pose_stamped_to_array(path[1])
+        self.current_seg_start = self.pose_to_array(path[0])
+        self.current_seg_end = self.pose_to_array(path[1])
         self.path = path
 
     def is_this_a_new_path(self, path):
@@ -76,10 +76,16 @@ class PathHelper:
         return self.path == [] or not self.are_points_close(path[1], self.path[1])
 
     def are_points_close(self, p1, p2):
-        return abs(p1.pose.position.x - p2.pose.position.x) < 0.1 and abs(p1.pose.position.y - p2.pose.position.y) < 0.1 and self.check_angle(self.get_yaw(p1), self.get_yaw(p2), 0.001)
+        return abs(p1.position.x - p2.position.x) < 0.1 and abs(p1.position.y - p2.position.y) < 0.1 and self.check_angle(self.get_yaw(p1), self.get_yaw(p2), 0.001)
 
     def get_yaw(self, pose_stamped):
-        return 2 * atan2(pose_stamped.pose.orientation.z, pose_stamped.pose.orientation.w)
+        return 2 * atan2(pose_stamped.orientation.z, pose_stamped.orientation.w)
+
+
+    def pose_to_array(self, pose_stamped):
+        return [pose_stamped.position.x,
+                pose_stamped.position.y,
+                2 * atan2(pose_stamped.orientation.z, pose_stamped.orientation.w)]
 
 
     def pose_stamped_to_array(self, pose_stamped):
@@ -128,13 +134,13 @@ class PathHelper:
             return
 
         self.current_seg_start = self.current_seg_end
-        self.current_seg_end = self.pose_stamped_to_array(self.path[self.i_goal])
+        self.current_seg_end = self.pose_to_array(self.path[self.i_goal])
 
     def is_goal_the_last_one(self):
         return self.i_goal == len(self.path) - 1
 
     def get_arrival_angle(self):
-        return 2 * atan2(self.path[-1].pose.orientation.z, self.path[-1].pose.orientation.w)
+        return 2 * atan2(self.path[-1].orientation.z, self.path[-1].orientation.w)
 
     def get_path_follow_params(self, robot_current_state):
         p = PathFollowParams()

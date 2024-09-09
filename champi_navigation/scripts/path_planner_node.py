@@ -44,7 +44,7 @@ class PlannerNode(Node):
         get_logger('rclpy').info(f"\tLaunching Path planner NODE...")
 
 
-        self.path_pub = self.create_publisher(Path, '/plan', 10)
+        self.champi_path_pub = self.create_publisher(ChampiPath, '/plan', 10)
 
         self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
         self.costmap_sub = self.create_subscription(OccupancyGrid, '/costmap', self.costmap_callback, 10)
@@ -76,18 +76,18 @@ class PlannerNode(Node):
             2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
         ]
 
-    def path_callback(self, path:Navigate.Goal):
+    def path_callback(self, navigate_goal:Navigate.Goal):
         self.get_logger().info('New goal received!')
         
         # TODO prendre en compte un path plutôt qu'un goal
 
-        path = path.path
+        champi_path : ChampiPath = navigate_goal.path
         
         self.goal_pose = [
-            path.segments[0].start.pose.position.x,
-            path.segments[0].start.pose.position.y,
-            2 * atan2(path.segments[0].start.pose.orientation.z, path.segments[0].start.pose.orientation.w)
-        ] 
+            champi_path.segments[0].start.pose.position.x,
+            champi_path.segments[0].start.pose.position.y,
+            2 * atan2(champi_path.segments[0].start.pose.orientation.z, champi_path.segments[0].start.pose.orientation.w)
+        ]
 
         # Cancel the current goal if there is one
         if self.planning:
@@ -120,13 +120,13 @@ class PlannerNode(Node):
             t_loop_start = time.time()
             
             # Compute the path
-            path_msg, result = self.path_planner.compute_path(self.robot_pose, self.goal_pose, self.costmap)
+            champi_path_msg, result = self.path_planner.compute_path(self.robot_pose, self.goal_pose, self.costmap)
 
             if result != ComputePathResult.SUCCESS:
                 self.get_logger().warn(f'Path computation failed: {result.name}', throttle_duration_sec=0.5)
 
             # Publish the path and feedback
-            self.path_pub.publish(path_msg)
+            self.champi_path_pub.publish(champi_path_msg)
 
             # TODO feedback
 
@@ -135,9 +135,9 @@ class PlannerNode(Node):
 
 
         # Publish a final empty path
-        path = Path()
+        path = ChampiPath()
         path.header.stamp = self.get_clock().now().to_msg()
-        self.path_pub.publish(path)
+        self.champi_path_pub.publish(path)
 
         result = None
 
@@ -156,7 +156,7 @@ class PlannerNode(Node):
 
     def costmap_callback(self, msg):
 
-        if self.path_planner is None:
+        if self.path_planner is None: # TODO pourquoi instancier ici et pas dans l'__init__?
             self.path_planner = AStarPathPlanner(msg.info.width, msg.info.height, msg.info.resolution)
 
         self.costmap = np.array(msg.data).reshape(msg.info.height, msg.info.width)

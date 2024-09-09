@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Path
+from geometry_msgs.msg import Pose
+from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
 
 from math import sin, cos, atan2, hypot
 import time
 from enum import Enum
-from icecream import ic
 
 from astar import AStar
 from bresenham import bresenham
@@ -70,43 +69,68 @@ class ComputePathResult(Enum):
     GOAL_NOT_IN_COSTMAP = 2
     GOAL_IN_OCCUPIED_CELL = 3
     NO_PATH_FOUND = 4
-
-
-def path_to_msg(path, angle=0.):
+    
+def path_to_msg(path: list[tuple[float,float,float]], angle=0.) -> ChampiPath:
 
     """
     Always give an angle (unless you give an empty path, then the angle is not used)
-    :param path:
+    :param path: list[tuple[x,y,theta]]
     :param angle:
     :return:
     """
 
     # TODO remove parameter angle (path will have the angle for each point), and move this function to the node
 
-    path_msg = Path()
-    path_msg.header.frame_id = 'map'
+    champi_path_msg = ChampiPath()
+    champi_path_msg.header.frame_id = 'map'
     t = time.time()
-    path_msg.header.stamp.sec = int(t)
-    path_msg.header.stamp.nanosec = int((t - int(t)) * 1e9)
+    champi_path_msg.header.stamp.sec = int(t)
+    champi_path_msg.header.stamp.nanosec = int((t - int(t)) * 1e9)
 
     if len(path) == 0:
-        return path_msg
+        return champi_path_msg
 
-    for p in path:
-        pose = PoseStamped()
-        pose.pose.position.x = p[0]
-        pose.pose.position.y = p[1]
-        pose.pose.position.z = 0.
-        pose.pose.orientation.x = 0.
-        pose.pose.orientation.y = 0.
-        pose.pose.orientation.z = 0.
-        pose.pose.orientation.w = 1.
-        path_msg.poses.append(pose)
+    for i in range(len(path)):
+        if i+1 == len(path):
+            break
+        
+        start_pose = Pose()
+        start_pose.position.x = path[i][0]
+        start_pose.position.y = path[i][1]
+        start_pose.position.z = 0.
+        start_pose.orientation.x = 0.
+        start_pose.orientation.y = 0.
+        start_pose.orientation.z = 0.
+        start_pose.orientation.w = 1. # TODO to orientate the robot along each waypoint (for look_at_point)
 
-    # Set the latest pose orientation
-    path_msg.poses[-1].pose.orientation.z = sin(angle / 2)
-    path_msg.poses[-1].pose.orientation.w = cos(angle / 2)
-    return path_msg
+        start_champi_point = ChampiPoint()
+        start_champi_point.pose = start_pose
+        
+        end_pose = Pose()
+        end_pose.position.x = path[i+1][0]
+        end_pose.position.y = path[i+1][1]
+        end_pose.position.z = 0.
+        end_pose.orientation.x = 0.
+        end_pose.orientation.y = 0.
+
+        if i+2 == len(path):
+            # Set the orientation of the last pose 
+            end_pose.orientation.z = sin(angle / 2)
+            end_pose.orientation.w = cos(angle / 2)
+        else:
+            end_pose.orientation.z = 0.
+            end_pose.orientation.w = 1. # TODO to orientate the robot along each waypoint (for look_at_point)
+
+        end_champi_point = ChampiPoint()
+        end_champi_point.pose = end_pose
+
+        champi_segment = ChampiSegment()
+        champi_segment.start = start_champi_point
+        champi_segment.end = end_champi_point
+
+        champi_path_msg.segments.append(champi_segment)
+
+    return champi_path_msg
 
 
 def is_line_free(start, end, costmap):
@@ -137,7 +161,7 @@ class AStarPathPlanner:
         self.m_per_pixel = m_per_pixel
         self.costmap_path_finder = CostmapPathFinder(width, height, m_per_pixel)
 
-    def compute_path(self, robot_pose, goal_pose, costmap):
+    def compute_path(self, robot_pose, goal_pose, costmap) -> tuple[ChampiPath, ComputePathResult]:
 
         start = self.m_to_pixel(robot_pose)
         goal = self.m_to_pixel(goal_pose)

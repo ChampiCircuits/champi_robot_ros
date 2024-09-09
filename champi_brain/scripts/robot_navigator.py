@@ -67,7 +67,8 @@ class Robot_Navigator():
         segment.start = goal_pose
         segment.end = goal_pose
         segment.speed = 0.3
-        segment.look_at_point = goal_pose
+        # segment.look_at_point = 
+        # segment.robot_angle_when_looking_at_point = 
 
         path = Navigate.Goal() # = ChampiPath type
         path.path.name = ""
