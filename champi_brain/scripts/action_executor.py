@@ -37,7 +37,7 @@ class Action_Executor():
 
         # MAIN STATE MACHINE
         self.state = State.NO_ACTION
-        self.current_action = None
+        self.current_action = None # TODO tout passer en Pose(), supprimer les tuples[x,y,theta]
 
         self.move_state = None
       

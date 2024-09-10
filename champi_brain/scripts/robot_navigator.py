@@ -8,6 +8,7 @@ from math import sin, cos
 from std_msgs.msg import Empty
 from rclpy.action import ActionClient
 from rclpy.logging import get_logger
+import utils
 
 from geometry_msgs.msg import Pose
 from champi_interfaces.action import Navigate
@@ -38,6 +39,37 @@ class Robot_Navigator():
         get_logger('robot_navigator').info(f"\tRobot Navigator launched !")
 
 
+    def navigate_through_waypoints(self, waypoints: list[Pose|None], max_time_allowed: float):
+        navigate_goal = Navigate.Goal() # = ChampiPath type
+        navigate_goal.path.name = ""
+        navigate_goal.path.max_time_allowed = float(max_time_allowed)
+
+        waypoints.insert(0, None) #to be later replaced by current_pose in path_planner_node
+
+        for i in range(len(waypoints)):
+            if i+1 == len(waypoints):
+                break
+
+            segment = ChampiSegment()
+            segment.name = ""
+            if waypoints[i] != None:
+                segment.start = utils.pose_to_champi_point(waypoints[i])
+            segment.end = utils.pose_to_champi_point(waypoints[i+1])
+            segment.speed = 0.3
+            # segment.do_look_at_point = 
+            # segment.look_at_point = 
+            # segment.robot_angle_when_looking_at_point = 
+
+            navigate_goal.path.segments.append(segment)
+
+        # Send the goal to the action server
+        future_navigate_result = self.action_client_navigate.send_goal_async(navigate_goal, feedback_callback=self.feedback_callback)
+
+        # Add done callback
+        future_navigate_result.add_done_callback(self.goal_response_callback)
+
+        get_logger('robot_navigator').info('Waypoints sent from robot_navigator!')
+
     def navigate_to_tuple(self, destination: Tuple[float, float, float], max_time_allowed:float): # TODO change calls to Pose msg
         if destination is None:
             return
@@ -51,38 +83,7 @@ class Robot_Navigator():
         pose.orientation.z = sin(destination[2]/2)
         pose.orientation.w = cos(destination[2]/2)
 
-        self.navigate_to_pose(pose, max_time_allowed)
-
-
-    def navigate_to_pose(self, pose:Pose, max_time_allowed:float):
-        goal_pose = ChampiPoint()
-        goal_pose.name = ""
-        goal_pose.pose = pose
-        goal_pose.point_type = 1 # TODO use enum
-        goal_pose.tolerance = 0.5 # TODO use enum
-        goal_pose.robot_should_stop_here = True
-
-        segment = ChampiSegment()
-        segment.name = ""
-        segment.start = goal_pose
-        segment.end = goal_pose
-        segment.speed = 0.3
-        # segment.look_at_point = 
-        # segment.robot_angle_when_looking_at_point = 
-
-        path = Navigate.Goal() # = ChampiPath type
-        path.path.name = ""
-        path.path.segments = [segment]
-        path.path.max_time_allowed = float(max_time_allowed)
-
-
-        # Send the goal to the action server
-        future_navigate_result = self.action_client_navigate.send_goal_async(path, feedback_callback=self.feedback_callback)
-
-        # Add done callback
-        future_navigate_result.add_done_callback(self.goal_response_callback)
-
-        get_logger('robot_navigator').info('Goal sent from robot_navigator!')
+        self.navigate_through_waypoints([pose], max_time_allowed)
 
     # ==================================== ROS2 Callbacks ==========================================
 
@@ -118,5 +119,5 @@ class Robot_Navigator():
 
     def cancel_done_callback(self, future):
         get_logger('robot_navigator').info('Goal cancelled succesfully!')
-        self.navigate_to_pose(self.goal_pose, 100000.) # TODO WHY??
+        self.navigate_through_waypoints([self.goal_pose], 100000.) # TODO WHY??
 

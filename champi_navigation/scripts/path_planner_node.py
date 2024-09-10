@@ -10,18 +10,25 @@ from rclpy.executors import MultiThreadedExecutor
 
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
 from champi_interfaces.action import Navigate
-from champi_interfaces.msg import ChampiPath
+from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
 from geometry_msgs.msg import Pose
 
 
 from math import atan2, pi
 import numpy as np
-
 import time
 
 from champi_navigation.path_planner import AStarPathPlanner, ComputePathResult
 from rclpy.logging import get_logger
 
+def pose_to_champi_point(pose: Pose) -> ChampiPoint: # TODO duplicated with champi_brain.utils
+    champi_point = ChampiPoint()
+    champi_point.name = ""
+    champi_point.pose = pose
+    champi_point.point_type = 1 # TODO use enum #TODO put the right thing here and next line
+    champi_point.tolerance = 0.5 # TODO use enum
+    champi_point.robot_should_stop_here = True
+    return champi_point
 
 class PlannerNode(Node):
     """
@@ -78,21 +85,16 @@ class PlannerNode(Node):
 
     def path_callback(self, navigate_goal:Navigate.Goal):
         self.get_logger().info('New goal received!')
-        
-        # TODO prendre en compte un path plutôt qu'un goal
 
         champi_path : ChampiPath = navigate_goal.path
-        
         self.asked_from_client_champi_path = champi_path
 
         # Cancel the current goal if there is one
         if self.planning:
             self.goal_handle_navigate.abort()
-            self.get_logger().info('Received a new goal, cancelling the current one!')
+            self.get_logger().info('Received a new path, cancelling the current one!')
 
-        
         self.planning = True
-
         return GoalResponse.ACCEPT
     
 
@@ -108,23 +110,17 @@ class PlannerNode(Node):
             time.sleep(self.loop_period)
 
         while rclpy.ok() and self.planning and not self.is_current_goal_reached():
-
-            # TODO ici, il faudrait plutôt construire le path planning en prennant en compte le ChampiPath donné en entrée, plutôt qu'un simple goal
-            # ptet concaténer des compute_path entre chaque ChampiPoint
-            # Dans un champiPath, le end d'un segment est le start du segment suivant
-
             t_loop_start = time.time()
             
             # Compute the path, see Readme.md
             global_champi_path = ChampiPath()
-            for i, champi_segment in enumerate(self.asked_from_client_champi_path.segments):
-                # for each segment, we compute the path
 
-                if i==0:
-                    # for first one we create a first segment from robot_pose
-                    local_champi_path, result = self.path_planner.compute_path(self.robot_pose, champi_segment.start.pose, self.costmap)
-                else:
-                    local_champi_path, result = self.path_planner.compute_path(champi_segment.start.pose, champi_segment.end.pose, self.costmap)
+            # modify the first point of the path to set it to current_pose, because it has not been set in robot_navigator
+            self.asked_from_client_champi_path.segments[0].start = pose_to_champi_point(self.robot_pose)
+
+            for champi_segment in self.asked_from_client_champi_path.segments:
+                # for each segment, we compute the path
+                local_champi_path, result = self.path_planner.compute_path(champi_segment.start.pose, champi_segment.end.pose, self.costmap)
 
                 if result != ComputePathResult.SUCCESS:
                     self.get_logger().warn(f'Path computation failed: {result.name}', throttle_duration_sec=0.5)
@@ -138,7 +134,6 @@ class PlannerNode(Node):
 
             # Publish the path and feedback
             self.champi_path_pub.publish(global_champi_path)
-            self.get_logger().warn(f'champi path global: {global_champi_path}')
 
             # TODO feedback
 
@@ -181,10 +176,12 @@ class PlannerNode(Node):
 
     # ====================================== Utils ==========================================
 
-    def is_current_goal_reached(self):
+    def is_current_goal_reached(self) -> bool:
         """
         Checks if the goal is reached and switch to the next one if it is the case.
         """
+        if len(self.asked_from_client_champi_path.segments) == 0:
+            return False
 
         last_goal_pose_of_global_path = self.asked_from_client_champi_path.segments[-1].end
 

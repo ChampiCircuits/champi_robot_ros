@@ -3,5 +3,6 @@ string name
 ChampiPoint start
 ChampiPoint end
 float32 speed
+bool do_look_at_point
 ChampiPoint look_at_point
 float32 robot_angle_when_looking_at_point

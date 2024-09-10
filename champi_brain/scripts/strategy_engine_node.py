@@ -471,7 +471,7 @@ class StrategyEngineNode(Node):
                     self.state = State.IN_ACTION
                     self.action_executor.new_action(self.current_action_to_perform)
                 else:
-                    get_logger('strat_engine').info(f"FIN")
+                    get_logger('strat_engine').info(f"END")
                     quit()
             
         
