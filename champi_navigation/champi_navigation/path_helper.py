@@ -2,6 +2,7 @@ import rclpy
 from math import atan2, pi
 from geometry_msgs.msg import Pose
 from champi_navigation.utils import dist_point_to_line, PathFollowParams
+from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
 
 
 class PathHelper:
@@ -24,6 +25,7 @@ class PathHelper:
 
     def __init__(self, max_linear_speed, max_angular_speed, max_linear_acceleration, max_angular_acceleration):
         self.path = []
+        self.champi_path : ChampiPath
 
         self.i_goal = None
         self.current_seg_end = None
@@ -34,7 +36,7 @@ class PathHelper:
         self.max_linear_acceleration = max_linear_acceleration
         self.max_angular_acceleration = max_angular_acceleration
 
-    def set_path(self, path: list[Pose], robot_current_state):
+    def set_path(self, path: list[Pose], robot_current_state, champi_path: ChampiPath): # TODO abandonner la lister de poses et juste utiliser le champi path
 
         """
         Give to this method the path to follow and the current state of the robot. The path may be a new one or an
@@ -67,6 +69,7 @@ class PathHelper:
         self.current_seg_start = self.pose_to_array(path[0])
         self.current_seg_end = self.pose_to_array(path[1])
         self.path = path
+        self.champi_path = champi_path
 
         print(self.path)
 
@@ -162,8 +165,20 @@ class PathHelper:
         if self.is_goal_the_last_one():
             p.arrival_speed = 0.
 
-        p.max_speed_linear = self.max_linear_speed
-        p.max_speed_angular = self.max_angular_speed
+        current_champi_segment: ChampiSegment = self.champi_path.segments[self.i_goal-1]
+        print()
+        print()
+        print()
+        print()
+        print(self.i_goal)
+        print(current_champi_segment)
+        print()
+        print()
+        print()
+        print()
+
+        p.max_speed_linear = current_champi_segment.max_linear_speed
+        p.max_speed_angular = current_champi_segment.max_angular_speed
         p.max_acc_linear = self.max_linear_acceleration
         p.max_acc_angular = self.max_angular_acceleration
 

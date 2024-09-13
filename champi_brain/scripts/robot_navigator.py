@@ -55,7 +55,11 @@ class Robot_Navigator():
             if waypoints[i] != None:
                 segment.start = utils.pose_to_champi_point(waypoints[i])
             segment.end = utils.pose_to_champi_point(waypoints[i+1])
-            segment.speed = 0.3
+            if i == 0:
+                segment.max_linear_speed = 1.0
+            else:
+                segment.max_linear_speed = 0.01
+            segment.max_angular_speed = 1.5
             # segment.do_look_at_point = 
             # segment.look_at_point = 
             # segment.robot_angle_when_looking_at_point = 

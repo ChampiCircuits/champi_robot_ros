@@ -143,11 +143,39 @@ class PlannerNode(Node):
 
             for champi_segment in self.asked_from_client_champi_path.segments[self.index_of_next_waypoint-1:]:
                 # for each segment, we compute the path
+                champi_segment:ChampiSegment
                 local_champi_path, result = self.path_planner.compute_path(champi_segment.start.pose, champi_segment.end.pose, self.costmap)
+                local_champi_path: ChampiPath
 
                 if result != ComputePathResult.SUCCESS:
                     self.get_logger().warn(f'Path computation failed: {result.name}', throttle_duration_sec=0.5)
                     # TODO gérer la situation
+
+                # we set the params of the segment to the local_path
+                for seg in local_champi_path.segments:
+                    seg:ChampiSegment
+                    # seg.header = champi_segment.header
+                    seg.do_look_at_point = champi_segment.do_look_at_point
+                    seg.look_at_point = champi_segment.look_at_point
+                    seg.robot_angle_when_looking_at_point = champi_segment.robot_angle_when_looking_at_point
+                    seg.max_linear_speed = champi_segment.max_linear_speed
+                    seg.max_angular_speed = champi_segment.max_angular_speed
+                    seg.name = champi_segment.name
+                # set the params of the first and last point
+                local_champi_path.segments[0].start.point_type = champi_segment.start.point_type
+                local_champi_path.segments[0].start.tolerance = champi_segment.start.tolerance
+                local_champi_path.segments[0].start.robot_should_stop_here = champi_segment.start.robot_should_stop_here
+
+                local_champi_path.segments[-1].end.point_type = champi_segment.end.point_type
+                local_champi_path.segments[-1].end.tolerance = champi_segment.end.tolerance
+                local_champi_path.segments[-1].end.robot_should_stop_here = champi_segment.end.robot_should_stop_here
+                
+                # set the params of the path
+                # local_champi_path.header = self.asked_from_client_champi_path.header
+                local_champi_path.name = self.asked_from_client_champi_path.name
+                local_champi_path.max_time_allowed = self.asked_from_client_champi_path.max_time_allowed
+                local_champi_path.forcing_type = self.asked_from_client_champi_path.forcing_type
+
 
                 # then we concatenate all paths in a global one
                 for local_sub_champi_segment in local_champi_path.segments:
