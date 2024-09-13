@@ -12,7 +12,7 @@ from nav_msgs.msg import Path, OccupancyGrid, Odometry
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
 from geometry_msgs.msg import Pose
-
+from visualization_msgs.msg import Marker, MarkerArray
 
 from math import atan2, pi
 import numpy as np
@@ -20,6 +20,9 @@ import time
 
 from champi_navigation.path_planner import AStarPathPlanner, ComputePathResult
 from rclpy.logging import get_logger
+
+
+debug_poses = []
 
 def pose_to_champi_point(pose: Pose) -> ChampiPoint: # TODO duplicated with champi_brain.utils
     champi_point = ChampiPoint()
@@ -29,6 +32,7 @@ def pose_to_champi_point(pose: Pose) -> ChampiPoint: # TODO duplicated with cham
     champi_point.tolerance = 0.5 # TODO use enum
     champi_point.robot_should_stop_here = True
     return champi_point
+
 
 class PlannerNode(Node):
     """
@@ -62,11 +66,14 @@ class PlannerNode(Node):
                                                    goal_callback=self.path_callback,
                                                    cancel_callback=self.cancel_callback,
                                                    callback_group=ReentrantCallbackGroup())
+        
+        self.markers_trajectory_pub = self.create_publisher(MarkerArray, '/trajectories', 10)
         self.goal_handle_navigate = None
 
         self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
 
-        self.robot_pose: Pose = None 
+        self.robot_pose: Pose = None
+        self.index_of_next_waypoint = 1
         self.asked_from_client_champi_path :ChampiPath = None
         self.costmap = None
 
@@ -97,10 +104,16 @@ class PlannerNode(Node):
         self.planning = True
         return GoalResponse.ACCEPT
     
+    def display_segments(self, champi_path: ChampiPath):
+        s = ""
+        for seg in champi_path.segments:
+            seg: ChampiSegment
+            s += str(seg.start.pose.position.x)+" "+str(seg.start.pose.position.y) + "--"
+            s += str(seg.end.pose.position.x)+" "+str(seg.end.pose.position.y)
+            s += "\n"
+        return s
 
     async def execute_callback(self, goal_handle):
-        self.get_logger().info("callback")
-
         self.goal_handle_navigate = goal_handle
 
          # We're still waiting for first messages (init)
@@ -114,11 +127,21 @@ class PlannerNode(Node):
             
             # Compute the path, see Readme.md
             global_champi_path = ChampiPath()
+            
+            marker_array = MarkerArray()
+            for i, s in enumerate(self.asked_from_client_champi_path.segments):
+                s:ChampiSegment
+                p:ChampiPoint = s.start
+                marker_array.markers.append(self.create_marker(p.pose, i))
+            marker_array.markers.append(self.create_marker(self.asked_from_client_champi_path.segments[-1].end.pose, len(self.asked_from_client_champi_path.segments)))
+                    
+            self.markers_trajectory_pub.publish(marker_array)
+            
 
             # modify the first point of the path to set it to current_pose, because it has not been set in robot_navigator
             self.asked_from_client_champi_path.segments[0].start = pose_to_champi_point(self.robot_pose)
 
-            for champi_segment in self.asked_from_client_champi_path.segments:
+            for champi_segment in self.asked_from_client_champi_path.segments[self.index_of_next_waypoint-1:]:
                 # for each segment, we compute the path
                 local_champi_path, result = self.path_planner.compute_path(champi_segment.start.pose, champi_segment.end.pose, self.costmap)
 
@@ -129,7 +152,7 @@ class PlannerNode(Node):
                 # then we concatenate all paths in a global one
                 for local_sub_champi_segment in local_champi_path.segments:
                     global_champi_path.segments.append(local_sub_champi_segment)
-            global_champi_path.max_time_allowed = self.asked_from_client_champi_path.max_time_allowed
+            # global_champi_path.max_time_allowed = self.asked_from_client_champi_path.max_time_allowed # TODO
 
 
             # Publish the path and feedback
@@ -137,7 +160,7 @@ class PlannerNode(Node):
 
             # TODO feedback
 
-            self.get_logger().info(f'.')
+            self.get_logger().info(f'. \t\t loop_exec_time={round(time.time() - t_loop_start, 5)}')
             time.sleep(self.loop_period - (time.time() - t_loop_start))
 
 
@@ -176,27 +199,70 @@ class PlannerNode(Node):
 
     # ====================================== Utils ==========================================
 
+    def create_marker(self, pose:Pose, marker_id):
+        marker = Marker()
+        marker.header.frame_id = "odom"  # Remplacer par le frame approprié
+        marker.header.stamp = self.get_clock().now().to_msg()
+        
+        marker.ns = "trajectory"
+        marker.id = marker_id
+        marker.type = Marker.CUBE  # Utilisation d'un marqueur sphérique
+        marker.action = Marker.ADD
+
+        # Définir la position et l'orientation à partir de Pose
+        marker.pose.position.x = pose.position.x
+        marker.pose.position.y = pose.position.y
+        marker.pose.position.z = pose.position.z
+
+        marker.pose.orientation.x = pose.orientation.x
+        marker.pose.orientation.y = pose.orientation.y
+        marker.pose.orientation.z = pose.orientation.z
+        marker.pose.orientation.w = pose.orientation.w
+
+        # Paramètres de mise à l'échelle et de couleur
+        marker.scale.x = 0.05  # Taille du marqueur en x
+        marker.scale.y = 0.05  # Taille du marqueur en y
+        marker.scale.z = 0.05  # Taille du marqueur en z
+
+        marker.color.a = 1.0  # Opacité (1.0 = opaque, 0.0 = transparent)
+        marker.color.r = 0.0  # Rouge
+        marker.color.g = 0.0  # Vert
+        marker.color.b = 1.0  # Bleu
+
+        return marker
+
+    def is_point_reached(self, point:Pose) -> bool:
+        """
+        Checks if the waypoint is reached.
+        """
+        if len(self.asked_from_client_champi_path.segments) == 0:
+            return False
+
+        point = self.asked_from_client_champi_path.segments[-1].end
+
+        if self.robot_pose is None or point is None:
+            return False
+        
+        error_max_lin = 0.05
+        error_max_ang = 0.05
+
+        theta_robot_pose = 2 * atan2(self.robot_pose.orientation.z, self.robot_pose.orientation.w)
+        theta_current_goal_pose = 2 * atan2(point.pose.orientation.z, point.pose.orientation.w)
+
+        return (abs(self.robot_pose.position.x - point.pose.position.x) < error_max_lin
+                and abs(self.robot_pose.position.y - point.pose.position.y) < error_max_lin
+                and self.check_angle(theta_robot_pose, theta_current_goal_pose, error_max_ang))
+    
     def is_current_goal_reached(self) -> bool:
         """
-        Checks if the goal is reached and switch to the next one if it is the case.
+        Checks if the goal is reached.
         """
         if len(self.asked_from_client_champi_path.segments) == 0:
             return False
 
         last_goal_pose_of_global_path = self.asked_from_client_champi_path.segments[-1].end
 
-        if self.robot_pose is None or last_goal_pose_of_global_path is None:
-            return False
-
-        error_max_lin = 0.05
-        error_max_ang = 0.05
-
-        theta_robot_pose = 2 * atan2(self.robot_pose.orientation.z, self.robot_pose.orientation.w)
-        theta_current_goal_pose = 2 * atan2(last_goal_pose_of_global_path.pose.orientation.z, last_goal_pose_of_global_path.pose.orientation.w)
-
-        return (abs(self.robot_pose.position.x - last_goal_pose_of_global_path.pose.position.x) < error_max_lin
-                and abs(self.robot_pose.position.y - last_goal_pose_of_global_path.pose.position.y) < error_max_lin
-                and self.check_angle(theta_robot_pose, theta_current_goal_pose, error_max_ang))
+        return self.is_point_reached(last_goal_pose_of_global_path)
 
     def check_angle(self, angle1:float, angle2:float, error_max:float):
         # check that the angle error is less than error_max

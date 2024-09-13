@@ -71,11 +71,16 @@ class PathHelper:
         print(self.path)
 
     def is_this_a_new_path(self, path):
-        # The path is simply an updated version of the previous path if the second points are (almost) the same.
-
-        # self.path == [] means this is the first path we receive (self.path is initialized to [] in the constructor).
-
-        return self.path == [] or not self.are_points_close(path[1], self.path[1])
+        is_first_path_we_receive = (self.path == [])
+        if is_first_path_we_receive or len(self.path) != len(path):
+            return True
+        
+        # The path is simply an updated version of the previous path if the points are (almost) the same (except the first).
+        for i in range(1, len(path)):
+            if not self.are_points_close(path[i], self.path[i]):
+                return True
+            
+        return False
 
     def are_points_close(self, p1, p2):
         return abs(p1.position.x - p2.position.x) < 0.1 and abs(p1.position.y - p2.position.y) < 0.1 and self.check_angle(self.get_yaw(p1), self.get_yaw(p2), 0.001)
@@ -153,7 +158,7 @@ class PathHelper:
         p.robot_state = robot_current_state
 
         p.arrival_angle = self.get_arrival_angle()
-        p.arrival_speed = 0.3
+        p.arrival_speed = 0. # TODO why 0.3??
         if self.is_goal_the_last_one():
             p.arrival_speed = 0.
 

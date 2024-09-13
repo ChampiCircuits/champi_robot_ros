@@ -44,6 +44,18 @@ PATH CONTROLLER
     - vitesse au waypoint
     - tolérance au waypoint
 
+CHAMPI_PATH:
+le param forcing_type a pour valeurs possibles : 
+
+
+ si l'adversaire est sur le path            
+      "avoid"     on contourne                           
+      "wait       on attend à la position de départ
+      "force"     on commence le path jusqu'à ce que la distance de collision arrête le robot
+ si l'adversaire est sur le goal
+      "avoid"     prend le même effet que wait     
+      "wait"      on attend à la position de départ
+      "force"     on commence le path jusqu'à ce que la distance de collision arrête le robot
 
 
 
@@ -54,3 +66,10 @@ PATH CONTROLLER
     msg.pose.pose.position.y,
     2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
 ]
+
+
+
+le pb là c'est que si on a un path [current, A, B]
+quand on est entre current et A pas de pb
+quand on a passé A, le path_planner_node recalcule le path comme de current vers A puis A vers B, alors qu'on a déjà fait A
+donc faudrait ptet checker les waypoints atteints aussi et incrémenter un current_index

@@ -70,6 +70,15 @@ class Robot_Navigator():
 
         get_logger('robot_navigator').info('Waypoints sent from robot_navigator!')
 
+
+    def tuple_to_pose(self, tuple: Tuple[float, float, float]):
+        pose = Pose()
+        pose.position.x = tuple[0]
+        pose.position.y = tuple[1]
+        pose.orientation.z = sin(tuple[2]/2)
+        pose.orientation.w = cos(tuple[2]/2)
+        return pose
+    
     def navigate_to_tuple(self, destination: Tuple[float, float, float], max_time_allowed:float): # TODO change calls to Pose msg
         if destination is None:
             return
@@ -77,11 +86,7 @@ class Robot_Navigator():
             return
         self.last_goal = destination
 
-        pose = Pose()
-        pose.position.x = destination[0]
-        pose.position.y = destination[1]
-        pose.orientation.z = sin(destination[2]/2)
-        pose.orientation.w = cos(destination[2]/2)
+        pose = self.tuple_to_pose(destination)
 
         self.navigate_through_waypoints([pose], max_time_allowed)
 

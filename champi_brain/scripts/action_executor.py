@@ -52,7 +52,7 @@ class Action_Executor():
             self.move_state = State.FINISHED_MOVE
 
         if self.state == State.JUST_MOVE:
-            self.state = State.ACTION_FINISHED
+            self.state = State.ACTION_FINISHED # TODO attention, plusieurs moyens de finir JUST_MOVE et RETOUR (cf plus bas)
         elif self.state == State.RETOUR:
             self.state = State.ACTION_FINISHED
         
@@ -93,13 +93,29 @@ class Action_Executor():
             self.update_just_move()
         
     def update_just_move(self):
+        if self.move_state == State.WAITING_END_MOVE:
+            return
+        elif self.move_state == State.FINISHED_MOVE:
+            self.state = State.ACTION_FINISHED
         get_logger('action_exec').info(f"\Moving to to {self.current_action['pose']}")
-        self.robot_navigator.navigate_to_tuple(self.current_action['pose'], 100) # TODO pas  100
+        # pose = self.robot_navigator.tuple_to_pose(self.current_action['pose'])
+        # pose2 = self.robot_navigator.tuple_to_pose(self.strategy_node.get_offset_start_pose(self.current_action['pose'])) # TODO TEST ONLY
+
+
+        pose = self.robot_navigator.tuple_to_pose([1.7, 0.3, 0])
+        pose2 = self.robot_navigator.tuple_to_pose([1.5, 0.3, 0])
+        self.robot_navigator.navigate_through_waypoints([pose, pose2], 100) # TODO pas  100
+        self.move_state = State.WAITING_END_MOVE
 
     def update_retour(self):
+        if self.move_state == State.WAITING_END_MOVE:
+            return
+        elif self.move_state == State.FINISHED_MOVE:
+            self.state = State.ACTION_FINISHED
         get_logger('action_exec').info(f"\Going home to {self.current_action['pose']}")
         self.robot_navigator.navigate_to_tuple(self.current_action['pose'], 100) # TODO pas  100
-        
+        self.move_state = State.WAITING_END_MOVE
+
 
     def update_pose_plantes(self):
         get_logger('action_exec').info(f"\Putting plants...state={self.state}\t nb_plants={self.strategy_node.nb_plants}\t CAN_state={self.strategy_node.CAN_state} \t MOVE_State={self.move_state}")
