@@ -1,9 +1,7 @@
-import rclpy
-from math import atan2, pi
+from math import cos, sin, atan2, pi
 from geometry_msgs.msg import Pose
-from champi_navigation.utils import dist_point_to_line, PathFollowParams
+from champi_navigation.utils import PathFollowParams
 from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
-
 
 class PathHelper:
     """
@@ -30,6 +28,7 @@ class PathHelper:
         self.i_goal = None
         self.current_seg_end = None
         self.current_seg_start = None
+        self.path_finished_FLAG = False #flag that is reset only by the path_planner_node
 
         self.max_linear_speed = max_linear_speed
         self.max_angular_speed = max_angular_speed
@@ -53,9 +52,8 @@ class PathHelper:
             self.i_goal = None
             self.current_seg_start = None
             self.current_seg_end = None
+            self.path_finished_FLAG = True
             return
-
-        # TODO what if the path is only one point?
 
         # The path is the same as the previous we received: only difference is the first point (the robot moved)
         if not self.is_this_a_new_path(path):
@@ -64,14 +62,12 @@ class PathHelper:
             return
 
         # If we are here, the path is a new one.
-
         self.i_goal = 1
         self.current_seg_start = self.pose_to_array(path[0])
         self.current_seg_end = self.pose_to_array(path[1])
         self.path = path
         self.champi_path = champi_path
 
-        print(self.path)
 
     def is_this_a_new_path(self, path):
         is_first_path_we_receive = (self.path == [])
@@ -119,9 +115,18 @@ class PathHelper:
         error_max_lin = 0.05
         error_max_ang = 0.05
 
+        current_champi_segment: ChampiSegment = self.champi_path.segments[self.i_goal-1]
+
+        if not current_champi_segment.do_look_at_point:
+            target_angle = self.current_seg_end[2]
+        else:
+            target_angle = self.calculate_angle_to_target(robot_current_state.pose, current_champi_segment.look_at_point.pose)
+
+        angle_ok = self.check_angle(robot_current_state.pose[2], target_angle, error_max_ang)
+        
         return (abs(robot_current_state.pose[0] - self.current_seg_end[0]) < error_max_lin
                 and abs(robot_current_state.pose[1] - self.current_seg_end[1]) < error_max_lin
-                and self.check_angle(robot_current_state.pose[2], self.current_seg_end[2], error_max_ang))
+                and angle_ok)
 
     def check_angle(self, angle1, angle2, error_max):
         # check that the angle error is less than error_max
@@ -141,6 +146,7 @@ class PathHelper:
             self.i_goal = None
             self.current_seg_start = None
             self.current_seg_end = None
+            self.path_finished_FLAG = True
             return
 
         self.current_seg_start = self.current_seg_end
@@ -151,8 +157,28 @@ class PathHelper:
 
     def get_arrival_angle(self):
         return 2 * atan2(self.path[-1].orientation.z, self.path[-1].orientation.w)
+    
+    def calculate_angle_to_target(self, robot_pose, target_pose: Pose):
+        x_robot = robot_pose[0]
+        y_robot = robot_pose[1]
+        yaw_robot = robot_pose[2]
+        x_target = target_pose.position.x
+        y_target = target_pose.position.y
+
+        delta_x = x_target - x_robot
+        delta_y = y_target - y_robot
+
+        target_angle = atan2(delta_y, delta_x)
+
+        delta_theta = target_angle - yaw_robot
+
+        # normalize angle between [-pi and pi]
+        delta_theta = atan2(sin(delta_theta), cos(delta_theta))
+
+        return delta_theta + yaw_robot
 
     def get_path_follow_params(self, robot_current_state):
+        current_champi_segment: ChampiSegment = self.champi_path.segments[self.i_goal-1]
         p = PathFollowParams()
 
         p.segment_end = self.current_seg_end
@@ -160,22 +186,14 @@ class PathHelper:
 
         p.robot_state = robot_current_state
 
-        p.arrival_angle = self.get_arrival_angle()
+        if current_champi_segment.do_look_at_point:
+            p.arrival_angle = self.calculate_angle_to_target(robot_current_state.pose, current_champi_segment.look_at_point.pose)
+        else:
+            p.arrival_angle = self.get_arrival_angle()
+
         p.arrival_speed = 0. # TODO why 0.3??
         if self.is_goal_the_last_one():
             p.arrival_speed = 0.
-
-        current_champi_segment: ChampiSegment = self.champi_path.segments[self.i_goal-1]
-        print()
-        print()
-        print()
-        print()
-        print(self.i_goal)
-        print(current_champi_segment)
-        print()
-        print()
-        print()
-        print()
 
         p.max_speed_linear = current_champi_segment.max_linear_speed
         p.max_speed_angular = current_champi_segment.max_angular_speed

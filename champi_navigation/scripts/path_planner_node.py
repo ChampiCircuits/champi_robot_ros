@@ -8,13 +8,14 @@ from rclpy.action import ActionServer, GoalResponse, CancelResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 
-from nav_msgs.msg import Path, OccupancyGrid, Odometry
+from nav_msgs.msg import OccupancyGrid, Odometry
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
 from geometry_msgs.msg import Pose
 from visualization_msgs.msg import Marker, MarkerArray
+from std_msgs.msg import Empty
 
-from math import atan2, pi
+from math import pi
 import numpy as np
 import time
 
@@ -60,6 +61,7 @@ class PlannerNode(Node):
 
         self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
         self.costmap_sub = self.create_subscription(OccupancyGrid, '/costmap', self.costmap_callback, 10)
+        self.path_finished_sub = self.create_subscription(Empty, '/path_finished', self.path_finished_callback, 10)
 
         self.action_server_navigate = ActionServer(self, Navigate, '/navigate',
                                                    self.execute_callback,
@@ -76,6 +78,7 @@ class PlannerNode(Node):
         self.index_of_next_waypoint = 1
         self.asked_from_client_champi_path :ChampiPath = None
         self.costmap = None
+        self.path_finished = False
 
         self.path_planner = None
 
@@ -84,6 +87,10 @@ class PlannerNode(Node):
 
     # ==================================== ROS2 Callbacks ==========================================
 
+    def path_finished_callback(self, msg):
+        self.path_finished = True
+        self.get_logger().warn("PATH FINISHED")
+
     def odom_callback(self, msg):
         self.robot_pose = Pose()
         self.robot_pose.position = msg.pose.pose.position
@@ -91,7 +98,7 @@ class PlannerNode(Node):
     
 
     def path_callback(self, navigate_goal:Navigate.Goal):
-        self.get_logger().info('New goal received!')
+        self.get_logger().info('New path received!')
 
         champi_path : ChampiPath = navigate_goal.path
         self.asked_from_client_champi_path = champi_path
@@ -102,6 +109,7 @@ class PlannerNode(Node):
             self.get_logger().info('Received a new path, cancelling the current one!')
 
         self.planning = True
+        self.path_finished = False
         return GoalResponse.ACCEPT
     
     def display_segments(self, champi_path: ChampiPath):
@@ -122,7 +130,7 @@ class PlannerNode(Node):
             # TODO feedback
             time.sleep(self.loop_period)
 
-        while rclpy.ok() and self.planning and not self.is_current_goal_reached():
+        while rclpy.ok() and self.planning and not self.path_finished:
             t_loop_start = time.time()
             
             # Compute the path, see Readme.md
@@ -258,46 +266,6 @@ class PlannerNode(Node):
         marker.color.b = 1.0  # Bleu
 
         return marker
-
-    def is_point_reached(self, point:Pose) -> bool:
-        """
-        Checks if the waypoint is reached.
-        """
-        if len(self.asked_from_client_champi_path.segments) == 0:
-            return False
-
-        point = self.asked_from_client_champi_path.segments[-1].end
-
-        if self.robot_pose is None or point is None:
-            return False
-        
-        error_max_lin = 0.05
-        error_max_ang = 0.05
-
-        theta_robot_pose = 2 * atan2(self.robot_pose.orientation.z, self.robot_pose.orientation.w)
-        theta_current_goal_pose = 2 * atan2(point.pose.orientation.z, point.pose.orientation.w)
-
-        return (abs(self.robot_pose.position.x - point.pose.position.x) < error_max_lin
-                and abs(self.robot_pose.position.y - point.pose.position.y) < error_max_lin
-                and self.check_angle(theta_robot_pose, theta_current_goal_pose, error_max_ang))
-    
-    def is_current_goal_reached(self) -> bool:
-        """
-        Checks if the goal is reached.
-        """
-        if len(self.asked_from_client_champi_path.segments) == 0:
-            return False
-
-        last_goal_pose_of_global_path = self.asked_from_client_champi_path.segments[-1].end
-
-        return self.is_point_reached(last_goal_pose_of_global_path)
-
-    def check_angle(self, angle1:float, angle2:float, error_max:float):
-        # check that the angle error is less than error_max
-        error = abs(angle1 - angle2)
-        if abs(2 * pi - error) < 0.01:
-            error = 0
-        return error < error_max
 
 
 def main(args=None):

@@ -39,7 +39,7 @@ Dans sa boucle d'update:
 PATH CONTROLLER
 - recoit un ChampiPath sur /plan
 - suit le path en prenant en compte
-    - lookAtPoint & angle du robot
+    - lookAtPoint & angle du robot --> si on doLookAtPoint alors l'angle d'arrivée du segment n'est plus pris en compte
     - vitesse du segment
     - vitesse au waypoint
     - tolérance au waypoint
@@ -66,10 +66,3 @@ le param forcing_type a pour valeurs possibles :
     msg.pose.pose.position.y,
     2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
 ]
-
-
-
-le pb là c'est que si on a un path [current, A, B]
-quand on est entre current et A pas de pb
-quand on a passé A, le path_planner_node recalcule le path comme de current vers A puis A vers B, alors qu'on a déjà fait A
-donc faudrait ptet checker les waypoints atteints aussi et incrémenter un current_index

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-from champi_navigation.utils import Vel, dist_point_to_line, RobotState, PathFollowParams
+from champi_navigation.utils import Vel, RobotState, PathFollowParams
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
 from champi_navigation.path_helper import PathHelper
 
 
 from math import atan2
-from icecream import ic
 
 
 import rclpy
@@ -15,6 +14,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose
 from champi_interfaces.msg import ChampiPath
+from std_msgs.msg import Empty
 
 
 class PathControllerNode(Node):
@@ -42,9 +42,9 @@ class PathControllerNode(Node):
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.champi_path_sub = self.create_subscription(ChampiPath, '/plan', self.champi_path_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
+        self.path_finished_pub = self.create_publisher(Empty, '/path_finished', 10)
 
         # Other objects instantiation
-
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
 
         self.path_helper = PathHelper(
@@ -79,10 +79,13 @@ class PathControllerNode(Node):
             poses.append(champi_segment.start.pose)
         poses.append(champi_path.segments[-1].end.pose)
 
-        # self.get_logger().warn(f'GLOBAL PATH {len(poses)}')
         self.path_helper.set_path(poses, self.robot_current_state, champi_path)
 
     def control_loop_spin_once(self):
+        if self.path_helper.path_finished_FLAG:
+            self.path_helper.path_finished_FLAG = False           
+            self.path_finished_pub.publish(Empty())
+            self.get_logger().warn("FINISHED IN CONTROL")
 
         if self.robot_current_state is None:
             return
