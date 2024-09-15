@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 
-from typing import Tuple
 from math import acos, cos, sin
 import rclpy
 from nav_msgs.msg import Odometry
-from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 import rclpy.time
 from std_msgs.msg import String, Int64, Empty, Int64MultiArray, Int32
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import MarkerArray
 from utils import CAN_MSGS
 
 # markers
@@ -19,14 +16,13 @@ from std_msgs.msg import ColorRGBA
 # from strat_engine.executors import MultiThreadedExecutor
 # from threading import Thread
 
-import plants_taker_api
+# import plants_taker_api
 from action_executor import Action_Executor
-from utils import draw_rviz_markers, calc_time_of_travel, get_action_by_name, pose_with_cov_from_position
-from utils import State, StateTakingPlants
+from utils import draw_rviz_markers, calc_time_of_travel, get_action_by_name
+from utils import State
 from rclpy.logging import get_logger
 
 import time
-from enum import Enum
 
 from robot_localization.srv import SetPose
 

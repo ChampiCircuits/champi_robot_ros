@@ -70,7 +70,7 @@ class ComputePathResult(Enum):
     GOAL_IN_OCCUPIED_CELL = 3
     NO_PATH_FOUND = 4
     
-def path_to_msg(path: list[Pose], angle:float = 0.) -> ChampiPath:
+def path_to_msg(path: list[Pose]) -> ChampiPath:
 
     """
     Always give an angle (unless you give an empty path, then the angle is not used)
@@ -78,8 +78,6 @@ def path_to_msg(path: list[Pose], angle:float = 0.) -> ChampiPath:
     :param angle:
     :return:
     """
-
-    # TODO remove parameter angle (path will have the angle for each point), and move this function to the node
 
     champi_path_msg = ChampiPath()
     champi_path_msg.header.frame_id = 'map'
@@ -89,6 +87,8 @@ def path_to_msg(path: list[Pose], angle:float = 0.) -> ChampiPath:
 
     if len(path) == 0:
         return champi_path_msg
+    
+    last_pose = path[-1]
 
     for i in range(len(path)):
         if i+1 == len(path):
@@ -101,7 +101,7 @@ def path_to_msg(path: list[Pose], angle:float = 0.) -> ChampiPath:
         start_pose.orientation.x = 0.
         start_pose.orientation.y = 0.
         start_pose.orientation.z = 0.
-        start_pose.orientation.w = 1. # TODO to orientate the robot along each waypoint (for look_at_point)
+        start_pose.orientation.w = 1.
 
         start_champi_point = ChampiPoint()
         start_champi_point.pose = start_pose
@@ -113,13 +113,14 @@ def path_to_msg(path: list[Pose], angle:float = 0.) -> ChampiPath:
         end_pose.orientation.x = 0.
         end_pose.orientation.y = 0.
 
+        
         if i+2 == len(path):
             # Set the orientation of the last pose 
-            end_pose.orientation.z = sin(angle / 2)
-            end_pose.orientation.w = cos(angle / 2)
+            end_pose.orientation.z = path[i+1].orientation.z
+            end_pose.orientation.w = path[i+1].orientation.w
         else:
             end_pose.orientation.z = 0.
-            end_pose.orientation.w = 1. # TODO to orientate the robot along each waypoint (for look_at_point)
+            end_pose.orientation.w = 1.
 
         end_champi_point = ChampiPoint()
         end_champi_point.pose = end_pose
@@ -188,9 +189,8 @@ class AStarPathPlanner:
                 return path_msg, ComputePathResult.NO_PATH_FOUND
 
         # If line is free, just go straight (no need to pathfind, we save time)
-        goal_pose_theta = 2 * atan2(goal_pose.orientation.z, goal_pose.orientation.w)
         if is_line_free(start, goal, costmap):
-            path_msg = path_to_msg([robot_pose, goal_pose], goal_pose_theta)
+            path_msg = path_to_msg([robot_pose, goal_pose])
             return path_msg, ComputePathResult.SUCCESS
 
         # Compute the path
@@ -211,7 +211,7 @@ class AStarPathPlanner:
         path_m[0] = robot_pose
         path_m[-1] = goal_pose  # goal is already in m
 
-        path_msg = path_to_msg(path_m, goal_pose_theta)
+        path_msg = path_to_msg(path_m)
 
         return path_msg, ComputePathResult.SUCCESS
 

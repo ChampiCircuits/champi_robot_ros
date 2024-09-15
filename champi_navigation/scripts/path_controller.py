@@ -70,16 +70,10 @@ class PathControllerNode(Node):
             return
         
         if len(champi_path.segments) == 0:
-            self.path_helper.set_path([], self.robot_current_state, champi_path)
+            self.path_helper.set_path(champi_path)
             return
         
-        # TODO, pour le moment on récup que les poses pour faire comme avant avec un Path
-        poses: list[Pose] = []
-        for champi_segment in champi_path.segments:
-            poses.append(champi_segment.start.pose)
-        poses.append(champi_path.segments[-1].end.pose)
-
-        self.path_helper.set_path(poses, self.robot_current_state, champi_path)
+        self.path_helper.set_path(champi_path)
 
     def control_loop_spin_once(self):
         if self.path_helper.path_finished_FLAG:

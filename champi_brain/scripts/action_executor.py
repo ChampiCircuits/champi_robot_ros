@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 
-import rclpy.time
 from robot_navigator import Robot_Navigator
 
-import time
-from typing import Tuple
-from enum import Enum
 
-from std_msgs.msg import String, ColorRGBA, Int64, Int64MultiArray, Empty
+from std_msgs.msg import ColorRGBA, Int64, Empty
 
 from rclpy.node import Node
-import rclpy
 
 import plants_taker_api
 from utils import draw_rviz_markers
-from utils import *
+from utils import State, StateTakingPlants, OFFSET_POSE_PLANT_X, OFFSET_POSE_PLANT_Y, CAN_MSGS
 from rclpy.logging import get_logger
 
 
@@ -98,13 +93,12 @@ class Action_Executor():
         elif self.move_state == State.FINISHED_MOVE:
             self.state = State.ACTION_FINISHED
         get_logger('action_exec').info(f"\Moving to to {self.current_action['pose']}")
-        # pose = self.robot_navigator.tuple_to_pose(self.current_action['pose'])
-        # pose2 = self.robot_navigator.tuple_to_pose(self.strategy_node.get_offset_start_pose(self.current_action['pose'])) # TODO TEST ONLY
+        pose = self.robot_navigator.tuple_to_pose(self.current_action['pose'])
 
-
-        pose = self.robot_navigator.tuple_to_pose([1.7, 0.3, 0])
+        pose = self.robot_navigator.tuple_to_pose([1.7, 0.3, 0]) # TODO test only
         pose2 = self.robot_navigator.tuple_to_pose([1.5, 0.3, 0])
         self.robot_navigator.navigate_through_waypoints([pose, pose2], 100) # TODO pas  100
+        # self.robot_navigator.navigate_through_waypoints([pose], 100) # TODO pas  100
         self.move_state = State.WAITING_END_MOVE
 
     def update_retour(self):

@@ -128,12 +128,12 @@ def pose_with_cov_from_position(position, stamp):
     return goal_pose
 
 
-def pose_to_champi_point(pose: Pose) -> ChampiPoint:
+def pose_to_champi_point(pose: Pose) -> ChampiPoint: #TODO devrait être supprimée prochainement
     champi_point = ChampiPoint()
     champi_point.name = ""
     champi_point.pose = pose
-    champi_point.point_type = 1 # TODO use enum #TODO put the right thing here and next line
+    champi_point.point_type = 1 # TODO has a use??
     champi_point.linear_tolerance = 0.05 # TODO use enum or predefined values
     champi_point.angular_tolerance = 0.05 # TODO use enum or predefined values
-    champi_point.robot_should_stop_here = True
+    champi_point.robot_should_stop_here = False
     return champi_point

@@ -23,16 +23,13 @@ from champi_navigation.path_planner import AStarPathPlanner, ComputePathResult
 from rclpy.logging import get_logger
 
 
-debug_poses = []
-
-def pose_to_champi_point(pose: Pose) -> ChampiPoint: # TODO duplicated with champi_brain.utils
+def pose_to_dumb_champi_point(pose: Pose) -> ChampiPoint:
+    """
+    dumb because it has no properties except the pose
+    """
     champi_point = ChampiPoint()
-    champi_point.name = ""
+    champi_point.name = "current_pose"
     champi_point.pose = pose
-    champi_point.point_type = 1 # TODO use enum #TODO put the right thing here and next line
-    champi_point.linear_tolerance = 0.05 # TODO use enum
-    champi_point.angular_tolerance = 0.05 # TODO use enum
-    champi_point.robot_should_stop_here = True
     return champi_point
 
 
@@ -148,7 +145,7 @@ class PlannerNode(Node):
             
 
             # modify the first point of the path to set it to current_pose, because it has not been set in robot_navigator
-            self.asked_from_client_champi_path.segments[0].start = pose_to_champi_point(self.robot_pose)
+            self.asked_from_client_champi_path.segments[0].start = pose_to_dumb_champi_point(self.robot_pose)
 
             for champi_segment in self.asked_from_client_champi_path.segments[self.index_of_next_waypoint-1:]:
                 # for each segment, we compute the path

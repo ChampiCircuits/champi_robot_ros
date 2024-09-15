@@ -40,6 +40,9 @@ class Robot_Navigator():
 
 
     def navigate_through_waypoints(self, waypoints: list[Pose|None], max_time_allowed: float):
+        # TODO FAUDRA CHANGER CETTE FONCTION POUR QU'ELLE PRENNE UN CHAMPI_PATH
+        # SINON ON PEUT PAS DONNER DE PARAMS SPECIFIQUES, ils sont set par défaut dans pose_to_champi_point
+
         navigate_goal = Navigate.Goal() # = ChampiPath type
         navigate_goal.path.name = ""
         navigate_goal.path.max_time_allowed = float(max_time_allowed)
@@ -88,7 +91,7 @@ class Robot_Navigator():
         pose.orientation.w = cos(tuple[2]/2)
         return pose
     
-    def navigate_to_tuple(self, destination: Tuple[float, float, float], max_time_allowed:float): # TODO change calls to Pose msg
+    def navigate_to_tuple(self, destination: Tuple[float, float, float], max_time_allowed:float):
         if destination is None:
             return
         if self.last_goal is not None and self.last_goal[0] == destination[0] and self.last_goal[1] == destination[1] and self.last_goal[2] == destination[2]:

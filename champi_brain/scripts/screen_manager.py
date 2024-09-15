@@ -12,7 +12,6 @@ import subprocess, netifaces, time, matplotlib, psutil
 from signal import SIGINT
 
 import rclpy
-from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
 from std_msgs.msg import Int32, String, Empty, Int64, Int64MultiArray

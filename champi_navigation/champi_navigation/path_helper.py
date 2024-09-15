@@ -35,20 +35,20 @@ class PathHelper:
         self.max_linear_acceleration = max_linear_acceleration
         self.max_angular_acceleration = max_angular_acceleration
 
-    def set_path(self, path: list[Pose], robot_current_state, champi_path: ChampiPath): # TODO abandonner la lister de poses et juste utiliser le champi path
+    def set_path(self, champi_path: ChampiPath): 
 
         """
         Give to this method the path to follow and the current state of the robot. The path may be a new one or an
-        updated version of the previous one. The method will figure out where the robot is on the path according to the
-        robot_current_state. It will finally set the internal state of the PathHelper object accordingly.
-
-        :param path: the path to follow (list of PoseStamped from ROS2 nav_msgs.msg.Path)
-        :param robot_current_state: the current state of the robot (RobotState: pose and velocity)
-        :return: None
+        updated version of the previous one. It will finally set the internal state of the PathHelper object accordingly.
         """
+        poses: list[Pose] = []
+        if len(champi_path.segments) > 0:
+            for champi_segment in champi_path.segments:
+                poses.append(champi_segment.start.pose)
+            poses.append(champi_path.segments[-1].end.pose)
 
         # If the path is empty, we set variables to None and return
-        if len(path) == 0:
+        if len(poses) == 0:
             self.i_goal = None
             self.current_seg_start = None
             self.current_seg_end = None
@@ -56,16 +56,16 @@ class PathHelper:
             return
 
         # The path is the same as the previous we received: only difference is the first point (the robot moved)
-        if not self.is_this_a_new_path(path):
+        if not self.is_this_a_new_path(poses):
             # nothing to do: we don't update the first point of the path, so the current segment doesn't change.
             # This allows us to have a notion of "straight line".
             return
 
         # If we are here, the path is a new one.
         self.i_goal = 1
-        self.current_seg_start = self.pose_to_array(path[0])
-        self.current_seg_end = self.pose_to_array(path[1])
-        self.path = path
+        self.current_seg_start = self.pose_to_array(poses[0])
+        self.current_seg_end = self.pose_to_array(poses[1])
+        self.path = poses
         self.champi_path = champi_path
 
 
@@ -192,8 +192,8 @@ class PathHelper:
         else:
             p.arrival_angle = self.get_arrival_angle()
 
-        p.arrival_speed = 0. # TODO why 0.3??
-        if self.is_goal_the_last_one():
+        p.arrival_speed = 0.005 # just enough to not stop too much
+        if self.is_goal_the_last_one() or current_champi_segment.end.robot_should_stop_here:
             p.arrival_speed = 0.
 
         p.max_speed_linear = current_champi_segment.max_linear_speed
