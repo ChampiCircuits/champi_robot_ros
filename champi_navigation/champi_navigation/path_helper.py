@@ -112,10 +112,11 @@ class PathHelper:
         """Checks if the goal is reached and switch to the next one if it is the case.
         Should not be called if i_goal is None = no path to follow."""
 
-        error_max_lin = 0.05
-        error_max_ang = 0.05
-
         current_champi_segment: ChampiSegment = self.champi_path.segments[self.i_goal-1]
+        
+        error_max_lin = current_champi_segment.end.linear_tolerance
+        error_max_ang = current_champi_segment.end.angular_tolerance
+
 
         if not current_champi_segment.do_look_at_point:
             target_angle = self.current_seg_end[2]

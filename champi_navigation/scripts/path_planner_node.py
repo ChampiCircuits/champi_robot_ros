@@ -30,7 +30,8 @@ def pose_to_champi_point(pose: Pose) -> ChampiPoint: # TODO duplicated with cham
     champi_point.name = ""
     champi_point.pose = pose
     champi_point.point_type = 1 # TODO use enum #TODO put the right thing here and next line
-    champi_point.tolerance = 0.5 # TODO use enum
+    champi_point.linear_tolerance = 0.05 # TODO use enum
+    champi_point.angular_tolerance = 0.05 # TODO use enum
     champi_point.robot_should_stop_here = True
     return champi_point
 
@@ -171,11 +172,13 @@ class PlannerNode(Node):
                     seg.name = champi_segment.name
                 # set the params of the first and last point
                 local_champi_path.segments[0].start.point_type = champi_segment.start.point_type
-                local_champi_path.segments[0].start.tolerance = champi_segment.start.tolerance
+                local_champi_path.segments[0].start.linear_tolerance = champi_segment.start.linear_tolerance
+                local_champi_path.segments[0].start.angular_tolerance = champi_segment.start.angular_tolerance
                 local_champi_path.segments[0].start.robot_should_stop_here = champi_segment.start.robot_should_stop_here
 
                 local_champi_path.segments[-1].end.point_type = champi_segment.end.point_type
-                local_champi_path.segments[-1].end.tolerance = champi_segment.end.tolerance
+                local_champi_path.segments[-1].end.linear_tolerance = champi_segment.end.linear_tolerance
+                local_champi_path.segments[-1].end.angular_tolerance = champi_segment.end.angular_tolerance
                 local_champi_path.segments[-1].end.robot_should_stop_here = champi_segment.end.robot_should_stop_here
                 
                 # set the params of the path

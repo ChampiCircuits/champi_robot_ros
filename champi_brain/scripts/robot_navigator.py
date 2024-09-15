@@ -60,11 +60,14 @@ class Robot_Navigator():
             else:
                 segment.max_linear_speed = 0.1
             segment.max_angular_speed = 1.5
-            segment.do_look_at_point = True
+            segment.do_look_at_point = False
             look_at_point = ChampiPoint()
             look_at_point.pose = self.tuple_to_pose((0., 0.0, 0.))
             segment.look_at_point = look_at_point
             segment.robot_angle_when_looking_at_point = 0.
+
+            segment.end.linear_tolerance = 0.05
+            segment.end.angular_tolerance = 0.05
 
             navigate_goal.path.segments.append(segment)
 

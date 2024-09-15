@@ -133,6 +133,7 @@ def pose_to_champi_point(pose: Pose) -> ChampiPoint:
     champi_point.name = ""
     champi_point.pose = pose
     champi_point.point_type = 1 # TODO use enum #TODO put the right thing here and next line
-    champi_point.tolerance = 0.5 # TODO use enum
+    champi_point.linear_tolerance = 0.05 # TODO use enum or predefined values
+    champi_point.angular_tolerance = 0.05 # TODO use enum or predefined values
     champi_point.robot_should_stop_here = True
     return champi_point
