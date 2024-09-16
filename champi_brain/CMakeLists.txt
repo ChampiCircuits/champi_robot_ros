@@ -21,16 +21,10 @@ find_package(ament_index_cpp REQUIRED)
 
 
 find_package(ament_cmake REQUIRED)
-link_directories(~/BehaviorTree.CPP/build/) # TODO ptet trouver mieux ? cf readmeBT
-
-# add_library(behaviortree_cpp STATIC IMPORTED)
-# set_target_properties(behaviortree_cpp PROPERTIES IMPORTED_LOCATION /home/ku-etienne/BehaviorTree.CPP/build/libbehaviortree_cpp.so)
-# set(CMAKE_PREFIX_PATH "~/BehaviorTree.CPP/install" ${CMAKE_PREFIX_PATH})
 find_package(behaviortree_cpp REQUIRED)
 
-add_executable(example_bt "src/example_bt.cpp")
-target_link_libraries(example_bt behaviortree_cpp)
-ament_target_dependencies(example_bt rclcpp ament_index_cpp)
+add_executable(example_bt src/example_bt.cpp)
+ament_target_dependencies(example_bt rclcpp behaviortree_cpp)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

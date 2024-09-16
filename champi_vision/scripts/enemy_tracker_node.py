@@ -147,7 +147,7 @@ class EnemyTracker(Node):
             self.enemy_pos_pub.publish(enemy_odom_msg)
             
         
-        self.get_logger().info(f'Enemy Tracker loop took {time.time()-t_start}s. Detected {len(points)} points.')
+        # self.get_logger().info(f'Enemy Tracker loop took {time.time()-t_start}s. Detected {len(points)} points.')
 
 
     def is_point_in_box(self, point, poly_points):

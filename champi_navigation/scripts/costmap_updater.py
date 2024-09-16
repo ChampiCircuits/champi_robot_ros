@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 
 import rclpy
 from rclpy.node import Node
@@ -93,7 +93,7 @@ class ImageToCostmapNode(Node):
     def draw_enemy_robot(self, img, x, y):
         enemy_x = int(round(x / self.resolution))
         enemy_y = int(round(y / self.resolution))
-        radius = int(np.ceil((self.enemy_robot_radius + self.robot_radius) / self.resolution))
+        radius = int(np.ceil((self.enemy_robot_radius + self.robot_radius) / self.resolution))  # TODO Optimisation possible: calcul du rayon dans __init__
 
         # Draw enemy robot
         cv2.circle(img, (enemy_x, enemy_y), radius, 100, -1)
