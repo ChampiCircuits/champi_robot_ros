@@ -10,7 +10,7 @@ from rclpy.executors import MultiThreadedExecutor
 
 from nav_msgs.msg import OccupancyGrid, Odometry
 from champi_interfaces.action import Navigate
-from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
+from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPose
 from geometry_msgs.msg import Pose
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import Empty
@@ -23,14 +23,14 @@ from champi_navigation.path_planner import AStarPathPlanner, ComputePathResult
 from rclpy.logging import get_logger
 
 
-def pose_to_dumb_champi_point(pose: Pose) -> ChampiPoint:
+def pose_to_dumb_champi_point(pose: Pose) -> ChampiPose:
     """
     dumb because it has no properties except the pose
     """
-    champi_point = ChampiPoint()
-    champi_point.name = "current_pose"
-    champi_point.pose = pose
-    return champi_point
+    champi_pose = ChampiPose()
+    champi_pose.name = "current_pose"
+    champi_pose.pose = pose
+    return champi_pose
 
 
 class PlannerNode(Node):
@@ -137,7 +137,7 @@ class PlannerNode(Node):
             marker_array = MarkerArray()
             for i, s in enumerate(self.asked_from_client_champi_path.segments):
                 s:ChampiSegment
-                p:ChampiPoint = s.start
+                p:ChampiPose = s.start
                 marker_array.markers.append(self.create_marker(p.pose, i))
             marker_array.markers.append(self.create_marker(self.asked_from_client_champi_path.segments[-1].end.pose, len(self.asked_from_client_champi_path.segments)))
                     

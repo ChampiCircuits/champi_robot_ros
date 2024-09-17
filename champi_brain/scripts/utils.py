@@ -2,7 +2,7 @@
 
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped, PoseStamped
-from champi_interfaces.msg import ChampiPoint
+from champi_interfaces.msg import ChampiPose
 
 from rclpy.duration import Duration
 
@@ -128,12 +128,12 @@ def pose_with_cov_from_position(position, stamp):
     return goal_pose
 
 
-def pose_to_champi_point(pose: Pose) -> ChampiPoint: #TODO devrait être supprimée prochainement
-    champi_point = ChampiPoint()
-    champi_point.name = ""
-    champi_point.pose = pose
-    champi_point.point_type = 1 # TODO has a use??
-    champi_point.linear_tolerance = 0.05 # TODO use enum or predefined values
-    champi_point.angular_tolerance = 0.05 # TODO use enum or predefined values
-    champi_point.robot_should_stop_here = False
-    return champi_point
+def pose_to_champi_point(pose: Pose) -> ChampiPose: #TODO devrait être supprimée prochainement
+    champi_pose = ChampiPose()
+    champi_pose.name = ""
+    champi_pose.pose = pose
+    champi_pose.point_type = 1 # TODO has a use??
+    champi_pose.linear_tolerance = 0.05 # TODO use enum or predefined values
+    champi_pose.angular_tolerance = 0.05 # TODO use enum or predefined values
+    champi_pose.robot_should_stop_here = False
+    return champi_pose

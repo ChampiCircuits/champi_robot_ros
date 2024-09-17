@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
+from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPose
 
 
 from typing import Tuple
@@ -64,7 +64,7 @@ class Robot_Navigator():
                 segment.max_linear_speed = 0.1
             segment.max_angular_speed = 1.5
             segment.do_look_at_point = False
-            look_at_point = ChampiPoint()
+            look_at_point = ChampiPose()
             look_at_point.pose = self.tuple_to_pose((0., 0.0, 0.))
             segment.look_at_point = look_at_point
             segment.robot_angle_when_looking_at_point = 0.

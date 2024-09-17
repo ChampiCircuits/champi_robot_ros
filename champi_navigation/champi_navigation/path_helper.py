@@ -1,7 +1,7 @@
 from math import cos, sin, atan2, pi
 from geometry_msgs.msg import Pose
 from champi_navigation.utils import PathFollowParams
-from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
+from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPose
 
 class PathHelper:
     """

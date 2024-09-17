@@ -1,9 +1,9 @@
 std_msgs/Header header 
 string name
-ChampiPoint start
-ChampiPoint end
+ChampiPose start
+ChampiPose end
 float32 max_linear_speed
 float32 max_angular_speed
 bool do_look_at_point
-ChampiPoint look_at_point
+ChampiPose look_at_point
 float32 robot_angle_when_looking_at_point

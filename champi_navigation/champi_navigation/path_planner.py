@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from geometry_msgs.msg import Pose
-from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
+from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPose
 
 from math import sin, cos, atan2, hypot
 import time
@@ -103,7 +103,7 @@ def path_to_msg(path: list[Pose]) -> ChampiPath:
         start_pose.orientation.z = 0.
         start_pose.orientation.w = 1.
 
-        start_champi_point = ChampiPoint()
+        start_champi_point = ChampiPose()
         start_champi_point.pose = start_pose
         
         end_pose = Pose()
@@ -122,7 +122,7 @@ def path_to_msg(path: list[Pose]) -> ChampiPath:
             end_pose.orientation.z = 0.
             end_pose.orientation.w = 1.
 
-        end_champi_point = ChampiPoint()
+        end_champi_point = ChampiPose()
         end_champi_point.pose = end_pose
 
         champi_segment = ChampiSegment()
