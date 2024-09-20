@@ -12,7 +12,6 @@ import subprocess, netifaces, time, matplotlib, psutil
 from signal import SIGINT
 
 import rclpy
-from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
 from std_msgs.msg import Int32, String, Empty, Int64, Int64MultiArray
@@ -298,9 +297,11 @@ class Application(tk.Tk):
 
     def create_match_tab(self):
         # display score, font 50, centered in the window
-        self.score_label = ttk.Label(self.tab2, text=f"Score: {self.final_score}",font=("Futura Gabriola Garamond", 50), justify=tk.CENTER,padding=(10,50)).pack()
+        self.score_label = ttk.Label(self.tab2, text=f"Score: {self.final_score}",font=("Futura Gabriola Garamond", 50), justify=tk.CENTER,padding=(10,50))
+        self.score_label.pack()
         # display time left, font 50, centered in the window
-        self.time_label = ttk.Label(self.tab2, text=f"Time left: 100",font=("Futura Gabriola Garamond", 50), justify=tk.CENTER,padding=(10,50)).pack()
+        self.time_label = ttk.Label(self.tab2, text=f"Time left: 100",font=("Futura Gabriola Garamond", 50), justify=tk.CENTER,padding=(10,50))
+        self.time_label.pack()
         self.refresh_time()
 
     def refresh_time(self):
@@ -393,10 +394,12 @@ class Application(tk.Tk):
 
         # text CAN state
         CAN_state_label = ttk.Label(debug_frame, text="CAN state: ",font=("Futura Gabriola Garamond",30)).pack()
-        self.CAN_state_label = ttk.Label(debug_frame, text=self.CAN_state,font=("Futura Gabriola Garamond",20)).pack()
+        self.CAN_state_label = ttk.Label(debug_frame, text=self.CAN_state,font=("Futura Gabriola Garamond",20))
+        self.CAN_state_label.pack()
         # text nb_plants
         nb_plants_label = ttk.Label(debug_frame, text="nb_plants: ",font=("Futura Gabriola Garamond",30)).pack()
-        self.nb_plants_label = ttk.Label(debug_frame, text=self.nb_plants,font=("Futura Gabriola Garamond",20)).pack()
+        self.nb_plants_label = ttk.Label(debug_frame, text=self.nb_plants,font=("Futura Gabriola Garamond",20))
+        self.nb_plants_label.pack()
 
         
     def act_sub_update(self, msg):
@@ -421,7 +424,7 @@ class Application(tk.Tk):
             self.CAN_state = "INITIALIZING"
         elif CAN_state == 5:
             self.CAN_state = "FREE"
-
+        self.CAN_state_label.config(text=self.CAN_state)
 
     def start_grab_plants(self):
         print("start_grab_plants")
@@ -454,10 +457,11 @@ class Application(tk.Tk):
         ip_frame.pack(expand=True, fill="both")
 
         ip_label = ttk.Label(ip_frame, text="\n\nAdresse IP:",font=("Futura Gabriola Garamond",30)).pack()
-        self.ip_address = ttk.Label(ip_frame, text=self.get_ip_addresses(),font=("Futura Gabriola Garamond",20)).pack()
-
+        self.ip_address = ttk.Label(ip_frame, text=self.get_ip_addresses(),font=("Futura Gabriola Garamond",20))
+        self.ip_address.pack()
         wifi_label = ttk.Label(ip_frame, text="\n\nNom du réseau WiFi actuel:",font=("Futura Gabriola Garamond",30)).pack()
-        wifi_name = ttk.Label(ip_frame, text=self.get_wifi_name(),font=("Futura Gabriola Garamond",20)).pack()
+        self.wifi_name = ttk.Label(ip_frame, text=self.get_wifi_name(),font=("Futura Gabriola Garamond",20))
+        self.wifi_name.pack()
 
         # Bouton Actualiser
 

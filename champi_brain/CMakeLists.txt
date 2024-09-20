@@ -13,12 +13,24 @@ find_package(rclpy REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(champi_libraries REQUIRED)
+find_package(champi_interfaces REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
-# add_executable(test_diag src/test_diag.cpp)
-# ament_target_dependencies(test_diag rclcpp diagnostic_updater)
+
+find_package(ament_cmake REQUIRED)
+link_directories(~/BehaviorTree.CPP/build/) # TODO ptet trouver mieux ? cf readmeBT
+
+# add_library(behaviortree_cpp STATIC IMPORTED)
+# set_target_properties(behaviortree_cpp PROPERTIES IMPORTED_LOCATION /home/ku-etienne/BehaviorTree.CPP/build/libbehaviortree_cpp.so)
+# set(CMAKE_PREFIX_PATH "~/BehaviorTree.CPP/install" ${CMAKE_PREFIX_PATH})
+find_package(behaviortree_cpp REQUIRED)
+
+add_executable(example_bt "src/example_bt.cpp")
+target_link_libraries(example_bt behaviortree_cpp)
+ament_target_dependencies(example_bt rclcpp ament_index_cpp)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -34,6 +46,7 @@ endif()
 
 # Allow lauch files to be found when calling them with ros2 launch
 install(DIRECTORY
+  xml
   launch
   scripts
   # config
@@ -49,6 +62,7 @@ install(PROGRAMS
         scripts/screen_manager.py
         scripts/rviz_markers.py
         scripts/strategy_engine_node.py
+        scripts/simu_act_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 
-from champi_navigation.utils import Vel, dist_point_to_line, RobotState, PathFollowParams
+from champi_navigation.utils import Vel, RobotState, PathFollowParams
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
 from champi_navigation.path_helper import PathHelper
 
 
 from math import atan2
-from icecream import ic
 
 
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-from nav_msgs.msg import Path
+from geometry_msgs.msg import Pose
+from champi_interfaces.msg import ChampiPath
+from std_msgs.msg import Empty
 
 
 class PathControllerNode(Node):
@@ -39,11 +40,11 @@ class PathControllerNode(Node):
         # ROS subscriptions, publishers and timers
         self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.path_sub = self.create_subscription(Path, '/plan', self.path_callback, 10)
+        self.champi_path_sub = self.create_subscription(ChampiPath, '/plan', self.champi_path_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
+        self.path_finished_pub = self.create_publisher(Empty, '/path_finished', 10)
 
         # Other objects instantiation
-
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
 
         self.path_helper = PathHelper(
@@ -62,15 +63,23 @@ class PathControllerNode(Node):
         vel = Vel.to_global_frame(pose, vel)
         self.robot_current_state = RobotState(pose, vel)
 
-    def path_callback(self, msg):
+    def champi_path_callback(self, champi_path: ChampiPath):
         """Callback for the path message. It is called when a new path is received from topic."""
 
         if self.robot_current_state is None:
             return
-
-        self.path_helper.set_path(msg.poses, self.robot_current_state)
+        
+        if len(champi_path.segments) == 0:
+            self.path_helper.set_path(champi_path)
+            return
+        
+        self.path_helper.set_path(champi_path)
 
     def control_loop_spin_once(self):
+        if self.path_helper.path_finished_FLAG:
+            self.path_helper.path_finished_FLAG = False           
+            self.path_finished_pub.publish(Empty())
+            self.get_logger().warn("FINISHED IN CONTROL")
 
         if self.robot_current_state is None:
             return
