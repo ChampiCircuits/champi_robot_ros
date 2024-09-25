@@ -33,6 +33,7 @@
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
+#include "nanopb.pb.h"
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
 #define PROTOBUF_INTERNAL_EXPORT_msgs_5fcan_2eproto
@@ -48,7 +49,7 @@ struct TableStruct_msgs_5fcan_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxillaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[10]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[11]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -71,6 +72,9 @@ extern BaseVelDefaultTypeInternal _BaseVel_default_instance_;
 class ImuData;
 class ImuDataDefaultTypeInternal;
 extern ImuDataDefaultTypeInternal _ImuData_default_instance_;
+class LasersDistances;
+class LasersDistancesDefaultTypeInternal;
+extern LasersDistancesDefaultTypeInternal _LasersDistances_default_instance_;
 class LedRingDistances;
 class LedRingDistancesDefaultTypeInternal;
 extern LedRingDistancesDefaultTypeInternal _LedRingDistances_default_instance_;
@@ -93,6 +97,7 @@ template<> ::msgs_can::ActStatus* Arena::CreateMaybeMessage<::msgs_can::ActStatu
 template<> ::msgs_can::BaseConfig* Arena::CreateMaybeMessage<::msgs_can::BaseConfig>(Arena*);
 template<> ::msgs_can::BaseVel* Arena::CreateMaybeMessage<::msgs_can::BaseVel>(Arena*);
 template<> ::msgs_can::ImuData* Arena::CreateMaybeMessage<::msgs_can::ImuData>(Arena*);
+template<> ::msgs_can::LasersDistances* Arena::CreateMaybeMessage<::msgs_can::LasersDistances>(Arena*);
 template<> ::msgs_can::LedRingDistances* Arena::CreateMaybeMessage<::msgs_can::LedRingDistances>(Arena*);
 template<> ::msgs_can::Log* Arena::CreateMaybeMessage<::msgs_can::Log>(Arena*);
 template<> ::msgs_can::RetBaseConfig* Arena::CreateMaybeMessage<::msgs_can::RetBaseConfig>(Arena*);
@@ -2042,7 +2047,7 @@ class LedRingDistances PROTOBUF_FINAL :
   enum : int {
     kDistancesFieldNumber = 1,
   };
-  // repeated float distances = 1;
+  // repeated float distances = 1 [(.nanopb) = {
   int distances_size() const;
   private:
   int _internal_distances_size() const;
@@ -2065,6 +2070,163 @@ class LedRingDistances PROTOBUF_FINAL :
       mutable_distances();
 
   // @@protoc_insertion_point(class_scope:msgs_can.LedRingDistances)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedField< float > distances_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_msgs_5fcan_2eproto;
+};
+// -------------------------------------------------------------------
+
+class LasersDistances PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:msgs_can.LasersDistances) */ {
+ public:
+  inline LasersDistances() : LasersDistances(nullptr) {};
+  virtual ~LasersDistances();
+
+  LasersDistances(const LasersDistances& from);
+  LasersDistances(LasersDistances&& from) noexcept
+    : LasersDistances() {
+    *this = ::std::move(from);
+  }
+
+  inline LasersDistances& operator=(const LasersDistances& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline LasersDistances& operator=(LasersDistances&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const LasersDistances& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const LasersDistances* internal_default_instance() {
+    return reinterpret_cast<const LasersDistances*>(
+               &_LasersDistances_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    10;
+
+  friend void swap(LasersDistances& a, LasersDistances& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(LasersDistances* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(LasersDistances* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline LasersDistances* New() const final {
+    return CreateMaybeMessage<LasersDistances>(nullptr);
+  }
+
+  LasersDistances* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<LasersDistances>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const LasersDistances& from);
+  void MergeFrom(const LasersDistances& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(LasersDistances* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "msgs_can.LasersDistances";
+  }
+  protected:
+  explicit LasersDistances(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_msgs_5fcan_2eproto);
+    return ::descriptor_table_msgs_5fcan_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kDistancesFieldNumber = 1,
+  };
+  // repeated float distances = 1 [(.nanopb) = {
+  int distances_size() const;
+  private:
+  int _internal_distances_size() const;
+  public:
+  void clear_distances();
+  private:
+  float _internal_distances(int index) const;
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedField< float >&
+      _internal_distances() const;
+  void _internal_add_distances(float value);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedField< float >*
+      _internal_mutable_distances();
+  public:
+  float distances(int index) const;
+  void set_distances(int index, float value);
+  void add_distances(float value);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedField< float >&
+      distances() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedField< float >*
+      mutable_distances();
+
+  // @@protoc_insertion_point(class_scope:msgs_can.LasersDistances)
  private:
   class _Internal;
 
@@ -3223,7 +3385,7 @@ inline void ActStatus::set_plant_count(::PROTOBUF_NAMESPACE_ID::int32 value) {
 
 // LedRingDistances
 
-// repeated float distances = 1;
+// repeated float distances = 1 [(.nanopb) = {
 inline int LedRingDistances::_internal_distances_size() const {
   return distances_.size();
 }
@@ -3270,9 +3432,62 @@ LedRingDistances::mutable_distances() {
   return _internal_mutable_distances();
 }
 
+// -------------------------------------------------------------------
+
+// LasersDistances
+
+// repeated float distances = 1 [(.nanopb) = {
+inline int LasersDistances::_internal_distances_size() const {
+  return distances_.size();
+}
+inline int LasersDistances::distances_size() const {
+  return _internal_distances_size();
+}
+inline void LasersDistances::clear_distances() {
+  distances_.Clear();
+}
+inline float LasersDistances::_internal_distances(int index) const {
+  return distances_.Get(index);
+}
+inline float LasersDistances::distances(int index) const {
+  // @@protoc_insertion_point(field_get:msgs_can.LasersDistances.distances)
+  return _internal_distances(index);
+}
+inline void LasersDistances::set_distances(int index, float value) {
+  distances_.Set(index, value);
+  // @@protoc_insertion_point(field_set:msgs_can.LasersDistances.distances)
+}
+inline void LasersDistances::_internal_add_distances(float value) {
+  distances_.Add(value);
+}
+inline void LasersDistances::add_distances(float value) {
+  _internal_add_distances(value);
+  // @@protoc_insertion_point(field_add:msgs_can.LasersDistances.distances)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< float >&
+LasersDistances::_internal_distances() const {
+  return distances_;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< float >&
+LasersDistances::distances() const {
+  // @@protoc_insertion_point(field_list:msgs_can.LasersDistances.distances)
+  return _internal_distances();
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< float >*
+LasersDistances::_internal_mutable_distances() {
+  return &distances_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< float >*
+LasersDistances::mutable_distances() {
+  // @@protoc_insertion_point(field_mutable_list:msgs_can.LasersDistances.distances)
+  return _internal_mutable_distances();
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

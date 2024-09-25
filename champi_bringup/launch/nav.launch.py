@@ -47,11 +47,18 @@ def generate_launch_description():
         output='screen',
     )
 
+    position_readjustment_node = Node(
+        package='champi_navigation',
+        executable='position_readjustment_node.py',
+        name='position_readjustment',
+        output='screen',
+    )
+
     return LaunchDescription([
         path_controller_node,
         costmap_updater_node,
         a_star_path_planner_node,
         call_set_pose_node,
-        path_planner_ui_node
-
+        path_planner_ui_node,
+        position_readjustment_node
     ])

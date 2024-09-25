@@ -22,6 +22,7 @@
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>champi_libraries</depend>
+  <depend>champi_interfaces</depend>
   <depend>joy</depend>
   <build_depend>ament_index_cpp</build_depend>
   <exec_depend>ament_index_cpp</exec_depend>

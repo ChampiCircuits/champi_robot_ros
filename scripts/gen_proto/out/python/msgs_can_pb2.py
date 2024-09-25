@@ -12,6 +12,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
+import nanopb_pb2 as nanopb__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
@@ -20,8 +21,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0emsgs_can.proto\x12\x08msgs_can\".\n\x07\x42\x61seVel\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"\xda\x02\n\x06Status\x12\x11\n\ttimestamp\x18\x01 \x01(\x02\x12+\n\x06status\x18\x02 \x01(\x0e\x32\x1b.msgs_can.Status.StatusType\x12)\n\x05\x65rror\x18\x03 \x01(\x0e\x32\x1a.msgs_can.Status.ErrorType\x12\x0f\n\x07message\x18\x04 \x01(\t\"3\n\nStatusType\x12\x06\n\x02OK\x10\x00\x12\x08\n\x04INIT\x10\x01\x12\x08\n\x04WARN\x10\x02\x12\t\n\x05\x45RROR\x10\x03\"\x9e\x01\n\tErrorType\x12\x08\n\x04NONE\x10\x00\x12\x14\n\x10INIT_PERIPHERALS\x10\x01\x12\x0c\n\x08INIT_CAN\x10\x02\x12\x10\n\x0cPROTO_ENCODE\x10\x03\x12\x10\n\x0cPROTO_DECODE\x10\x04\x12\x13\n\x0f\x43MD_VEL_TIMEOUT\x10\x05\x12\n\n\x06\x43\x41N_TX\x10\x06\x12\n\n\x06\x43\x41N_RX\x10\x07\x12\x12\n\x0eINVALID_CONFIG\x10\x08\"0\n\x0cStatusReport\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\"M\n\x03Log\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x03(\x0b\x32\x10.msgs_can.Status\"c\n\nBaseConfig\x12\x11\n\tmax_accel\x18\x01 \x01(\x02\x12\x17\n\x0f\x63md_vel_timeout\x18\x02 \x01(\x02\x12\x14\n\x0cwheel_radius\x18\x03 \x01(\x02\x12\x13\n\x0b\x62\x61se_radius\x18\x04 \x01(\x02\"W\n\rRetBaseConfig\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x01(\x0b\x32\x10.msgs_can.Status\"f\n\x07ImuData\x12\r\n\x05\x61\x63\x63_x\x18\x01 \x01(\x02\x12\r\n\x05\x61\x63\x63_y\x18\x02 \x01(\x02\x12\r\n\x05\x61\x63\x63_z\x18\x03 \x01(\x02\x12\x0e\n\x06gyro_x\x18\x04 \x01(\x02\x12\x0e\n\x06gyro_y\x18\x05 \x01(\x02\x12\x0e\n\x06gyro_z\x18\x06 \x01(\x02\"=\n\x06\x41\x63tCmd\x12$\n\x06\x61\x63tion\x18\x01 \x01(\x0e\x32\x14.msgs_can.ActActions\x12\r\n\x05value\x18\x02 \x01(\x02\"h\n\tActStatus\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\x12$\n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32\x14.msgs_can.ActActions\x12\x13\n\x0bplant_count\x18\x03 \x01(\x05\"%\n\x10LedRingDistances\x12\x11\n\tdistances\x18\x01 \x03(\x02*~\n\nActActions\x12\x15\n\x11START_GRAB_PLANTS\x10\x00\x12\x14\n\x10STOP_GRAB_PLANTS\x10\x01\x12\x11\n\rRELEASE_PLANT\x10\x02\x12\x14\n\x10TURN_SOLAR_PANEL\x10\x03\x12\x10\n\x0cINITIALIZING\x10\x04\x12\x08\n\x04\x46REE\x10\x05'
-)
+  serialized_pb=b'\n\x0emsgs_can.proto\x12\x08msgs_can\x1a\x0cnanopb.proto\".\n\x07\x42\x61seVel\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"\xda\x02\n\x06Status\x12\x11\n\ttimestamp\x18\x01 \x01(\x02\x12+\n\x06status\x18\x02 \x01(\x0e\x32\x1b.msgs_can.Status.StatusType\x12)\n\x05\x65rror\x18\x03 \x01(\x0e\x32\x1a.msgs_can.Status.ErrorType\x12\x0f\n\x07message\x18\x04 \x01(\t\"3\n\nStatusType\x12\x06\n\x02OK\x10\x00\x12\x08\n\x04INIT\x10\x01\x12\x08\n\x04WARN\x10\x02\x12\t\n\x05\x45RROR\x10\x03\"\x9e\x01\n\tErrorType\x12\x08\n\x04NONE\x10\x00\x12\x14\n\x10INIT_PERIPHERALS\x10\x01\x12\x0c\n\x08INIT_CAN\x10\x02\x12\x10\n\x0cPROTO_ENCODE\x10\x03\x12\x10\n\x0cPROTO_DECODE\x10\x04\x12\x13\n\x0f\x43MD_VEL_TIMEOUT\x10\x05\x12\n\n\x06\x43\x41N_TX\x10\x06\x12\n\n\x06\x43\x41N_RX\x10\x07\x12\x12\n\x0eINVALID_CONFIG\x10\x08\"0\n\x0cStatusReport\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\"M\n\x03Log\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x03(\x0b\x32\x10.msgs_can.Status\"c\n\nBaseConfig\x12\x11\n\tmax_accel\x18\x01 \x01(\x02\x12\x17\n\x0f\x63md_vel_timeout\x18\x02 \x01(\x02\x12\x14\n\x0cwheel_radius\x18\x03 \x01(\x02\x12\x13\n\x0b\x62\x61se_radius\x18\x04 \x01(\x02\"W\n\rRetBaseConfig\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x01(\x0b\x32\x10.msgs_can.Status\"f\n\x07ImuData\x12\r\n\x05\x61\x63\x63_x\x18\x01 \x01(\x02\x12\r\n\x05\x61\x63\x63_y\x18\x02 \x01(\x02\x12\r\n\x05\x61\x63\x63_z\x18\x03 \x01(\x02\x12\x0e\n\x06gyro_x\x18\x04 \x01(\x02\x12\x0e\n\x06gyro_y\x18\x05 \x01(\x02\x12\x0e\n\x06gyro_z\x18\x06 \x01(\x02\"=\n\x06\x41\x63tCmd\x12$\n\x06\x61\x63tion\x18\x01 \x01(\x0e\x32\x14.msgs_can.ActActions\x12\r\n\x05value\x18\x02 \x01(\x02\"h\n\tActStatus\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\x12$\n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32\x14.msgs_can.ActActions\x12\x13\n\x0bplant_count\x18\x03 \x01(\x05\"2\n\x10LedRingDistances\x12\x1e\n\tdistances\x18\x01 \x03(\x02\x42\x0b\x92?\x02\x10\x18\x92?\x03\x80\x01\x01\"1\n\x0fLasersDistances\x12\x1e\n\tdistances\x18\x01 \x03(\x02\x42\x0b\x92?\x02\x10\x04\x92?\x03\x80\x01\x01*~\n\nActActions\x12\x15\n\x11START_GRAB_PLANTS\x10\x00\x12\x14\n\x10STOP_GRAB_PLANTS\x10\x01\x12\x11\n\rRELEASE_PLANT\x10\x02\x12\x14\n\x10TURN_SOLAR_PANEL\x10\x03\x12\x10\n\x0cINITIALIZING\x10\x04\x12\x08\n\x04\x46REE\x10\x05'
+  ,
+  dependencies=[nanopb__pb2.DESCRIPTOR,])
 
 _ACTACTIONS = _descriptor.EnumDescriptor(
   name='ActActions',
@@ -63,8 +65,8 @@ _ACTACTIONS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1056,
-  serialized_end=1182,
+  serialized_start=1134,
+  serialized_end=1260,
 )
 _sym_db.RegisterEnumDescriptor(_ACTACTIONS)
 
@@ -107,8 +109,8 @@ _STATUS_STATUSTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=211,
-  serialized_end=262,
+  serialized_start=225,
+  serialized_end=276,
 )
 _sym_db.RegisterEnumDescriptor(_STATUS_STATUSTYPE)
 
@@ -167,8 +169,8 @@ _STATUS_ERRORTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=265,
-  serialized_end=423,
+  serialized_start=279,
+  serialized_end=437,
 )
 _sym_db.RegisterEnumDescriptor(_STATUS_ERRORTYPE)
 
@@ -214,8 +216,8 @@ _BASEVEL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=28,
-  serialized_end=74,
+  serialized_start=42,
+  serialized_end=88,
 )
 
 
@@ -269,8 +271,8 @@ _STATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=77,
-  serialized_end=423,
+  serialized_start=91,
+  serialized_end=437,
 )
 
 
@@ -301,8 +303,8 @@ _STATUSREPORT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=425,
-  serialized_end=473,
+  serialized_start=439,
+  serialized_end=487,
 )
 
 
@@ -340,8 +342,8 @@ _LOG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=475,
-  serialized_end=552,
+  serialized_start=489,
+  serialized_end=566,
 )
 
 
@@ -393,8 +395,8 @@ _BASECONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=554,
-  serialized_end=653,
+  serialized_start=568,
+  serialized_end=667,
 )
 
 
@@ -432,8 +434,8 @@ _RETBASECONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=655,
-  serialized_end=742,
+  serialized_start=669,
+  serialized_end=756,
 )
 
 
@@ -499,8 +501,8 @@ _IMUDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=744,
-  serialized_end=846,
+  serialized_start=758,
+  serialized_end=860,
 )
 
 
@@ -538,8 +540,8 @@ _ACTCMD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=848,
-  serialized_end=909,
+  serialized_start=862,
+  serialized_end=923,
 )
 
 
@@ -584,8 +586,8 @@ _ACTSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=911,
-  serialized_end=1015,
+  serialized_start=925,
+  serialized_end=1029,
 )
 
 
@@ -603,7 +605,7 @@ _LEDRINGDISTANCES = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+      serialized_options=b'\222?\002\020\030\222?\003\200\001\001', file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -616,8 +618,40 @@ _LEDRINGDISTANCES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1017,
-  serialized_end=1054,
+  serialized_start=1031,
+  serialized_end=1081,
+)
+
+
+_LASERSDISTANCES = _descriptor.Descriptor(
+  name='LasersDistances',
+  full_name='msgs_can.LasersDistances',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='distances', full_name='msgs_can.LasersDistances.distances', index=0,
+      number=1, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=b'\222?\002\020\004\222?\003\200\001\001', file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1083,
+  serialized_end=1132,
 )
 
 _STATUS.fields_by_name['status'].enum_type = _STATUS_STATUSTYPE
@@ -642,6 +676,7 @@ DESCRIPTOR.message_types_by_name['ImuData'] = _IMUDATA
 DESCRIPTOR.message_types_by_name['ActCmd'] = _ACTCMD
 DESCRIPTOR.message_types_by_name['ActStatus'] = _ACTSTATUS
 DESCRIPTOR.message_types_by_name['LedRingDistances'] = _LEDRINGDISTANCES
+DESCRIPTOR.message_types_by_name['LasersDistances'] = _LASERSDISTANCES
 DESCRIPTOR.enum_types_by_name['ActActions'] = _ACTACTIONS
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -715,5 +750,14 @@ LedRingDistances = _reflection.GeneratedProtocolMessageType('LedRingDistances', 
   })
 _sym_db.RegisterMessage(LedRingDistances)
 
+LasersDistances = _reflection.GeneratedProtocolMessageType('LasersDistances', (_message.Message,), {
+  'DESCRIPTOR' : _LASERSDISTANCES,
+  '__module__' : 'msgs_can_pb2'
+  # @@protoc_insertion_point(class_scope:msgs_can.LasersDistances)
+  })
+_sym_db.RegisterMessage(LasersDistances)
 
+
+_LEDRINGDISTANCES.fields_by_name['distances']._options = None
+_LASERSDISTANCES.fields_by_name['distances']._options = None
 # @@protoc_insertion_point(module_scope)

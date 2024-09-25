@@ -57,6 +57,10 @@ class LedRingDistancesDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LedRingDistances> _instance;
 } _LedRingDistances_default_instance_;
+class LasersDistancesDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LasersDistances> _instance;
+} _LasersDistances_default_instance_;
 }  // namespace msgs_can
 static void InitDefaultsscc_info_ActCmd_msgs_5fcan_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -128,6 +132,20 @@ static void InitDefaultsscc_info_ImuData_msgs_5fcan_2eproto() {
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ImuData_msgs_5fcan_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ImuData_msgs_5fcan_2eproto}, {}};
+
+static void InitDefaultsscc_info_LasersDistances_msgs_5fcan_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::msgs_can::_LasersDistances_default_instance_;
+    new (ptr) ::msgs_can::LasersDistances();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::msgs_can::LasersDistances::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LasersDistances_msgs_5fcan_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_LasersDistances_msgs_5fcan_2eproto}, {}};
 
 static void InitDefaultsscc_info_LedRingDistances_msgs_5fcan_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -204,7 +222,7 @@ static void InitDefaultsscc_info_StatusReport_msgs_5fcan_2eproto() {
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_StatusReport_msgs_5fcan_2eproto}, {
       &scc_info_Status_msgs_5fcan_2eproto.base,}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[10];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[11];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_msgs_5fcan_2eproto[3];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_msgs_5fcan_2eproto = nullptr;
 
@@ -314,6 +332,12 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_msgs_5fcan_2eproto::offsets[] 
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   PROTOBUF_FIELD_OFFSET(::msgs_can::LedRingDistances, distances_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::msgs_can::LasersDistances, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::msgs_can::LasersDistances, distances_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, 8, sizeof(::msgs_can::BaseVel)},
@@ -326,6 +350,7 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 79, 86, sizeof(::msgs_can::ActCmd)},
   { 88, 96, sizeof(::msgs_can::ActStatus)},
   { 99, -1, sizeof(::msgs_can::LedRingDistances)},
+  { 105, -1, sizeof(::msgs_can::LasersDistances)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -339,48 +364,53 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ActCmd_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ActStatus_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_LedRingDistances_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_LasersDistances_default_instance_),
 };
 
 const char descriptor_table_protodef_msgs_5fcan_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\016msgs_can.proto\022\010msgs_can\".\n\007BaseVel\022\t\n"
-  "\001x\030\001 \001(\002\022\t\n\001y\030\002 \001(\002\022\r\n\005theta\030\003 \001(\002\"\332\002\n\006S"
-  "tatus\022\021\n\ttimestamp\030\001 \001(\002\022+\n\006status\030\002 \001(\016"
-  "2\033.msgs_can.Status.StatusType\022)\n\005error\030\003"
-  " \001(\0162\032.msgs_can.Status.ErrorType\022\017\n\007mess"
-  "age\030\004 \001(\t\"3\n\nStatusType\022\006\n\002OK\020\000\022\010\n\004INIT\020"
-  "\001\022\010\n\004WARN\020\002\022\t\n\005ERROR\020\003\"\236\001\n\tErrorType\022\010\n\004"
-  "NONE\020\000\022\024\n\020INIT_PERIPHERALS\020\001\022\014\n\010INIT_CAN"
-  "\020\002\022\020\n\014PROTO_ENCODE\020\003\022\020\n\014PROTO_DECODE\020\004\022\023"
-  "\n\017CMD_VEL_TIMEOUT\020\005\022\n\n\006CAN_TX\020\006\022\n\n\006CAN_R"
-  "X\020\007\022\022\n\016INVALID_CONFIG\020\010\"0\n\014StatusReport\022"
-  " \n\006status\030\001 \001(\0132\020.msgs_can.Status\"M\n\003Log"
-  "\022$\n\006config\030\001 \001(\0132\024.msgs_can.BaseConfig\022 "
-  "\n\006status\030\002 \003(\0132\020.msgs_can.Status\"c\n\nBase"
-  "Config\022\021\n\tmax_accel\030\001 \001(\002\022\027\n\017cmd_vel_tim"
-  "eout\030\002 \001(\002\022\024\n\014wheel_radius\030\003 \001(\002\022\023\n\013base"
-  "_radius\030\004 \001(\002\"W\n\rRetBaseConfig\022$\n\006config"
-  "\030\001 \001(\0132\024.msgs_can.BaseConfig\022 \n\006status\030\002"
-  " \001(\0132\020.msgs_can.Status\"f\n\007ImuData\022\r\n\005acc"
-  "_x\030\001 \001(\002\022\r\n\005acc_y\030\002 \001(\002\022\r\n\005acc_z\030\003 \001(\002\022\016"
-  "\n\006gyro_x\030\004 \001(\002\022\016\n\006gyro_y\030\005 \001(\002\022\016\n\006gyro_z"
-  "\030\006 \001(\002\"=\n\006ActCmd\022$\n\006action\030\001 \001(\0162\024.msgs_"
-  "can.ActActions\022\r\n\005value\030\002 \001(\002\"h\n\tActStat"
-  "us\022 \n\006status\030\001 \001(\0132\020.msgs_can.Status\022$\n\006"
-  "action\030\002 \001(\0162\024.msgs_can.ActActions\022\023\n\013pl"
-  "ant_count\030\003 \001(\005\"%\n\020LedRingDistances\022\021\n\td"
-  "istances\030\001 \003(\002*~\n\nActActions\022\025\n\021START_GR"
-  "AB_PLANTS\020\000\022\024\n\020STOP_GRAB_PLANTS\020\001\022\021\n\rREL"
-  "EASE_PLANT\020\002\022\024\n\020TURN_SOLAR_PANEL\020\003\022\020\n\014IN"
-  "ITIALIZING\020\004\022\010\n\004FREE\020\005"
+  "\n\016msgs_can.proto\022\010msgs_can\032\014nanopb.proto"
+  "\".\n\007BaseVel\022\t\n\001x\030\001 \001(\002\022\t\n\001y\030\002 \001(\002\022\r\n\005the"
+  "ta\030\003 \001(\002\"\332\002\n\006Status\022\021\n\ttimestamp\030\001 \001(\002\022+"
+  "\n\006status\030\002 \001(\0162\033.msgs_can.Status.StatusT"
+  "ype\022)\n\005error\030\003 \001(\0162\032.msgs_can.Status.Err"
+  "orType\022\017\n\007message\030\004 \001(\t\"3\n\nStatusType\022\006\n"
+  "\002OK\020\000\022\010\n\004INIT\020\001\022\010\n\004WARN\020\002\022\t\n\005ERROR\020\003\"\236\001\n"
+  "\tErrorType\022\010\n\004NONE\020\000\022\024\n\020INIT_PERIPHERALS"
+  "\020\001\022\014\n\010INIT_CAN\020\002\022\020\n\014PROTO_ENCODE\020\003\022\020\n\014PR"
+  "OTO_DECODE\020\004\022\023\n\017CMD_VEL_TIMEOUT\020\005\022\n\n\006CAN"
+  "_TX\020\006\022\n\n\006CAN_RX\020\007\022\022\n\016INVALID_CONFIG\020\010\"0\n"
+  "\014StatusReport\022 \n\006status\030\001 \001(\0132\020.msgs_can"
+  ".Status\"M\n\003Log\022$\n\006config\030\001 \001(\0132\024.msgs_ca"
+  "n.BaseConfig\022 \n\006status\030\002 \003(\0132\020.msgs_can."
+  "Status\"c\n\nBaseConfig\022\021\n\tmax_accel\030\001 \001(\002\022"
+  "\027\n\017cmd_vel_timeout\030\002 \001(\002\022\024\n\014wheel_radius"
+  "\030\003 \001(\002\022\023\n\013base_radius\030\004 \001(\002\"W\n\rRetBaseCo"
+  "nfig\022$\n\006config\030\001 \001(\0132\024.msgs_can.BaseConf"
+  "ig\022 \n\006status\030\002 \001(\0132\020.msgs_can.Status\"f\n\007"
+  "ImuData\022\r\n\005acc_x\030\001 \001(\002\022\r\n\005acc_y\030\002 \001(\002\022\r\n"
+  "\005acc_z\030\003 \001(\002\022\016\n\006gyro_x\030\004 \001(\002\022\016\n\006gyro_y\030\005"
+  " \001(\002\022\016\n\006gyro_z\030\006 \001(\002\"=\n\006ActCmd\022$\n\006action"
+  "\030\001 \001(\0162\024.msgs_can.ActActions\022\r\n\005value\030\002 "
+  "\001(\002\"h\n\tActStatus\022 \n\006status\030\001 \001(\0132\020.msgs_"
+  "can.Status\022$\n\006action\030\002 \001(\0162\024.msgs_can.Ac"
+  "tActions\022\023\n\013plant_count\030\003 \001(\005\"2\n\020LedRing"
+  "Distances\022\036\n\tdistances\030\001 \003(\002B\013\222\?\002\020\030\222\?\003\200\001"
+  "\001\"1\n\017LasersDistances\022\036\n\tdistances\030\001 \003(\002B"
+  "\013\222\?\002\020\004\222\?\003\200\001\001*~\n\nActActions\022\025\n\021START_GRAB"
+  "_PLANTS\020\000\022\024\n\020STOP_GRAB_PLANTS\020\001\022\021\n\rRELEA"
+  "SE_PLANT\020\002\022\024\n\020TURN_SOLAR_PANEL\020\003\022\020\n\014INIT"
+  "IALIZING\020\004\022\010\n\004FREE\020\005"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_msgs_5fcan_2eproto_deps[1] = {
+  &::descriptor_table_nanopb_2eproto,
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[10] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[11] = {
   &scc_info_ActCmd_msgs_5fcan_2eproto.base,
   &scc_info_ActStatus_msgs_5fcan_2eproto.base,
   &scc_info_BaseConfig_msgs_5fcan_2eproto.base,
   &scc_info_BaseVel_msgs_5fcan_2eproto.base,
   &scc_info_ImuData_msgs_5fcan_2eproto.base,
+  &scc_info_LasersDistances_msgs_5fcan_2eproto.base,
   &scc_info_LedRingDistances_msgs_5fcan_2eproto.base,
   &scc_info_Log_msgs_5fcan_2eproto.base,
   &scc_info_RetBaseConfig_msgs_5fcan_2eproto.base,
@@ -389,10 +419,10 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msg
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_msgs_5fcan_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_msgs_5fcan_2eproto = {
-  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 1182,
-  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 10, 0,
+  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 1260,
+  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 11, 1,
   schemas, file_default_instances, TableStruct_msgs_5fcan_2eproto::offsets,
-  file_level_metadata_msgs_5fcan_2eproto, 10, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
+  file_level_metadata_msgs_5fcan_2eproto, 11, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -3147,7 +3177,7 @@ const char* LedRingDistances::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     CHK_(ptr);
     switch (tag >> 3) {
-      // repeated float distances = 1;
+      // repeated float distances = 1 [(.nanopb) = {
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 13)) {
           ptr -= 1;
@@ -3190,7 +3220,7 @@ failure:
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated float distances = 1;
+  // repeated float distances = 1 [(.nanopb) = {
   for (int i = 0, n = this->_internal_distances_size(); i < n; i++) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(1, this->_internal_distances(i), target);
@@ -3212,7 +3242,7 @@ size_t LedRingDistances::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated float distances = 1;
+  // repeated float distances = 1 [(.nanopb) = {
   {
     unsigned int count = static_cast<unsigned int>(this->_internal_distances_size());
     size_t data_size = 4UL * count;
@@ -3284,6 +3314,211 @@ void LedRingDistances::InternalSwap(LedRingDistances* other) {
 }
 
 
+// ===================================================================
+
+void LasersDistances::InitAsDefaultInstance() {
+}
+class LasersDistances::_Internal {
+ public:
+};
+
+LasersDistances::LasersDistances(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena),
+  distances_(arena) {
+  SharedCtor();
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:msgs_can.LasersDistances)
+}
+LasersDistances::LasersDistances(const LasersDistances& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      distances_(from.distances_) {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  // @@protoc_insertion_point(copy_constructor:msgs_can.LasersDistances)
+}
+
+void LasersDistances::SharedCtor() {
+}
+
+LasersDistances::~LasersDistances() {
+  // @@protoc_insertion_point(destructor:msgs_can.LasersDistances)
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+void LasersDistances::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
+}
+
+void LasersDistances::ArenaDtor(void* object) {
+  LasersDistances* _this = reinterpret_cast< LasersDistances* >(object);
+  (void)_this;
+}
+void LasersDistances::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void LasersDistances::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const LasersDistances& LasersDistances::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LasersDistances_msgs_5fcan_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void LasersDistances::Clear() {
+// @@protoc_insertion_point(message_clear_start:msgs_can.LasersDistances)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  distances_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* LasersDistances::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // repeated float distances = 1 [(.nanopb) = {
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 13)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            _internal_add_distances(::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr));
+            ptr += sizeof(float);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<13>(ptr));
+        } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10) {
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedFloatParser(_internal_mutable_distances(), ptr, ctx);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* LasersDistances::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:msgs_can.LasersDistances)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // repeated float distances = 1 [(.nanopb) = {
+  for (int i = 0, n = this->_internal_distances_size(); i < n; i++) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(1, this->_internal_distances(i), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:msgs_can.LasersDistances)
+  return target;
+}
+
+size_t LasersDistances::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:msgs_can.LasersDistances)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated float distances = 1 [(.nanopb) = {
+  {
+    unsigned int count = static_cast<unsigned int>(this->_internal_distances_size());
+    size_t data_size = 4UL * count;
+    total_size += 1 *
+                  ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(this->_internal_distances_size());
+    total_size += data_size;
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void LasersDistances::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:msgs_can.LasersDistances)
+  GOOGLE_DCHECK_NE(&from, this);
+  const LasersDistances* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<LasersDistances>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:msgs_can.LasersDistances)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:msgs_can.LasersDistances)
+    MergeFrom(*source);
+  }
+}
+
+void LasersDistances::MergeFrom(const LasersDistances& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:msgs_can.LasersDistances)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  distances_.MergeFrom(from.distances_);
+}
+
+void LasersDistances::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:msgs_can.LasersDistances)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void LasersDistances::CopyFrom(const LasersDistances& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:msgs_can.LasersDistances)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool LasersDistances::IsInitialized() const {
+  return true;
+}
+
+void LasersDistances::InternalSwap(LasersDistances* other) {
+  using std::swap;
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  distances_.InternalSwap(&other->distances_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata LasersDistances::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace msgs_can
 PROTOBUF_NAMESPACE_OPEN
@@ -3316,6 +3551,9 @@ template<> PROTOBUF_NOINLINE ::msgs_can::ActStatus* Arena::CreateMaybeMessage< :
 }
 template<> PROTOBUF_NOINLINE ::msgs_can::LedRingDistances* Arena::CreateMaybeMessage< ::msgs_can::LedRingDistances >(Arena* arena) {
   return Arena::CreateMessageInternal< ::msgs_can::LedRingDistances >(arena);
+}
+template<> PROTOBUF_NOINLINE ::msgs_can::LasersDistances* Arena::CreateMaybeMessage< ::msgs_can::LasersDistances >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::msgs_can::LasersDistances >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

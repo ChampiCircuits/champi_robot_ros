@@ -20,7 +20,6 @@ find_package(tf2_ros REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 
 
-find_package(ament_cmake REQUIRED)
 link_directories(~/BehaviorTree.CPP/build/) # TODO ptet trouver mieux ? cf readmeBT
 
 # add_library(behaviortree_cpp STATIC IMPORTED)

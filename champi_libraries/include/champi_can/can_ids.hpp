@@ -20,4 +20,5 @@ namespace can_ids {
     int TIRETTE_START = 0x6;
     int ACT_RESET = 0x2;
     int LED_RING_DISTANCES =  0x210;
+    int LASERS_DISTANCES =  0x211;
 }

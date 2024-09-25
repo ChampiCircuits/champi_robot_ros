@@ -144,6 +144,30 @@ ukf:
         pose0_queue_size: 5
         pose0_rejection_threshold: 2.0  # Note the difference in parameter name
 
+
+        pose1: /pose/readjustment_x
+        pose1_config: [true,  false, false,
+                       false, false, false,
+                       false, false, false,
+                       false, false, false,
+                       false, false, false]
+        pose1_differential: false
+        pose1_relative: false
+        pose1_queue_size: 5
+        pose1_rejection_threshold: 2.0  # Note the difference in parameter name
+
+        pose2: /pose/readjustment_y
+        pose2_config: [false, true,  false,
+                       false, false, false,
+                       false, false, false,
+                       false, false, false,
+                       false, false, false]
+        pose2_differential: false
+        pose2_relative: false
+        pose2_queue_size: 5
+        pose2_rejection_threshold: 2.0  # Note the difference in parameter name
+
+
         # twist0: example/twist
         # twist0_config: [false, false, false,
         #                 false, false, false,

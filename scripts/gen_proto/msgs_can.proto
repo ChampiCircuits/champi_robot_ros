@@ -1,4 +1,8 @@
 syntax = "proto2";
+
+// package nano_pb_generator.proto;
+// import "protos/dir/sample.proto";
+// import "nano_pb_generator/proto/nanopb.proto"; // comment me when compile for cpp and python
 import "nanopb.proto"; // comment me when compile for cpp and python
 
 package msgs_can;
@@ -93,4 +97,8 @@ message ActStatus {
 
 message LedRingDistances {
   repeated float distances = 1 [(nanopb).max_count = 24, (nanopb).fixed_count = true];  // comment me when compile for cpp and python
+}
+
+message LasersDistances {
+  repeated float distances = 1 [(nanopb).max_count = 4, (nanopb).fixed_count = true];  // comment me when compile for cpp and python
 }

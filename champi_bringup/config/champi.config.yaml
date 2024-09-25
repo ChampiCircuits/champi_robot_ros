@@ -123,3 +123,7 @@ path_controller:
 path_planner:
   ros__parameters:
     planner_loop_period: 0.2 # s # TODO originellement à 0.2
+
+position_readjustment:
+  ros__parameters:
+    position_readjustment_loop_period: 1.0 # s

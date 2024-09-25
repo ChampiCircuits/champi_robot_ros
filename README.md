@@ -58,6 +58,11 @@ python3 dev_tools/goals_cmd.py
 
 ## How to
 
+### Creer un nouveau script
+- mettre dans cmakelists
+- mettre dans le launch
+- chmod+x dans install/
+
 ### Configuration du projet
 
 La première fois, se placer à la racine du workspace et lancer la commande suivante pour installer les dépendances et ajouter
@@ -105,6 +110,10 @@ python3 gen_ids.py
     - champi_libraries/src/champi_can/msgs_can.pb.cc
 - from gen_can_ids/out/can_ids_ns.hpp **(copy content from NS file)**
     - champi_libraries/include/champi_can/can_ids.hpp
+
+Before building : 
+- in msgs_can.pb.cc replace the include by : "#include "champi_can/msgs_can.pb.h"
+- same in msgs_can.pb.h "#include <champi_can/pb.h>"
 
 ### Publier des goals pour nav2 sur Rviz2
 

@@ -36,6 +36,9 @@ PB_BIND(msgs_can_ActStatus, msgs_can_ActStatus, AUTO)
 PB_BIND(msgs_can_LedRingDistances, msgs_can_LedRingDistances, AUTO)
 
 
+PB_BIND(msgs_can_LasersDistances, msgs_can_LasersDistances, AUTO)
+
+
 
 
 

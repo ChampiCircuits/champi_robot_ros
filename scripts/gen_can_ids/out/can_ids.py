@@ -19,3 +19,4 @@ class CanIds:
     TIRETTE_START = 0x6
     ACT_RESET = 0x2
     LED_RING_DISTANCES =  0x210
+    LASERS_DISTANCES =  0x211

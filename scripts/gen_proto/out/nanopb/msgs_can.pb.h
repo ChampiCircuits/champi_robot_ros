@@ -123,8 +123,12 @@ typedef struct _msgs_can_ActStatus {
 } msgs_can_ActStatus;
 
 typedef struct _msgs_can_LedRingDistances {
-    float distances[24];
+    float distances[24]; /* comment me when compile for cpp and python */
 } msgs_can_LedRingDistances;
+
+typedef struct _msgs_can_LasersDistances {
+    float distances[4]; /* comment me when compile for cpp and python */
+} msgs_can_LasersDistances;
 
 
 #ifdef __cplusplus
@@ -159,6 +163,7 @@ extern "C" {
 
 
 
+
 /* Initializer values for message structs */
 #define msgs_can_BaseVel_init_default            {false, 0, false, 0, false, 0}
 #define msgs_can_Status_init_default             {false, 0, false, _msgs_can_Status_StatusType_MIN, false, _msgs_can_Status_ErrorType_MIN, {{NULL}, NULL}}
@@ -170,6 +175,7 @@ extern "C" {
 #define msgs_can_ActCmd_init_default             {false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_ActStatus_init_default          {false, msgs_can_Status_init_default, false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_LedRingDistances_init_default   {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+#define msgs_can_LasersDistances_init_default    {{0, 0, 0, 0}}
 #define msgs_can_BaseVel_init_zero               {false, 0, false, 0, false, 0}
 #define msgs_can_Status_init_zero                {false, 0, false, _msgs_can_Status_StatusType_MIN, false, _msgs_can_Status_ErrorType_MIN, {{NULL}, NULL}}
 #define msgs_can_StatusReport_init_zero          {false, msgs_can_Status_init_zero}
@@ -180,6 +186,7 @@ extern "C" {
 #define msgs_can_ActCmd_init_zero                {false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_ActStatus_init_zero             {false, msgs_can_Status_init_zero, false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_LedRingDistances_init_zero      {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+#define msgs_can_LasersDistances_init_zero       {{0, 0, 0, 0}}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define msgs_can_BaseVel_x_tag                   1
@@ -210,6 +217,7 @@ extern "C" {
 #define msgs_can_ActStatus_action_tag            2
 #define msgs_can_ActStatus_plant_count_tag       3
 #define msgs_can_LedRingDistances_distances_tag  1
+#define msgs_can_LasersDistances_distances_tag   1
 
 /* Struct field encoding specification for nanopb */
 #define msgs_can_BaseVel_FIELDLIST(X, a) \
@@ -286,6 +294,11 @@ X(a, STATIC,   FIXARRAY, FLOAT,    distances,         1)
 #define msgs_can_LedRingDistances_CALLBACK NULL
 #define msgs_can_LedRingDistances_DEFAULT NULL
 
+#define msgs_can_LasersDistances_FIELDLIST(X, a) \
+X(a, STATIC,   FIXARRAY, FLOAT,    distances,         1)
+#define msgs_can_LasersDistances_CALLBACK NULL
+#define msgs_can_LasersDistances_DEFAULT NULL
+
 extern const pb_msgdesc_t msgs_can_BaseVel_msg;
 extern const pb_msgdesc_t msgs_can_Status_msg;
 extern const pb_msgdesc_t msgs_can_StatusReport_msg;
@@ -296,6 +309,7 @@ extern const pb_msgdesc_t msgs_can_ImuData_msg;
 extern const pb_msgdesc_t msgs_can_ActCmd_msg;
 extern const pb_msgdesc_t msgs_can_ActStatus_msg;
 extern const pb_msgdesc_t msgs_can_LedRingDistances_msg;
+extern const pb_msgdesc_t msgs_can_LasersDistances_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define msgs_can_BaseVel_fields &msgs_can_BaseVel_msg
@@ -308,6 +322,7 @@ extern const pb_msgdesc_t msgs_can_LedRingDistances_msg;
 #define msgs_can_ActCmd_fields &msgs_can_ActCmd_msg
 #define msgs_can_ActStatus_fields &msgs_can_ActStatus_msg
 #define msgs_can_LedRingDistances_fields &msgs_can_LedRingDistances_msg
+#define msgs_can_LasersDistances_fields &msgs_can_LasersDistances_msg
 
 /* Maximum encoded size of messages (where known) */
 /* msgs_can_Status_size depends on runtime parameters */
@@ -320,6 +335,7 @@ extern const pb_msgdesc_t msgs_can_LedRingDistances_msg;
 #define msgs_can_BaseConfig_size                 20
 #define msgs_can_BaseVel_size                    15
 #define msgs_can_ImuData_size                    30
+#define msgs_can_LasersDistances_size            20
 #define msgs_can_LedRingDistances_size           120
 
 #ifdef __cplusplus
