@@ -33,7 +33,6 @@
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
-#include "nanopb.pb.h"
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
 #define PROTOBUF_INTERNAL_EXPORT_msgs_5fcan_2eproto
@@ -2047,7 +2046,7 @@ class LedRingDistances PROTOBUF_FINAL :
   enum : int {
     kDistancesFieldNumber = 1,
   };
-  // repeated float distances = 1 [(.nanopb) = {
+  // repeated float distances = 1;
   int distances_size() const;
   private:
   int _internal_distances_size() const;
@@ -2204,7 +2203,7 @@ class LasersDistances PROTOBUF_FINAL :
   enum : int {
     kDistancesFieldNumber = 1,
   };
-  // repeated float distances = 1 [(.nanopb) = {
+  // repeated float distances = 1;
   int distances_size() const;
   private:
   int _internal_distances_size() const;
@@ -3385,7 +3384,7 @@ inline void ActStatus::set_plant_count(::PROTOBUF_NAMESPACE_ID::int32 value) {
 
 // LedRingDistances
 
-// repeated float distances = 1 [(.nanopb) = {
+// repeated float distances = 1;
 inline int LedRingDistances::_internal_distances_size() const {
   return distances_.size();
 }
@@ -3436,7 +3435,7 @@ LedRingDistances::mutable_distances() {
 
 // LasersDistances
 
-// repeated float distances = 1 [(.nanopb) = {
+// repeated float distances = 1;
 inline int LasersDistances::_internal_distances_size() const {
   return distances_.size();
 }

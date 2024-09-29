@@ -27,7 +27,7 @@ public:
             diag_updater_node_(this),
             champi_can_interface_(
                     this->declare_parameter<std::string>("can_interface_name"),
-                    {can_ids::ACT_STATUS},
+                    {can_ids::ACT_STATUS, can_ids::LASERS_DISTANCES},
                     this->declare_parameter<bool>("champi_can_verbose_mode"))
     {
 
@@ -67,6 +67,8 @@ public:
         pub_tirette_start_ = this->create_publisher<std_msgs::msg::Empty>("/tirette_start", 10);
         pub_act_status_ = this->create_publisher<std_msgs::msg::Int64MultiArray>("/act_status", 10);
 
+        // pub_lasers_
+
         // Sub
         sub_cmd_= this->create_subscription<std_msgs::msg::Int64>("/act_cmd", 10, std::bind(
                 &ActuatorsControllerNode::act_cmd_callback, this, std::placeholders::_1));
@@ -96,6 +98,7 @@ private:
     diagnostic_updater::Updater diag_updater_node_;
 
     msgs_can::ActStatus latest_act_status_;
+    msgs_can::LasersDistances latest_lasers_distances_;
 
     rclcpp::Time last_rx_status_time_;
     double dt_measured_{};
@@ -122,7 +125,7 @@ private:
         else if(latest_act_status_.has_status() && latest_act_status_.status().has_status()) {
             switch(latest_act_status_.status().status()) {
                 case msgs_can::Status_StatusType::Status_StatusType_OK:
-                    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "OK");
+                    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "OK2");
                     break;
                 case msgs_can::Status_StatusType::Status_StatusType_WARN:
                     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Warning");
@@ -216,6 +219,7 @@ private:
 
         if(node_state_.lvl == diagnostic_msgs::msg::DiagnosticStatus::WARN) { // WARN is during initialization TODO pas bien si on veut utilier WARN pour autre chose aussi
             update_node_state(diagnostic_msgs::msg::DiagnosticStatus::OK, "OK");
+
             diag_updater_node_.force_update();
         }
         return got_first_act_status_; // If we have not received the first imu data msg yet, we do not publish it.
@@ -238,7 +242,7 @@ private:
 
     void rx_can() {
         if(champi_can_interface_.check_if_new_full_msg(can_ids::ACT_STATUS)) {
-
+            // TODO il devrait pas y avoir un             last_rx_status_time_ = this->now(); ici aussi ?
             auto buffer = champi_can_interface_.get_full_msg(can_ids::ACT_STATUS);
 
             // Update current imu data
@@ -258,6 +262,29 @@ private:
             auto buffer = champi_can_interface_.get_full_msg(can_ids::TIRETTE_START);
             
             publish_tirette_start();
+        }
+
+
+        if(champi_can_interface_.check_if_new_full_msg(can_ids::LASERS_DISTANCES)) {
+
+            last_rx_status_time_ = this->now();
+            auto buffer = champi_can_interface_.get_full_msg(can_ids::LASERS_DISTANCES);
+            RCLCPP_INFO(this->get_logger(), "SIZE buffer : %d", buffer.size()); 
+
+            // for (auto c:buffer)
+            //     RCLCPP_WARN(this->get_logger(), "%d", (int) c); 
+
+            // Update current lasers_distances data
+            latest_lasers_distances_.ParseFromString(buffer);
+
+            RCLCPP_INFO(this->get_logger(), "SIZE : %d",latest_lasers_distances_.distances_size()); 
+
+
+            for (int i=0;i<4;i++) {
+              RCLCPP_INFO(this->get_logger(), "%f",latest_lasers_distances_.distances(i)); 
+            }
+
+            // // publish_lasers_distances();
         }
     }
 
@@ -332,6 +359,24 @@ private:
 
 
         pub_act_status_->publish(current_status);
+    }
+
+    void publish_lasers_distances() {
+        std_msgs::msg::Int64MultiArray lasers_distances;
+
+        RCLCPP_INFO(this->get_logger(), "RECEIVED LASER DISTANCES !! %d \t %d \t %d \t %d", 
+            (int)latest_lasers_distances_.distances(0),
+            (int)latest_lasers_distances_.distances(1),
+            (int)latest_lasers_distances_.distances(2),
+            (int)latest_lasers_distances_.distances(3));
+
+        lasers_distances.data = std::vector<int64_t>({(int)latest_lasers_distances_.distances(0),
+                                                    (int)latest_lasers_distances_.distances(1),
+                                                    (int)latest_lasers_distances_.distances(2),
+                                                    (int)latest_lasers_distances_.distances(3)});
+        
+        // publish_lasers_distances.publish(lasers_distances);
+
     }
 
 

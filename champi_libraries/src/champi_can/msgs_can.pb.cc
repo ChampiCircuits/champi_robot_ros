@@ -368,41 +368,39 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 };
 
 const char descriptor_table_protodef_msgs_5fcan_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\016msgs_can.proto\022\010msgs_can\032\014nanopb.proto"
-  "\".\n\007BaseVel\022\t\n\001x\030\001 \001(\002\022\t\n\001y\030\002 \001(\002\022\r\n\005the"
-  "ta\030\003 \001(\002\"\332\002\n\006Status\022\021\n\ttimestamp\030\001 \001(\002\022+"
-  "\n\006status\030\002 \001(\0162\033.msgs_can.Status.StatusT"
-  "ype\022)\n\005error\030\003 \001(\0162\032.msgs_can.Status.Err"
-  "orType\022\017\n\007message\030\004 \001(\t\"3\n\nStatusType\022\006\n"
-  "\002OK\020\000\022\010\n\004INIT\020\001\022\010\n\004WARN\020\002\022\t\n\005ERROR\020\003\"\236\001\n"
-  "\tErrorType\022\010\n\004NONE\020\000\022\024\n\020INIT_PERIPHERALS"
-  "\020\001\022\014\n\010INIT_CAN\020\002\022\020\n\014PROTO_ENCODE\020\003\022\020\n\014PR"
-  "OTO_DECODE\020\004\022\023\n\017CMD_VEL_TIMEOUT\020\005\022\n\n\006CAN"
-  "_TX\020\006\022\n\n\006CAN_RX\020\007\022\022\n\016INVALID_CONFIG\020\010\"0\n"
-  "\014StatusReport\022 \n\006status\030\001 \001(\0132\020.msgs_can"
-  ".Status\"M\n\003Log\022$\n\006config\030\001 \001(\0132\024.msgs_ca"
-  "n.BaseConfig\022 \n\006status\030\002 \003(\0132\020.msgs_can."
-  "Status\"c\n\nBaseConfig\022\021\n\tmax_accel\030\001 \001(\002\022"
-  "\027\n\017cmd_vel_timeout\030\002 \001(\002\022\024\n\014wheel_radius"
-  "\030\003 \001(\002\022\023\n\013base_radius\030\004 \001(\002\"W\n\rRetBaseCo"
-  "nfig\022$\n\006config\030\001 \001(\0132\024.msgs_can.BaseConf"
-  "ig\022 \n\006status\030\002 \001(\0132\020.msgs_can.Status\"f\n\007"
-  "ImuData\022\r\n\005acc_x\030\001 \001(\002\022\r\n\005acc_y\030\002 \001(\002\022\r\n"
-  "\005acc_z\030\003 \001(\002\022\016\n\006gyro_x\030\004 \001(\002\022\016\n\006gyro_y\030\005"
-  " \001(\002\022\016\n\006gyro_z\030\006 \001(\002\"=\n\006ActCmd\022$\n\006action"
-  "\030\001 \001(\0162\024.msgs_can.ActActions\022\r\n\005value\030\002 "
-  "\001(\002\"h\n\tActStatus\022 \n\006status\030\001 \001(\0132\020.msgs_"
-  "can.Status\022$\n\006action\030\002 \001(\0162\024.msgs_can.Ac"
-  "tActions\022\023\n\013plant_count\030\003 \001(\005\"2\n\020LedRing"
-  "Distances\022\036\n\tdistances\030\001 \003(\002B\013\222\?\002\020\030\222\?\003\200\001"
-  "\001\"1\n\017LasersDistances\022\036\n\tdistances\030\001 \003(\002B"
-  "\013\222\?\002\020\004\222\?\003\200\001\001*~\n\nActActions\022\025\n\021START_GRAB"
+  "\n\016msgs_can.proto\022\010msgs_can\".\n\007BaseVel\022\t\n"
+  "\001x\030\001 \001(\002\022\t\n\001y\030\002 \001(\002\022\r\n\005theta\030\003 \001(\002\"\332\002\n\006S"
+  "tatus\022\021\n\ttimestamp\030\001 \001(\002\022+\n\006status\030\002 \001(\016"
+  "2\033.msgs_can.Status.StatusType\022)\n\005error\030\003"
+  " \001(\0162\032.msgs_can.Status.ErrorType\022\017\n\007mess"
+  "age\030\004 \001(\t\"3\n\nStatusType\022\006\n\002OK\020\000\022\010\n\004INIT\020"
+  "\001\022\010\n\004WARN\020\002\022\t\n\005ERROR\020\003\"\236\001\n\tErrorType\022\010\n\004"
+  "NONE\020\000\022\024\n\020INIT_PERIPHERALS\020\001\022\014\n\010INIT_CAN"
+  "\020\002\022\020\n\014PROTO_ENCODE\020\003\022\020\n\014PROTO_DECODE\020\004\022\023"
+  "\n\017CMD_VEL_TIMEOUT\020\005\022\n\n\006CAN_TX\020\006\022\n\n\006CAN_R"
+  "X\020\007\022\022\n\016INVALID_CONFIG\020\010\"0\n\014StatusReport\022"
+  " \n\006status\030\001 \001(\0132\020.msgs_can.Status\"M\n\003Log"
+  "\022$\n\006config\030\001 \001(\0132\024.msgs_can.BaseConfig\022 "
+  "\n\006status\030\002 \003(\0132\020.msgs_can.Status\"c\n\nBase"
+  "Config\022\021\n\tmax_accel\030\001 \001(\002\022\027\n\017cmd_vel_tim"
+  "eout\030\002 \001(\002\022\024\n\014wheel_radius\030\003 \001(\002\022\023\n\013base"
+  "_radius\030\004 \001(\002\"W\n\rRetBaseConfig\022$\n\006config"
+  "\030\001 \001(\0132\024.msgs_can.BaseConfig\022 \n\006status\030\002"
+  " \001(\0132\020.msgs_can.Status\"f\n\007ImuData\022\r\n\005acc"
+  "_x\030\001 \001(\002\022\r\n\005acc_y\030\002 \001(\002\022\r\n\005acc_z\030\003 \001(\002\022\016"
+  "\n\006gyro_x\030\004 \001(\002\022\016\n\006gyro_y\030\005 \001(\002\022\016\n\006gyro_z"
+  "\030\006 \001(\002\"=\n\006ActCmd\022$\n\006action\030\001 \001(\0162\024.msgs_"
+  "can.ActActions\022\r\n\005value\030\002 \001(\002\"h\n\tActStat"
+  "us\022 \n\006status\030\001 \001(\0132\020.msgs_can.Status\022$\n\006"
+  "action\030\002 \001(\0162\024.msgs_can.ActActions\022\023\n\013pl"
+  "ant_count\030\003 \001(\005\"%\n\020LedRingDistances\022\021\n\td"
+  "istances\030\001 \003(\002\"$\n\017LasersDistances\022\021\n\tdis"
+  "tances\030\001 \003(\002*~\n\nActActions\022\025\n\021START_GRAB"
   "_PLANTS\020\000\022\024\n\020STOP_GRAB_PLANTS\020\001\022\021\n\rRELEA"
   "SE_PLANT\020\002\022\024\n\020TURN_SOLAR_PANEL\020\003\022\020\n\014INIT"
   "IALIZING\020\004\022\010\n\004FREE\020\005"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_msgs_5fcan_2eproto_deps[1] = {
-  &::descriptor_table_nanopb_2eproto,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[11] = {
   &scc_info_ActCmd_msgs_5fcan_2eproto.base,
@@ -419,8 +417,8 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msg
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_msgs_5fcan_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_msgs_5fcan_2eproto = {
-  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 1260,
-  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 11, 1,
+  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 1220,
+  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 11, 0,
   schemas, file_default_instances, TableStruct_msgs_5fcan_2eproto::offsets,
   file_level_metadata_msgs_5fcan_2eproto, 11, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
 };
@@ -3177,7 +3175,7 @@ const char* LedRingDistances::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     CHK_(ptr);
     switch (tag >> 3) {
-      // repeated float distances = 1 [(.nanopb) = {
+      // repeated float distances = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 13)) {
           ptr -= 1;
@@ -3220,7 +3218,7 @@ failure:
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated float distances = 1 [(.nanopb) = {
+  // repeated float distances = 1;
   for (int i = 0, n = this->_internal_distances_size(); i < n; i++) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(1, this->_internal_distances(i), target);
@@ -3242,7 +3240,7 @@ size_t LedRingDistances::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated float distances = 1 [(.nanopb) = {
+  // repeated float distances = 1;
   {
     unsigned int count = static_cast<unsigned int>(this->_internal_distances_size());
     size_t data_size = 4UL * count;
@@ -3382,7 +3380,7 @@ const char* LasersDistances::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     CHK_(ptr);
     switch (tag >> 3) {
-      // repeated float distances = 1 [(.nanopb) = {
+      // repeated float distances = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 13)) {
           ptr -= 1;
@@ -3425,7 +3423,7 @@ failure:
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated float distances = 1 [(.nanopb) = {
+  // repeated float distances = 1;
   for (int i = 0, n = this->_internal_distances_size(); i < n; i++) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(1, this->_internal_distances(i), target);
@@ -3447,7 +3445,7 @@ size_t LasersDistances::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // repeated float distances = 1 [(.nanopb) = {
+  // repeated float distances = 1;
   {
     unsigned int count = static_cast<unsigned int>(this->_internal_distances_size());
     size_t data_size = 4UL * count;
