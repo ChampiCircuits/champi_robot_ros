@@ -5,9 +5,9 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /TF1/Frames1
-        - /Odometry1/Shape1
+        - /Odometry from Kalman1/Shape1
         - /Map1/Update Topic1
-        - /Odometry2/Shape1
+        - /Odometry1/Shape1
       Splitter Ratio: 0.612994372844696
     Tree Height: 625
   - Class: rviz_common/Selection
@@ -113,7 +113,7 @@ Visualization Manager:
         Value: false
       Enabled: true
       Keep: 100
-      Name: Odometry
+      Name: Odometry from Kalman
       Position Tolerance: 0.10000000149011612
       Shape:
         Alpha: 1
@@ -198,7 +198,7 @@ Visualization Manager:
       Length: 0.30000001192092896
       Line Style: Lines
       Line Width: 0.029999999329447746
-      Name: Path
+      Name: Plan (viz only)
       Offset:
         X: 0
         Y: 0
@@ -214,7 +214,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /plan
+        Value: /plan_viz
       Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz_default_plugins/Odometry
@@ -255,6 +255,26 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /enemy_pose
       Value: false
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.10000000149011612
+      Head Radius: 0.05000000074505806
+      Name: 2D Goal Pose
+      Shaft Length: 0.20000000298023224
+      Shaft Radius: 0.019999999552965164
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -310,11 +330,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: -142.25326538085938
+      Scale: -250.6988525390625
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 1.0503708124160767
-      Y: 1.640665888786316
+      X: 1.1080403327941895
+      Y: 0.4761994481086731
     Saved: ~
 Window Geometry:
   Displays:

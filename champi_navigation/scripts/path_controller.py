@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 
-from champi_navigation.utils import Vel, RobotState, PathFollowParams
+import champi_navigation.goal_checker as goal_checker
+from champi_navigation.utils import Vel, RobotState, PathFollowParams, pose_to_array
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
-from champi_navigation.path_helper import PathHelper
 
-
-from math import atan2
-
+from math import atan2, cos, sin
 
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose
-from champi_interfaces.msg import ChampiPath
+from champi_interfaces.msg import CtrlGoal
 from std_msgs.msg import Empty
 
 
@@ -24,37 +22,30 @@ class PathControllerNode(Node):
         # Parameters
 
         self.control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
-        self.max_linear_speed = self.declare_parameter('max_linear_speed', rclpy.Parameter.Type.DOUBLE).value
-        self.max_angular_speed = self.declare_parameter('max_angular_speed', rclpy.Parameter.Type.DOUBLE).value
         self.max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
         self.max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Controller started with the following parameters:')
         self.get_logger().info(f'control_loop_period: {self.control_loop_period}')
-        self.get_logger().info(f'max_linear_speed: {self.max_linear_speed}')
-        self.get_logger().info(f'max_angular_speed: {self.max_angular_speed}')
         self.get_logger().info(f'max_linear_acceleration: {self.max_linear_acceleration}')
         self.get_logger().info(f'max_angular_acceleration: {self.max_angular_acceleration}')
 
         # ROS subscriptions, publishers and timers
         self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.champi_path_sub = self.create_subscription(ChampiPath, '/plan', self.champi_path_callback, 10)
+        self.champi_path_sub = self.create_subscription(CtrlGoal, '/plan', self.ctrl_goal_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
-        self.path_finished_pub = self.create_publisher(Empty, '/path_finished', 10)
 
         # Other objects instantiation
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
 
-        self.path_helper = PathHelper(
-            self.max_linear_speed,
-            self.max_angular_speed,
-            self.max_linear_acceleration,
-            self.max_angular_acceleration
-        )
+        self.path_follow_params = PathFollowParams()
 
         self.robot_current_state = None
+
+        self.ctrl_goal: CtrlGoal = None
+
 
     def current_pose_callback(self, msg):
         """Callback for the current pose message. It is called when a new pose is received from topic."""
@@ -63,45 +54,35 @@ class PathControllerNode(Node):
         vel = Vel.to_global_frame(pose, vel)
         self.robot_current_state = RobotState(pose, vel)
 
-    def champi_path_callback(self, champi_path: ChampiPath):
+
+    def ctrl_goal_callback(self, ctrl_goal: CtrlGoal):
         """Callback for the path message. It is called when a new path is received from topic."""
 
         if self.robot_current_state is None:
             return
         
-        if len(champi_path.segments) == 0:
-            self.path_helper.set_path(champi_path)
-            return
-        
-        self.path_helper.set_path(champi_path)
+        if self.ctrl_goal is None or not self.are_ctrl_goals_equal(ctrl_goal, self.ctrl_goal):
+            self.ctrl_goal = ctrl_goal
+            self.fill_path_follow_params()
+
 
     def control_loop_spin_once(self):
-        if self.path_helper.path_finished_FLAG:
-            self.path_helper.path_finished_FLAG = False           
-            self.path_finished_pub.publish(Empty())
-            self.get_logger().warn("FINISHED IN CONTROL")
 
         if self.robot_current_state is None:
             return
-
-        if self.path_helper.robot_should_stop():
-            cmd_vel = Twist()
-            cmd_vel.linear.x = 0.
-            cmd_vel.linear.y = 0.
-            cmd_vel.angular.z = 0.
-            self.cmd_vel_pub.publish(cmd_vel)
+        
+        if self.ctrl_goal is None:
             return
         
-        self.path_helper.update_goal(self.robot_current_state)
-
-        # Maybe, when calling update_goal, we found that the robot is already at the goal
-        if self.path_helper.robot_should_stop():
+        if goal_checker.is_pose_reached(self.ctrl_goal.pose, self.robot_current_state.get_pose_ros(), # TODO rationalize the use of ros poses vs arrays
+                                        self.ctrl_goal.linear_tolerance, self.ctrl_goal.angular_tolerance):
+            self.stop_robot()
             return
 
-        # Compute the command velocity (get required parameters from path_helper)
-        path_follow_params = self.path_helper.get_path_follow_params(self.robot_current_state)
+        # self.get_logger().info(self.path_follow_params.to_string())
 
-        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(path_follow_params)
+        self.update_path_follow_params()
+        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.path_follow_params)
 
         # express cmd in the base_link frame
         cmd_vel = Vel.to_robot_frame(self.robot_current_state.pose, cmd_vel)
@@ -110,7 +91,44 @@ class PathControllerNode(Node):
 
         # Publish the command
         self.cmd_vel_pub.publish(cmd_twist)
+    
 
+    def are_ctrl_goals_equal(self, goal1: CtrlGoal, goal2: CtrlGoal):
+        """
+        Check if two control goals are equal.
+        """
+        return goal1.pose.position.x == goal2.pose.position.x and \
+                goal1.pose.position.y == goal2.pose.position.y
+
+
+    def fill_path_follow_params(self):
+
+        """Use the (new) self.ctrl_goal to fill the path follow params. They should not change until we receive a different CtrlGoal"""
+
+        self.path_follow_params.robot_state = self.robot_current_state
+        self.path_follow_params.segment_start = self.robot_current_state.pose
+        self.path_follow_params.segment_end = pose_to_array(self.ctrl_goal.pose)
+        self.path_follow_params.arrival_speed = self.ctrl_goal.end_speed
+        self.path_follow_params.arrival_angle = 2*atan2(self.ctrl_goal.pose.orientation.z, self.ctrl_goal.pose.orientation.w)
+        self.path_follow_params.max_speed_linear = self.ctrl_goal.max_linear_speed
+        self.path_follow_params.max_speed_angular = self.ctrl_goal.max_angular_speed
+        self.path_follow_params.max_acc_linear = self.max_linear_acceleration
+        self.path_follow_params.max_acc_angular = self.max_angular_acceleration
+            
+    def update_path_follow_params(self):
+        """To be called in the control loop to update the robot state (and potentially other parameters later)"""
+
+        self.path_follow_params.robot_state = self.robot_current_state
+
+
+    def stop_robot(self):
+        """Stop the robot."""
+
+        cmd_vel = Twist()
+        cmd_vel.linear.x = 0.
+        cmd_vel.linear.y = 0.
+        cmd_vel.angular.z = 0.
+        self.cmd_vel_pub.publish(cmd_vel)
 
 def main(args=None):
     rclpy.init(args=args)

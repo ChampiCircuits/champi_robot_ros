@@ -2,7 +2,7 @@
 
 from math import atan2, cos, sin, sqrt
 import numpy as np
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Pose
 
 
 class Vel:
@@ -54,6 +54,17 @@ class RobotState:
         self.pose = pose  # a list of 3 elements [x, y, theta]
         self.vel = vel
 
+    def to_string(self):
+        return f'RobotState(pose={self.pose}, vel={self.vel})'
+    
+    def get_pose_ros(self):
+        pose = Pose()
+        pose.position.x = self.pose[0]
+        pose.position.y = self.pose[1]
+        pose.orientation.z = sin(self.pose[2] / 2)
+        pose.orientation.w = cos(self.pose[2] / 2)
+        return pose
+
 
 class PathFollowParams:
     """This class is used to store the parameters of a CmdVelUpdater class.
@@ -87,6 +98,24 @@ class PathFollowParams:
         self.max_speed_angular = None
         self.max_acc_linear = None
         self.max_acc_angular = None
+    
+    def to_string(self):
+        return f"RobotState: {self.robot_state.to_string()},\n \
+                Segment Start: {self.segment_start},\n \
+                Segment End: {self.segment_end},\n \
+                Arrival Speed: {self.arrival_speed},\n \
+                Arrival Angle: {self.arrival_angle},\n \
+                Max Speed Linear: {self.max_speed_linear},\n \
+                Max Speed Angular: {self.max_speed_angular},\n \
+                Max Acc Linear: {self.max_acc_linear},\n \
+                Max Acc Angular: {self.max_acc_angular}\n\n"
+
+
+def pose_to_array(pose: Pose):
+
+    return [pose.position.x,
+            pose.position.y,
+            2 * atan2(pose.orientation.z, pose.orientation.w)]
 
 
 def dist_point_to_line(point, line):

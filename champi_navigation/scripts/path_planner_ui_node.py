@@ -4,16 +4,9 @@ import rclpy
 from rclpy.node import Node
 
 from rclpy.action import ActionClient
-from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
-from nav_msgs.msg import Path, OccupancyGrid, Odometry
-from std_msgs.msg import String
+from geometry_msgs.msg import PoseStamped
 from champi_interfaces.action import Navigate
-from champi_interfaces.msg import ChampiPath, ChampiPoint, ChampiSegment
 
-from math import sin, cos, atan2, hypot, pi
-import numpy as np
-
-import time
 from icecream import ic
 from rclpy.logging import get_logger
 
@@ -93,9 +86,8 @@ class PathPlannerUINode(Node):
 
     def send_goal(self, goal_pose):
         # Create a Navigate request
-        goal = Navigate.Goal()
-        goal
-        goal.path = self.champi_path_from_goal_pose(goal_pose)
+        goal = self.create_action_goal(goal_pose)
+
         # Send the goal to the action server
         future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
 
@@ -105,36 +97,23 @@ class PathPlannerUINode(Node):
         self.get_logger().info('Goal sent!')
 
 
-    def champi_path_from_goal_pose(self, pose: Pose): # TODO centraliser la création de paths
-    
-        # We leave the first point of segment empty
-        end_champi_point = PathPlannerUINode.pose_to_champi_point(pose)
+    def create_action_goal(self, goal_pose):
 
-        champi_segment = ChampiSegment()
-        champi_segment.end = end_champi_point
-        champi_segment.max_linear_speed = 0.5 # TODO centraliser la config des vitesses
-        champi_segment.max_angular_speed = 1.57
-
-        champi_path_msg = ChampiPath()
-        champi_path_msg.header.frame_id = 'map'
-        champi_path_msg.header.stamp = self.get_clock().now().to_msg()
-        champi_path_msg.segments.append(champi_segment)
-        champi_path_msg.max_time_allowed = 10.
-
-        return champi_path_msg
-
-
+        goal = Navigate.Goal()
         
-    def pose_to_champi_point(pose: Pose) -> ChampiPoint: #TODO devrait être supprimée prochainement
-        champi_point = ChampiPoint()
-        champi_point.name = ""
-        champi_point.pose = pose
-        champi_point.point_type = 1 # TODO has a use??
-        champi_point.linear_tolerance = 0.05 # TODO use enum or predefined values
-        champi_point.angular_tolerance = 0.05 # TODO use enum or predefined values
-        champi_point.robot_should_stop_here = False
-        return champi_point
+        goal.pose = goal_pose
+        
+        goal.end_speed = 0.2
 
+        goal.max_linear_speed = 0.2
+        goal.max_angular_speed = 1.5
+        
+        goal.linear_tolerance = 0.01
+        goal.angular_tolerance = 0.1
+
+        goal.do_look_at_point = False
+
+        return goal
 
  
 

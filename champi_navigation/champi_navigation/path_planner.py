@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
 from geometry_msgs.msg import Pose
-from champi_interfaces.msg import ChampiPath, ChampiSegment, ChampiPoint
 
-from math import sin, cos, atan2, hypot
-import time
+from math import hypot
 from enum import Enum
 
 from astar import AStar
@@ -13,7 +11,7 @@ from bresenham import bresenham
 
 class CostmapPathFinder(AStar):
 
-    def __init__(self, width, height, m_per_pixel):
+    def __init__(self, width, height):
         # Costmap is a np array
         self.costmap = None
         self.width = width
@@ -64,74 +62,12 @@ class CostmapPathFinder(AStar):
 
 
 class ComputePathResult(Enum):
-    SUCCESS = 0
+    SUCCESS_STRAIGHT = 0
     START_NOT_IN_COSTMAP = 1
     GOAL_NOT_IN_COSTMAP = 2
     GOAL_IN_OCCUPIED_CELL = 3
     NO_PATH_FOUND = 4
-    
-def path_to_msg(path: list[Pose]) -> ChampiPath:
-
-    """
-    Always give an angle (unless you give an empty path, then the angle is not used)
-    :param path: list[tuple[x,y,theta]]
-    :param angle:
-    :return:
-    """
-
-    champi_path_msg = ChampiPath()
-    champi_path_msg.header.frame_id = 'map'
-    t = time.time()
-    champi_path_msg.header.stamp.sec = int(t)
-    champi_path_msg.header.stamp.nanosec = int((t - int(t)) * 1e9)
-
-    if len(path) == 0:
-        return champi_path_msg
-    
-    last_pose = path[-1]
-
-    for i in range(len(path)):
-        if i+1 == len(path):
-            break
-        
-        start_pose = Pose()
-        start_pose.position.x = path[i].position.x
-        start_pose.position.y = path[i].position.y
-        start_pose.position.z = 0.
-        start_pose.orientation.x = 0.
-        start_pose.orientation.y = 0.
-        start_pose.orientation.z = 0.
-        start_pose.orientation.w = 1.
-
-        start_champi_point = ChampiPoint()
-        start_champi_point.pose = start_pose
-        
-        end_pose = Pose()
-        end_pose.position.x = path[i+1].position.x
-        end_pose.position.y = path[i+1].position.y
-        end_pose.position.z = 0.
-        end_pose.orientation.x = 0.
-        end_pose.orientation.y = 0.
-
-        
-        if i+2 == len(path):
-            # Set the orientation of the last pose 
-            end_pose.orientation.z = path[i+1].orientation.z
-            end_pose.orientation.w = path[i+1].orientation.w
-        else:
-            end_pose.orientation.z = 0.
-            end_pose.orientation.w = 1.
-
-        end_champi_point = ChampiPoint()
-        end_champi_point.pose = end_pose
-
-        champi_segment = ChampiSegment()
-        champi_segment.start = start_champi_point
-        champi_segment.end = end_champi_point
-
-        champi_path_msg.segments.append(champi_segment)
-
-    return champi_path_msg
+    SUCCESS_AVOIDANCE = 5
 
 
 def is_line_free(start:tuple[int,int], end:tuple[int,int], costmap) -> bool:
@@ -160,9 +96,10 @@ class AStarPathPlanner:
     def __init__(self, width, height, m_per_pixel):
 
         self.m_per_pixel = m_per_pixel
-        self.costmap_path_finder = CostmapPathFinder(width, height, m_per_pixel)
+        self.costmap_path_finder = CostmapPathFinder(width, height)
 
-    def compute_path(self, robot_pose: Pose, goal_pose: Pose, costmap) -> tuple[ChampiPath, ComputePathResult]:
+
+    def compute_path(self, robot_pose: Pose, goal_pose: Pose, costmap) -> tuple[list[Pose], ComputePathResult]:
 
         start: tuple[int, int] = self.m_to_pixel(robot_pose)
         goal:  tuple[int, int] = self.m_to_pixel(goal_pose)
@@ -171,13 +108,13 @@ class AStarPathPlanner:
         if not (0 <= start[0] < costmap.shape[1] and 0 <= start[1] < costmap.shape[0]):
             return None, ComputePathResult.START_NOT_IN_COSTMAP
         if not (0 <= goal[0] < costmap.shape[1] and 0 <= goal[1] < costmap.shape[0]):
-            path_msg = path_to_msg([])
-            return path_msg, ComputePathResult.GOAL_NOT_IN_COSTMAP
+            path_poses = []
+            return path_poses, ComputePathResult.GOAL_NOT_IN_COSTMAP
 
         # If goal is in an occupied cell, return
         if costmap[goal[1], goal[0]] != 0:
-            path_msg = path_to_msg([])
-            return path_msg, ComputePathResult.GOAL_IN_OCCUPIED_CELL
+            path_poses = []
+            return path_poses, ComputePathResult.GOAL_IN_OCCUPIED_CELL
 
 
         # If start is in an occupied cell, find the closest free cell
@@ -185,20 +122,20 @@ class AStarPathPlanner:
             # start = self.handle_start_in_occupied_cell_by_finding_closest_free_cell(start, costmap)
             start = self.handle_start_in_occupied_cell_by_clearing(start, costmap)
             if start is None:
-                path_msg = path_to_msg([])
-                return path_msg, ComputePathResult.NO_PATH_FOUND
+                path_poses = []
+                return path_poses, ComputePathResult.NO_PATH_FOUND
 
         # If line is free, just go straight (no need to pathfind, we save time)
         if is_line_free(start, goal, costmap):
-            path_msg = path_to_msg([robot_pose, goal_pose])
-            return path_msg, ComputePathResult.SUCCESS
+            path_poses = [robot_pose, goal_pose]
+            return path_poses, ComputePathResult.SUCCESS_STRAIGHT
 
         # Compute the path
         path = self.costmap_path_finder.compute_path(start, goal, costmap)
 
         if path is None: # No path found
-            path_msg = path_to_msg([])
-            return path_msg, ComputePathResult.NO_PATH_FOUND
+            path_poses = []
+            return path_poses, ComputePathResult.NO_PATH_FOUND
 
         path = list(path)
 
@@ -207,13 +144,21 @@ class AStarPathPlanner:
         # Convert path to meters
         path_m = [self.pixel_to_m(p) for p in path]
 
+        # Create pose from points. Use orientation from the goal
+        path_poses = []
+        for p in path_m:
+            pose = Pose()
+            pose.position.x = p[0]
+            pose.position.y = p[1]
+            pose.orientation = goal_pose.orientation
+            path_poses.append(pose)
+
         # Replace start and end with the actual start and end
-        path_m[0] = robot_pose
-        path_m[-1] = goal_pose  # goal is already in m
+        path_poses[0] = robot_pose
+        path_poses[-1] = goal_pose  # goal is already in m
 
-        path_msg = path_to_msg(path_m)
+        return path_poses, ComputePathResult.SUCCESS_AVOIDANCE
 
-        return path_msg, ComputePathResult.SUCCESS
 
     def handle_start_in_occupied_cell_by_clearing(self, start, costmap):
         """
@@ -267,5 +212,5 @@ class AStarPathPlanner:
     def m_to_pixel(self, pose:Pose):
         return int(pose.position.x / self.m_per_pixel), int(pose.position.y / self.m_per_pixel)
 
-    def pixel_to_m(self, pose:Pose):
-        return pose.position.x * self.m_per_pixel, pose.position.y * self.m_per_pixel
+    def pixel_to_m(self, pos):
+        return pos[0] * self.m_per_pixel, pos[1] * self.m_per_pixel

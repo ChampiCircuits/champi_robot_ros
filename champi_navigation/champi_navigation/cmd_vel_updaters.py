@@ -80,3 +80,69 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         return cmd_vel
 
 
+
+
+"""
+TODO: Create a new CmdVelUpdater that features "look_at_point". Je pense que c'est la meilleure façon de le faire.
+Il faudrait revoir certaines choses: par exemple, tourner avant de commencer à rouler ? sinon le look at point ne 
+va pas être respecté au début.
+
+Copiers-collers de l'ancienne implémentation, retirée pour l'instant:
+
+
+    def calculate_angle_to_target(robot_pose, target_pose: Pose):
+        x_robot = robot_pose[0]
+        y_robot = robot_pose[1]
+        yaw_robot = robot_pose[2]
+        x_target = target_pose.position.x
+        y_target = target_pose.position.y
+
+        delta_x = x_target - x_robot
+        delta_y = y_target - y_robot
+
+        target_angle = atan2(delta_y, delta_x)
+
+        delta_theta = target_angle - yaw_robot
+
+        # normalize angle between [-pi and pi]
+        delta_theta = atan2(sin(delta_theta), cos(delta_theta))
+
+        return delta_theta + yaw_robot
+
+
+        -------------------------------------------------------------------------
+        
+
+        if current_champi_segment.do_look_at_point:
+            p.arrival_angle = self.calculate_angle_to_target(robot_current_state.pose, current_champi_segment.look_at_point.pose)
+        else:
+            p.arrival_angle = self.get_arrival_angle()
+
+        
+            
+        -------------------------------------------------------------------------
+        
+
+    def is_current_goal_reached(self, robot_current_state):
+        "Checks if the goal is reached and switch to the next one if it is the case.
+        Should not be called if i_goal is None = no path to follow."
+
+        current_champi_segment: ChampiSegment = self.champi_path.segments[self.i_goal-1]
+        
+        error_max_lin = current_champi_segment.end.linear_tolerance
+        error_max_ang = current_champi_segment.end.angular_tolerance
+
+
+        if not current_champi_segment.do_look_at_point:
+            target_angle = self.current_seg_end[2]
+        else:
+            target_angle = self.calculate_angle_to_target(robot_current_state.pose, current_champi_segment.look_at_point.pose)
+
+        angle_ok = self.check_angle(robot_current_state.pose[2], target_angle, error_max_ang)
+        
+        return (abs(robot_current_state.pose[0] - self.current_seg_end[0]) < error_max_lin
+                and abs(robot_current_state.pose[1] - self.current_seg_end[1]) < error_max_lin
+                and angle_ok)
+
+
+"""

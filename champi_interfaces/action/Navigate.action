@@ -1,5 +1,19 @@
 # Request
-ChampiPath path
+geometry_msgs/Pose pose
+
+float32 end_speed
+
+float32 max_linear_speed
+float32 max_angular_speed
+
+float32 linear_tolerance
+float32 angular_tolerance
+
+bool do_look_at_point
+geometry_msgs/Point look_at_point
+float32 robot_angle_when_looking_at_point
+
+float32 timeout
 ---
 # Result
 bool success

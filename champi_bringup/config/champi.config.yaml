@@ -115,8 +115,6 @@ costmap_updater:
 path_controller:
   ros__parameters:
     control_loop_period: 0.1 # s
-    max_linear_speed: 0.2 # m/s
-    max_angular_speed: 1.5 # rad/s
     max_linear_acceleration: 0.3 # m/s^2
     max_angular_acceleration: 1.0 # rad/s^2
 
