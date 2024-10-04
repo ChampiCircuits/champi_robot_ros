@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import champi_navigation.goal_checker as goal_checker
-from champi_navigation.utils import Vel, RobotState, PathFollowParams, pose_to_array
+import champi_navigation.utils as cu
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
 
 from math import atan2, cos, sin
@@ -40,7 +40,7 @@ class PathControllerNode(Node):
         # Other objects instantiation
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
 
-        self.path_follow_params = PathFollowParams()
+        self.path_follow_params = cu.PathFollowParams()
 
         self.robot_current_state = None
 
@@ -49,10 +49,10 @@ class PathControllerNode(Node):
 
     def current_pose_callback(self, msg):
         """Callback for the current pose message. It is called when a new pose is received from topic."""
-        pose = [msg.pose.pose.position.x, msg.pose.pose.position.y, 2*atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)]
-        vel = Vel(msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.angular.z)
-        vel = Vel.to_global_frame(pose, vel)
-        self.robot_current_state = RobotState(pose, vel)
+        pose = cu.Pose2D(pose=msg.pose.pose)
+        vel = cu.Vel2D(msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.angular.z)
+        vel = cu.Vel2D.to_global_frame(pose, vel)
+        self.robot_current_state = cu.RobotState(pose, vel)
 
 
     def ctrl_goal_callback(self, ctrl_goal: CtrlGoal):
@@ -74,7 +74,7 @@ class PathControllerNode(Node):
         if self.ctrl_goal is None:
             return
         
-        if goal_checker.is_pose_reached(self.ctrl_goal.pose, self.robot_current_state.get_pose_ros(), # TODO rationalize the use of ros poses vs arrays
+        if goal_checker.is_pose_reached(self.ctrl_goal.pose, self.robot_current_state.pose.to_ros_pose(),
                                         self.ctrl_goal.linear_tolerance, self.ctrl_goal.angular_tolerance):
             self.stop_robot()
             return
@@ -85,7 +85,7 @@ class PathControllerNode(Node):
         cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.path_follow_params)
 
         # express cmd in the base_link frame
-        cmd_vel = Vel.to_robot_frame(self.robot_current_state.pose, cmd_vel)
+        cmd_vel = cu.Vel2D.to_robot_frame(self.robot_current_state.pose, cmd_vel)
         # convert to cmd_twist
         cmd_twist = cmd_vel.to_twist()
 
@@ -107,9 +107,8 @@ class PathControllerNode(Node):
 
         self.path_follow_params.robot_state = self.robot_current_state
         self.path_follow_params.segment_start = self.robot_current_state.pose
-        self.path_follow_params.segment_end = pose_to_array(self.ctrl_goal.pose)
+        self.path_follow_params.segment_end = cu.Pose2D(pose=self.ctrl_goal.pose)
         self.path_follow_params.arrival_speed = self.ctrl_goal.end_speed
-        self.path_follow_params.arrival_angle = 2*atan2(self.ctrl_goal.pose.orientation.z, self.ctrl_goal.pose.orientation.w)
         self.path_follow_params.max_speed_linear = self.ctrl_goal.max_linear_speed
         self.path_follow_params.max_speed_angular = self.ctrl_goal.max_angular_speed
         self.path_follow_params.max_acc_linear = self.max_linear_acceleration
@@ -129,6 +128,7 @@ class PathControllerNode(Node):
         cmd_vel.linear.y = 0.
         cmd_vel.angular.z = 0.
         self.cmd_vel_pub.publish(cmd_vel)
+
 
 def main(args=None):
     rclpy.init(args=args)

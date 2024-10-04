@@ -5,7 +5,7 @@ import numpy as np
 from geometry_msgs.msg import Twist, Pose
 
 
-class Vel:
+class Vel2D:
     """Velocity. It can be expressed in any frame."""
     def __init__(self, x=0., y=0., theta=0.):
         self.x = x # m/s
@@ -35,35 +35,93 @@ class Vel:
     @staticmethod
     def to_robot_frame(robot_pose, cmd_vel):
         """Transform a velocity expressed in the base_link frame to the robot frame"""
-        x = cmd_vel.x * cos(robot_pose[2]) + cmd_vel.y * sin(robot_pose[2])
-        y = -cmd_vel.x * sin(robot_pose[2]) + cmd_vel.y * cos(robot_pose[2])
+        x = cmd_vel.x * cos(robot_pose.theta) + cmd_vel.y * sin(robot_pose.theta)
+        y = -cmd_vel.x * sin(robot_pose.theta) + cmd_vel.y * cos(robot_pose.theta)
         theta = cmd_vel.theta
-        return Vel(x, y, theta)
+        return Vel2D(x, y, theta)
     
     @staticmethod
     def to_global_frame(robot_pose, cmd_vel):
         """Transform a velocity expressed in the robot frame to the base_link frame"""
-        x = cmd_vel.x * cos(robot_pose[2]) - cmd_vel.y * sin(robot_pose[2])
-        y = cmd_vel.x * sin(robot_pose[2]) + cmd_vel.y * cos(robot_pose[2])
+        x = cmd_vel.x * cos(robot_pose.theta) - cmd_vel.y * sin(robot_pose.theta)
+        y = cmd_vel.x * sin(robot_pose.theta) + cmd_vel.y * cos(robot_pose.theta)
         theta = cmd_vel.theta
-        return Vel(x, y, theta)
+        return Vel2D(x, y, theta)
+
+
+class Pose2D:
+    def __init__(self, x=0., y=0., theta=0., pose:Pose=None):
+
+        # This assertion is here because it's easy to do mistakes with that constructor, e.g Pose2D(pose) instead of Pose2D(pose=pose)
+        assert type(x) == float and type(y) == float and type(theta) == float, "x, y and theta must be floats"
+
+        if pose is not None:
+            self.x = pose.position.x
+            self.y = pose.position.y
+            self.theta = 2 * atan2(pose.orientation.z, pose.orientation.w)
+        else:
+            self.x = x
+            self.y = y
+            self.theta = theta
+
+    def to_ros_pose(self):
+        print("pose2D :")
+        print(self.x)
+        print(self.y)
+        pose = Pose()
+        pose.position.x = self.x
+        pose.position.y = self.y
+        pose.orientation.z = sin(self.theta / 2)
+        pose.orientation.w = cos(self.theta / 2)
+        return pose
+    
+
+    def dist_to_line(self, start, end):
+        """Compute the distance between this point and a LINE (not segment!) defined by two points.
+
+        Args:
+            start (Pose2D): Start of the line
+            end (Pose2D): Start of the line
+
+        Returns:
+            float: The distance between the point and the line
+        """
+        x0, y0 = self.x, self.y
+        x1, y1 = start.x, start.y
+        x2, y2 = end.x, end.y
+        return abs((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
+
+
+    def dist_to_line_signed(self, start, end):
+        """Compute the distance between this point and a LINE (not segment!) defined by two points.
+        Positive if point is on one side of the line, negative if on the other side.
+
+        Args:
+            start (Pose2D): Start of the line
+            end (Pose2D): Start of the line
+
+        Returns:
+            float: The distance between the point and the line
+        """
+        x0, y0 = self.x, self.y
+        x1, y1 = start.x, start.y
+        x2, y2 = end.x, end.y
+        return ((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
+    
+    def position_equals(self, other):
+        return self.x == other.x and self.y == other.y
+    
+    def __str__(self):
+        return f'Pose2D(x={self.x}, y={self.y}, theta={self.theta})'
 
 
 class RobotState:
-    def __init__(self, pose: np.array, vel: Vel):
-        self.pose = pose  # a list of 3 elements [x, y, theta]
+    def __init__(self, pose: Pose2D, vel: Vel2D):
+        self.pose = pose
         self.vel = vel
 
     def to_string(self):
         return f'RobotState(pose={self.pose}, vel={self.vel})'
-    
-    def get_pose_ros(self):
-        pose = Pose()
-        pose.position.x = self.pose[0]
-        pose.position.y = self.pose[1]
-        pose.orientation.z = sin(self.pose[2] / 2)
-        pose.orientation.w = cos(self.pose[2] / 2)
-        return pose
 
 
 class PathFollowParams:
@@ -75,7 +133,7 @@ class PathFollowParams:
     - Segment Start Pose (note: the segment is the line that is currently being followed)
     - Segment End Pose (goal)
     - Arrival Speed (at goal)
-    - Arrival Angle
+    - Arrival Angle TODO
 
     - max_speed_linear
     - max_speed_angular
@@ -93,7 +151,6 @@ class PathFollowParams:
         self.segment_start = None # type Pose
         self.segment_end = None # type Pose
         self.arrival_speed = None
-        self.arrival_angle = None
         self.max_speed_linear = None
         self.max_speed_angular = None
         self.max_acc_linear = None
@@ -104,29 +161,7 @@ class PathFollowParams:
                 Segment Start: {self.segment_start},\n \
                 Segment End: {self.segment_end},\n \
                 Arrival Speed: {self.arrival_speed},\n \
-                Arrival Angle: {self.arrival_angle},\n \
                 Max Speed Linear: {self.max_speed_linear},\n \
                 Max Speed Angular: {self.max_speed_angular},\n \
                 Max Acc Linear: {self.max_acc_linear},\n \
                 Max Acc Angular: {self.max_acc_angular}\n\n"
-
-
-def pose_to_array(pose: Pose):
-
-    return [pose.position.x,
-            pose.position.y,
-            2 * atan2(pose.orientation.z, pose.orientation.w)]
-
-
-def dist_point_to_line(point, line):
-    x0, y0 = point
-    x1, y1 = line[0]
-    x2, y2 = line[1]
-    return abs((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
-
-
-def dist_point_to_line_signed(point, line):
-    x0, y0 = point
-    x1, y1 = line[0]
-    x2, y2 = line[1]
-    return ((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)

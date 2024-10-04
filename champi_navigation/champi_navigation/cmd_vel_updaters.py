@@ -1,7 +1,7 @@
 from math import pi, atan2, sqrt, cos, sin
 
 from champi_navigation.pid import PID
-from champi_navigation.utils import Vel, dist_point_to_line_signed, PathFollowParams
+import champi_navigation.utils as cu
 
 from wpimath.trajectory import TrapezoidProfile
 
@@ -15,7 +15,7 @@ class CmdVelUpdaterInterface:
     periodically to update the velocity of the robot.
     """
 
-    def compute_cmd_vel(self, p: PathFollowParams):
+    def compute_cmd_vel(self, p: cu.PathFollowParams):
         pass
 
 
@@ -27,15 +27,15 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
 
         self.pid_correct_dir = PID(5, 0, 1)
 
-    def compute_cmd_vel(self, p: PathFollowParams):
+    def compute_cmd_vel(self, p: cu.PathFollowParams):
 
         # TODO update constraints if needed
         self.constraints_mag = TrapezoidProfile.Constraints(p.max_speed_linear, p.max_acc_linear)
         self.constraints_theta = TrapezoidProfile.Constraints(p.max_speed_angular, p.max_acc_angular)
 
 
-        angle_vec_dir = atan2(p.segment_end[1] - p.robot_state.pose[1], p.segment_end[0] - p.robot_state.pose[0])
-        dist_robot_to_goal = sqrt((p.segment_end[0] - p.robot_state.pose[0]) ** 2 + (p.segment_end[1] - p.robot_state.pose[1]) ** 2)
+        angle_vec_dir = atan2(p.segment_end.y - p.robot_state.pose.y, p.segment_end.x - p.robot_state.pose.x)
+        dist_robot_to_goal = sqrt((p.segment_end.x - p.robot_state.pose.x) ** 2 + (p.segment_end.y - p.robot_state.pose.y) ** 2)
         # robot vel along the vector between robot and goal
         robot_vel_along_vec = p.robot_state.vel.x * cos(angle_vec_dir) + p.robot_state.vel.y * sin(angle_vec_dir)
 
@@ -47,7 +47,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         cmd_vel_along_vec = profile_mag.calculate(0.1).velocity
 
         # Compute angular velocity
-        theta_error = p.arrival_angle - p.robot_state.pose[2]
+        theta_error = p.segment_end.theta - p.robot_state.pose.theta
         if abs(theta_error) > pi:
             if theta_error > 0:
                 theta_error -= 2 * pi
@@ -60,8 +60,8 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         cmd_vel_theta = profile_theta.calculate(0.1).velocity
 
         dist = 0
-        if p.robot_state.pose[:2] != p.segment_start[:2]:
-            dist = dist_point_to_line_signed(p.robot_state.pose[:2], [p.segment_start[:2], p.segment_end[:2]])
+        if not p.robot_state.pose.position_equals(p.segment_start): # TODO do we need to test that ?
+            dist = p.robot_state.pose.dist_to_line_signed(p.segment_start, p.segment_end)
 
         correction = self.pid_correct_dir.update(dist, 0.1)
 
@@ -74,10 +74,17 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         angle_vec_dir += correction
 
         # Fill cmd_vel
-        cmd_vel = Vel()
+        cmd_vel = cu.Vel2D()
         cmd_vel.init_from_mag_ang(cmd_vel_along_vec, angle_vec_dir, cmd_vel_theta)
 
         return cmd_vel
+
+
+    # def get_theta_error_seg_end(robot_pose, seg_end_pose): TODO
+    #     pass
+
+        
+        
 
 
 
