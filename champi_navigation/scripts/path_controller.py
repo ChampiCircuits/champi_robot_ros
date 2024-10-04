@@ -4,8 +4,6 @@ import champi_navigation.goal_checker as goal_checker
 import champi_navigation.utils as cu
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
 
-from math import atan2, cos, sin
-
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
@@ -21,18 +19,18 @@ class PathControllerNode(Node):
 
         # Parameters
 
-        self.control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
-        self.max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
-        self.max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
+        control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
+        max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
+        max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Controller started with the following parameters:')
-        self.get_logger().info(f'control_loop_period: {self.control_loop_period}')
-        self.get_logger().info(f'max_linear_acceleration: {self.max_linear_acceleration}')
-        self.get_logger().info(f'max_angular_acceleration: {self.max_angular_acceleration}')
+        self.get_logger().info(f'control_loop_period: {control_loop_period}')
+        self.get_logger().info(f'max_linear_acceleration: {max_linear_acceleration}')
+        self.get_logger().info(f'max_angular_acceleration: {max_angular_acceleration}')
 
         # ROS subscriptions, publishers and timers
-        self.timer = self.create_timer(self.control_loop_period, self.control_loop_spin_once)
+        self.timer = self.create_timer(control_loop_period, self.control_loop_spin_once)
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.champi_path_sub = self.create_subscription(CtrlGoal, '/plan', self.ctrl_goal_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
@@ -40,7 +38,7 @@ class PathControllerNode(Node):
         # Other objects instantiation
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
 
-        self.path_follow_params = cu.PathFollowParams()
+        self.path_follow_params = cu.PathFollowParams(max_linear_acceleration, max_angular_acceleration)
 
         self.robot_current_state = None
 
@@ -63,7 +61,7 @@ class PathControllerNode(Node):
         
         if self.ctrl_goal is None or not self.are_ctrl_goals_equal(ctrl_goal, self.ctrl_goal):
             self.ctrl_goal = ctrl_goal
-            self.fill_path_follow_params()
+            self.path_follow_params.update_ctrl_goal(self.robot_current_state, ctrl_goal)
 
 
     def control_loop_spin_once(self):
@@ -74,8 +72,7 @@ class PathControllerNode(Node):
         if self.ctrl_goal is None:
             return
         
-        if goal_checker.is_pose_reached(self.ctrl_goal.pose, self.robot_current_state.pose.to_ros_pose(),
-                                        self.ctrl_goal.linear_tolerance, self.ctrl_goal.angular_tolerance):
+        if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):
             self.stop_robot()
             return
 
@@ -100,19 +97,6 @@ class PathControllerNode(Node):
         return goal1.pose.position.x == goal2.pose.position.x and \
                 goal1.pose.position.y == goal2.pose.position.y
 
-
-    def fill_path_follow_params(self):
-
-        """Use the (new) self.ctrl_goal to fill the path follow params. They should not change until we receive a different CtrlGoal"""
-
-        self.path_follow_params.robot_state = self.robot_current_state
-        self.path_follow_params.segment_start = self.robot_current_state.pose
-        self.path_follow_params.segment_end = cu.Pose2D(pose=self.ctrl_goal.pose)
-        self.path_follow_params.arrival_speed = self.ctrl_goal.end_speed
-        self.path_follow_params.max_speed_linear = self.ctrl_goal.max_linear_speed
-        self.path_follow_params.max_speed_angular = self.ctrl_goal.max_angular_speed
-        self.path_follow_params.max_acc_linear = self.max_linear_acceleration
-        self.path_follow_params.max_acc_angular = self.max_angular_acceleration
             
     def update_path_follow_params(self):
         """To be called in the control loop to update the robot state (and potentially other parameters later)"""
@@ -122,7 +106,6 @@ class PathControllerNode(Node):
 
     def stop_robot(self):
         """Stop the robot."""
-
         cmd_vel = Twist()
         cmd_vel.linear.x = 0.
         cmd_vel.linear.y = 0.

@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 
 from rclpy.action import ActionClient
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Point
 from champi_interfaces.action import Navigate
 
 from icecream import ic
@@ -103,7 +103,7 @@ class PathPlannerUINode(Node):
         
         goal.pose = goal_pose
         
-        goal.end_speed = 0.2
+        goal.end_speed = 0.
 
         goal.max_linear_speed = 0.2
         goal.max_angular_speed = 1.5
@@ -112,6 +112,11 @@ class PathPlannerUINode(Node):
         goal.angular_tolerance = 0.1
 
         goal.do_look_at_point = False
+
+        # goal.look_at_point = Point()
+        # goal.look_at_point.x = 1.
+        # goal.look_at_point.y = 1.
+        # goal.look_at_point.z = 0.
 
         return goal
 

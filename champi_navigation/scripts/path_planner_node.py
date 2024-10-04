@@ -12,7 +12,6 @@ from nav_msgs.msg import OccupancyGrid, Odometry, Path
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import CtrlGoal
 from geometry_msgs.msg import Pose, PoseStamped
-from std_msgs.msg import Empty
 
 from math import pi
 import numpy as np
@@ -20,9 +19,9 @@ import time
 
 from champi_navigation.path_planner import AStarPathPlanner, ComputePathResult
 import champi_navigation.goal_checker as goal_checker
+import champi_navigation.utils as cu
 
 from rclpy.logging import get_logger
-
 
 
 class PlannerNode(Node):
@@ -51,7 +50,6 @@ class PlannerNode(Node):
 
         self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
         self.costmap_sub = self.create_subscription(OccupancyGrid, '/costmap', self.costmap_callback, 10)
-        self.path_finished_sub = self.create_subscription(Empty, '/path_finished', self.path_finished_callback, 10)
 
         self.action_server_navigate = ActionServer(self, Navigate, '/navigate',
                                                    self.execute_callback,
@@ -75,15 +73,11 @@ class PlannerNode(Node):
 
     # ==================================== ROS2 Callbacks ==========================================
 
-    def path_finished_callback(self, msg):
-        self.path_finished = True
-        self.get_logger().warn("PATH FINISHED")
-
     def odom_callback(self, msg):
         self.robot_pose = Pose()
         self.robot_pose.position = msg.pose.pose.position
         self.robot_pose.orientation = msg.pose.pose.orientation
-    
+        
 
     def navigate_callback(self, navigate_goal: Navigate.Goal):
         self.get_logger().info('New Navigate request received!')
@@ -118,7 +112,10 @@ class PlannerNode(Node):
 
 
             # Check if goal is reached
-            if goal_checker.is_pose_reached(self.robot_pose, self.current_navigate_goal.pose,
+            if goal_checker.is_goal_reached(cu.Pose2D(pose=self.current_navigate_goal.pose),
+                                            cu.Pose2D(pose=self.robot_pose),
+                                            self.current_navigate_goal.do_look_at_point,
+                                            cu.Pose2D(point=self.current_navigate_goal.look_at_point),
                                             self.current_navigate_goal.linear_tolerance,
                                             self.current_navigate_goal.angular_tolerance):
                 navigate_goal_reached = True
@@ -186,7 +183,10 @@ class PlannerNode(Node):
 
     def cancel_callback(self, goal_handle):
         self.get_logger().info('Goal cancelled!')
-        self.goal_handle_navigate.abort()
+        if self.planning:
+            self.goal_handle_navigate.abort()
+        else:
+            self.get_logger().warn('No goal to cancel!')  # Can happen if the robot reach the arrival at the same time as the goal is cancelled
         self.planning = False
         return CancelResponse.ACCEPT
 
