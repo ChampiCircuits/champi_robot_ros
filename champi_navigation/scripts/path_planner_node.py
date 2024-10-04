@@ -62,6 +62,7 @@ class PlannerNode(Node):
         self.goal_handle_navigate = None
 
         self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
+        self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
 
         self.robot_pose: Pose = None
         self.costmap = None
@@ -114,6 +115,7 @@ class PlannerNode(Node):
             # Check if goal is reached
             if goal_checker.is_goal_reached(cu.Pose2D(pose=self.current_navigate_goal.pose),
                                             cu.Pose2D(pose=self.robot_pose),
+                                            self.current_navigate_goal.end_speed == 0,
                                             self.current_navigate_goal.do_look_at_point,
                                             cu.Pose2D(point=self.current_navigate_goal.look_at_point),
                                             self.current_navigate_goal.linear_tolerance,
@@ -129,7 +131,7 @@ class PlannerNode(Node):
                 is_waypoint = (result == ComputePathResult.SUCCESS_AVOIDANCE)
 
                 # Create a CtrlGoal
-                ctrl_goal = PlannerNode.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint)
+                ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint)
                 ctrl_goal.pose = path[1]
                 
                 # Publish goal
@@ -213,7 +215,7 @@ class PlannerNode(Node):
 
 
 
-    def create_ctrl_goal_from_navigate_goal(navigate_goal: Navigate.Goal, is_waypoint) -> CtrlGoal:
+    def create_ctrl_goal_from_navigate_goal(self, navigate_goal: Navigate.Goal, is_waypoint) -> CtrlGoal:
 
         """
         Create a CtrlGoal from a Navigate goal, transferring all the fields.
@@ -226,13 +228,14 @@ class PlannerNode(Node):
 
         if is_waypoint:
             ctrl_goal.end_speed = navigate_goal.max_linear_speed
+            ctrl_goal.linear_tolerance = self.waypoint_tolerance
         else:
             ctrl_goal.end_speed = navigate_goal.end_speed
+            ctrl_goal.linear_tolerance = navigate_goal.linear_tolerance
 
         ctrl_goal.max_linear_speed = navigate_goal.max_linear_speed
         ctrl_goal.max_angular_speed = navigate_goal.max_angular_speed
 
-        ctrl_goal.linear_tolerance = navigate_goal.linear_tolerance
         ctrl_goal.angular_tolerance = navigate_goal.angular_tolerance
 
         ctrl_goal.do_look_at_point = navigate_goal.do_look_at_point

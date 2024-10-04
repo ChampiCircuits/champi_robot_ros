@@ -7,23 +7,40 @@ from icecream import ic
 
 
 
-def is_goal_reached(goal_pose:Pose2D, current_pose:Pose2D, do_look_at_point:bool, look_at_point:Pose2D, linear_tolerance:float, angular_tolerance:float):
+def is_goal_reached(goal_pose:Pose2D, current_pose:Pose2D, arrival_speed_0:bool, do_look_at_point:bool, look_at_point:Pose2D, linear_tolerance:float, angular_tolerance:float):
 
-    if not do_look_at_point:  # goal reached -> pose reached
-        return is_pose_reached(goal_pose, current_pose, linear_tolerance, angular_tolerance)
+    if arrival_speed_0:
+
+
+        if not do_look_at_point:  # goal reached -> pose reached
+            return is_pose_reached(goal_pose, current_pose, linear_tolerance, angular_tolerance)
+        
+        # if look_at_point is set, goal reached -> position reached then error angle to look at point = 0
+
+        angle_error = abs(current_pose.get_angle_difference_to_look_at(look_at_point))
+        return is_position_reached(goal_pose, current_pose, linear_tolerance) and angle_error < angular_tolerance
     
-    # if look_at_point is set, goal reached -> position reached then error angle to look at point = 0
 
-    angle_error = abs(current_pose.get_angle_difference_to_look_at(look_at_point))
-    return is_position_reached(goal_pose, current_pose, linear_tolerance) and angle_error < angular_tolerance
+    # If we reach this, arrival speed is non-zero. In that case, we only check if the position is reached.
+    # If we were waiting for the orientation to be good, the robot would be turning around the point at arrival_speed
+    # untill the orientation is reached.
+
+    return is_position_reached(goal_pose, current_pose, linear_tolerance)
 
 
 def is_ctrl_goal_reached(goal:CtrlGoal, current_pose:Pose2D):
-    """Little wrapper of is_goal_reached for use by the controller"""
 
     return is_goal_reached(
         Pose2D(pose=goal.pose),
-        current_pose, goal.do_look_at_point, Pose2D(point=goal.look_at_point), goal.linear_tolerance, goal.angular_tolerance)
+        current_pose,
+        goal.end_speed == 0,
+        goal.do_look_at_point,
+        Pose2D(point=goal.look_at_point),
+        goal.linear_tolerance,
+        goal.angular_tolerance)
+    
+
+
 
 
 def is_pose_reached(goal:Pose2D, current_pose:Pose2D, linear_tolerance:float, angular_tolerance:float):

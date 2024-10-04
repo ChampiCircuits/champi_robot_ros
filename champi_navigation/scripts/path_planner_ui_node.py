@@ -103,7 +103,7 @@ class PathPlannerUINode(Node):
         
         goal.pose = goal_pose
         
-        goal.end_speed = 0.
+        goal.end_speed = 0.2
 
         goal.max_linear_speed = 0.2
         goal.max_angular_speed = 1.5

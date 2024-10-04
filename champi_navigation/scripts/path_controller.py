@@ -8,9 +8,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Pose
 from champi_interfaces.msg import CtrlGoal
-from std_msgs.msg import Empty
 
 
 class PathControllerNode(Node):
@@ -44,7 +42,6 @@ class PathControllerNode(Node):
 
         self.ctrl_goal: CtrlGoal = None
 
-
     def current_pose_callback(self, msg):
         """Callback for the current pose message. It is called when a new pose is received from topic."""
         pose = cu.Pose2D(pose=msg.pose.pose)
@@ -73,10 +70,11 @@ class PathControllerNode(Node):
             return
         
         if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):
+            
+            
+            
             self.stop_robot()
             return
-
-        # self.get_logger().info(self.path_follow_params.to_string())
 
         self.update_path_follow_params()
         cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.path_follow_params)

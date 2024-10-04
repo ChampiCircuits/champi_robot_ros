@@ -1,9 +1,14 @@
-from math import pi, atan2, sqrt, cos, sin
+from math import pi, sqrt, cos, sin
 
 from champi_navigation.pid import PID
 import champi_navigation.utils as cu
 
 from wpimath.trajectory import TrapezoidProfile
+
+
+
+# TODO implement robot_angle_when_looking_at_point
+
 
 
 class CmdVelUpdaterInterface:
