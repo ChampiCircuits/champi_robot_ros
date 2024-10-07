@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import champi_navigation.goal_checker as goal_checker
-import champi_navigation.utils as cu
+from champi_libraries_py.data_types.geometry import Pose2D, Vel2D
+from champi_libraries_py.data_types.robot_state import RobotState
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
+from champi_navigation.path_follow_params import PathFollowParams
 
 import rclpy
 from rclpy.node import Node
@@ -36,7 +38,7 @@ class PathControllerNode(Node):
         # Other objects instantiation
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
 
-        self.path_follow_params = cu.PathFollowParams(max_linear_acceleration, max_angular_acceleration)
+        self.path_follow_params = PathFollowParams(max_linear_acceleration, max_angular_acceleration)
 
         self.robot_current_state = None
 
@@ -44,10 +46,10 @@ class PathControllerNode(Node):
 
     def current_pose_callback(self, msg):
         """Callback for the current pose message. It is called when a new pose is received from topic."""
-        pose = cu.Pose2D(pose=msg.pose.pose)
-        vel = cu.Vel2D(msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.angular.z)
-        vel = cu.Vel2D.to_global_frame(pose, vel)
-        self.robot_current_state = cu.RobotState(pose, vel)
+        pose = Pose2D(pose=msg.pose.pose)
+        vel = Vel2D(msg.twist.twist.linear.x, msg.twist.twist.linear.y, msg.twist.twist.angular.z)
+        vel = Vel2D.to_global_frame(pose, vel)
+        self.robot_current_state = RobotState(pose, vel)
 
 
     def ctrl_goal_callback(self, ctrl_goal: CtrlGoal):
@@ -80,7 +82,7 @@ class PathControllerNode(Node):
         cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.path_follow_params)
 
         # express cmd in the base_link frame
-        cmd_vel = cu.Vel2D.to_robot_frame(self.robot_current_state.pose, cmd_vel)
+        cmd_vel = Vel2D.to_robot_frame(self.robot_current_state.pose, cmd_vel)
         # convert to cmd_twist
         cmd_twist = cmd_vel.to_twist()
 

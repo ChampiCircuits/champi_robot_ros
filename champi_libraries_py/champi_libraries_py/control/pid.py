@@ -1,7 +1,5 @@
-# implement a simple PID controller
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 
 class PID:
     def __init__(self, Kp, Ki, Kd):

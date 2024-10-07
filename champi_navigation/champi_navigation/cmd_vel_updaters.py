@@ -1,7 +1,8 @@
 from math import pi, sqrt, cos, sin
 
-from champi_navigation.pid import PID
-import champi_navigation.utils as cu
+from champi_libraries_py.data_types.geometry import Vel2D
+from champi_libraries_py.control.pid import PID
+from champi_navigation.path_follow_params import PathFollowParams
 
 from wpimath.trajectory import TrapezoidProfile
 
@@ -20,7 +21,7 @@ class CmdVelUpdaterInterface:
     periodically to update the velocity of the robot.
     """
 
-    def compute_cmd_vel(self, p: cu.PathFollowParams):
+    def compute_cmd_vel(self, p: PathFollowParams):
         pass
 
 
@@ -32,7 +33,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
 
         self.pid_correct_dir = PID(5, 0, 1)
 
-    def compute_cmd_vel(self, p: cu.PathFollowParams):
+    def compute_cmd_vel(self, p: PathFollowParams):
 
         # Compute profile constraints
         # TODO update constraints if needed only (for possible better performance)
@@ -85,7 +86,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
 
         # Fill cmd_vel
 
-        cmd_vel = cu.Vel2D()
+        cmd_vel = Vel2D()
         cmd_vel.init_from_mag_ang(cmd_vel_along_vec, angle_heading_vector, cmd_vel_theta)
 
         return cmd_vel

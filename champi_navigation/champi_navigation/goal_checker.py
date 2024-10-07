@@ -1,6 +1,6 @@
 from math import hypot, pi
 
-from champi_navigation.utils import Pose2D
+from champi_libraries_py.data_types.geometry import Pose2D
 from champi_interfaces.msg import CtrlGoal
 
 from icecream import ic

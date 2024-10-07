@@ -19,7 +19,8 @@ import time
 
 from champi_navigation.path_planner import AStarPathPlanner, ComputePathResult
 import champi_navigation.goal_checker as goal_checker
-import champi_navigation.utils as cu
+from champi_libraries_py.data_types.geometry import Pose2D
+
 
 from rclpy.logging import get_logger
 
@@ -113,11 +114,11 @@ class PlannerNode(Node):
 
 
             # Check if goal is reached
-            if goal_checker.is_goal_reached(cu.Pose2D(pose=self.current_navigate_goal.pose),
-                                            cu.Pose2D(pose=self.robot_pose),
+            if goal_checker.is_goal_reached(Pose2D(pose=self.current_navigate_goal.pose),
+                                            Pose2D(pose=self.robot_pose),
                                             self.current_navigate_goal.end_speed == 0,
                                             self.current_navigate_goal.do_look_at_point,
-                                            cu.Pose2D(point=self.current_navigate_goal.look_at_point),
+                                            Pose2D(point=self.current_navigate_goal.look_at_point),
                                             self.current_navigate_goal.linear_tolerance,
                                             self.current_navigate_goal.angular_tolerance):
                 navigate_goal_reached = True
