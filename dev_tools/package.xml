@@ -3,9 +3,9 @@
 <package format="3">
   <name>dev_tools</name>
   <version>0.0.0</version>
-  <description>Nodes for debug, etc</description>
+  <description>A basket full of not-really-pretty mushrooms (they can be usefull sometimes)</description>
   <maintainer email="andrerusso02@gmail.com">andrerusso02</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Driving license for regular mushroom-fueled vehicles.</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>

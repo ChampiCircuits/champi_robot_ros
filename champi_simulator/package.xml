@@ -3,9 +3,9 @@
 <package format="3">
   <name>champi_simulator</name>
   <version>0.0.0</version>
-  <description>Gazebo simulation (Iron)? I might delete it.</description>
+  <description>Mimicks social behavior of a rare mushroom specie, in hope of observing them from closer.</description>
   <maintainer email="andrerusso02@gmail.com">arusso</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Driving license for regular mushroom-fueled vehicles.</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>

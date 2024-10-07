@@ -3,9 +3,9 @@
 <package format="3">
   <name>champi_bringup</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>*Mushrooms awake*</description>
   <maintainer email="andrerusso02@gmail.com">arusso</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Driving license for regular mushroom-fueled vehicles.</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

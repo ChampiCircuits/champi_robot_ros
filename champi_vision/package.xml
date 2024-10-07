@@ -3,9 +3,9 @@
 <package format="3">
   <name>champi_vision</name>
   <version>0.0.0</version>
-  <description>Vision nodes</description>
+  <description>Did you know some mushroom species have 8 little eyes?</description>
   <maintainer email="andre.russo@ex9.tech">arusso</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Driving license for regular mushroom-fueled vehicles.</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
