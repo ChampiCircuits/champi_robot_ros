@@ -16,6 +16,7 @@ from geometry_msgs.msg import Pose, PoseStamped
 from math import pi
 import numpy as np
 import time
+from rclpy.executors import ExternalShutdownException
 
 from champi_navigation.path_planner import AStarPathPlanner, ComputePathResult
 import champi_navigation.goal_checker as goal_checker
@@ -119,6 +120,7 @@ class PlannerNode(Node):
                                             self.current_navigate_goal.end_speed == 0,
                                             self.current_navigate_goal.do_look_at_point,
                                             Pose2D(point=self.current_navigate_goal.look_at_point),
+                                            self.current_navigate_goal.robot_angle_when_looking_at_point,
                                             self.current_navigate_goal.linear_tolerance,
                                             self.current_navigate_goal.angular_tolerance):
                 navigate_goal_reached = True
@@ -189,7 +191,7 @@ class PlannerNode(Node):
         if self.planning:
             self.goal_handle_navigate.abort()
         else:
-            self.get_logger().warn('No goal to cancel!')  # Can happen if the robot reach the arrival at the same time as the goal is cancelled
+            self.get_logger().warn('No goal to cancel!')  # Can happen if the robot reach the end at the same time as the goal is cancelled
         self.planning = False
         return CancelResponse.ACCEPT
 
@@ -254,10 +256,14 @@ def main(args=None):
     # Use a MultiThreadedExecutor to enable processing goals concurrently
     executor = MultiThreadedExecutor()
 
-    rclpy.spin(node, executor=executor)
+    try:
+        rclpy.spin(node, executor=executor)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
-    node.destroy()
-    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

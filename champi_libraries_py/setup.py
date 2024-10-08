@@ -15,8 +15,8 @@ setup(
     zip_safe=True,
     maintainer='andre',
     maintainer_email='andrerusso02@gmail.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='A bookcase, that contains mushrooms and snakes instead of actual books.',
+    license='Driving license for regular mushroom-fueled vehicles.',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [

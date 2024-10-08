@@ -7,8 +7,9 @@ from rclpy.action import ActionClient
 from geometry_msgs.msg import PoseStamped, Point
 from champi_interfaces.action import Navigate
 
-from icecream import ic
 from rclpy.logging import get_logger
+
+from rclpy.executors import ExternalShutdownException
 
 
 
@@ -105,7 +106,7 @@ class PathPlannerUINode(Node):
         
         goal.end_speed = 0.2
 
-        goal.max_linear_speed = 0.2
+        goal.max_linear_speed = 0.
         goal.max_angular_speed = 1.5
         
         goal.linear_tolerance = 0.01
@@ -113,10 +114,12 @@ class PathPlannerUINode(Node):
 
         goal.do_look_at_point = False
 
-        # goal.look_at_point = Point()
-        # goal.look_at_point.x = 1.
-        # goal.look_at_point.y = 1.
-        # goal.look_at_point.z = 0.
+        goal.look_at_point = Point()
+        goal.look_at_point.x = 1.
+        goal.look_at_point.y = 1.
+        goal.look_at_point.z = 0.
+
+        goal.robot_angle_when_looking_at_point = 0.
 
         return goal
 
@@ -125,11 +128,16 @@ class PathPlannerUINode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    planner_ui = PathPlannerUINode()
-    rclpy.spin(planner_ui)
 
-    planner_ui.destroy_node()
-    rclpy.shutdown()
+    node = PathPlannerUINode()
+
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':

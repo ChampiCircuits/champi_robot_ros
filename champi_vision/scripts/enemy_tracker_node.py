@@ -9,6 +9,7 @@ from geometry_msgs.msg import PointStamped
 from nav_msgs.msg import Odometry
 from tf2_geometry_msgs import do_transform_point
 import time
+from rclpy.executors import ExternalShutdownException
 
 from math import cos, sin, atan2
 
@@ -194,10 +195,16 @@ class EnemyTracker(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    laserscan_to_odom_node = EnemyTracker()
-    rclpy.spin(laserscan_to_odom_node)
-    laserscan_to_odom_node.destroy_node()
-    rclpy.shutdown()
+
+    node = EnemyTracker()
+
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

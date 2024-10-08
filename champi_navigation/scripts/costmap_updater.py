@@ -8,6 +8,8 @@ import cv2
 import numpy as np
 from icecream import ic
 import time
+from rclpy.executors import ExternalShutdownException
+
 
 class ImageToCostmapNode(Node):
     def __init__(self):
@@ -93,7 +95,7 @@ class ImageToCostmapNode(Node):
     def draw_enemy_robot(self, img, x, y):
         enemy_x = int(round(x / self.resolution))
         enemy_y = int(round(y / self.resolution))
-        radius = int(np.ceil((self.enemy_robot_radius + self.robot_radius) / self.resolution))  # TODO Optimisation possible: calcul du rayon dans __init__
+        radius = int(np.ceil((self.enemy_robot_radius + self.robot_radius) / self.resolution))
 
         # Draw enemy robot
         cv2.circle(img, (enemy_x, enemy_y), radius, 100, -1)
@@ -113,12 +115,16 @@ class ImageToCostmapNode(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    image_to_costmap_node = ImageToCostmapNode()
+    node = ImageToCostmapNode()
 
-    rclpy.spin(image_to_costmap_node)
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
-    image_to_costmap_node.destroy_node()
-    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

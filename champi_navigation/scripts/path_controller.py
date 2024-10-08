@@ -12,6 +12,8 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from champi_interfaces.msg import CtrlGoal
 
+from rclpy.executors import ExternalShutdownException
+
 
 class PathControllerNode(Node):
     def __init__(self):
@@ -72,13 +74,10 @@ class PathControllerNode(Node):
             return
         
         if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):
-            
-            
-            
             self.stop_robot()
             return
 
-        self.update_path_follow_params()
+        self.path_follow_params.update_robot_state(self.robot_current_state)
         cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.path_follow_params)
 
         # express cmd in the base_link frame
@@ -92,16 +91,10 @@ class PathControllerNode(Node):
 
     def are_ctrl_goals_equal(self, goal1: CtrlGoal, goal2: CtrlGoal):
         """
-        Check if two control goals are equal.
+        Check if two control goals are equal, position-wise.
         """
         return goal1.pose.position.x == goal2.pose.position.x and \
                 goal1.pose.position.y == goal2.pose.position.y
-
-            
-    def update_path_follow_params(self):
-        """To be called in the control loop to update the robot state (and potentially other parameters later)"""
-
-        self.path_follow_params.robot_state = self.robot_current_state
 
 
     def stop_robot(self):
@@ -115,10 +108,16 @@ class PathControllerNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    pose_control_node = PathControllerNode()
-    rclpy.spin(pose_control_node)
-    pose_control_node.destroy_node()
-    rclpy.shutdown()
+
+    node = PathControllerNode()
+
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':
