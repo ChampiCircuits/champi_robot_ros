@@ -1,7 +1,7 @@
 # Inspiration: https://www.theconstructsim.com/how-to-create-a-ros2-c-library/
 
 cmake_minimum_required(VERSION 3.8)
-project(champi_libraries)
+project(champi_libraries_cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)

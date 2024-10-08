@@ -21,7 +21,7 @@
 
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>champi_libraries</depend>
+  <depend>champi_libraries_cpp</depend>
   <depend>joy</depend>
 
   <export>

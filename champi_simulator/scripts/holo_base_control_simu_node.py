@@ -18,6 +18,8 @@ from sensor_msgs.msg import Imu
 from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import TransformStamped
 
+from champi_libraries_py.utils.angles import get_yaw
+
 
 class HoloBaseControlDummy(Node):
 
@@ -99,7 +101,7 @@ class HoloBaseControlDummy(Node):
     def initial_pose_callback(self, msg):
         self.current_pose[0] = msg.pose.pose.position.x
         self.current_pose[1] = msg.pose.pose.position.y
-        self.current_pose[2] = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
+        self.current_pose[2] = get_yaw(msg.pose.pose)
 
     # Returns the velocity with limited acceleration applied
     def limit_accel(self, current_speed, goal_speed, max_acceleration, dt):

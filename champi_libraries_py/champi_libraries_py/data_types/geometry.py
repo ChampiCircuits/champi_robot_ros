@@ -6,6 +6,8 @@ from math import atan2, cos, sin, sqrt, pi
 import numpy as np
 from geometry_msgs.msg import Twist, Pose, Point
 
+from champi_libraries_py.utils.angles import normalize_angle, get_yaw
+
 
 class Vel2D:
     """Velocity. It can be expressed in any frame."""
@@ -60,7 +62,7 @@ class Pose2D:
         if pose is not None:
             self.x = pose.position.x
             self.y = pose.position.y
-            self.theta = 2 * atan2(pose.orientation.z, pose.orientation.w)
+            self.theta = get_yaw(pose)
 
         elif point is not None:
             self.x = point.x
@@ -131,24 +133,14 @@ class Pose2D:
             float: The angle difference (in radians) between the two poses
         """
         diff = other.theta - self.theta
-        if abs(diff) > pi:
-            if diff > 0:
-                diff -= 2 * pi
-            else:
-                diff += 2 * pi
 
-        return diff
+        return normalize_angle(diff)
+    
     
     def get_angle_difference_to_look_at(self, target:Pose2D, robot_angle_when_looking_at_point):
         diff = self.get_target_angle(target) - self.theta - robot_angle_when_looking_at_point
         
-        if abs(diff) > pi:
-            if diff > 0:
-                diff -= 2 * pi
-            else:
-                diff += 2 * pi
-        
-        return diff
+        return normalize_angle(diff)
 
     def get_target_angle(self, target:Pose2D):
         return atan2(target.y - self.y, target.x - self.x)

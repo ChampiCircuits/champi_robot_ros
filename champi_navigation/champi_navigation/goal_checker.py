@@ -1,6 +1,8 @@
 from math import hypot, pi
 
 from champi_libraries_py.data_types.geometry import Pose2D
+from champi_libraries_py.utils.angles import normalize_angle
+
 from champi_interfaces.msg import CtrlGoal
 
 
@@ -87,7 +89,9 @@ def is_angle_reached(goal:Pose2D, current_pose_robot:Pose2D, angular_tolerance:f
         angular_tolerance (float): Angular tolerance (radians)
     """
 
-    return get_minimal_angle_difference(current_pose_robot.theta, goal.theta) < angular_tolerance
+    diff = normalize_angle(current_pose_robot.theta - goal.theta)
+
+    return abs(diff) < angular_tolerance
 
 
 def get_minimal_angle_difference(angle1, angle2): # TODO create helpers for angles in champi_libraries_py

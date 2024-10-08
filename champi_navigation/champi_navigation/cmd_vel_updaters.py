@@ -7,11 +7,6 @@ from champi_navigation.path_follow_params import PathFollowParams
 from wpimath.trajectory import TrapezoidProfile
 
 
-
-# TODO implement robot_angle_when_looking_at_point
-
-
-
 class CmdVelUpdaterInterface:
 
     """
@@ -104,7 +99,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         current_state_theta = TrapezoidProfile.State(-theta_error, p.robot_state.vel.theta)
         goal_state_theta = TrapezoidProfile.State(0, 0)
         profile_theta = TrapezoidProfile(constraints_theta, goal_state_theta, current_state_theta)
-        cmd_vel_theta = profile_theta.calculate(0.1).velocity
+        cmd_vel_theta = profile_theta.calculate(0.1).velocity  # TODO pass dt as argument
 
         # ========================= Final velocity command =========================
 

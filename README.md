@@ -101,10 +101,10 @@ python3 gen_ids.py
 
 ### Replace by the generated files :
 - from gen_proto/out/
-    - champi_libraries/include/champi_can/msgs_can.pb.h
-    - champi_libraries/src/champi_can/msgs_can.pb.cc
+    - champi_libraries_cpp/include/champi_can/msgs_can.pb.h
+    - champi_libraries_cpp/src/champi_can/msgs_can.pb.cc
 - from gen_can_ids/out/can_ids_ns.hpp **(copy content from NS file)**
-    - champi_libraries/include/champi_can/can_ids.hpp
+    - champi_libraries_cpp/include/champi_can/can_ids.hpp
 
 ### Publier des goals pour nav2 sur Rviz2
 
