@@ -13,6 +13,7 @@ from rclpy.executors import ExternalShutdownException
 from math import sin, cos, acos, pi
 from sensor_msgs.msg import LaserScan
 import tf2_ros
+from std_msgs.msg import Header
 
 # TODO c'est pas ca, mais on affinera
 BEACON_1_POS = Point()
@@ -34,7 +35,7 @@ class AbsoluteLocNode(Node):
         self.min_cluster_size = 3
         self.cluster_distance_max = 0.06 #m
         self.threshold_centroids_identical = 0.01 #m
-        self.max_dist_centroid_to_beacon = 0.2 #m
+        self.max_dist_centroid_to_beacon = 3.0 #m
 
         self.laser_scan_sub_ = self.create_subscription(LaserScan,  "/scan", self.laser_callback, 10)
         self.last_scan: LaserScan = None
@@ -43,6 +44,7 @@ class AbsoluteLocNode(Node):
         self.last_robot_pose: PoseStamped = PoseStamped()
 
         self.publisher = self.create_publisher(MarkerArray, '/clusters', 10)
+        self.pose_publisher = self.create_publisher(PoseWithCovarianceStamped, '/pose/absolute_loc', 10)
 
         self.timer = self.create_timer(0.2, self.timer_callback)  # 10Hz
 
@@ -66,7 +68,7 @@ class AbsoluteLocNode(Node):
     def laser_callback(self, msg):
         self.last_scan = msg
 
-    def publish_circles(self, points: list[PointStamped]):
+    def publish_circles(self, points: list[PointStamped], robot_position:Point):
         marker_array = MarkerArray()
         
         for i, point in enumerate(points):
@@ -89,16 +91,47 @@ class AbsoluteLocNode(Node):
             marker.scale.z = 250 / 1000
             
             # Couleur du cercle
-            marker.color = ColorRGBA(r=0., g=1., b=0., a=0.3)  # Vert avec pleine opacité
+            marker.color = ColorRGBA(r=0., g=1., b=0., a=0.3)  
             
             # Durée du marqueur
-            marker.lifetime = rclpy.time.Duration(seconds=5).to_msg()  # 5 secondes
+            marker.lifetime = rclpy.time.Duration(seconds=0.5).to_msg() 
             
             # Identifiant unique pour chaque marqueur
             marker.id = i
             
             # Ajouter le marqueur à l'array
             marker_array.markers.append(marker)
+
+        if robot_position is not None:
+            marker = Marker()
+            marker.header.frame_id = 'odom'  # Cadre de référence
+            marker.type = Marker.CYLINDER
+            marker.action = Marker.ADD
+            
+            # Position du marqueur
+            marker.pose.position.x = robot_position.x
+            marker.pose.position.y = robot_position.y
+
+            # Orientation du marqueur
+            marker.pose.orientation.w = 1.0
+
+            # Taille du cercle
+            marker.scale.x = 150 / 1000
+            marker.scale.y = 150 / 1000
+            marker.scale.z = 150 / 1000
+            
+            # Couleur du cercle
+            marker.color = ColorRGBA(r=0., g=0., b=1., a=0.6) 
+            
+            # Durée du marqueur
+            marker.lifetime = rclpy.time.Duration(seconds=0.5).to_msg()  # 5 secondes
+            
+            # Identifiant unique pour chaque marqueur
+            marker.id = len(points)
+            
+            # Ajouter le marqueur à l'array
+            marker_array.markers.append(marker)
+
 
         self.publisher.publish(marker_array)
 
@@ -155,7 +188,7 @@ class AbsoluteLocNode(Node):
 
         return clusters
 
-    def compute_and_merge_centroids(self, clusters):
+    def compute_and_merge_centroids(self, clusters) -> list[PointStamped]:
         """
         Calcule les centroïdes des clusters et fusionne les centroïdes proches les uns des autres.
         
@@ -264,6 +297,89 @@ class AbsoluteLocNode(Node):
 
         return matched_beacons
 
+    def calculate_robot_position(self, beacons: list[PointStamped]):
+        """
+        Calcule la position du robot par triangulation à partir des positions des 3 balises.
+        
+        :param beacons: Liste de 3 Points correspondant aux positions des balises. Si une balise est absente, la valeur est None.
+        :return: Point correspondant à la position triangulée du robot, ou None si triangulation impossible.
+        """
+        # Vérifier que les trois balises sont présentes
+        if any(beacon is None for beacon in beacons):
+            return None
+        
+        # Extraire les positions des balises
+        beacon_1 = beacons[0]
+        beacon_2 = beacons[1]
+        beacon_3 = beacons[2]
+
+        # Les distances entre le robot et chaque balise (on suppose que ces distances sont disponibles)
+        d1 = np.sqrt((self.last_robot_pose.pose.position.x - beacon_1.point.x) ** 2 + (self.last_robot_pose.pose.position.y - beacon_1.point.y) ** 2)
+        d2 = np.sqrt((self.last_robot_pose.pose.position.x - beacon_2.point.x) ** 2 + (self.last_robot_pose.pose.position.y - beacon_2.point.y) ** 2)
+        d3 = np.sqrt((self.last_robot_pose.pose.position.x - beacon_3.point.x) ** 2 + (self.last_robot_pose.pose.position.y - beacon_3.point.y) ** 2)
+        
+
+        # Triangulation pour estimer la position du robot
+        # Utiliser une méthode de triangulation classique basée sur les distances
+        A = 2 * (beacon_2.point.x - beacon_1.point.x)
+        B = 2 * (beacon_2.point.y - beacon_1.point.y)
+        C = d1**2 - d2**2 - beacon_1.point.x**2 - beacon_1.point.y**2 + beacon_2.point.x**2 + beacon_2.point.y**2
+
+        D = 2 * (beacon_3.point.x - beacon_2.point.x)
+        E = 2 * (beacon_3.point.y - beacon_2.point.y)
+        F = d2**2 - d3**2 - beacon_2.point.x**2 - beacon_2.point.y**2 + beacon_3.point.x**2 + beacon_3.point.y**2
+
+        # Résoudre le système d'équations linéaires pour trouver x et y
+        denom = (A * E - B * D)
+        if denom == 0:
+            return None  # Cas de dégénérescence où les balises sont alignées
+
+        robot_x = (C * E - B * F) / denom
+        robot_y = (A * F - C * D) / denom
+
+        # Créer un Point avec la position triangulée du robot
+        robot_position = Point(x=robot_x, y=robot_y, z=0.0)
+
+        return robot_position
+
+    def publish_robot_pose(self, robot_position):
+        """
+        Publie une PoseWithCovarianceStamped à partir de la position du robot (robot_position) dans ROS2.
+        
+        :param robot_position: Position du robot sous forme d'un geometry_msgs.msg.Point (x, y, z).
+        """
+        if robot_position is None:
+            return
+
+        # Créer un message PoseWithCovarianceStamped
+        pose_msg = PoseWithCovarianceStamped()
+
+        # Ajouter un header avec l'horodatage et le frame_id (par exemple "odom")
+        pose_msg.header = Header()
+        pose_msg.header.stamp = self.get_clock().now().to_msg()  # Horodatage ROS2
+        pose_msg.header.frame_id = "odom"  # Frame de référence
+
+        # Définir la position (x, y, z)
+        pose_msg.pose.pose.position = Point(
+            x=robot_position.x,
+            y=robot_position.y,
+            z=0.0 
+        )
+
+        # Définir une orientation neutre (pas de rotation, quaternion identitaire)
+        pose_msg.pose.pose.orientation = self.last_robot_pose.pose.orientation # TODO on voudra calc l'orientation aussi
+
+        # Ajouter une covariance faible (petites valeurs pour représenter une bonne confiance)
+        covariance_matrix = np.zeros((6, 6))  # Matrice 6x6 initialisée à zéro
+        covariance_matrix[0, 0] = 0.02  # Variance sur x
+        covariance_matrix[1, 1] = 0.02  # Variance sur y
+        covariance_matrix[5, 5] = 0.02  # Variance sur yaw (rotation autour de z)
+
+        # Aplatir la matrice en un tableau 1D pour l'insérer dans la covariance
+        pose_msg.pose.covariance = covariance_matrix.flatten().tolist()
+
+        # Publier le message via le publisher ROS2
+        self.pose_publisher.publish(pose_msg)
 
     def compute(self, last_scan: LaserScan):
         clusters = self.extract_clusters(last_scan)
@@ -277,7 +393,10 @@ class AbsoluteLocNode(Node):
 
         beacons_position = self.match_centroids_to_beacons(centroids)
 
-        self.publish_circles(beacons_position)
+        robot_position: Point = self.calculate_robot_position(beacons_position)
+        self.publish_circles(beacons_position, robot_position)
+
+        self.publish_robot_pose(robot_position)
 
 def main(args=None):
     rclpy.init(args=args)
