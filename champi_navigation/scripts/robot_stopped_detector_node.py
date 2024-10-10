@@ -7,7 +7,7 @@ from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 import math
 from rclpy.executors import ExternalShutdownException
-from math import acos
+from math import acos, pi
 
 
 class MyNode(Node):
@@ -60,7 +60,7 @@ class MyNode(Node):
 
     def update_robot_pose(self, msg):
 
-        self.robot_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y, acos(msg.pose.pose.orientation.w)*2*180/3.1415)
+        self.robot_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y, acos(msg.pose.pose.orientation.w)*2*180./pi)
 
         if self.last_robot_pose is None:
             self.last_robot_pose = self.robot_pose
