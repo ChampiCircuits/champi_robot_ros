@@ -47,11 +47,19 @@ def generate_launch_description():
         output='screen',
     )
 
+    absolute_loc_node = Node(
+        package='champi_navigation',
+        executable='absolute_loc_node.py',
+        name='absolute_loc',
+        output='screen',
+        parameters=[config_file_path]
+    )
+
     return LaunchDescription([
         path_controller_node,
         costmap_updater_node,
         a_star_path_planner_node,
         call_set_pose_node,
-        path_planner_ui_node
-
+        path_planner_ui_node,
+        absolute_loc_node
     ])
