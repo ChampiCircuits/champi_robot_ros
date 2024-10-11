@@ -3,6 +3,7 @@
 import champi_navigation.goal_checker as goal_checker
 from champi_libraries_py.data_types.geometry import Pose2D, Vel2D
 from champi_libraries_py.data_types.robot_state import RobotState
+from champi_libraries_py.utils.diagnostics import create_topic_freq_diagnostic, ExecTimeMeasurer
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
 from champi_navigation.path_follow_params import PathFollowParams
 
@@ -14,13 +15,15 @@ from champi_interfaces.msg import CtrlGoal
 
 from rclpy.executors import ExternalShutdownException
 
+import diagnostic_msgs
+import diagnostic_updater
+
 
 class PathControllerNode(Node):
     def __init__(self):
         super().__init__('pose_control_node')
 
         # Parameters
-
         control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
         max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
         max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
@@ -34,17 +37,25 @@ class PathControllerNode(Node):
         # ROS subscriptions, publishers and timers
         self.timer = self.create_timer(control_loop_period, self.control_loop_spin_once)
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.champi_path_sub = self.create_subscription(CtrlGoal, '/plan', self.ctrl_goal_callback, 10)
+        self.champi_path_sub = self.create_subscription(CtrlGoal, '/ctrl_goal', self.ctrl_goal_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
 
         # Other objects instantiation
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
-
         self.path_follow_params = PathFollowParams(max_linear_acceleration, max_angular_acceleration)
-
         self.robot_current_state = None
-
         self.ctrl_goal: CtrlGoal = None
+
+        updater = diagnostic_updater.Updater(self)
+        updater.setHardwareID('none')
+
+        # Diagnostic for cmd_vel frequency
+        self.diagnostic_freq_cmd_vel = create_topic_freq_diagnostic('/cmd_vel', updater, 10)
+        
+        # Diagnostic for execution time of control loop
+        self.exec_time_measurer = ExecTimeMeasurer()
+        updater.add('Loop exec time', self.exec_time_measurer.produce_diagnostics)
+        
 
     def current_pose_callback(self, msg):
         """Callback for the current pose message. It is called when a new pose is received from topic."""
@@ -55,38 +66,52 @@ class PathControllerNode(Node):
 
 
     def ctrl_goal_callback(self, ctrl_goal: CtrlGoal):
-        """Callback for the path message. It is called when a new path is received from topic."""
+        """Callback to receive ctrl_goal messages from topic."""
 
         if self.robot_current_state is None:
             return
         
         if self.ctrl_goal is None or not self.are_ctrl_goals_equal(ctrl_goal, self.ctrl_goal):
+            # Means that we need to update the control goal (first time or new goal)
+            # Why do we test this ? The path planner is not required to publish the twice the same goal (e.g periodically)
+            # but for reliability, it can if it wants to.
             self.ctrl_goal = ctrl_goal
-            self.path_follow_params.update_ctrl_goal(self.robot_current_state, ctrl_goal)
+            self.path_follow_params.update_ctrl_goal(self.robot_current_state, ctrl_goal)  # See description of PathFollowParams class for more details
 
 
     def control_loop_spin_once(self):
+        """Control loop routine. Called periodically by a timer."""
 
-        if self.robot_current_state is None:
-            return
-        
-        if self.ctrl_goal is None:
-            return
-        
-        if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):
+        # # Exectution time measurement for diagnostics. Check class definition for details.
+        self.exec_time_measurer.start()
+
+        if self.robot_current_state is None or self.ctrl_goal is None:  # Initialization
             self.stop_robot()
+            self.exec_time_measurer.stop()
             return
 
+        if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):  # Goal reached
+            # TODO: If the goal is reached is a waypoint (non-zero speed), we could allow a timeout before stopping the robot,
+            # to allow some time to the path planner or brain to send a new goal. For now, it seems to work well without this:
+            # the robot doesn't seem to slow down when reaching a waypoint.
+            self.stop_robot()
+            self.exec_time_measurer.stop()
+            return
+
+        # Compute the velocity command
         self.path_follow_params.update_robot_state(self.robot_current_state)
         cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.path_follow_params)
 
-        # express cmd in the base_link frame
+        # express cmd in the base_link frame (initially in the global fixed frame)
         cmd_vel = Vel2D.to_robot_frame(self.robot_current_state.pose, cmd_vel)
         # convert to cmd_twist
         cmd_twist = cmd_vel.to_twist()
 
         # Publish the command
         self.cmd_vel_pub.publish(cmd_twist)
+        self.diagnostic_freq_cmd_vel.tick()
+
+        self.exec_time_measurer.stop()
     
 
     def are_ctrl_goals_equal(self, goal1: CtrlGoal, goal2: CtrlGoal):
@@ -104,6 +129,21 @@ class PathControllerNode(Node):
         cmd_vel.linear.y = 0.
         cmd_vel.angular.z = 0.
         self.cmd_vel_pub.publish(cmd_vel)
+        self.diagnostic_freq_cmd_vel.tick()
+    
+
+    def diag_current_goal(self, stat):
+        if self.ctrl_goal is None:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, 'No goal received yet')
+            stat.add('Goal', 'No goal received yet')
+        elif goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Goal reached')
+            stat.add('Goal', str(self.ctrl_goal))
+            
+        else:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Goal received')
+            stat.add('Goal', str(self.ctrl_goal))
+        return stat
 
 
 def main(args=None):

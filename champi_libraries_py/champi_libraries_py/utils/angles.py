@@ -3,7 +3,7 @@ from geometry_msgs.msg import Pose
 
 
 def normalize_angle(angle):
-    """Normalize an angle between -pi and pi."""
+    """Normalize an angle between -pi and pi. Has the consequence to find the shortest angle difference."""
     if angle > pi:
         angle -= 2 * pi
     elif angle < -pi:

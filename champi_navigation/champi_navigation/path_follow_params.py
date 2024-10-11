@@ -7,7 +7,7 @@ from champi_libraries_py.data_types.robot_state import RobotState
 
 
 class PathFollowParams:
-    """This class is used to store the parameters used by a CmdVelUpdater class.
+    """This class stores the parameters used by a CmdVelUpdater class.
     We need to pass this class each time we call compute_cmd_vel.
     """
 

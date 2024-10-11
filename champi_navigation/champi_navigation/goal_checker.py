@@ -8,12 +8,18 @@ from champi_interfaces.msg import CtrlGoal
 
 def is_goal_reached(goal_pose:Pose2D,
                     current_pose:Pose2D,
-                    end_speed_0:bool,
+                    end_speed_0:bool,  # Whether the robot has to stop at the goal pose or not
                     do_look_at_point:bool,
                     look_at_point:Pose2D,
                     robot_angle_when_looking_at_point:float,
                     linear_tolerance:float,
                     angular_tolerance:float):
+    
+    """Check if the goal is reached, given the current pose of the robot and all the parameters defining the goal.
+
+    Returns:
+        bool: Whether the goal is reached or not.
+    """
 
     if end_speed_0:
 
@@ -92,17 +98,3 @@ def is_angle_reached(goal:Pose2D, current_pose_robot:Pose2D, angular_tolerance:f
     diff = normalize_angle(current_pose_robot.theta - goal.theta)
 
     return abs(diff) < angular_tolerance
-
-
-def get_minimal_angle_difference(angle1, angle2): # TODO create helpers for angles in champi_libraries_py
-    """Get the minimal difference between two angles.
-
-    Args:
-        angle1 (float): First angle (radians)
-        angle2 (float): Second angle (radians)
-    """
-
-    diff = abs(angle1 - angle2)
-    if diff > pi:
-        diff = 2 * pi - diff
-    return diff
