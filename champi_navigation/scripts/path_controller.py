@@ -2,6 +2,7 @@
 
 import champi_navigation.goal_checker as goal_checker
 from champi_libraries_py.data_types.geometry import Pose2D, Vel2D
+from champi_libraries_py.utils.angles import get_yaw
 from champi_libraries_py.data_types.robot_state import RobotState
 from champi_libraries_py.utils.diagnostics import create_topic_freq_diagnostic, ExecTimeMeasurer
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
@@ -55,6 +56,12 @@ class PathControllerNode(Node):
         # Diagnostic for execution time of control loop
         self.exec_time_measurer = ExecTimeMeasurer()
         updater.add('Loop exec time', self.exec_time_measurer.produce_diagnostics)
+
+        # Diagnostic for cmd_vel updater
+        updater.add('CmdVelUpdater', self.cmd_vel_updater.produce_diagnostics)
+        
+        # Diagnostic for current goal
+        updater.add('Current goal', self.diag_current_goal)
         
 
     def current_pose_callback(self, msg):
@@ -133,16 +140,24 @@ class PathControllerNode(Node):
     
 
     def diag_current_goal(self, stat):
+        """Callback for the diagnostic updater to report the current goal."""
+
         if self.ctrl_goal is None:
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, 'No goal received yet')
-            stat.add('Goal', 'No goal received yet')
-        elif goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):
+            stat.add('Goal x (m)', 'N/A')
+            stat.add('Goal y (m)', 'N/A')
+            stat.add('Goal yaw (rad)', 'N/A')
+            return stat
+        
+        stat.add('Goal x (m)', str(self.ctrl_goal.pose.position.x))
+        stat.add('Goal y (m)', str(self.ctrl_goal.pose.position.y))
+        stat.add('Goal yaw (rad)', str(get_yaw(self.ctrl_goal.pose)))
+
+        if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Goal reached')
-            stat.add('Goal', str(self.ctrl_goal))
-            
         else:
-            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Goal received')
-            stat.add('Goal', str(self.ctrl_goal))
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Going to goal')
+
         return stat
 
 

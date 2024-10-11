@@ -157,10 +157,6 @@ class PlannerNode(Node):
 
 
         self.planning = False
-
-        # Publish a final empty CtrlGoal
-        path = CtrlGoal()
-        self.champi_path_pub.publish(path)
         
         result = None
 

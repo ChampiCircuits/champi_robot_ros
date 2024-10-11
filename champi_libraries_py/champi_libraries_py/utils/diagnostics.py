@@ -30,10 +30,10 @@ class ExecTimeMeasurer:
         """Callback method to pass to a diagnostic updater. It will produce diagnostics about the measured execution time.
 
         Args:
-            stat (_type_): No need to worry about that, the diagnostic updater takes care of it.
+            stat (DiagnosticStatus): No need to worry about that, the diagnostic updater takes care of it.
 
         Returns:
-            _type_:  No need to worry about that, the diagnostic updater takes care of it.
+            DiagnosticStatus: No need to worry about that, the diagnostic updater takes care of it.
         """
         if self.exec_time is None:
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, 'Not measured yet')

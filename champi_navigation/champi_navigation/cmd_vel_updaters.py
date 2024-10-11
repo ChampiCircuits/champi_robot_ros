@@ -1,4 +1,4 @@
-from math import pi, sqrt, cos, sin
+from math import pi, sqrt, cos, sin, trunc
 
 from champi_libraries_py.data_types.geometry import Vel2D
 from champi_libraries_py.control.pid import PID
@@ -6,22 +6,55 @@ from champi_navigation.path_follow_params import PathFollowParams
 
 from wpimath.trajectory import TrapezoidProfile
 
+import diagnostic_msgs
+
 
 class CmdVelUpdaterInterface:
-
     """
-    Interface for the CmdVelUpdater classes. This interface defines the method compute_cmd_vel that must be implemented.
+    Abstract class for the CmdVelUpdater classes. This interface defines the method compute_cmd_vel that must be implemented.
     This method takes a PathFollowParams object as argument and returns a Vel object that represents the velocity to
     apply to the robot to follow the objectives defined in the PathFollowParams object. The method must be called
     periodically to update the velocity of the robot.
     """
 
+    def __init__(self):
+        # Variables to store statistics, for diagnostics
+        self.stat_error_dist = None
+        self.stat_error_theta = None
+
+
     def compute_cmd_vel(self, p: PathFollowParams):
+        """See class description.
+
+        Args:
+            p (PathFollowParams): See class description.
+        """
         pass
+
+
+    def produce_diagnostics(self, stat):
+        """Callback method to be used in with a DiagnosticUpdater object.
+
+        Args:
+            stat (DiagnosticStatus): No need to worry about that, the diagnostic updater takes care of it.
+
+        Returns:
+            DiagnosticStatus: No need to worry about that, the diagnostic updater takes care of it.
+        """
+        if self.stat_error_dist is not None and self.stat_error_theta is not None:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'CmdVelUpdater is running')
+            stat.add('Error dist (m)', str(self.stat_error_dist))
+            stat.add('Error theta (rad)', str(self.stat_error_theta))
+        else:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, 'Statistics not available')
+            stat.add('Error dist (m)', 'N/A')
+            stat.add('Error theta (rad)', 'N/A')
+        return stat
 
 
 class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
     def __init__(self):
+        super().__init__()
         self.pid_correct_dir = PID(5, 0, 1)
 
 
@@ -109,4 +142,10 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         cmd_vel = Vel2D()
         cmd_vel.init_from_mag_ang(cmd_vel_x_y, angle_heading, cmd_vel_theta)
 
+
+        # ========================= Statistics =========================
+        self.stat_error_dist = dist_robot_to_goal
+        self.stat_error_theta = theta_error
+
         return cmd_vel
+    
