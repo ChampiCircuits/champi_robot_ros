@@ -47,7 +47,6 @@ class PlannerNode(Node):
         super().__init__('planner_node')
         get_logger('rclpy').info(f"\tLaunching Path planner NODE...")
 
-
         self.champi_path_pub = self.create_publisher(CtrlGoal, '/ctrl_goal', 10)
 
         self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)

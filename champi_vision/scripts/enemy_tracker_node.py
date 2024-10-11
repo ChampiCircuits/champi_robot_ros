@@ -8,13 +8,13 @@ from tf2_ros import TransformListener, Buffer
 from geometry_msgs.msg import PointStamped
 from nav_msgs.msg import Odometry
 from tf2_geometry_msgs import do_transform_point
-import time
 from rclpy.executors import ExternalShutdownException
 
 from math import cos, sin, atan2
 
 from shapely.geometry import Point as ShapelyPoint
 from shapely.geometry.polygon import Polygon
+
 
 class EnemyTracker(Node):
     def __init__(self):
@@ -59,9 +59,6 @@ class EnemyTracker(Node):
 
     def timer_callback(self):
 
-
-        t_start = time.time()
-
         if self.scan_msg is None:
             return
 
@@ -74,7 +71,7 @@ class EnemyTracker(Node):
 
         transformed_box_points = []
         for point in self.box_points:
-            transformed_point = self.transform_point(point, 'odom', 'base_laser')
+            transformed_point = self.transform_point(point, 'odom', 'base_laser', self.scan_msg.header.stamp)
             if transformed_point is not None:
                 transformed_box_points.append(transformed_point)
             # else: we ignore the point
@@ -109,8 +106,9 @@ class EnemyTracker(Node):
 
             center_of_mass = self.get_center_of_mass(points)
 
-            # Transform center of mass to odom frame
-            center_of_mass = self.transform_point(closest_point, 'base_laser', 'odom')
+            # Transform center of mass to odom frame.
+            # It is very important to use the same timestamp as the scan message, otherwise the obstacles will appear to move when the robot moves.
+            center_of_mass = self.transform_point(center_of_mass, 'base_laser', 'odom', self.scan_msg.header.stamp)
             if center_of_mass is None:
                 return
             
@@ -147,9 +145,6 @@ class EnemyTracker(Node):
 
             self.enemy_pos_pub.publish(enemy_odom_msg)
             
-        
-        # self.get_logger().info(f'Enemy Tracker loop took {time.time()-t_start}s. Detected {len(points)} points.')
-
 
     def is_point_in_box(self, point, poly_points):
         polygon = Polygon(poly_points)
@@ -164,11 +159,13 @@ class EnemyTracker(Node):
             y_sum += point[1]
         return [x_sum/len(points), y_sum/len(points)]
 
+
     def is_steady(self, point):
         return (self.prev_enemy_odom_msg is not None and abs(point[0] - self.prev_enemy_odom_msg.pose.pose.position.x) < 0.02
                 and abs(point[1] - self.prev_enemy_odom_msg.pose.pose.position.y) < 0.02)
     
-    def transform_point(self, point: list, parent_frame: str, child_frame: str):
+
+    def transform_point(self, point: list, parent_frame: str, child_frame: str, when: rclpy.time.Time):
         """
         Transforms a point from parent_frame to child_frame. the point is in the form of [x, y] coordinates.
         """
@@ -177,14 +174,12 @@ class EnemyTracker(Node):
         point_stamped.point.x = point[0]
         point_stamped.point.y = point[1]
         point_stamped.point.z = 0.0
-        point_stamped.header.frame_id = parent_frame
-        point_stamped.header.stamp.sec = 0
-        point_stamped.header.stamp.nanosec = 0
+        # no need to fill the header because it is not used (see implementation of do_transform_point)
 
         try:
             transform = self.tf_buffer.lookup_transform(child_frame,
                                                         parent_frame,
-                                                        point_stamped.header.stamp)
+                                                        when)
             transformed_point = do_transform_point(point_stamped, transform)
             return [transformed_point.point.x, transformed_point.point.y]
 
