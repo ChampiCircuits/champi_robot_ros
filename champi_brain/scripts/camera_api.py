@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from rclpy.logging import get_logger
+
 
 def take_picture() -> np.ndarray:
     """Take a picture with the camera and return it as a numpy array."""
@@ -27,7 +29,7 @@ def convert_px_to_mm(plants_positions_px: np.ndarray, supposed_plants_center) ->
         y = supposed_plants_center[1] + r * np.sin(angle)
         coords.append([x,y])
 
-    print("\t\tfake generated coords: ", coords)
+    get_logger("camera_api").info("\t\tfake generated coords: "+ str(coords))
     return np.array(coords)
 
 def convert_robot_frame_to_world_frame(plants_positions: np.ndarray) -> np.ndarray:

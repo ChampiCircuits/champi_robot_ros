@@ -23,6 +23,9 @@
   <depend>nav_msgs</depend>
   <depend>champi_libraries</depend>
   <depend>joy</depend>
+  <build_depend>ament_index_cpp</build_depend>
+  <exec_depend>ament_index_cpp</exec_depend>
+  <depend>behaviortree_cpp</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

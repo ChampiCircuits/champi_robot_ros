@@ -14,6 +14,7 @@ import numpy as np
 
 import time
 from icecream import ic
+from rclpy.logging import get_logger
 
 
 
@@ -21,6 +22,8 @@ class PathPlannerUINode(Node):
 
     def __init__(self):
         super().__init__('planner_ui')
+        get_logger('rclpy').info(f"\tLaunching Path planner UI...")
+
 
         # Subscriber for /goal_pose
         self.goal_pose_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_pose_callback, 10)
@@ -33,6 +36,7 @@ class PathPlannerUINode(Node):
         self.goal_handle_navigate = None
 
         self.goal_pose = None
+        get_logger('rclpy').info(f"\tPath planner UI launched !")
     
 
     # ==================================== ROS2 Callbacks ==========================================
