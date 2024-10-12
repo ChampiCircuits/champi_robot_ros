@@ -70,6 +70,14 @@ class PlannerNode(Node):
         self.path_planner = None
 
         self.planning = False
+
+
+        self.debug = True # TODO add as parameter
+
+        if self.debug:
+            # Create 2 debug occupancy grids publishers
+            self.debug_pub_raw_path = self.create_publisher(OccupancyGrid, '/raw_path_costmap_viz', 10)
+            self.debug_pub_optimized_path = self.create_publisher(OccupancyGrid, '/optimized_path_costmap_viz', 10)
         
         get_logger('rclpy').info("\tPath planner NODE launched!")
 
@@ -141,6 +149,14 @@ class PlannerNode(Node):
 
                 # Publish path for visualization
                 self.publish_path(path)
+
+
+                if self.debug:
+                    costmap_raw_path = self.path_planner.get_raw_path_as_occupancy_grid()
+                    costmap_optimized_path = self.path_planner.get_optimized_path_as_occupancy_grid()
+
+                    self.debug_pub_raw_path.publish(costmap_raw_path)
+                    self.debug_pub_optimized_path.publish(costmap_optimized_path)
                 
 
             else:

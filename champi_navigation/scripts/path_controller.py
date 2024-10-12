@@ -178,7 +178,7 @@ class PathControllerNode(Node):
         stat.add('Goal y (m)', str(self.ctrl_goal.pose.position.y))
         stat.add('Goal yaw (rad)', str(get_yaw(self.ctrl_goal.pose)))
 
-        if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):
+        if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose) or self.timeout.is_running():
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Goal reached')
         else:
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Going to goal')
