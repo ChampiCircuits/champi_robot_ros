@@ -5,6 +5,7 @@ from champi_libraries_py.data_types.geometry import Pose2D, Vel2D
 from champi_libraries_py.utils.angles import get_yaw
 from champi_libraries_py.data_types.robot_state import RobotState
 from champi_libraries_py.utils.diagnostics import create_topic_freq_diagnostic, ExecTimeMeasurer
+from champi_libraries_py.utils.timeout import Timeout
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
 from champi_navigation.path_follow_params import PathFollowParams
 
@@ -28,6 +29,7 @@ class PathControllerNode(Node):
         control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
         max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
         max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
+        timeout_wait_next_goal = self.declare_parameter('timeout_wait_next_goal', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Controller started with the following parameters:')
@@ -46,6 +48,10 @@ class PathControllerNode(Node):
         self.path_follow_params = PathFollowParams(max_linear_acceleration, max_angular_acceleration)
         self.robot_current_state = None
         self.ctrl_goal: CtrlGoal = None
+
+        # When the ctrl_goal is reached and end_speed!=0 (we expect a new goal to be sent right away),
+        # the robot will emergency stop once the timeout is elapsed.
+        self.timeout = Timeout(timeout_wait_next_goal)
 
         updater = diagnostic_updater.Updater(self)
         updater.setHardwareID('none')
@@ -86,22 +92,41 @@ class PathControllerNode(Node):
             self.path_follow_params.update_ctrl_goal(self.robot_current_state, ctrl_goal)  # See description of PathFollowParams class for more details
 
 
+            if self.timeout.is_running():
+                self.timeout.reset()
+
+
     def control_loop_spin_once(self):
         """Control loop routine. Called periodically by a timer."""
 
         # # Exectution time measurement for diagnostics. Check class definition for details.
         self.exec_time_measurer.start()
 
-        if self.robot_current_state is None or self.ctrl_goal is None:  # Initialization
+        # Initialization checks
+        if self.robot_current_state is None or self.ctrl_goal is None:
             self.stop_robot()
             self.exec_time_measurer.stop()
             return
 
-        if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):  # Goal reached
-            # TODO: If the goal is reached is a waypoint (non-zero speed), we could allow a timeout before stopping the robot,
-            # to allow some time to the path planner or brain to send a new goal. For now, it seems to work well without this:
-            # the robot doesn't seem to slow down when reaching a waypoint.
-            self.stop_robot()
+        # When goal is reached, we allow a timeout before stopping the robot, to allow some time to the path planner or brain to send a new goal.
+
+        # In case end_speed is non zero:
+        #   We enter this block once, when the goal is reached. Note that in the next iterations, is_ctrl_goal_reached can return False
+        #   because the robot may overtake tne goal.
+        # In case end_speed is zero:
+        #   We enter this block every time the goal is reached, because the robot will stop thus is_ctrl_goal_reached will stay True.
+        if not self.timeout.is_running() and goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):  # Goal reached
+            if self.ctrl_goal.end_speed != 0.:
+                self.timeout.start()
+            else:
+                self.stop_robot()
+                self.exec_time_measurer.stop()
+                return
+
+        # One the timeout is elapsed, we stop the robot
+        if self.timeout.is_running():
+            if self.timeout.is_elapsed():
+                self.stop_robot()
             self.exec_time_measurer.stop()
             return
 
