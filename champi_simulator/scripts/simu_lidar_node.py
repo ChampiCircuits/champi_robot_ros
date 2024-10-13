@@ -50,25 +50,56 @@ class LidarSimulator(Node):
         scan.range_min = 0.0
         scan.range_max = 5.
         scan.ranges = [scan.range_max] * 1024  # Initialize all ranges to max
+        scan.intensities = [0.] * 1024  # Initialize all ranges to max
 
-        obstacle_point = PointStamped()
-        obstacle_point.header.frame_id = 'odom'
-        obstacle_point.point = self.obstacle_position
+        # obstacle_point = PointStamped()
+        # obstacle_point.header.frame_id = 'odom'
+        # obstacle_point.point = self.obstacle_position
+
+        # try:
+        #     transformed_point = self.tf_buffer.transform(obstacle_point, 'base_laser')
+        #     angle = self.calculate_angle(transformed_point.point)
+        #     index = int((angle - scan.angle_min) / scan.angle_increment)
+        #     distance = self.calculate_distance(transformed_point.point)
+        #     scan.ranges[index] = distance
+        #     # add a 5 more points on each side of the obstacle to simulate the width of the obstacle.
+        #     # Care of not going out of the array bounds
+        #     for i in range(max(0, index - 5), min(index + 5, 1023)):
+        #         # add random noise to the distance
+        #         scan.ranges[i] = distance + random.uniform(-0.01, 0.01)
+
+        BEACON_1_POS = PointStamped()
+        BEACON_1_POS.point.x = 0.8
+        BEACON_1_POS.point.y = 1.5
+        BEACON_2_POS = PointStamped()
+        BEACON_2_POS.point.x = 2.0
+        BEACON_2_POS.point.y = 1.5
+        BEACON_3_POS = PointStamped()
+        BEACON_3_POS.point.x = 2.0
+        BEACON_3_POS.point.y = 0.8
+
+        R_BEACON = 0.04
+        n = 15
 
         try:
-            transformed_point = self.tf_buffer.transform(obstacle_point, 'base_laser')
-            angle = self.calculate_angle(transformed_point.point)
-            index = int((angle - scan.angle_min) / scan.angle_increment)
-            distance = self.calculate_distance(transformed_point.point)
-            scan.ranges[index] = distance
-            # add a 5 more points on each side of the obstacle to simulate the width of the obstacle.
-            # Care of not going out of the array bounds
-            for i in range(max(0, index - 5), min(index + 5, 1023)):
-                # add random noise to the distance
-                scan.ranges[i] = distance + random.uniform(-0.01, 0.01)
+            for beacon in [BEACON_1_POS,BEACON_2_POS,BEACON_3_POS]:
+                for i in range(n): # n points per circle
+                    angle = 2 * i * math.pi/n
+                    p = PointStamped()
+                    p.header.frame_id = 'odom'
+                    p.point.x = beacon.point.x + R_BEACON*math.cos(angle)
+                    p.point.y = beacon.point.y + R_BEACON*math.sin(angle)
+
+                    transformed_point = self.tf_buffer.transform(p, 'base_laser')
+                    angle = self.calculate_angle(transformed_point.point)
+                    index = int((angle - scan.angle_min) / scan.angle_increment)
+                    distance = self.calculate_distance(transformed_point.point)
+                    
+                    scan.ranges[index] = distance + random.uniform(-0.01, 0.01)
+                    scan.intensities[index] = 255.
 
         except Exception as e:
-            self.get_logger().warn('Could not transform obstacle point: ' + str(e))
+            self.get_logger().warn(message='Could not transform obstacle point: ' + str(e))
 
         scan.header.frame_id = 'base_laser'
         scan.header.stamp = self.get_clock().now().to_msg()
