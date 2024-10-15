@@ -16,12 +16,22 @@ float32 robot_angle_when_looking_at_point
 float32 timeout
 ---
 # Result
+
 bool success
 string message
 ---
 # Feedback
+byte SUCCESS_STRAIGHT = 0
+byte START_NOT_IN_COSTMAP = 1
+byte GOAL_NOT_IN_COSTMAP = 2
+byte GOAL_IN_OCCUPIED_CELL = 3
+byte NO_PATH_FOUND = 4
+byte SUCCESS_AVOIDANCE = 5
+byte INTITIALIZING = 6
+
+byte path_compute_result
+
 # Estimated Time of Arrival (seconds)
-float32 eta
-int32 goal_index
-string path_compute_status
+float32 eta  # -1 means unknown (initialization, no path found, etc.)
+
 

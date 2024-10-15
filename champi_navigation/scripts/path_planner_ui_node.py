@@ -6,7 +6,6 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from geometry_msgs.msg import PoseStamped, Point
 from champi_interfaces.action import Navigate
-
 from rclpy.logging import get_logger
 
 from rclpy.executors import ExternalShutdownException
@@ -53,7 +52,8 @@ class PathPlannerUINode(Node):
 
 
     def feedback_callback(self, feedback_msg):
-        self.get_logger().info(f'Feedback received! Feedback: {feedback_msg}')
+        self.get_logger().info(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {feedback_msg.feedback.eta}')
+
 
 
     # ==================================== Done Callbacks ==========================================
@@ -122,6 +122,25 @@ class PathPlannerUINode(Node):
         goal.robot_angle_when_looking_at_point = 0.
 
         return goal
+    
+
+    def path_compute_result_to_str(self, path_compute_result):
+        if path_compute_result == Navigate.Feedback.SUCCESS_STRAIGHT:
+            return 'SUCCESS_STRAIGHT'
+        elif path_compute_result == Navigate.Feedback.SUCCESS_AVOIDANCE:
+            return 'SUCCESS_AVOIDANCE'
+        elif path_compute_result == Navigate.Feedback.START_NOT_IN_COSTMAP:
+            return 'START_NOT_IN_COSTMAP'
+        elif path_compute_result == Navigate.Feedback.GOAL_NOT_IN_COSTMAP:
+            return 'GOAL_NOT_IN_COSTMAP'
+        elif path_compute_result == Navigate.Feedback.GOAL_IN_OCCUPIED_CELL:
+            return 'GOAL_IN_OCCUPIED_CELL'
+        elif path_compute_result == Navigate.Feedback.NO_PATH_FOUND:
+            return 'NO_PATH_FOUND'
+        elif path_compute_result == Navigate.Feedback.INTITIALIZING:
+            return 'INTITIALIZING'
+        else:
+            return 'UNKNOWN (error)'
 
  
 

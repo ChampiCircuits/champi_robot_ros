@@ -13,7 +13,7 @@ from champi_interfaces.action import Navigate
 from champi_interfaces.msg import CtrlGoal
 from geometry_msgs.msg import Pose, PoseStamped
 
-from math import pi
+from math import hypot
 import numpy as np
 import time
 from rclpy.executors import ExternalShutdownException
@@ -45,7 +45,15 @@ class PlannerNode(Node):
 
     def __init__(self):
         super().__init__('planner_node')
-        get_logger('rclpy').info(f"\tLaunching Path planner NODE...")
+        
+        self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
+        self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
+        self.debug =self.declare_parameter('debug', rclpy.Parameter.Type.BOOL).value
+
+        self.get_logger().info('Path Planner started with the following parameters:')
+        self.get_logger().info(f'loop_period: {self.loop_period}')
+        self.get_logger().info(f'waypoint_tolerance: {self.waypoint_tolerance}')
+        self.get_logger().info(f'debug: {self.debug}')
 
         self.champi_path_pub = self.create_publisher(CtrlGoal, '/ctrl_goal', 10)
 
@@ -62,24 +70,17 @@ class PlannerNode(Node):
 
         self.goal_handle_navigate = None
 
-        self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
-        self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
-
         self.robot_pose: Pose = None
         self.costmap = None
         self.path_planner = None
 
         self.planning = False
 
-
-        self.debug = True # TODO add as parameter
-
         if self.debug:
             # Create 2 debug occupancy grids publishers
             self.debug_pub_raw_path = self.create_publisher(OccupancyGrid, '/raw_path_costmap_viz', 10)
             self.debug_pub_optimized_path = self.create_publisher(OccupancyGrid, '/optimized_path_costmap_viz', 10)
-        
-        get_logger('rclpy').info("\tPath planner NODE launched!")
+
 
     # ==================================== ROS2 Callbacks ==========================================
 
@@ -109,10 +110,17 @@ class PlannerNode(Node):
     async def execute_callback(self, goal_handle):
         self.goal_handle_navigate = goal_handle
 
+        feedback_msg = Navigate.Feedback()
+
          # We're still waiting for first messages (init)
         while rclpy.ok() and (self.robot_pose is None or self.costmap is None) and goal_handle.is_active:
             self.get_logger().info('Waiting for init messages', throttle_duration_sec=1.)
-            # TODO feedback
+            
+            # Feedback
+            feedback_msg.path_compute_result = Navigate.Feedback.INTITIALIZING
+            feedback_msg.eta = -1.
+            goal_handle.publish_feedback(feedback_msg)
+
             time.sleep(self.loop_period)
 
         navigate_goal_reached = False
@@ -131,7 +139,7 @@ class PlannerNode(Node):
                                             self.current_navigate_goal.linear_tolerance,
                                             self.current_navigate_goal.angular_tolerance):
                 navigate_goal_reached = True
-            
+                continue
 
             path, result = self.path_planner.compute_path(self.robot_pose, self.current_navigate_goal.pose, self.costmap)
             
@@ -150,6 +158,11 @@ class PlannerNode(Node):
                 # Publish path for visualization
                 self.publish_path(path)
 
+                # Feedback
+                feedback_msg.path_compute_result = self.result_to_compute_path_status(result)
+                feedback_msg.eta = self.get_estimated_eta(path, self.current_navigate_goal.max_linear_speed)
+                goal_handle.publish_feedback(feedback_msg)
+
 
                 if self.debug:
                     costmap_raw_path = self.path_planner.get_raw_path_as_occupancy_grid()
@@ -161,11 +174,16 @@ class PlannerNode(Node):
 
             else:
                 self.get_logger().warn(f'Path computation failed: {result.name}', throttle_duration_sec=0.5)
-                # TODO gérer la situation
 
+                # Feedback
+                feedback_msg.path_compute_result = self.result_to_compute_path_status(result)
+                feedback_msg.eta = -1.
+                goal_handle.publish_feedback(feedback_msg)
 
+                # TODO gérer la situation: if the error is GOAL_NOT_IN_COSTMAP or NO_PATH_FOUND,
+                # we are still able to move in direction of the goal. So we will generate a path that goes straight to the goal
+                # until the costmap is not free.
 
-            # TODO feedback
 
             # self.get_logger().info(f'. \t\t loop_exec_time={round(time.time() - t_loop_start, 5)}')
             time.sleep(self.loop_period - (time.time() - t_loop_start))
@@ -257,6 +275,35 @@ class PlannerNode(Node):
         ctrl_goal.robot_angle_when_looking_at_point = navigate_goal.robot_angle_when_looking_at_point
 
         return ctrl_goal
+
+
+
+    def get_estimated_eta(self, path, speed):
+        """
+        Estimate the time to reach the end of the path with a given speed (we don't take into account the acceleration)
+        """
+        distance = 0
+        for i in range(1, len(path)):
+            d = hypot(path[i].position.x - path[i-1].position.x, path[i].position.y - path[i-1].position.y)
+            distance += d
+        return distance / speed
+    
+
+    def result_to_compute_path_status(self, result):
+        if result == ComputePathResult.SUCCESS_STRAIGHT:
+            return Navigate.Feedback.SUCCESS_STRAIGHT
+        elif result == ComputePathResult.SUCCESS_AVOIDANCE:
+            return Navigate.Feedback.SUCCESS_AVOIDANCE
+        elif result == ComputePathResult.GOAL_NOT_IN_COSTMAP:
+            return Navigate.Feedback.GOAL_NOT_IN_COSTMAP
+        elif result == ComputePathResult.NO_PATH_FOUND:
+            return Navigate.Feedback.NO_PATH_FOUND
+        elif result == ComputePathResult.START_NOT_IN_COSTMAP:
+            return Navigate.Feedback.START_NOT_IN_COSTMAP
+        elif result == ComputePathResult.GOAL_IN_OCCUPIED_CELL:
+            return Navigate.Feedback.GOAL_IN_OCCUPIED_CELL
+
+
 
 
 def main(args=None):

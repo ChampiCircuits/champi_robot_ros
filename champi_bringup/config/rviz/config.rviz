@@ -7,7 +7,6 @@ Panels:
         - /TF1/Frames1
         - /Odometry from Kalman1/Shape1
         - /Map1/Update Topic1
-        - /Plan (viz only)1
         - /Enemy Pose1/Shape1
         - /Raw Path (debug)1/Status1
       Splitter Ratio: 0.440828412771225
