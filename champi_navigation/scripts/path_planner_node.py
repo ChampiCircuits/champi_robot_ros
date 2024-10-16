@@ -25,6 +25,8 @@ from champi_libraries_py.data_types.geometry import Pose2D
 
 from rclpy.logging import get_logger
 
+from icecream import ic
+
 
 class PlannerNode(Node):
     """
@@ -144,23 +146,28 @@ class PlannerNode(Node):
             path, result = self.path_planner.compute_path(self.robot_pose, self.current_navigate_goal.pose, self.costmap)
             
             
-            if result == ComputePathResult.SUCCESS_STRAIGHT or result == ComputePathResult.SUCCESS_AVOIDANCE:
+            if path is not None:
 
                 is_waypoint = (result == ComputePathResult.SUCCESS_AVOIDANCE)
 
                 # Create a CtrlGoal
                 ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint)
                 ctrl_goal.pose = path[1]
-                
+
                 # Publish goal
                 self.champi_path_pub.publish(ctrl_goal)
 
                 # Publish path for visualization
-                self.publish_path(path)
+                self.publish_path(path)                    
 
                 # Feedback
+                if result != ComputePathResult.SUCCESS_STRAIGHT and result != ComputePathResult.SUCCESS_AVOIDANCE:
+                    self.get_logger().warn(f'Path computation failed: {result.name}, but some part of a path could still be geberated',
+                                           throttle_duration_sec=0.5)
+                    feedback_msg.eta = -1.
+                else:
+                    feedback_msg.eta = self.get_estimated_eta(path, self.current_navigate_goal.max_linear_speed)
                 feedback_msg.path_compute_result = self.result_to_compute_path_status(result)
-                feedback_msg.eta = self.get_estimated_eta(path, self.current_navigate_goal.max_linear_speed)
                 goal_handle.publish_feedback(feedback_msg)
 
 
@@ -173,16 +180,12 @@ class PlannerNode(Node):
                 
 
             else:
-                self.get_logger().warn(f'Path computation failed: {result.name}', throttle_duration_sec=0.5)
+                
 
                 # Feedback
                 feedback_msg.path_compute_result = self.result_to_compute_path_status(result)
                 feedback_msg.eta = -1.
                 goal_handle.publish_feedback(feedback_msg)
-
-                # TODO gérer la situation: if the error is GOAL_NOT_IN_COSTMAP or NO_PATH_FOUND,
-                # we are still able to move in direction of the goal. So we will generate a path that goes straight to the goal
-                # until the costmap is not free.
 
 
             # self.get_logger().info(f'. \t\t loop_exec_time={round(time.time() - t_loop_start, 5)}')

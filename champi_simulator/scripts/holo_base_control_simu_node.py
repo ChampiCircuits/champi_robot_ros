@@ -172,14 +172,13 @@ class HoloBaseControlDummy(Node):
         if time.time() - self.t_last_cmd_vel_ > 0.5:
             self.latest_cmd_vel = [0., 0., 0.]
 
-        # comppute speed of the robot and print it
-        speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
-        # print 1/20 times
-        if self.cnt == 20:
-            # rclpy.logging.get_logger('rclpy').info(f"Speed: {speed}")
-            self.cnt = 0
-        self.cnt += 1
-
+        # # comppute speed of the robot and print it
+        # speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
+        # # print 1/20 times
+        # if self.cnt == 20:
+        #     # rclpy.logging.get_logger('rclpy').info(f"Speed: {speed}")
+        #     self.cnt = 0
+        # self.cnt += 1
 
         # Compute dt
         if self.last_time_ == 0.0:

@@ -33,13 +33,6 @@ def generate_launch_description():
         parameters=[config_file_path]
     )
 
-    call_set_pose_node = Node(
-        package='dev_tools',
-        executable='call_set_pose.py',
-        name='call_set_pose',
-        output='screen',
-    )
-
     path_planner_ui_node = Node(
         package='champi_navigation',
         executable='path_planner_ui_node.py',
@@ -51,7 +44,6 @@ def generate_launch_description():
         path_controller_node,
         costmap_updater_node,
         a_star_path_planner_node,
-        call_set_pose_node,
         path_planner_ui_node
 
     ])

@@ -52,7 +52,8 @@ class PathPlannerUINode(Node):
 
 
     def feedback_callback(self, feedback_msg):
-        self.get_logger().info(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {feedback_msg.feedback.eta}')
+        pass
+        # self.get_logger().info(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {feedback_msg.feedback.eta}')
 
 
 

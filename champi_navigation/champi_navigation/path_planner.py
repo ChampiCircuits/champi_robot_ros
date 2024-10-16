@@ -9,6 +9,8 @@ from nav_msgs.msg import OccupancyGrid
 
 from champi_navigation.costmap_astar import CostmapAStar
 
+from icecream import ic
+
 
 class ComputePathResult(Enum):
     SUCCESS_STRAIGHT = 0
@@ -71,14 +73,13 @@ class AStarPathPlanner:
             self.optimized_path = []
             return None, ComputePathResult.START_NOT_IN_COSTMAP
         if not (0 <= goal[0] < costmap.shape[1] and 0 <= goal[1] < costmap.shape[0]):
-            path_poses = []
             self.raw_path = []
             self.optimized_path = []
-            return path_poses, ComputePathResult.GOAL_NOT_IN_COSTMAP
+            return None, ComputePathResult.GOAL_NOT_IN_COSTMAP
 
         # If goal is in an occupied cell, return
         if costmap[goal[1], goal[0]] != 0:
-            path_poses = []
+            path_poses = self.compute_path_until_obstacle(robot_pose, goal_pose, costmap)
             return path_poses, ComputePathResult.GOAL_IN_OCCUPIED_CELL
 
 
@@ -89,8 +90,7 @@ class AStarPathPlanner:
             # start = self.handle_start_in_occupied_cell_by_finding_closest_free_cell(start, costmap)
             start = self.handle_start_in_occupied_cell_by_clearing(start, costmap)
             if start is None:
-                path_poses = []
-                return path_poses, ComputePathResult.NO_PATH_FOUND
+                return None, ComputePathResult.NO_PATH_FOUND
 
         # If line is free, just go straight (no need to pathfind, we save time)
         if is_line_free(start, goal, costmap, check_start=True):
@@ -103,7 +103,7 @@ class AStarPathPlanner:
         path = self.costmap_path_finder.compute_path(start, goal, costmap)
 
         if path is None: # No path found
-            path_poses = []
+            path_poses = self.compute_path_until_obstacle(robot_pose, goal_pose, costmap)
             self.raw_path = []
             self.optimized_path = []
             return path_poses, ComputePathResult.NO_PATH_FOUND
@@ -139,7 +139,7 @@ class AStarPathPlanner:
         """
         Clears a circle of radius 0.1m around the start cell, to allow pathfinding.
 
-        This approach is less conservative than finding the closest free cell, but the current prefers it
+        This approach is less conservative than finding the closest free cell, but it works better
         (smooth motion).
 
         :param start: tuple (x, y)
@@ -242,3 +242,39 @@ class AStarPathPlanner:
         occupancy_grid.data = data.flatten().tolist()
 
         return occupancy_grid
+    
+
+    def compute_path_until_obstacle(self, robot_pose: Pose, goal_pose: Pose, costmap) -> list[Pose]:
+        """
+        Compute a line path until the first obstacle is found.
+        Always call it when compute_path() returns NO_PATH_FOUND or GOAL_IN_OCCUPIED_CELL.
+
+        :param robot_pose: Pose
+        :param costmap: np array
+        :return: list of Pose,
+        """
+
+        # Create breseham line from robot to goal
+        start = self.m_to_pixel(robot_pose)
+        goal = self.m_to_pixel(goal_pose)
+
+        path = list(bresenham(start[0], start[1], goal[0], goal[1]))
+
+        # Find the first obstacle
+        end_of_line = None
+        for i in range(1, len(path)):
+            p = path[i]
+            if costmap[p[1], p[0]] != 0:
+                end_of_line = path[i-1]
+                break
+
+        if end_of_line is None or end_of_line == start:
+            return None
+        
+        end_pose = Pose()
+        end_pose.position.x, end_pose.position.y = self.pixel_to_m(end_of_line)
+        
+        return [robot_pose, end_pose]
+        
+
+
