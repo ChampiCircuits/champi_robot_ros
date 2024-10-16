@@ -21,7 +21,13 @@ from rclpy.executors import ExternalShutdownException
 from champi_navigation.path_planner import PathPlanner, ComputePathResult
 from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
 import champi_navigation.goal_checker as goal_checker
+from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
+from champi_libraries_py.utils.timeout import Timeout
 from champi_libraries_py.data_types.geometry import Pose2D
+
+import diagnostic_msgs
+import diagnostic_updater
+
 
 
 from rclpy.logging import get_logger
@@ -68,12 +74,29 @@ class PlannerNode(Node):
                                                    callback_group=ReentrantCallbackGroup())
         
 
+        # Path planner object
+        self.path_planner = PathPlanner()
+
+        # Timeout object to abort the Navigate goal if it takes too long (robot stuck, goal occupied...)
+        self.timeout = Timeout()
+
+        # Diagnostic updater
+        updater = diagnostic_updater.Updater(self)
+        updater.setHardwareID('none')
+
+        # Diagnostic for execution time of control loop
+        self.exec_time_measurer = ExecTimeMeasurer()
+        updater.add('Loop exec time', self.exec_time_measurer.produce_diagnostics)
+
+        # Diagnostic for timeout
+        updater.add('Timeout', self.timeout.produce_diagnostics) 
+
+        # Diagnostic for PathPlanner
+        updater.add('PathPlanner', self.path_planner.produce_diagnostics)
+
         # Data retreived from topics
         self.robot_pose: Pose = None
         self.costmap = None # Numpy 2D array
-
-        # Path planne object
-        self.path_planner = None
 
         # Current goal handle, that we get when a new goal is received by the action server
         self.goal_handle_navigate = None
@@ -93,8 +116,8 @@ class PlannerNode(Node):
 
     def costmap_callback(self, msg):
         # First time we receive the costmap: create the path planner using costmap metadata
-        if self.path_planner is None:
-            self.path_planner = PathPlanner(msg.info.width, msg.info.height, msg.info.resolution)
+        if not self.path_planner.is_initialized:
+            self.path_planner.initialize(msg.info.width, msg.info.height, msg.info.resolution)
 
         self.costmap = np.array(msg.data).reshape(msg.info.height, msg.info.width)
     
@@ -155,9 +178,21 @@ class PlannerNode(Node):
         # =================================== MAIN LOOP ==========================================
 
         navigate_goal_reached = False
+        self.timeout.start(self.current_navigate_goal.timeout)
 
         while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached:
+
+            # Exectution time measurement for diagnostics. Check class definition for details.
+            self.exec_time_measurer.start()
+
             t_loop_start = time.time()
+
+            # Check if the timeout is reached
+            if self.timeout.is_elapsed():
+                self.get_logger().warn('Timeout reached!')
+                goal_handle.abort()
+                self.timeout.reset()
+                continue
 
             # Check if goal is reached
             if goal_checker.is_goal_reached(Pose2D(pose=self.current_navigate_goal.pose),
@@ -202,10 +237,13 @@ class PlannerNode(Node):
             feedback_msg = get_feedback_msg(result, path, self.current_navigate_goal.max_linear_speed)
             goal_handle.publish_feedback(feedback_msg)
 
-            # self.get_logger().info(f'. \t\t loop_exec_time={round(time.time() - t_loop_start, 5)}')
+            self.exec_time_measurer.stop()
+
+            # Sleep to respect the loop period
             time.sleep(self.loop_period - (time.time() - t_loop_start))
 
         self.planning = False
+        self.timeout.reset()
         
 
         # ============================ FILL ACTION RESULT ====================================
@@ -286,6 +324,9 @@ class PlannerNode(Node):
         ctrl_goal.robot_angle_when_looking_at_point = navigate_goal.robot_angle_when_looking_at_point
 
         return ctrl_goal
+    
+
+    # ====================================== Main ==========================================
 
 
 def main(args=None):

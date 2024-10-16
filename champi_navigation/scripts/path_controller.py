@@ -29,7 +29,7 @@ class PathControllerNode(Node):
         control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
         max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
         max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
-        timeout_wait_next_goal = self.declare_parameter('timeout_wait_next_goal', rclpy.Parameter.Type.DOUBLE).value
+        self.timeout_wait_next_goal = self.declare_parameter('timeout_wait_next_goal', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Controller started with the following parameters:')
@@ -51,7 +51,7 @@ class PathControllerNode(Node):
 
         # When the ctrl_goal is reached and end_speed!=0 (we expect a new goal to be sent right away),
         # the robot will emergency stop once the timeout is elapsed.
-        self.timeout = Timeout(timeout_wait_next_goal)
+        self.timeout = Timeout()
 
         updater = diagnostic_updater.Updater(self)
         updater.setHardwareID('none')
@@ -117,7 +117,7 @@ class PathControllerNode(Node):
         #   We enter this block every time the goal is reached, because the robot will stop thus is_ctrl_goal_reached will stay True.
         if not self.timeout.is_running() and goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose):  # Goal reached
             if self.ctrl_goal.end_speed != 0.:
-                self.timeout.start()
+                self.timeout.start(self.timeout_wait_next_goal)
             else:
                 self.stop_robot()
                 self.exec_time_measurer.stop()

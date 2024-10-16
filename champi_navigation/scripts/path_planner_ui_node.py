@@ -122,6 +122,8 @@ class PathPlannerUINode(Node):
 
         goal.robot_angle_when_looking_at_point = 0.
 
+        goal.timeout = 7. # seconds
+
         return goal
     
 

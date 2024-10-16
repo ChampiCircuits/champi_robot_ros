@@ -5,6 +5,8 @@ from bresenham import bresenham
 
 from geometry_msgs.msg import Pose
 from nav_msgs.msg import OccupancyGrid
+import diagnostic_msgs
+
 
 from champi_navigation.costmap_astar import CostmapAStar
 from champi_navigation.planning_feedback import ComputePathResult
@@ -46,7 +48,10 @@ class PathPlanner:
     It uses uses the A* planner when obstacles are in the way, otherwise it creates a straight line to the goal.
     """
 
-    def __init__(self, width: int, height: int, m_per_pixel: float):
+    def __init__(self):
+        self.is_initialized = False
+
+    def initialize(self, width: int, height: int, m_per_pixel: float):
         """Initializes the path planner.
 
         Args:
@@ -54,6 +59,8 @@ class PathPlanner:
             height (int): Height of the costmap grid in pixels
             m_per_pixel (float): Size in meters of a pixel in the costmap grid
         """
+        
+        self.is_initialized = True
 
         self.m_per_pixel = m_per_pixel
         # A* path pathfinder
@@ -62,6 +69,9 @@ class PathPlanner:
         # raw and optimized path stored for debug
         self.raw_path = []
         self.optimized_path = []
+        
+        # Latest result, for diagnostics
+        self.latest_result = None
 
 
     def compute_path(self, robot_pose: Pose, goal_pose: Pose, costmap) -> tuple[list[Pose], ComputePathResult]:
@@ -80,6 +90,10 @@ class PathPlanner:
             So, the result is only for information. To know if a path could be computed, check if the returned path is not None.
         """
 
+        # ic(self.is_initialized)
+        # ic(self.m_per_pixel)
+        # ic(self.costmap_path_finder.width)
+
         # Reset raw and optimized path, that are used for debug
         self.raw_path = []
         self.optimized_path = []
@@ -90,15 +104,18 @@ class PathPlanner:
 
         # If start is not in the costmap, return
         if not (0 <= start[0] < costmap.shape[1] and 0 <= start[1] < costmap.shape[0]):
+            self.latest_result = ComputePathResult.START_NOT_IN_COSTMAP
             return None, ComputePathResult.START_NOT_IN_COSTMAP
         
         # If goal is not in the costmap, return
         if not (0 <= goal[0] < costmap.shape[1] and 0 <= goal[1] < costmap.shape[0]):
+            self.latest_result = ComputePathResult.GOAL_NOT_IN_COSTMAP
             return None, ComputePathResult.GOAL_NOT_IN_COSTMAP
 
         # If goal is in an occupied cell, no A* will be performed but we can still try to go straight until obstacle
         if costmap[goal[1], goal[0]] != 0:
             path_poses = self.compute_path_until_obstacle(robot_pose, goal_pose, costmap) # Note: returns None if no path found
+            self.latest_result = ComputePathResult.GOAL_IN_OCCUPIED_CELL
             return path_poses, ComputePathResult.GOAL_IN_OCCUPIED_CELL
 
         # Handle the case where start is an occupied cell.
@@ -117,6 +134,7 @@ class PathPlanner:
         # If line is free, just go straight (no need to pathfind, we save time)
         if is_line_free(start, goal, costmap, check_start=True):
             path_poses = [robot_pose, goal_pose]
+            self.latest_result = ComputePathResult.SUCCESS_STRAIGHT
             return path_poses, ComputePathResult.SUCCESS_STRAIGHT
 
         # Compute the path
@@ -125,6 +143,7 @@ class PathPlanner:
         # No path found
         if path is None:
             path_poses = self.compute_path_until_obstacle(robot_pose, goal_pose, costmap)
+            self.latest_result = ComputePathResult.NO_PATH_FOUND
             return path_poses, ComputePathResult.NO_PATH_FOUND
 
         path = list(path)
@@ -152,6 +171,7 @@ class PathPlanner:
         path_poses[0] = robot_pose
         path_poses[-1] = goal_pose
 
+        self.latest_result = ComputePathResult.SUCCESS_AVOIDANCE
         return path_poses, ComputePathResult.SUCCESS_AVOIDANCE
 
 
@@ -307,6 +327,27 @@ class PathPlanner:
         end_pose.orientation = goal_pose.orientation
 
         return [robot_pose, end_pose]
+    
+
+    def produce_diagnostics(self, stat):
+        """Callback for the diagnostic updater to report the latest path computation result."""
+
+        if not self.is_initialized:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, 'Not initialized')
+            stat.add('Latest ComputePathResult', 'N/A')
+
+        if self.latest_result is None:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Initialized, no planning done yet')
+            stat.add('Latest ComputePathResult', 'N/A')
+
+        elif self.latest_result == ComputePathResult.SUCCESS_STRAIGHT or self.latest_result == ComputePathResult.SUCCESS_AVOIDANCE:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, "Initialized, planning OK")
+            stat.add('Latest ComputePathResult', self.latest_result.name)
+        else:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, "Initialized, planning NOK")
+            stat.add('Latest ComputePathResult', self.latest_result.name)
+    
+        return stat
         
 
 
