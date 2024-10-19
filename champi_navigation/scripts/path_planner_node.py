@@ -259,19 +259,20 @@ class PlannerNode(Node):
         
 
         # ============================ FILL ACTION RESULT ====================================
+
+        # stop robot and clear path
+        self.publish_stop()
+        self.publish_path([])
+
         result = None
         
         # Check if the goal was aborted
         if not goal_handle.is_active:
-            self.publish_stop()
-            self.publish_path([])
             self.get_logger().info('Action execution stopped because goal was aborted!!')
             result =  Navigate.Result(success=False, message='Goal aborted!')
 
         # Check if the node is shutting down
         elif not rclpy.ok():
-            self.publish_stop()
-            self.publish_path([])
             result = Navigate.Result(success=False, message='Node shutdown!')
 
         # The goal was reached

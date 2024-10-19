@@ -11,9 +11,9 @@ import time
 from rclpy.executors import ExternalShutdownException
 
 
-class ImageToCostmapNode(Node):
+class CostmapUpdaterNode(Node):
     def __init__(self):
-        super().__init__('image_to_costmap_node')
+        super().__init__('costmap_updater_node')
         self.publisher_ = self.create_publisher(OccupancyGrid, 'costmap', 10)
         self.bridge = CvBridge()
         self.timer_period = 0.2  # seconds
@@ -115,7 +115,7 @@ class ImageToCostmapNode(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    node = ImageToCostmapNode()
+    node = CostmapUpdaterNode()
 
     try:
         rclpy.spin(node)

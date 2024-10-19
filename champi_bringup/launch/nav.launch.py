@@ -9,17 +9,17 @@ def generate_launch_description():
     # Get configuration file
     config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
 
-    path_controller_node = Node(
+    pose_controller_node = Node(
         package='champi_navigation',
-        executable='path_controller.py',
-        name='path_controller',
+        executable='pose_controller_node.py',
+        name='pose_controller',
         output='screen',
         parameters=[config_file_path]
     )
 
     costmap_updater_node = Node(
         package='champi_navigation',
-        executable='costmap_updater.py',
+        executable='costmap_updater_node.py',
         name='costmap_updater',
         output='screen',
         parameters=[config_file_path]
@@ -41,7 +41,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        path_controller_node,
+        pose_controller_node,
         costmap_updater_node,
         a_star_path_planner_node,
         path_planner_ui_node

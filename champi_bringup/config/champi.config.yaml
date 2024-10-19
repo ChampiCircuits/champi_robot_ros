@@ -112,7 +112,7 @@ costmap_updater:
     enemy_robot_radius: 0.2 # m
     enemy_pos_prediction_time: 0.0 # s. 0.0 means disabled
 
-path_controller:
+pose_controller:
   ros__parameters:
     control_loop_period: 0.1 # s
     max_linear_acceleration: 0.3 # m/s^2

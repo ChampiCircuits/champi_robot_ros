@@ -21,9 +21,9 @@ import diagnostic_msgs
 import diagnostic_updater
 
 
-class PathControllerNode(Node):
+class PoseControllerNode(Node):
     def __init__(self):
-        super().__init__('pose_control_node')
+        super().__init__('pose_controller_node')
 
         # Parameters
         control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
@@ -48,6 +48,9 @@ class PathControllerNode(Node):
         self.path_follow_params = PathFollowParams(max_linear_acceleration, max_angular_acceleration)
         self.robot_current_state = None
         self.ctrl_goal: CtrlGoal = None
+
+        # "stop" variable, that is used to indicate that planner asked to stop the robot (by sending a goal with max speed = 0)
+        self.stop_requested_by_planner = False
 
         # When the ctrl_goal is reached and end_speed!=0 (we expect a new goal to be sent right away),
         # the robot will emergency stop once the timeout is elapsed.
@@ -84,6 +87,13 @@ class PathControllerNode(Node):
         if self.robot_current_state is None:
             return
         
+        # Stop requested by planner ?
+        if ctrl_goal.max_linear_speed == 0.:
+            self.stop_requested_by_planner = True
+            return
+        else:
+            self.stop_requested_by_planner = False
+        
         if self.ctrl_goal is None or not self.are_ctrl_goals_equal(ctrl_goal, self.ctrl_goal):
             # Means that we need to update the control goal (first time or new goal)
             # Why do we test this ? The path planner is not required to publish the twice the same goal (e.g periodically)
@@ -102,8 +112,8 @@ class PathControllerNode(Node):
         # # Exectution time measurement for diagnostics. Check class definition for details.
         self.exec_time_measurer.start()
 
-        # Initialization checks
-        if self.robot_current_state is None or self.ctrl_goal is None:
+        # Initialization checks or stop requested by planner
+        if self.robot_current_state is None or self.ctrl_goal is None or self.stop_requested_by_planner:
             self.stop_robot()
             self.exec_time_measurer.stop()
             return
@@ -180,6 +190,8 @@ class PathControllerNode(Node):
 
         if goal_checker.is_ctrl_goal_reached(self.ctrl_goal, self.robot_current_state.pose) or self.timeout.is_running():
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Goal reached')
+        elif self.stop_requested_by_planner:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, 'Stop requested by planner')
         else:
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Going to goal')
 
@@ -189,7 +201,7 @@ class PathControllerNode(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    node = PathControllerNode()
+    node = PoseControllerNode()
 
     try:
         rclpy.spin(node)
