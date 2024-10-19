@@ -7,6 +7,7 @@ from rclpy.action import ActionServer, GoalResponse, CancelResponse
 
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import ExternalShutdownException
 
 from nav_msgs.msg import OccupancyGrid, Odometry, Path
 from champi_interfaces.action import Navigate
@@ -16,7 +17,8 @@ from geometry_msgs.msg import Pose, PoseStamped
 from math import hypot
 import numpy as np
 import time
-from rclpy.executors import ExternalShutdownException
+from threading import Lock
+
 
 from champi_navigation.path_planner import PathPlanner, ComputePathResult
 from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
@@ -104,6 +106,11 @@ class PlannerNode(Node):
         # True when we have a goal to reach. Come back to False when the goal is reached or cancelled
         self.planning = False
 
+        # This mutex is used to avoid the execute_callback to be running multiple times concurentlly, which leads to very annoying things.
+        # For example, without mutex, when we cancel a goal, the new execute_callback is called althrough the previous one is still running,
+        # and they modify the same attributes...
+        self.mutex_exec = Lock()
+
 
     # ==================================== ROS2 topics Callbacks ==========================================
 
@@ -159,6 +166,11 @@ class PlannerNode(Node):
     async def execute_callback(self, goal_handle):
         """ Called right after we return GoalResponse.ACCEPT in navigate_callback
         """
+
+
+        self.mutex_exec.acquire()
+
+
         self.goal_handle_navigate = goal_handle
 
 
@@ -251,11 +263,15 @@ class PlannerNode(Node):
         
         # Check if the goal was aborted
         if not goal_handle.is_active:
+            self.publish_stop()
+            self.publish_path([])
             self.get_logger().info('Action execution stopped because goal was aborted!!')
             result =  Navigate.Result(success=False, message='Goal aborted!')
 
         # Check if the node is shutting down
         elif not rclpy.ok():
+            self.publish_stop()
+            self.publish_path([])
             result = Navigate.Result(success=False, message='Node shutdown!')
 
         # The goal was reached
@@ -264,10 +280,19 @@ class PlannerNode(Node):
             self.get_logger().info('Navigate Goal reached!')
             result = Navigate.Result(success=True, message='Goal reached!')
         
+        self.mutex_exec.release()
+        
         return result
 
 
     # ====================================== Utils ==========================================
+
+
+    def publish_stop(self):
+        """Publish a stop command to the controller node. Made by publishing an empty CtrlGoal; as max speed is 0, the robot will stop.
+        """
+        ctrl_goal = CtrlGoal()
+        self.champi_path_pub.publish(ctrl_goal)
 
 
     def publish_path(self, path: list[Pose]):
