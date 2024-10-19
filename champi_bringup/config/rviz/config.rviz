@@ -5,10 +5,11 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /TF1/Frames1
-        - /Odometry1/Shape1
+        - /Odometry from Kalman1/Shape1
         - /Map1/Update Topic1
-        - /Odometry2/Shape1
-      Splitter Ratio: 0.612994372844696
+        - /Enemy Pose1/Shape1
+        - /Raw Path (debug)1/Status1
+      Splitter Ratio: 0.440828412771225
     Tree Height: 625
   - Class: rviz_common/Selection
     Name: Selection
@@ -113,7 +114,7 @@ Visualization Manager:
         Value: false
       Enabled: true
       Keep: 100
-      Name: Odometry
+      Name: Odometry from Kalman
       Position Tolerance: 0.10000000149011612
       Shape:
         Alpha: 1
@@ -198,7 +199,7 @@ Visualization Manager:
       Length: 0.30000001192092896
       Line Style: Lines
       Line Width: 0.029999999329447746
-      Name: Path
+      Name: Plan (viz only)
       Offset:
         X: 0
         Y: 0
@@ -214,7 +215,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /plan
+        Value: /plan_viz
       Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz_default_plugins/Odometry
@@ -233,20 +234,20 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: false
+      Enabled: true
       Keep: 100
-      Name: Odometry
+      Name: Enemy Pose
       Position Tolerance: 0.10000000149011612
       Shape:
         Alpha: 1
-        Axes Length: 1
-        Axes Radius: 0.10000000149011612
+        Axes Length: 0.10000000149011612
+        Axes Radius: 0.009999999776482582
         Color: 255; 25; 0
         Head Length: 0.019999999552965164
         Head Radius: 0.019999999552965164
         Shaft Length: 0.05000000074505806
         Shaft Radius: 0.009999999776482582
-        Value: Arrow
+        Value: Axes
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -254,7 +255,69 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /enemy_pose
-      Value: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.10000000149011612
+      Head Radius: 0.05000000074505806
+      Name: 2D Goal Pose
+      Shaft Length: 0.20000000298023224
+      Shaft Radius: 0.019999999552965164
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
+      Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz_default_plugins/Map
+      Color Scheme: costmap
+      Draw Behind: false
+      Enabled: true
+      Name: Raw Path (debug)
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /raw_path_costmap_viz
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /raw_path_costmap_viz_updates
+      Use Timestamp: false
+      Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz_default_plugins/Map
+      Color Scheme: costmap
+      Draw Behind: false
+      Enabled: true
+      Name: Oprimized Path (debug)
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /optimized_path_costmap_viz
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /optimized_path_costmap_viz_updates
+      Use Timestamp: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -300,7 +363,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.01999509707093239
+      Angle: 3.14001202583313
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -310,11 +373,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: -189.7691192626953
+      Scale: 345.93804931640625
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 1.0503708124160767
-      Y: 1.640665888786316
+      X: 1.0828497409820557
+      Y: 0.6894264221191406
     Saved: ~
 Window Geometry:
   Displays:
@@ -324,7 +387,7 @@ Window Geometry:
   Hide Right Dock: false
   Navigation 2:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000024e00000323fc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000007901000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073020000051100000133000001850000014bfb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000004e00000323000000ff01000003fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb00000018004e0061007600690067006100740069006f006e00200032000000021d000001680000017e01000003fb000000100044006900730070006c00610079007300000001e90000019c000000ff01000003000000010000011000000323fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000004e00000323000000d701000003fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000004efc0100000002fb0000000800540069006d0065010000000000000780000002e701000003fb0000000800540069006d00650100000000000004500000000000000000000004200000032300000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002ac00000323fc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000007901000003fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073020000051100000133000001850000014bfb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000004e00000323000000ff01000003fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb00000018004e0061007600690067006100740069006f006e00200032000000021d000001680000017e01000003fb000000100044006900730070006c00610079007300000001e90000019c000000ff01000003000000010000011000000323fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000004e00000323000000d701000003fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000004efc0100000002fb0000000800540069006d0065010000000000000780000002e701000003fb0000000800540069006d00650100000000000004500000000000000000000003c20000032300000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:

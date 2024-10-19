@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="MainTree">
+      
+  <BehaviorTree ID="MainTree">
+    <Sequence name="root_sequence">
+      <CheckBattery name="check_battery"/>
+      <OpenGripper name="open_gripper"/>
+      <ApproachObject name="approach_object"/>
+      <CloseGripper name="close_gripper"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="ApproachObject"
+            editable="true"/>
+    <Condition ID="CheckBattery"
+               editable="true"/>
+    <Action ID="CloseGripper"
+            editable="true"/>
+    <Action ID="OpenGripper"
+            editable="true"/>
+  </TreeNodesModel>
+
+</root>

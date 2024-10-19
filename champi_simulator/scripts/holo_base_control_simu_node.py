@@ -18,6 +18,8 @@ from sensor_msgs.msg import Imu
 from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import TransformStamped
 
+from champi_libraries_py.utils.angles import get_yaw
+
 
 class HoloBaseControlDummy(Node):
 
@@ -99,7 +101,7 @@ class HoloBaseControlDummy(Node):
     def initial_pose_callback(self, msg):
         self.current_pose[0] = msg.pose.pose.position.x
         self.current_pose[1] = msg.pose.pose.position.y
-        self.current_pose[2] = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
+        self.current_pose[2] = get_yaw(msg.pose.pose)
 
     # Returns the velocity with limited acceleration applied
     def limit_accel(self, current_speed, goal_speed, max_acceleration, dt):
@@ -170,14 +172,13 @@ class HoloBaseControlDummy(Node):
         if time.time() - self.t_last_cmd_vel_ > 0.5:
             self.latest_cmd_vel = [0., 0., 0.]
 
-        # comppute speed of the robot and print it
-        speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
-        # print 1/20 times
-        if self.cnt == 20:
-            # rclpy.logging.get_logger('rclpy').info(f"Speed: {speed}")
-            self.cnt = 0
-        self.cnt += 1
-
+        # # comppute speed of the robot and print it
+        # speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
+        # # print 1/20 times
+        # if self.cnt == 20:
+        #     # rclpy.logging.get_logger('rclpy').info(f"Speed: {speed}")
+        #     self.cnt = 0
+        # self.cnt += 1
 
         # Compute dt
         if self.last_time_ == 0.0:

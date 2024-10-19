@@ -10,11 +10,10 @@ find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-
-
 rosidl_generate_interfaces(${PROJECT_NAME}
-        "action/Navigate.action"
-        DEPENDENCIES geometry_msgs
+  "msg/CtrlGoal.msg"
+  "action/Navigate.action"
+  DEPENDENCIES geometry_msgs
 )
 
 if(BUILD_TESTING)

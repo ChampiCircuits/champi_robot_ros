@@ -3,9 +3,9 @@
 <package format="3">
   <name>champi_interfaces</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>A box of mushroomy messages.</description>
   <maintainer email="andrerusso02@gmail.com">arusso</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Driving license for regular mushroom-fueled vehicles.</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
@@ -18,6 +18,8 @@
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
+
+  <exec_depend>rosidl_default_runtime</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -66,13 +66,19 @@ class LidarSimulator(Node):
             for i in range(max(0, index - 5), min(index + 5, 1023)):
                 # add random noise to the distance
                 scan.ranges[i] = distance + random.uniform(-0.01, 0.01)
+            
+            # We use the same timestamp as the transformed point (time of latest tf available).
+            # If we were using the current time, there woult be a mismatch between the scan and the robot position,
+            # then when a subscriber would do the inverse transform transform scan to global frame, the points of lidar would
+            # appear to be moving when robot moves fast.
+            scan.header.frame_id = 'base_laser'
+            scan.header.stamp = transformed_point.header.stamp
+            self.publisher.publish(scan)
 
         except Exception as e:
             self.get_logger().warn('Could not transform obstacle point: ' + str(e))
 
-        scan.header.frame_id = 'base_laser'
-        scan.header.stamp = self.get_clock().now().to_msg()
-        self.publisher.publish(scan)
+
 
     def calculate_angle(self, point):
         return math.atan2(point.y, point.x)

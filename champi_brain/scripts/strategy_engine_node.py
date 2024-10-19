@@ -1,50 +1,48 @@
 #!/usr/bin/env python3
 
-from typing import Tuple
 from math import acos, cos, sin
 import rclpy
 from nav_msgs.msg import Odometry
-from diagnostic_msgs.msg import DiagnosticArray
 from rclpy.node import Node
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 import rclpy.time
 from std_msgs.msg import String, Int64, Empty, Int64MultiArray, Int32
-from visualization_msgs.msg import Marker, MarkerArray
+from visualization_msgs.msg import MarkerArray
 from utils import CAN_MSGS
 
 # markers
 from std_msgs.msg import ColorRGBA
 
-# from rclpy.executors import MultiThreadedExecutor
+# from strat_engine.executors import MultiThreadedExecutor
 # from threading import Thread
 
-import plants_taker_api
+# import plants_taker_api
 from action_executor import Action_Executor
-from utils import draw_rviz_markers, calc_time_of_travel, get_action_by_name, pose_with_cov_from_position
-from utils import State, StateTakingPlants
+from utils import draw_rviz_markers, calc_time_of_travel, get_action_by_name
+from utils import State
 from rclpy.logging import get_logger
-from icecream import ic
 
 import time
-from enum import Enum
 
 from robot_localization.srv import SetPose
 
 
 actions = [
-    {"name":"plantes1","type":"prendre_plantes","pose": (1.-0.3, 1.5-0.5),    "time": 10, "points": 0},
-    {"name":"plantes2","type":"prendre_plantes","pose": (1.-0.5, 1.5),        "time": 10, "points": 0},
-    {"name":"plantes3","type":"prendre_plantes","pose": (1.-0.3, 1.5+0.5),    "time": 10, "points": 0},
-    {"name":"plantes4","type":"prendre_plantes","pose": (1.+0.3, 1.5-0.5),    "time": 10, "points": 0},
-    {"name":"plantes5","type":"prendre_plantes","pose": (1.+0.5, 1.5),        "time": 10, "points": 0},
-    {"name":"plantes6","type":"prendre_plantes","pose": (1.+0.3, 1.5+0.5),    "time": 10, "points": 0},
-
-    {"name":"poserplantesJ1","type":"pose_plantes_sol","pose": (0.45/2., 0.5/2, -1.0466),     "time": 10, "points": 3*3, "dirs": (1,1)},
+    # DANS LA DEMIE TABLE
+    {"name":"plantes1","type":"prendre_plantes","pose": (1.-0.3, 1.0),    "time": 10, "points": 0},
+    {"name":"plantes4","type":"prendre_plantes","pose": (1.+0.3, 1.0),    "time": 10, "points": 0},
+    {"name":"poserplantesJ1","type":"pose_plantes_sol","pose": (0.55/2., 0.5/2, -1.0466),     "time": 10, "points": 3*3, "dirs": (1,1)},
+    {"name":"poserplantesB1","type":"pose_plantes_sol","pose": (1.0+0.5/2, 0.5/2, -1.0466),"time": 10, "points": 3*3, "dirs":(1, 1)},
     {"name":"poserplantesJ2","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 0.5/2, -1.0466+3.14),       "time": 10, "points": 3*3, "dirs":(-1,1)},
+    # FIN DE DANS LA DEMIE TABLE
+
+    {"name":"plantes2","type":"prendre_plantes","pose": (1.-0.5, 1.5),    "time": 10, "points": 0},
+    {"name":"plantes3","type":"prendre_plantes","pose": (1.-0.3, 2.0),    "time": 10, "points": 0},
+    {"name":"plantes5","type":"prendre_plantes","pose": (1.+0.5, 1.5),    "time": 10, "points": 0},
+    {"name":"plantes6","type":"prendre_plantes","pose": (1.+0.3, 2.0),    "time": 10, "points": 0},
+
     {"name":"poserplantesJ3","type":"pose_plantes_sol","pose": (1.0-0.5, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*3, "dirs":(-1, -1)},
     
-    {"name":"poserplantesB1","type":"pose_plantes_sol","pose": (1.0+0.5/2, 0.5/2, -1.0466),"time": 10, "points": 3*3, "dirs":(1, 1)},
     {"name":"poserplantesB2","type":"pose_plantes_sol","pose": (0.45/2, 3.0-0.4/2, -1.0466),"time": 10, "points": 3*3, "dirs":(1, -1)},
     {"name":"poserplantesB3","type":"pose_plantes_sol","pose": (2.0-0.45/2.0, 3.0-0.5/2, -1.0466+3.14),"time": 10, "points": 3*3, "dirs":(-1, -1)},
 
@@ -65,7 +63,8 @@ actions = [
     # {"name":"panneau9","type":"tourner_panneau","pose": (50, 3000-275-225-225),  "time": 10, "points": 5},
     
     {"name":"retour_zone_yellow","type":"retour_zone","pose": (1.0, 2.734, 3.14),  "time": 0, "points": 10}, #J3
-    {"name":"retour_zone_yellow_inv","type":"retour_zone","pose": (1.0, 2.73, 1.57),  "time": 0, "points": 10}, #J3
+    {"name":"retour_zone_yellow_inv","type":"retour_zone","pose": (2.0-0.45/2, 0.5/2, 1.57),  "time": 0, "points": 10}, #J3
+    # {"name":"retour_zone_yellow_inv","type":"retour_zone","pose": (1.0, 2.73, 1.57),  "time": 0, "points": 10}, #J3
     {"name":"retour_zone_blue","type":"retour_zone","pose": (1.0, 0.265, 1.57),  "time": 0, "points": 10}, #B1
     {"name":"retour_zone_blue_inv","type":"retour_zone","pose": (0.265, 3.0-0.265, 1.57),  "time": 0, "points": 10}, #B1
     # {"name":"retour_zone_blue_inv","type":"retour_zone","pose": (1.0, 0.265, -1.57),  "time": 0, "points": 10}, #B1
@@ -92,7 +91,9 @@ strategy_yellow = {
     "actions": {
         # "list": ["poserplantesJ2"]
         # "list": ["p2","p3","retour_zone_yellow_inv"],
-        "list": ["plantes2","plantes3","poserplantesJ3","plantes5","plantes4","retour_zone_yellow_inv"],
+        # "list": ["plantes2","plantes3","poserplantesJ3","plantes5","plantes4","retour_zone_yellow_inv"],
+        # "list": ["plantes1","poserplantesJ1", "retour_zone_yellow_inv"],
+        "list": ["plantes1","plantes4","poserplantesJ1", "retour_zone_yellow_inv"],
         # "list": ["p6","p5", "retour_zone_yellow_inv"],
         # "list": ["plantes4","poserplantesJ2","plantes5","poserplantesJ1","plantes6","poserplantesJ3", "retour_zone_yellow"],
         # "list": ["plantes4", "plantes5", "plantes6", "poserplantes1", "poserplantes2", "panneau1", "retour_zone_yellow"],
@@ -106,7 +107,7 @@ strategy_blue = {
         # "list": ["p6","p5", "retour_zone_blue_inv"],
         # "list": ["p5","p4", "retour_zone_blue_inv"],
         # "list": ["poserplantesB1", "retour_zone_blue_inv"],
-        "list": ["plantes5","plantes4","poserplantesB1","plantes2","plantes3", "retour_zone_blue_inv"],
+        "list": ["plantes4","plantes1","poserplantesJ1", "retour_zone_blue_inv"],
         # "list": ["plantes6","poserplantesB3","plantes5","poserplantesB2","plantes4","poserplantesB1", "retour_zone_blue"],
         # "list": ["plantes4","retour_zone_blue"],
         # "list": ["plantes6","poserplantesB3", "retour_zone_blue"],
@@ -138,18 +139,23 @@ MIDDLE_OF_TABLE = (2.0/2, 3.0/2)
 class StrategyEngineNode(Node):
     def __init__(self) -> None:
         super().__init__('strategy_engine_node')
+        get_logger('strat_engine').info(f"Launched strategy node !")
 
         self.received_color_and_pose = False
 
         # # depending on the ros2 parameter 'color'
         # global TEAM
         # global RETOUR_ZONE_NAME
-        self.declare_parameter('color', rclpy.Parameter.Type.STRING) 
 
         self.IS_HOMOLOGATION = False
+        self.declare_parameter('color', rclpy.Parameter.Type.STRING) 
         if self.get_parameter('color').get_parameter_value().string_value == 'homologation':
             self.IS_HOMOLOGATION = True
 
+        self.IS_IN_SIM = False
+        self.declare_parameter('sim', rclpy.Parameter.Type.BOOL)
+        if self.get_parameter('sim').get_parameter_value().bool_value == True:
+            self.IS_IN_SIM = True
 
         # if self.get_parameter('color').get_parameter_value().string_value == 'yellow':
         #     TEAM = "YELLOW"
@@ -223,7 +229,7 @@ class StrategyEngineNode(Node):
 
         self.timer = self.create_timer(timer_period_sec=0.5,
                                        callback=self.callback_timer)
-        get_logger('rclpy').info(f"READY TO RECEIVE ZONE")
+        get_logger('strat_engine').info(f"READY TO RECEIVE ZONE")
 
     def get_offset_start_pose(self, start_pose):
         # on décale de 0.2m dans la direction du centre de la table
@@ -233,7 +239,7 @@ class StrategyEngineNode(Node):
         return (start_pose[0]+resized_vector[0], start_pose[1]+resized_vector[1], start_pose[2])
 
     def select_start_zone(self, msg):
-        get_logger('rclpy').info(f"\n\n\n\nRECEIVED ZONE : {msg.data}. \n\n\n\n")
+        get_logger('strat_engine').info(f"\n\n\n\nRECEIVED ZONE : {msg.data}. \n\n\n\n")
         self.start_pose = self.get_start_pose_from_start_zone(msg.data)
 
         # depending on the ros2 parameter 'color'
@@ -241,7 +247,7 @@ class StrategyEngineNode(Node):
         global RETOUR_ZONE_NAME
         
 
-        if 'J' in msg.data:
+        if 'J' in msg.data or 'Y' in msg.data:
             TEAM = "YELLOW"
             self.get_logger().info("YELLOW")
         else:
@@ -295,8 +301,8 @@ class StrategyEngineNode(Node):
 
         future = self.set_pose_client.call_async(request)
 
-        # while rclpy.ok():
-        #     rclpy.spin_once(self)
+        # while strat_engine.ok():
+        #     strat_engine.spin_once(self)
         #     if future.done():
         #         if future.result() is not None:
         #             break
@@ -314,16 +320,16 @@ class StrategyEngineNode(Node):
         self.strategy["actions"]["list"].insert(0, action["name"])
 
         # print
-        get_logger('rclpy').info(f"strategy: {self.strategy}")
+        get_logger('strat_engine').info(f"strategy: {self.strategy}")
         
 
     def get_start_pose_from_start_zone(self, start_zone): #str
         start_pose = None
-        if start_zone == "J1":
+        if start_zone == "J1" or start_zone == "Y1":
             start_pose = (0.165, 0.165, 1.0466) # 60°
-        elif start_zone == "J2":
+        elif start_zone == "J2" or start_zone == "Y2":
             start_pose = (2.0-0.165, 0.165, 2.0933)# 180-60° #2.6166
-        elif start_zone == "J3":
+        elif start_zone == "J3" or start_zone == "Y3":
             start_pose = (1.0, 3.0-0.165, -1.5707) #-90°
         elif start_zone == "B1":
             start_pose = (1.0, 0.165, 1.5707) #90°
@@ -332,7 +338,7 @@ class StrategyEngineNode(Node):
         elif start_zone == "B3":
             start_pose = (2.0-0.165, 3.0-0.165, -2.0933)# -180+60° #-2.6166
         else:
-            get_logger('rclpy').info(f"ERRRRRRRRRRRRRRRRRRRRRRROR start zone unvalide : {start_zone.data}. \n\n")
+            get_logger('strat_engine').info(f"ERRRRRRRRRRRRRRRRRRRRRRROR start zone unvalide : "+start_zone)
             quit()
 
         return start_pose
@@ -353,10 +359,10 @@ class StrategyEngineNode(Node):
             self.CAN_state = CAN_MSGS.INITIALIZING
         elif msg.data[0] == 5:
             self.CAN_state = CAN_MSGS.FREE
-        ic(self.CAN_state)
+        get_logger('strat_engine').info('\t received from act: '+str(self.CAN_state)+"\t plants in resevoir: "+str(self.nb_plants))
 
     def start_match(self,msg):
-        get_logger('rclpy').info(f"TIRETTE !!")
+        get_logger('strat_engine').info(f"TIRETTE !!")
         self.state = State.INIT
 
     def init(self):
@@ -365,19 +371,19 @@ class StrategyEngineNode(Node):
 
         # self.pub_initial_pose.publish(pose_with_cov_from_position(init_robot_pose,self.get_clock().now().to_msg()))
         self.start_time = rclpy.time.Time()
-        get_logger('rclpy').info(f"strategy engine started")
+        get_logger('strat_engine').info(f"strategy engine started")
         self.score_publisher.publish(Int32(data=-1)) # = START MATCH
 
     def update_robot_pose(self, msg):
         self.robot_pose = (msg.pose.pose.position.x, msg.pose.pose.position.y, acos(msg.pose.pose.orientation.w)*2*180/3.1415)
-        # get_logger('rclpy').info(f"updated robot_pose: {self.robot_pose}")
+        # get_logger('strat_engine').info(f"updated robot_pose: {self.robot_pose}")
 
     def callback_timer(self):
         """Execute the strategy for one iteration"""
         if self.state == State.NOT_STARTED:
-            # get_logger('rclpy').info(f"not started...", once=True)
+            # get_logger('strat_engine').info(f"not started...", once=True)
             return
-        # get_logger('rclpy').info(f"{self.state}.")
+        # get_logger('strat_engine').info(f"{self.state}.")
 
         if self.state == State.INIT:
             self.init()
@@ -387,29 +393,29 @@ class StrategyEngineNode(Node):
             self.action_executor.update(self.current_action_to_perform)
 
             if self.action_executor.state == State.ACTION_FINISHED:
-                get_logger('rclpy').info(f"")
-                get_logger('rclpy').info(f"Action finished: {self.current_action_name}")
-                get_logger('rclpy').info(f"actions dispos: {self.strategy['actions']['list']}")
+                get_logger('strat_engine').info(f"")
+                get_logger('strat_engine').info(f"Action finished: {self.current_action_name}")
+                get_logger('strat_engine').info(f"actions dispos: {self.strategy['actions']['list']}")
                 self.action_executor.state = State.NO_ACTION
 
                 # add points
                 self.final_score += self.current_action_to_perform["points"]
                 self.score_publisher.publish(Int32(data=self.final_score))
-                get_logger('rclpy').info(f"----> Score SENaT : {self.final_score}")
+                get_logger('strat_engine').info(f"----> Score SENT : {self.final_score}")
 
 
                 # if the last action executed was "retour_zone" then we stop everything
                 if self.current_action_to_perform == "retour_zone":
                     # print("FIN DU MATCH")
-                    get_logger('rclpy').info(f"FIN DU MATCH")
+                    get_logger('strat_engine').info(f"FIN DU MATCH")
                     # publish final score
                     self.score_publisher.publish(Int32(data=self.final_score))
                     quit()
 
-                # self.time_left = TOTAL_AVAILABLE_TIME - (rclpy.time.Time()- self.start_time).nanoseconds / 1e9
+                # self.time_left = TOTAL_AVAILABLE_TIME - (strat_engine.time.Time()- self.start_time).nanoseconds / 1e9
                 # # the action is finished, we pop it from the list
-                # get_logger('rclpy').info(f"Action finished: {self.current_action_name}")
-                # get_logger('rclpy').info(f"actions dispos: {self.strategy['actions']['list']}")
+                # get_logger('strat_engine').info(f"Action finished: {self.current_action_name}")
+                # get_logger('strat_engine').info(f"actions dispos: {self.strategy['actions']['list']}")
 
                 # if len(self.strategy["actions"]["list"]) != 0:
                 #     self.strategy["actions"]["list"].pop(0)
@@ -417,11 +423,11 @@ class StrategyEngineNode(Node):
                 #     self.current_action_to_perform = get_action_by_name(self.current_action_name, actions)
 
                 #     # print actions left
-                #     get_logger('rclpy').info(f"Actions left: {self.strategy['actions']['list']}")
-                #     get_logger('rclpy').info(f"*************************\n\n")
+                #     get_logger('strat_engine').info(f"Actions left: {self.strategy['actions']['list']}")
+                #     get_logger('strat_engine').info(f"*************************\n\n")
                 # else:
-                #     get_logger('rclpy').info(f"No action left")
-                #     get_logger('rclpy').info(f"*************************\n\n")
+                #     get_logger('strat_engine').info(f"No action left")
+                #     get_logger('strat_engine').info(f"*************************\n\n")
 
 
 
@@ -444,7 +450,7 @@ class StrategyEngineNode(Node):
                 # self.action_executor.stop_effectors()
                 e = Empty()
                 self.pub_STOP_FIN.publish(e)
-                get_logger('rclpy').info(f"STOPPING EFFECTORS")
+                get_logger('strat_engine').info(f"STOPPING EFFECTORS")
                 quit()
             # if the time is positive we execute the action
             else:
@@ -454,14 +460,14 @@ class StrategyEngineNode(Node):
                     self.current_action_name = self.strategy["actions"]["list"][0]
                     self.current_action_to_perform = get_action_by_name(self.current_action_name, actions)
                     self.strategy["actions"]["list"].pop(0) # TODO verif que on a encore des actions dispos
-                    get_logger('rclpy').info(f"")
-                    get_logger('rclpy').info(f"Executing action {self.current_action_name}")
-                    get_logger('rclpy').info(f"Actions left {self.strategy['actions']['list']}")
+                    get_logger('strat_engine').info(f"")
+                    get_logger('strat_engine').info(f"Executing action {self.current_action_name}")
+                    get_logger('strat_engine').info(f"Actions left {self.strategy['actions']['list']}")
 
                     self.state = State.IN_ACTION
                     self.action_executor.new_action(self.current_action_to_perform)
                 else:
-                    get_logger('rclpy').info(f"FIN")
+                    get_logger('strat_engine').info(f"END")
                     quit()
             
         

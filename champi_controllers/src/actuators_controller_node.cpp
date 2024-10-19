@@ -365,7 +365,7 @@ private:
 
         // - Initialization is not finished ?
         // - the node is OK or WARN ?
-        bool node_ok = check_node_ok_and_update();
+        bool node_ok = check_node_ok_and_update();  // TODO use variable ?
 
     }
 

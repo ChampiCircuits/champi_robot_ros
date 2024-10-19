@@ -12,13 +12,19 @@ find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(champi_libraries REQUIRED)
+find_package(champi_libraries_cpp REQUIRED)
+find_package(champi_interfaces REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
-# add_executable(test_diag src/test_diag.cpp)
-# ament_target_dependencies(test_diag rclcpp diagnostic_updater)
+
+find_package(ament_cmake REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
+
+add_executable(example_bt src/example_bt.cpp)
+ament_target_dependencies(example_bt rclcpp behaviortree_cpp)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -34,6 +40,7 @@ endif()
 
 # Allow lauch files to be found when calling them with ros2 launch
 install(DIRECTORY
+  xml
   launch
   scripts
   # config
@@ -49,6 +56,7 @@ install(PROGRAMS
         scripts/screen_manager.py
         scripts/rviz_markers.py
         scripts/strategy_engine_node.py
+        scripts/simu_act_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

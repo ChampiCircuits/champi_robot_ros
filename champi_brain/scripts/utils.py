@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 from visualization_msgs.msg import Marker, MarkerArray
-from geometry_msgs.msg import Point
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
+from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped, PoseStamped
+from champi_interfaces.msg import ChampiPoint
 
 from rclpy.duration import Duration
 
@@ -35,6 +35,8 @@ class State(Enum):
     FINISHED_MOVE = 11
     WAITING_PLANT_PUT = 12
     FINISHED_PLANT_PUT = 13
+    MOVING_BEFORE_PLANT_PUT = 14
+    LAST_MOVE_AFTER_PUT_PLANTS = 15
 
 class CAN_MSGS(Enum):
     START_GRAB_PLANTS = 0
@@ -124,3 +126,14 @@ def pose_with_cov_from_position(position, stamp):
     goal_pose.pose.pose.orientation.z = sin(position[2] / 2)
     goal_pose.pose.pose.orientation.w = cos(position[2] / 2)
     return goal_pose
+
+
+def pose_to_champi_point(pose: Pose) -> ChampiPoint: #TODO devrait être supprimée prochainement
+    champi_point = ChampiPoint()
+    champi_point.name = ""
+    champi_point.pose = pose
+    champi_point.point_type = 1 # TODO has a use??
+    champi_point.linear_tolerance = 0.05 # TODO use enum or predefined values
+    champi_point.angular_tolerance = 0.05 # TODO use enum or predefined values
+    champi_point.robot_should_stop_here = False
+    return champi_point

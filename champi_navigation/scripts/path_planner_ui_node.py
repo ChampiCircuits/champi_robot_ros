@@ -2,18 +2,13 @@
 
 import rclpy
 from rclpy.node import Node
+
 from rclpy.action import ActionClient
-
-from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
-from nav_msgs.msg import Path, OccupancyGrid, Odometry
-from std_msgs.msg import String
+from geometry_msgs.msg import PoseStamped, Point
 from champi_interfaces.action import Navigate
+from rclpy.logging import get_logger
 
-from math import sin, cos, atan2, hypot, pi
-import numpy as np
-
-import time
-from icecream import ic
+from rclpy.executors import ExternalShutdownException
 
 
 
@@ -21,6 +16,8 @@ class PathPlannerUINode(Node):
 
     def __init__(self):
         super().__init__('planner_ui')
+        get_logger('rclpy').info(f"\tLaunching Path planner UI...")
+
 
         # Subscriber for /goal_pose
         self.goal_pose_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_pose_callback, 10)
@@ -33,6 +30,7 @@ class PathPlannerUINode(Node):
         self.goal_handle_navigate = None
 
         self.goal_pose = None
+        get_logger('rclpy').info(f"\tPath planner UI launched !")
     
 
     # ==================================== ROS2 Callbacks ==========================================
@@ -54,7 +52,9 @@ class PathPlannerUINode(Node):
 
 
     def feedback_callback(self, feedback_msg):
-        self.get_logger().info(f'Feedback received! Feedback: {feedback_msg}')
+        pass
+        # self.get_logger().info(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {feedback_msg.feedback.eta}')
+
 
 
     # ==================================== Done Callbacks ==========================================
@@ -88,8 +88,7 @@ class PathPlannerUINode(Node):
 
     def send_goal(self, goal_pose):
         # Create a Navigate request
-        goal = Navigate.Goal()
-        goal.poses = [goal_pose]
+        goal = self.create_action_goal(goal_pose)
 
         # Send the goal to the action server
         future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
@@ -100,16 +99,67 @@ class PathPlannerUINode(Node):
         self.get_logger().info('Goal sent!')
 
 
+    def create_action_goal(self, goal_pose):
+
+        goal = Navigate.Goal()
+        
+        goal.pose = goal_pose
+        
+        goal.end_speed = 0.
+
+        goal.max_linear_speed = 0.2
+        goal.max_angular_speed = 1.5
+        
+        goal.linear_tolerance = 0.01
+        goal.angular_tolerance = 0.1
+
+        goal.do_look_at_point = False
+
+        goal.look_at_point = Point()
+        goal.look_at_point.x = 1.
+        goal.look_at_point.y = 1.
+        goal.look_at_point.z = 0.
+
+        goal.robot_angle_when_looking_at_point = 0.
+
+        goal.timeout = 7. # seconds
+
+        return goal
+    
+
+    def path_compute_result_to_str(self, path_compute_result):
+        if path_compute_result == Navigate.Feedback.SUCCESS_STRAIGHT:
+            return 'SUCCESS_STRAIGHT'
+        elif path_compute_result == Navigate.Feedback.SUCCESS_AVOIDANCE:
+            return 'SUCCESS_AVOIDANCE'
+        elif path_compute_result == Navigate.Feedback.START_NOT_IN_COSTMAP:
+            return 'START_NOT_IN_COSTMAP'
+        elif path_compute_result == Navigate.Feedback.GOAL_NOT_IN_COSTMAP:
+            return 'GOAL_NOT_IN_COSTMAP'
+        elif path_compute_result == Navigate.Feedback.GOAL_IN_OCCUPIED_CELL:
+            return 'GOAL_IN_OCCUPIED_CELL'
+        elif path_compute_result == Navigate.Feedback.NO_PATH_FOUND:
+            return 'NO_PATH_FOUND'
+        elif path_compute_result == Navigate.Feedback.INTITIALIZING:
+            return 'INTITIALIZING'
+        else:
+            return 'UNKNOWN (error)'
+
  
 
 
 def main(args=None):
     rclpy.init(args=args)
-    planner_ui = PathPlannerUINode()
-    rclpy.spin(planner_ui)
 
-    planner_ui.destroy_node()
-    rclpy.shutdown()
+    node = PathPlannerUINode()
+
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':
