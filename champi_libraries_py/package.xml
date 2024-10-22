@@ -3,9 +3,9 @@
 <package format="3">
   <name>champi_libraries_py</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>A bookcase, that contains mushrooms and snakes instead of actual books.</description>
   <maintainer email="andrerusso02@gmail.com">andre</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Driving license for regular mushroom-fueled vehicles.</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

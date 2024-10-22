@@ -3,9 +3,9 @@
 <package format="3">
   <name>champi_brain</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="ku-etienne@todo.todo">ku-etienne</maintainer>
-  <license>TODO: License declaration</license>
+  <description>A very smart package.</description>
+  <maintainer email="etienne.clairis@etik.com">ku-etienne</maintainer>
+  <license>Driving license for regular mushroom-fueled vehicles.</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
@@ -22,7 +22,8 @@
 
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>champi_libraries</depend>
+  <depend>champi_interfaces</depend>
+  <depend>champi_libraries_cpp</depend>
   <depend>joy</depend>
   <build_depend>ament_index_cpp</build_depend>
   <exec_depend>ament_index_cpp</exec_depend>

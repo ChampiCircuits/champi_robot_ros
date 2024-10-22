@@ -103,7 +103,7 @@ class LidarSimulator(Node):
                     scan.intensities[index] = 255.
 
         except Exception as e:
-            self.get_logger().warn(message='Could not transform obstacle point: ' + str(e))
+            self.get_logger().warn('Could not transform obstacle point: ' + str(e))
 
         scan.header.frame_id = 'base_laser'
         scan.header.stamp = self.get_clock().now().to_msg()

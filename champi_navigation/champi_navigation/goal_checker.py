@@ -1,34 +1,54 @@
 from math import hypot, pi
 
 from champi_libraries_py.data_types.geometry import Pose2D
+from champi_libraries_py.utils.angles import normalize_angle
+
 from champi_interfaces.msg import CtrlGoal
 
-from icecream import ic
 
+def is_goal_reached(goal_pose:Pose2D,
+                    current_pose:Pose2D,
+                    end_speed_0:bool,  # Whether the robot has to stop at the goal pose or not
+                    do_look_at_point:bool,
+                    look_at_point:Pose2D,
+                    robot_angle_when_looking_at_point:float,
+                    linear_tolerance:float,
+                    angular_tolerance:float):
+    
+    """Check if the goal is reached, given the current pose of the robot and all the parameters defining the goal.
 
+    Returns:
+        bool: Whether the goal is reached or not.
+    """
 
-def is_goal_reached(goal_pose:Pose2D, current_pose:Pose2D, arrival_speed_0:bool, do_look_at_point:bool, look_at_point:Pose2D, linear_tolerance:float, angular_tolerance:float):
-
-    if arrival_speed_0:
-
+    if end_speed_0:
 
         if not do_look_at_point:  # goal reached -> pose reached
             return is_pose_reached(goal_pose, current_pose, linear_tolerance, angular_tolerance)
         
-        # if look_at_point is set, goal reached -> position reached then error angle to look at point = 0
+        # if we reach this, look_at_point is set, goal reached -> position reached then error angle to look at point = 0
 
-        angle_error = abs(current_pose.get_angle_difference_to_look_at(look_at_point))
+        angle_error = abs(current_pose.get_angle_difference_to_look_at(look_at_point, robot_angle_when_looking_at_point))
         return is_position_reached(goal_pose, current_pose, linear_tolerance) and angle_error < angular_tolerance
     
 
-    # If we reach this, arrival speed is non-zero. In that case, we only check if the position is reached.
-    # If we were waiting for the orientation to be good, the robot would be turning around the point at arrival_speed
+    # If we reach this, end speed is non-zero. In that case, we only check if the position is reached.
+    # If we were waiting for the orientation to be good, the robot would be turning around the point at end_speed
     # untill the orientation is reached.
 
     return is_position_reached(goal_pose, current_pose, linear_tolerance)
 
 
 def is_ctrl_goal_reached(goal:CtrlGoal, current_pose:Pose2D):
+    """Convenient wrapper around is_goal_reached(), for use directly with CtrlGoal messages.
+
+    Args:
+        goal (CtrlGoal): Current ctrl_goal
+        current_pose (Pose2D): Current pose of the robot
+
+    Returns:
+        bool: Whether the ctrl_goal is reached or not.
+    """
 
     return is_goal_reached(
         Pose2D(pose=goal.pose),
@@ -36,11 +56,9 @@ def is_ctrl_goal_reached(goal:CtrlGoal, current_pose:Pose2D):
         goal.end_speed == 0,
         goal.do_look_at_point,
         Pose2D(point=goal.look_at_point),
+        goal.robot_angle_when_looking_at_point,
         goal.linear_tolerance,
         goal.angular_tolerance)
-    
-
-
 
 
 def is_pose_reached(goal:Pose2D, current_pose:Pose2D, linear_tolerance:float, angular_tolerance:float):
@@ -77,18 +95,6 @@ def is_angle_reached(goal:Pose2D, current_pose_robot:Pose2D, angular_tolerance:f
         angular_tolerance (float): Angular tolerance (radians)
     """
 
-    return get_minimal_angle_difference(current_pose_robot.theta, goal.theta) < angular_tolerance
+    diff = normalize_angle(current_pose_robot.theta - goal.theta)
 
-
-def get_minimal_angle_difference(angle1, angle2):
-    """Get the minimal difference between two angles.
-
-    Args:
-        angle1 (float): First angle (radians)
-        angle2 (float): Second angle (radians)
-    """
-
-    diff = abs(angle1 - angle2)
-    if diff > pi:
-        diff = 2 * pi - diff
-    return diff
+    return abs(diff) < angular_tolerance

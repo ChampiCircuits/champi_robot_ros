@@ -7,5 +7,5 @@ class RobotState:
         self.pose = pose
         self.vel = vel
 
-    def to_string(self):
+    def __str__(self):
         return f'RobotState(pose={self.pose}, vel={self.vel})'

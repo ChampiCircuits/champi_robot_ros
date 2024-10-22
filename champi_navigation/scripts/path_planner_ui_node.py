@@ -6,9 +6,9 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from geometry_msgs.msg import PoseStamped, Point
 from champi_interfaces.action import Navigate
-
-from icecream import ic
 from rclpy.logging import get_logger
+
+from rclpy.executors import ExternalShutdownException
 
 
 
@@ -52,7 +52,9 @@ class PathPlannerUINode(Node):
 
 
     def feedback_callback(self, feedback_msg):
-        self.get_logger().info(f'Feedback received! Feedback: {feedback_msg}')
+        pass
+        # self.get_logger().info(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {feedback_msg.feedback.eta}')
+
 
 
     # ==================================== Done Callbacks ==========================================
@@ -103,7 +105,7 @@ class PathPlannerUINode(Node):
         
         goal.pose = goal_pose
         
-        goal.end_speed = 0.2
+        goal.end_speed = 0.
 
         goal.max_linear_speed = 0.2
         goal.max_angular_speed = 1.5
@@ -113,23 +115,51 @@ class PathPlannerUINode(Node):
 
         goal.do_look_at_point = False
 
-        # goal.look_at_point = Point()
-        # goal.look_at_point.x = 1.
-        # goal.look_at_point.y = 1.
-        # goal.look_at_point.z = 0.
+        goal.look_at_point = Point()
+        goal.look_at_point.x = 1.
+        goal.look_at_point.y = 1.
+        goal.look_at_point.z = 0.
+
+        goal.robot_angle_when_looking_at_point = 0.
+
+        goal.timeout = 7. # seconds
 
         return goal
+    
+
+    def path_compute_result_to_str(self, path_compute_result):
+        if path_compute_result == Navigate.Feedback.SUCCESS_STRAIGHT:
+            return 'SUCCESS_STRAIGHT'
+        elif path_compute_result == Navigate.Feedback.SUCCESS_AVOIDANCE:
+            return 'SUCCESS_AVOIDANCE'
+        elif path_compute_result == Navigate.Feedback.START_NOT_IN_COSTMAP:
+            return 'START_NOT_IN_COSTMAP'
+        elif path_compute_result == Navigate.Feedback.GOAL_NOT_IN_COSTMAP:
+            return 'GOAL_NOT_IN_COSTMAP'
+        elif path_compute_result == Navigate.Feedback.GOAL_IN_OCCUPIED_CELL:
+            return 'GOAL_IN_OCCUPIED_CELL'
+        elif path_compute_result == Navigate.Feedback.NO_PATH_FOUND:
+            return 'NO_PATH_FOUND'
+        elif path_compute_result == Navigate.Feedback.INTITIALIZING:
+            return 'INTITIALIZING'
+        else:
+            return 'UNKNOWN (error)'
 
  
 
 
 def main(args=None):
     rclpy.init(args=args)
-    planner_ui = PathPlannerUINode()
-    rclpy.spin(planner_ui)
 
-    planner_ui.destroy_node()
-    rclpy.shutdown()
+    node = PathPlannerUINode()
+
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':

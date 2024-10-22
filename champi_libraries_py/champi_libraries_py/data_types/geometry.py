@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations  # Needed for type hinting in the class itself
+
 from math import atan2, cos, sin, sqrt, pi
 import numpy as np
 from geometry_msgs.msg import Twist, Pose, Point
+
+from champi_libraries_py.utils.angles import normalize_angle, get_yaw
 
 
 class Vel2D:
@@ -58,7 +62,7 @@ class Pose2D:
         if pose is not None:
             self.x = pose.position.x
             self.y = pose.position.y
-            self.theta = 2 * atan2(pose.orientation.z, pose.orientation.w)
+            self.theta = get_yaw(pose)
 
         elif point is not None:
             self.x = point.x
@@ -82,7 +86,7 @@ class Pose2D:
         return pose
     
 
-    def dist_to_line(self, start, end):
+    def dist_to_line(self, start:Pose2D, end:Pose2D):
         """Compute the distance between this point and a LINE (not segment!) defined by two points.
 
         Args:
@@ -98,7 +102,7 @@ class Pose2D:
         return abs((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
 
 
-    def dist_to_line_signed(self, start, end):
+    def dist_to_line_signed(self, start:Pose2D, end:Pose2D):
         """Compute the distance between this point and a LINE (not segment!) defined by two points.
         Positive if point is on one side of the line, negative if on the other side.
 
@@ -114,11 +118,11 @@ class Pose2D:
         x2, y2 = end.x, end.y
         return ((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
     
-    def position_equals(self, other):
+    def position_equals(self, other:Pose2D):
         return self.x == other.x and self.y == other.y
     
 
-    def get_angle_difference(self, other):
+    def get_angle_difference(self, other:Pose2D):
         """ Computes the MINIMAL angle difference with another pose given in argument.
         E.g if self.theta = 0 and other.theta = 6, the difference will be -0.28 rad not 6 rad
 
@@ -129,40 +133,26 @@ class Pose2D:
             float: The angle difference (in radians) between the two poses
         """
         diff = other.theta - self.theta
-        if abs(diff) > pi:
-            if diff > 0:
-                diff -= 2 * pi
-            else:
-                diff += 2 * pi
 
-        return diff
+        return normalize_angle(diff)
     
-    def get_angle_difference_to_look_at(self, target):
-        diff = self.get_target_angle(target) - self.theta
+    
+    def get_angle_difference_to_look_at(self, target:Pose2D, robot_angle_when_looking_at_point):
+        diff = self.get_target_angle(target) - self.theta - robot_angle_when_looking_at_point
         
-        if abs(diff) > pi:
-            if diff > 0:
-                diff -= 2 * pi
-            else:
-                diff += 2 * pi
-        
-        return diff
+        return normalize_angle(diff)
 
-    def get_target_angle(self, target):
+    def get_target_angle(self, target:Pose2D):
         return atan2(target.y - self.y, target.x - self.x)
     
         
-    def get_distance2(self, other):
+    def get_distance2(self, other:Pose2D):
         return (self.x - other.x)**2 + (self.y - other.y)**2
     
 
-    def get_distance(self, other):
+    def get_distance(self, other:Pose2D):
         return sqrt(self.get_distance2(other))
 
 
     def __str__(self):
-        return f'Pose2D(x={self.x}, y={self.y}, theta={self.theta})' # TODO Comprendre pourquoi ça ne marche pas
-    
-    
-    def to_string(self):
-        return f'Pose2D(x={self.x}, y={self.y}, theta={self.theta})'  # TODO Enlever quand __str__ marchera
+        return f'Pose2D(x={self.x}, y={self.y}, theta={self.theta})'

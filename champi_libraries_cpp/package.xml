@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>champi_libraries</name>
+  <name>champi_libraries_cpp</name>
   <version>0.0.0</version>
-  <description>A special bookstore were you can find rare mushroom species</description>
+  <description>A special bookstore were you can find rare mushroom species.</description>
   <maintainer email="andrerusso02@gmail.com">arusso</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Driving license for regular mushroom-fueled vehicles.</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
