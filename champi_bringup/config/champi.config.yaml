@@ -126,4 +126,4 @@ path_planner:
 
 position_readjustment:
   ros__parameters:
-    position_readjustment_loop_period: 1.0 # s
+    position_readjustment_loop_period: 0.1 # s

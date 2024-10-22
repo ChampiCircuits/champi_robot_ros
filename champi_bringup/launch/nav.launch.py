@@ -52,6 +52,14 @@ def generate_launch_description():
         executable='position_readjustment_node.py',
         name='position_readjustment',
         output='screen',
+        parameters=[config_file_path]
+    )
+
+    rviz_displayer = Node(
+        package='champi_navigation',
+        executable='rviz_displayer.py',
+        name='rviz_displayer',
+        output='screen',
     )
 
     return LaunchDescription([
@@ -60,5 +68,6 @@ def generate_launch_description():
         a_star_path_planner_node,
         call_set_pose_node,
         path_planner_ui_node,
-        position_readjustment_node
+        position_readjustment_node,
+        rviz_displayer
     ])

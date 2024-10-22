@@ -9,7 +9,9 @@
 
 #include "std_msgs/msg/empty.hpp"
 #include "std_msgs/msg/int64.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/int64_multi_array.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
 
 
 #include <diagnostic_updater/diagnostic_updater.hpp>
@@ -67,7 +69,7 @@ public:
         pub_tirette_start_ = this->create_publisher<std_msgs::msg::Empty>("/tirette_start", 10);
         pub_act_status_ = this->create_publisher<std_msgs::msg::Int64MultiArray>("/act_status", 10);
 
-        // pub_lasers_
+        pub_lasers_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/lasers_distances", 10);
 
         // Sub
         sub_cmd_= this->create_subscription<std_msgs::msg::Int64>("/act_cmd", 10, std::bind(
@@ -84,6 +86,7 @@ private:
     // Publishers: Pub current action and pub tirette start
     rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr pub_tirette_start_;
     rclcpp::Publisher<std_msgs::msg::Int64MultiArray>::SharedPtr pub_act_status_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr pub_lasers_;
 
 
     // Subscriber for cmd Action
@@ -269,22 +272,11 @@ private:
 
             last_rx_status_time_ = this->now();
             auto buffer = champi_can_interface_.get_full_msg(can_ids::LASERS_DISTANCES);
-            RCLCPP_INFO(this->get_logger(), "SIZE buffer : %d", buffer.size()); 
-
-            // for (auto c:buffer)
-            //     RCLCPP_WARN(this->get_logger(), "%d", (int) c); 
 
             // Update current lasers_distances data
             latest_lasers_distances_.ParseFromString(buffer);
 
-            RCLCPP_INFO(this->get_logger(), "SIZE : %d",latest_lasers_distances_.distances_size()); 
-
-
-            for (int i=0;i<4;i++) {
-              RCLCPP_INFO(this->get_logger(), "%f",latest_lasers_distances_.distances(i)); 
-            }
-
-            // // publish_lasers_distances();
+            publish_lasers_distances();
         }
     }
 
@@ -362,20 +354,20 @@ private:
     }
 
     void publish_lasers_distances() {
-        std_msgs::msg::Int64MultiArray lasers_distances;
+        std_msgs::msg::Float32MultiArray lasers_distances;
 
-        RCLCPP_INFO(this->get_logger(), "RECEIVED LASER DISTANCES !! %d \t %d \t %d \t %d", 
-            (int)latest_lasers_distances_.distances(0),
-            (int)latest_lasers_distances_.distances(1),
-            (int)latest_lasers_distances_.distances(2),
-            (int)latest_lasers_distances_.distances(3));
+        // RCLCPP_INFO(this->get_logger(), "RECEIVED LASER DISTANCES !! %d \t %d \t %d \t %d", 
+            // (int)latest_lasers_distances_.distances(0),
+            // (int)latest_lasers_distances_.distances(1),
+            // (int)latest_lasers_distances_.distances(2),
+            // (int)latest_lasers_distances_.distances(3));
 
-        lasers_distances.data = std::vector<int64_t>({(int)latest_lasers_distances_.distances(0),
-                                                    (int)latest_lasers_distances_.distances(1),
-                                                    (int)latest_lasers_distances_.distances(2),
-                                                    (int)latest_lasers_distances_.distances(3)});
+        lasers_distances.data = std::vector<float>({latest_lasers_distances_.distances(0),
+                                                      latest_lasers_distances_.distances(1),
+                                                      latest_lasers_distances_.distances(2),
+                                                      latest_lasers_distances_.distances(3)});
         
-        // publish_lasers_distances.publish(lasers_distances);
+        pub_lasers_->publish(lasers_distances);
 
     }
 

@@ -44,6 +44,7 @@ install(PROGRAMS
         scripts/costmap_updater.py
         scripts/path_planner_ui_node.py
         scripts/position_readjustment_node.py
+        scripts/rviz_displayer.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
