@@ -1,6 +1,7 @@
 // sudo apt-get install ros-humble-pcl-conversions ros-humble-pcl-msgs
 // sudo apt install libpcl-dev
 
+#include <chrono>
 #include <random>
 #include <vector>
 #include <cmath>
@@ -58,7 +59,6 @@ private:
     void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
         last_scan_ = msg;
-        std::cout << "new scan" << std::endl;
     }
 
     void timer_callback()
@@ -67,7 +67,15 @@ private:
         {
             return;
         }
+        
+        auto start_time = std::chrono::steady_clock::now();
         compute();
+        auto end_time = std::chrono::steady_clock::now();
+        auto exec_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+
+        // Afficher la durée d'exécution dans les logs
+        RCLCPP_INFO(this->get_logger(), "compute() executed in %ld ms", exec_duration);
+
     }
 
     void compute()
@@ -87,14 +95,12 @@ private:
         }
 
         // Appliquer l'ICP ici
-        auto transformation_matrix = applyICPFromROSPointClouds(point_cloud_in_odom, ref_point_cloud);
+        auto transformation_matrix = applyICPFromROSPointClouds(ref_point_cloud, point_cloud_in_odom);
 
         std::cout << transformation_matrix << std::endl;
 
         ref_point_cloud_pub_->publish(ref_point_cloud);
         current_point_cloud_pub_->publish(point_cloud_in_odom);
-
-        std::cout << "loop" << std::endl;
     }
 
     sensor_msgs::msg::PointCloud2 generate_pointcloud_with_circles(double diameter, const std::vector<geometry_msgs::msg::PointStamped> &positions, int num_points = 60, double uniform = 0.0)
