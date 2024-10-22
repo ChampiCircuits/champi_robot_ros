@@ -61,5 +61,5 @@ def generate_launch_description():
         a_star_path_planner_node,
         call_set_pose_node,
         path_planner_ui_node,
-        absolute_loc_node
+        # absolute_loc_node
     ])

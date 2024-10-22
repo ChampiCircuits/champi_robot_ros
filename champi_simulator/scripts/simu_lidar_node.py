@@ -4,10 +4,13 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PointStamped, Point
-from tf2_geometry_msgs import PointStamped
 from tf2_ros import TransformListener, Buffer
+import tf2_geometry_msgs
 import math
 import random
+import numpy as np
+from sensor_msgs.msg import PointCloud
+from geometry_msgs.msg import Point32
 
 from rclpy.executors import ExternalShutdownException
 
@@ -78,14 +81,15 @@ class LidarSimulator(Node):
         BEACON_3_POS.point.x = 2.0
         BEACON_3_POS.point.y = 0.8
 
-        R_BEACON = 0.04
-        n = 15
+        R_BEACON = 0.04 #0.04
+        n = 33
+        uniform = 0.01 #0.01
 
         try:
             for beacon in [BEACON_1_POS,BEACON_2_POS,BEACON_3_POS]:
                 for i in range(n): # n points per circle
                     angle = 2 * i * math.pi/n
-                    p = PointStamped()
+                    p = tf2_geometry_msgs.PointStamped()
                     p.header.frame_id = 'odom'
                     p.point.x = beacon.point.x + R_BEACON*math.cos(angle)
                     p.point.y = beacon.point.y + R_BEACON*math.sin(angle)
@@ -95,7 +99,7 @@ class LidarSimulator(Node):
                     index = int((angle - scan.angle_min) / scan.angle_increment)
                     distance = self.calculate_distance(transformed_point.point)
                     
-                    scan.ranges[index] = distance + random.uniform(-0.01, 0.01)
+                    scan.ranges[index] = distance + random.uniform(-uniform, uniform)
                     scan.intensities[index] = 255.
 
         except Exception as e:
