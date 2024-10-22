@@ -19,8 +19,8 @@ def pose_from_position(position, stamp): # TODO, à importer de utils dans champ
     goal_pose_msg.pose.position.y = position[1]
     goal_pose_msg.pose.position.z = 0.0
     # theta radians to quaternion
-    goal_pose_msg.pose.orientation.z = 0.0
-    goal_pose_msg.pose.orientation.z = 0.0
+    goal_pose_msg.pose.orientation.x = 0.0
+    goal_pose_msg.pose.orientation.y = 0.0
     goal_pose_msg.pose.orientation.z = sin(position[2] / 2)
     goal_pose_msg.pose.orientation.w = cos(position[2] / 2)
     return goal_pose_msg
