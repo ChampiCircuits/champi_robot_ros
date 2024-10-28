@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Say that this script must be run from the root of the workspace (ask and exit if not)
-echo "This script must be run from the root of the workspace."
+echo "This script must be run from the root of the workspace AND without sudo."
 echo "Do you want to continue? (y/n)"
 read answer
 if [ "$answer" != "y" ]; then
@@ -19,6 +19,15 @@ elif [ "$shell" = "zsh" ]; then
 else
   echo "Exiting..."
   exit 1
+fi
+
+# Ask if ARM architecture is being used and set a variable accordingly
+echo "Are you using an ARM architecture (e.g., Raspberry Pi)? (y/n)"
+read arm
+if [ "$arm" = "y" ]; then
+  arm="arm"
+else
+  arm=""
 fi
 
 # Put the workspace in the environment variable CHAMPI_WS_DIR in .zshrc (check if it already exists first)
@@ -41,17 +50,31 @@ fi
 # Say that the command champi_build can be used from any directory
 echo "The command champi_build can now be used from any directory."
 
+
+# Install python dependencies
+echo "Installing python dependencies..."
+pip3 install -r $CHAMPI_WS_DIR/src/champi_robot_ros/requirements.txt
+# Install robotpy (command differ for ARM architecture)
+if [ "$arm" = "arm" ]; then
+  python3 -m pip install --extra-index-url=https://wpilib.jfrog.io/artifactory/api/pypi/wpilib-python-release-2024/simple robotpy
+else
+  pip3 install robotpy
+fi
+echo "Python dependencies installed."
+
 # Install rosdep dependencies
 echo "Installing rosdep dependencies..."
+sudo apt install -y python3-rosdep2
+# TODO installer rosdep si ce n'est pas déjà fait
 sudo rosdep init
 rosdep update
 rosdep install --from src --ignore-src -y
 
-# Install dependencies
-echo "Installing dependencies..."
+# Install apt dependencies
+echo "Installing APT dependencies..."
 sudo apt update
-sudo apt install -y libprotobuf-dev libudev-dev protobuf-compiler
-
+xargs -a $CHAMPI_WS_DIR/src/champi_robot_ros/apt-requirements.txt sudo apt install -y
+echo "APT dependencies installed."
 
 # Check if the repository ldlidar_stl_ros2 already exists
 if [ -d "$CHAMPI_WS_DIR/src/ldlidar_stl_ros2" ]; then
@@ -87,19 +110,5 @@ if [ -d "$CHAMPI_WS_DIR/src/rviz_birdeye_display" ] || [ -d "$CHAMPI_WS_DIR/src/
   git clone https://github.com/teamspatzenhirn/spatz_interfaces.git $CHAMPI_WS_DIR/src/spatz_interfaces
   exit 0
 fi
-
-# Ask if the users want to clone the repositories needed to display images in rviz
-echo "Do you want to clone the repositories needed to display images in rviz? They aren't needed on RPI (y/n)"
-read answer
-if [ "$answer" != "y" ]; then
-  echo "Setup Done!"
-  exit 0
-fi
-
-
-# Clone repositories needed to display images in rviz
-echo "Cloning other ros packages..."
-git clone https://github.com/teamspatzenhirn/rviz_birdeye_display.git $CHAMPI_WS_DIR/src/rviz_birdeye_display
-git clone https://github.com/teamspatzenhirn/spatz_interfaces.git $CHAMPI_WS_DIR/src/spatz_interfaces
 
 echo "Setup Done!"

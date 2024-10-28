@@ -1,0 +1,3 @@
+libprotobuf-dev
+libudev-dev
+protobuf-compiler

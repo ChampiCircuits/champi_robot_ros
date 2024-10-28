@@ -1,4 +1,9 @@
 astar
 bresenham
+icecream
+numpy
+matplotlib
+nicegui
 
 # For robotpy, commands differ with ARM. Command for non ARM is pip3 install robotpy, and for ARM is python3 -m pip install --extra-index-url=https://wpilib.jfrog.io/artifactory/api/pypi/wpilib-python-release-2024/simple robotpy
+# Thererfore, we do that in the install script directly
