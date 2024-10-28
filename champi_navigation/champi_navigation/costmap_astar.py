@@ -13,10 +13,6 @@ class CostmapAStar(AStar):
     def update_costmap(self, costmap):
         self.costmap = costmap
 
-    def compute_path(self, start, goal, costmap):
-        self.update_costmap(costmap)
-        return self.astar(start, goal)
-
     def heuristic_cost_estimate(self, n1, n2):
         """computes the 'direct' distance between two (x,y) tuples"""
         (x1, y1) = n1

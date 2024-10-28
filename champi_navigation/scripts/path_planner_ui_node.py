@@ -36,7 +36,7 @@ class PathPlannerUINode(Node):
     # ==================================== ROS2 Callbacks ==========================================
 
     def goal_pose_callback(self, msg):
-        self.get_logger().info(f'New goal received!')
+        # self.get_logger().info(f'New goal received!')
 
         self.goal_pose = msg.pose
 
@@ -67,7 +67,7 @@ class PathPlannerUINode(Node):
         
         self.goal_handle_navigate = goal_handle
 
-        self.get_logger().info('Goal accepted :)')
+        self.get_logger().info('Goal accepted!')
 
         get_result_future = goal_handle.get_result_async()
         get_result_future.add_done_callback(self.get_result_callback)
@@ -75,7 +75,7 @@ class PathPlannerUINode(Node):
 
     def get_result_callback(self, future):
         result = future.result().result
-        self.get_logger().info(f'Result: {result.success}, {result.message}')
+        self.get_logger().info(f'Action result: {result.success}, {result.message}')
 
 
     def cancel_done_callback(self, future):
@@ -96,7 +96,7 @@ class PathPlannerUINode(Node):
         # Add done callback
         future_navigate_result.add_done_callback(self.goal_response_callback)
 
-        self.get_logger().info('Goal sent!')
+        self.get_logger().info('Goal sent...')
 
 
     def create_action_goal(self, goal_pose):
@@ -122,7 +122,7 @@ class PathPlannerUINode(Node):
 
         goal.robot_angle_when_looking_at_point = 0.
 
-        goal.timeout = 7. # seconds
+        goal.timeout = 10. # seconds
 
         return goal
     

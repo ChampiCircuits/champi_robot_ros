@@ -106,9 +106,9 @@ enemy_tracker:
 costmap_updater:
   ros__parameters:
     grid_width: 2.0 # m
-    grid_height: 1.5 # m
+    grid_height: 3.0 # m
     grid_resolution: 0.05 # m/cell
-    robot_radius: 0.05 # m # todo juste pour tester #0.2
+    robot_radius: 0.2
     enemy_robot_radius: 0.2 # m
     enemy_pos_prediction_time: 0.0 # s. 0.0 means disabled
 

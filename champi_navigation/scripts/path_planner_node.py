@@ -135,7 +135,7 @@ class PlannerNode(Node):
     def navigate_callback(self, navigate_goal: Navigate.Goal):
         """ Called when a new Navigate goal is received
         """
-        self.get_logger().info('New Navigate request received!')
+        self.get_logger().debug('New Navigate request received!')
 
         # Store the goal
         self.current_navigate_goal = navigate_goal
@@ -144,7 +144,7 @@ class PlannerNode(Node):
         if self.planning:
             self.goal_handle_navigate.abort()
 
-            self.get_logger().info('Received a new Navigate request, cancelling the current one!')
+            self.get_logger().debug('Received a new Navigate request, cancelling the current one!')
         
         self.planning = True
 
@@ -154,7 +154,7 @@ class PlannerNode(Node):
     def cancel_callback(self, goal_handle):
         """ Called when the goal is cancelled by the client
         """
-        self.get_logger().info('Goal cancelled!')
+        self.get_logger().debug('Goal cancelled!')
         if self.planning:
             self.goal_handle_navigate.abort()
         else:
@@ -268,7 +268,7 @@ class PlannerNode(Node):
         
         # Check if the goal was aborted
         if not goal_handle.is_active:
-            self.get_logger().info('Action execution stopped because goal was aborted!!')
+            self.get_logger().debug('Action execution stopped because goal was aborted!!')
             result =  Navigate.Result(success=False, message='Goal aborted!')
 
         # Check if the node is shutting down
@@ -278,7 +278,7 @@ class PlannerNode(Node):
         # The goal was reached
         else:
             goal_handle.succeed()
-            self.get_logger().info('Navigate Goal reached!')
+            self.get_logger().debug('Navigate Goal reached!')
             result = Navigate.Result(success=True, message='Goal reached!')
         
         self.mutex_exec.release()
