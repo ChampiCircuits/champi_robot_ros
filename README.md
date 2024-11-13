@@ -1,5 +1,14 @@
 # Coupe de France de Robotique 2024 : Code ROS2
 
+
+## Pictures
+
+|2024 robot!|
+| -------- |
+|<img src="docs/ressources/robot1.jpg"  width="50%">|
+
+
+
 ## Commandes
 
 
