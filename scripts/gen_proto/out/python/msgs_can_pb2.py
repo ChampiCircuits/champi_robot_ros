@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0emsgs_can.proto\x12\x08msgs_can\".\n\x07\x42\x61seVel\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"\xda\x02\n\x06Status\x12\x11\n\ttimestamp\x18\x01 \x01(\x02\x12+\n\x06status\x18\x02 \x01(\x0e\x32\x1b.msgs_can.Status.StatusType\x12)\n\x05\x65rror\x18\x03 \x01(\x0e\x32\x1a.msgs_can.Status.ErrorType\x12\x0f\n\x07message\x18\x04 \x01(\t\"3\n\nStatusType\x12\x06\n\x02OK\x10\x00\x12\x08\n\x04INIT\x10\x01\x12\x08\n\x04WARN\x10\x02\x12\t\n\x05\x45RROR\x10\x03\"\x9e\x01\n\tErrorType\x12\x08\n\x04NONE\x10\x00\x12\x14\n\x10INIT_PERIPHERALS\x10\x01\x12\x0c\n\x08INIT_CAN\x10\x02\x12\x10\n\x0cPROTO_ENCODE\x10\x03\x12\x10\n\x0cPROTO_DECODE\x10\x04\x12\x13\n\x0f\x43MD_VEL_TIMEOUT\x10\x05\x12\n\n\x06\x43\x41N_TX\x10\x06\x12\n\n\x06\x43\x41N_RX\x10\x07\x12\x12\n\x0eINVALID_CONFIG\x10\x08\"0\n\x0cStatusReport\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\"M\n\x03Log\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x03(\x0b\x32\x10.msgs_can.Status\"c\n\nBaseConfig\x12\x11\n\tmax_accel\x18\x01 \x01(\x02\x12\x17\n\x0f\x63md_vel_timeout\x18\x02 \x01(\x02\x12\x14\n\x0cwheel_radius\x18\x03 \x01(\x02\x12\x13\n\x0b\x62\x61se_radius\x18\x04 \x01(\x02\"W\n\rRetBaseConfig\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x01(\x0b\x32\x10.msgs_can.Status\"f\n\x07ImuData\x12\r\n\x05\x61\x63\x63_x\x18\x01 \x01(\x02\x12\r\n\x05\x61\x63\x63_y\x18\x02 \x01(\x02\x12\r\n\x05\x61\x63\x63_z\x18\x03 \x01(\x02\x12\x0e\n\x06gyro_x\x18\x04 \x01(\x02\x12\x0e\n\x06gyro_y\x18\x05 \x01(\x02\x12\x0e\n\x06gyro_z\x18\x06 \x01(\x02\"=\n\x06\x41\x63tCmd\x12$\n\x06\x61\x63tion\x18\x01 \x01(\x0e\x32\x14.msgs_can.ActActions\x12\r\n\x05value\x18\x02 \x01(\x02\"h\n\tActStatus\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\x12$\n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32\x14.msgs_can.ActActions\x12\x13\n\x0bplant_count\x18\x03 \x01(\x05\"%\n\x10LedRingDistances\x12\x11\n\tdistances\x18\x01 \x03(\x02*~\n\nActActions\x12\x15\n\x11START_GRAB_PLANTS\x10\x00\x12\x14\n\x10STOP_GRAB_PLANTS\x10\x01\x12\x11\n\rRELEASE_PLANT\x10\x02\x12\x14\n\x10TURN_SOLAR_PANEL\x10\x03\x12\x10\n\x0cINITIALIZING\x10\x04\x12\x08\n\x04\x46REE\x10\x05'
+  serialized_pb=b'\n\x0emsgs_can.proto\x12\x08msgs_can\".\n\x07\x42\x61seVel\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"\xda\x02\n\x06Status\x12\x11\n\ttimestamp\x18\x01 \x01(\x02\x12+\n\x06status\x18\x02 \x01(\x0e\x32\x1b.msgs_can.Status.StatusType\x12)\n\x05\x65rror\x18\x03 \x01(\x0e\x32\x1a.msgs_can.Status.ErrorType\x12\x0f\n\x07message\x18\x04 \x01(\t\"3\n\nStatusType\x12\x06\n\x02OK\x10\x00\x12\x08\n\x04INIT\x10\x01\x12\x08\n\x04WARN\x10\x02\x12\t\n\x05\x45RROR\x10\x03\"\x9e\x01\n\tErrorType\x12\x08\n\x04NONE\x10\x00\x12\x14\n\x10INIT_PERIPHERALS\x10\x01\x12\x0c\n\x08INIT_CAN\x10\x02\x12\x10\n\x0cPROTO_ENCODE\x10\x03\x12\x10\n\x0cPROTO_DECODE\x10\x04\x12\x13\n\x0f\x43MD_VEL_TIMEOUT\x10\x05\x12\n\n\x06\x43\x41N_TX\x10\x06\x12\n\n\x06\x43\x41N_RX\x10\x07\x12\x12\n\x0eINVALID_CONFIG\x10\x08\"0\n\x0cStatusReport\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\"M\n\x03Log\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x03(\x0b\x32\x10.msgs_can.Status\"c\n\nBaseConfig\x12\x11\n\tmax_accel\x18\x01 \x01(\x02\x12\x17\n\x0f\x63md_vel_timeout\x18\x02 \x01(\x02\x12\x14\n\x0cwheel_radius\x18\x03 \x01(\x02\x12\x13\n\x0b\x62\x61se_radius\x18\x04 \x01(\x02\"W\n\rRetBaseConfig\x12$\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\x14.msgs_can.BaseConfig\x12 \n\x06status\x18\x02 \x01(\x0b\x32\x10.msgs_can.Status\"f\n\x07ImuData\x12\r\n\x05\x61\x63\x63_x\x18\x01 \x01(\x02\x12\r\n\x05\x61\x63\x63_y\x18\x02 \x01(\x02\x12\r\n\x05\x61\x63\x63_z\x18\x03 \x01(\x02\x12\x0e\n\x06gyro_x\x18\x04 \x01(\x02\x12\x0e\n\x06gyro_y\x18\x05 \x01(\x02\x12\x0e\n\x06gyro_z\x18\x06 \x01(\x02\"=\n\x06\x41\x63tCmd\x12$\n\x06\x61\x63tion\x18\x01 \x01(\x0e\x32\x14.msgs_can.ActActions\x12\r\n\x05value\x18\x02 \x01(\x02\"h\n\tActStatus\x12 \n\x06status\x18\x01 \x01(\x0b\x32\x10.msgs_can.Status\x12$\n\x06\x61\x63tion\x18\x02 \x01(\x0e\x32\x14.msgs_can.ActActions\x12\x13\n\x0bplant_count\x18\x03 \x01(\x05\"%\n\x10LedRingDistances\x12\x11\n\tdistances\x18\x01 \x03(\x02\"\xe2\x01\n\x12TrackingSensorData\x12\x37\n\x06status\x18\x01 \x01(\x0e\x32\'.msgs_can.TrackingSensorData.StatusType\x12\x11\n\tpose_x_mm\x18\x02 \x01(\x02\x12\x11\n\tpose_y_mm\x18\x03 \x01(\x02\x12\x11\n\ttheta_rad\x18\x04 \x01(\x02\x12\x12\n\npose_x_std\x18\x05 \x01(\x02\x12\x12\n\npose_y_std\x18\x06 \x01(\x02\x12\x11\n\ttheta_std\x18\x07 \x01(\x02\"\x1f\n\nStatusType\x12\x06\n\x02OK\x10\x00\x12\t\n\x05\x45RROR\x10\x01\"C\n\x1fResetAndCalibrateTrackingSensor\x12\r\n\x05reset\x18\x01 \x01(\x08\x12\x11\n\tcalibrate\x18\x02 \x01(\x08*~\n\nActActions\x12\x15\n\x11START_GRAB_PLANTS\x10\x00\x12\x14\n\x10STOP_GRAB_PLANTS\x10\x01\x12\x11\n\rRELEASE_PLANT\x10\x02\x12\x14\n\x10TURN_SOLAR_PANEL\x10\x03\x12\x10\n\x0cINITIALIZING\x10\x04\x12\x08\n\x04\x46REE\x10\x05'
 )
 
 _ACTACTIONS = _descriptor.EnumDescriptor(
@@ -63,8 +63,8 @@ _ACTACTIONS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1056,
-  serialized_end=1182,
+  serialized_start=1354,
+  serialized_end=1480,
 )
 _sym_db.RegisterEnumDescriptor(_ACTACTIONS)
 
@@ -171,6 +171,31 @@ _STATUS_ERRORTYPE = _descriptor.EnumDescriptor(
   serialized_end=423,
 )
 _sym_db.RegisterEnumDescriptor(_STATUS_ERRORTYPE)
+
+_TRACKINGSENSORDATA_STATUSTYPE = _descriptor.EnumDescriptor(
+  name='StatusType',
+  full_name='msgs_can.TrackingSensorData.StatusType',
+  filename=None,
+  file=DESCRIPTOR,
+  create_key=_descriptor._internal_create_key,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='OK', index=0, number=0,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='ERROR', index=1, number=1,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=1252,
+  serialized_end=1283,
+)
+_sym_db.RegisterEnumDescriptor(_TRACKINGSENSORDATA_STATUSTYPE)
 
 
 _BASEVEL = _descriptor.Descriptor(
@@ -620,6 +645,120 @@ _LEDRINGDISTANCES = _descriptor.Descriptor(
   serialized_end=1054,
 )
 
+
+_TRACKINGSENSORDATA = _descriptor.Descriptor(
+  name='TrackingSensorData',
+  full_name='msgs_can.TrackingSensorData',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='status', full_name='msgs_can.TrackingSensorData.status', index=0,
+      number=1, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pose_x_mm', full_name='msgs_can.TrackingSensorData.pose_x_mm', index=1,
+      number=2, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pose_y_mm', full_name='msgs_can.TrackingSensorData.pose_y_mm', index=2,
+      number=3, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='theta_rad', full_name='msgs_can.TrackingSensorData.theta_rad', index=3,
+      number=4, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pose_x_std', full_name='msgs_can.TrackingSensorData.pose_x_std', index=4,
+      number=5, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pose_y_std', full_name='msgs_can.TrackingSensorData.pose_y_std', index=5,
+      number=6, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='theta_std', full_name='msgs_can.TrackingSensorData.theta_std', index=6,
+      number=7, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+    _TRACKINGSENSORDATA_STATUSTYPE,
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1057,
+  serialized_end=1283,
+)
+
+
+_RESETANDCALIBRATETRACKINGSENSOR = _descriptor.Descriptor(
+  name='ResetAndCalibrateTrackingSensor',
+  full_name='msgs_can.ResetAndCalibrateTrackingSensor',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='reset', full_name='msgs_can.ResetAndCalibrateTrackingSensor.reset', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='calibrate', full_name='msgs_can.ResetAndCalibrateTrackingSensor.calibrate', index=1,
+      number=2, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1285,
+  serialized_end=1352,
+)
+
 _STATUS.fields_by_name['status'].enum_type = _STATUS_STATUSTYPE
 _STATUS.fields_by_name['error'].enum_type = _STATUS_ERRORTYPE
 _STATUS_STATUSTYPE.containing_type = _STATUS
@@ -632,6 +771,8 @@ _RETBASECONFIG.fields_by_name['status'].message_type = _STATUS
 _ACTCMD.fields_by_name['action'].enum_type = _ACTACTIONS
 _ACTSTATUS.fields_by_name['status'].message_type = _STATUS
 _ACTSTATUS.fields_by_name['action'].enum_type = _ACTACTIONS
+_TRACKINGSENSORDATA.fields_by_name['status'].enum_type = _TRACKINGSENSORDATA_STATUSTYPE
+_TRACKINGSENSORDATA_STATUSTYPE.containing_type = _TRACKINGSENSORDATA
 DESCRIPTOR.message_types_by_name['BaseVel'] = _BASEVEL
 DESCRIPTOR.message_types_by_name['Status'] = _STATUS
 DESCRIPTOR.message_types_by_name['StatusReport'] = _STATUSREPORT
@@ -642,6 +783,8 @@ DESCRIPTOR.message_types_by_name['ImuData'] = _IMUDATA
 DESCRIPTOR.message_types_by_name['ActCmd'] = _ACTCMD
 DESCRIPTOR.message_types_by_name['ActStatus'] = _ACTSTATUS
 DESCRIPTOR.message_types_by_name['LedRingDistances'] = _LEDRINGDISTANCES
+DESCRIPTOR.message_types_by_name['TrackingSensorData'] = _TRACKINGSENSORDATA
+DESCRIPTOR.message_types_by_name['ResetAndCalibrateTrackingSensor'] = _RESETANDCALIBRATETRACKINGSENSOR
 DESCRIPTOR.enum_types_by_name['ActActions'] = _ACTACTIONS
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -714,6 +857,20 @@ LedRingDistances = _reflection.GeneratedProtocolMessageType('LedRingDistances', 
   # @@protoc_insertion_point(class_scope:msgs_can.LedRingDistances)
   })
 _sym_db.RegisterMessage(LedRingDistances)
+
+TrackingSensorData = _reflection.GeneratedProtocolMessageType('TrackingSensorData', (_message.Message,), {
+  'DESCRIPTOR' : _TRACKINGSENSORDATA,
+  '__module__' : 'msgs_can_pb2'
+  # @@protoc_insertion_point(class_scope:msgs_can.TrackingSensorData)
+  })
+_sym_db.RegisterMessage(TrackingSensorData)
+
+ResetAndCalibrateTrackingSensor = _reflection.GeneratedProtocolMessageType('ResetAndCalibrateTrackingSensor', (_message.Message,), {
+  'DESCRIPTOR' : _RESETANDCALIBRATETRACKINGSENSOR,
+  '__module__' : 'msgs_can_pb2'
+  # @@protoc_insertion_point(class_scope:msgs_can.ResetAndCalibrateTrackingSensor)
+  })
+_sym_db.RegisterMessage(ResetAndCalibrateTrackingSensor)
 
 
 # @@protoc_insertion_point(module_scope)
