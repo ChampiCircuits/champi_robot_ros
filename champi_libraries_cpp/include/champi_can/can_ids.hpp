@@ -20,4 +20,6 @@ namespace can_ids {
     int TIRETTE_START = 0x6;
     int ACT_RESET = 0x2;
     int LED_RING_DISTANCES =  0x210;
+    int TRACKING_SENSOR_DATA =  0x70;
+    int RESET_AND_CALIBRATE_TRACKING_SENSOR =  0x71;
 }

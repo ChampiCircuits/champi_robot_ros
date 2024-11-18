@@ -38,6 +38,11 @@ typedef enum _msgs_can_Status_ErrorType {
     msgs_can_Status_ErrorType_INVALID_CONFIG = 8
 } msgs_can_Status_ErrorType;
 
+typedef enum _msgs_can_TrackingSensorData_StatusType {
+    msgs_can_TrackingSensorData_StatusType_OK = 0,
+    msgs_can_TrackingSensorData_StatusType_ERROR = 1
+} msgs_can_TrackingSensorData_StatusType;
+
 /* Struct definitions */
 typedef struct _msgs_can_BaseVel {
     bool has_x;
@@ -126,6 +131,30 @@ typedef struct _msgs_can_LedRingDistances {
     float distances[24];
 } msgs_can_LedRingDistances;
 
+typedef struct _msgs_can_TrackingSensorData {
+    bool has_status;
+    msgs_can_TrackingSensorData_StatusType status;
+    bool has_pose_x_mm;
+    float pose_x_mm;
+    bool has_pose_y_mm;
+    float pose_y_mm;
+    bool has_theta_rad;
+    float theta_rad;
+    bool has_pose_x_std;
+    float pose_x_std;
+    bool has_pose_y_std;
+    float pose_y_std;
+    bool has_theta_std;
+    float theta_std;
+} msgs_can_TrackingSensorData;
+
+typedef struct _msgs_can_ResetAndCalibrateTrackingSensor {
+    bool has_reset;
+    bool reset;
+    bool has_calibrate;
+    bool calibrate;
+} msgs_can_ResetAndCalibrateTrackingSensor;
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,6 +173,10 @@ extern "C" {
 #define _msgs_can_Status_ErrorType_MAX msgs_can_Status_ErrorType_INVALID_CONFIG
 #define _msgs_can_Status_ErrorType_ARRAYSIZE ((msgs_can_Status_ErrorType)(msgs_can_Status_ErrorType_INVALID_CONFIG+1))
 
+#define _msgs_can_TrackingSensorData_StatusType_MIN msgs_can_TrackingSensorData_StatusType_OK
+#define _msgs_can_TrackingSensorData_StatusType_MAX msgs_can_TrackingSensorData_StatusType_ERROR
+#define _msgs_can_TrackingSensorData_StatusType_ARRAYSIZE ((msgs_can_TrackingSensorData_StatusType)(msgs_can_TrackingSensorData_StatusType_ERROR+1))
+
 
 #define msgs_can_Status_status_ENUMTYPE msgs_can_Status_StatusType
 #define msgs_can_Status_error_ENUMTYPE msgs_can_Status_ErrorType
@@ -158,6 +191,9 @@ extern "C" {
 #define msgs_can_ActStatus_action_ENUMTYPE msgs_can_ActActions
 
 
+#define msgs_can_TrackingSensorData_status_ENUMTYPE msgs_can_TrackingSensorData_StatusType
+
+
 
 /* Initializer values for message structs */
 #define msgs_can_BaseVel_init_default            {false, 0, false, 0, false, 0}
@@ -170,6 +206,8 @@ extern "C" {
 #define msgs_can_ActCmd_init_default             {false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_ActStatus_init_default          {false, msgs_can_Status_init_default, false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_LedRingDistances_init_default   {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+#define msgs_can_TrackingSensorData_init_default {false, _msgs_can_TrackingSensorData_StatusType_MIN, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define msgs_can_ResetAndCalibrateTrackingSensor_init_default {false, 0, false, 0}
 #define msgs_can_BaseVel_init_zero               {false, 0, false, 0, false, 0}
 #define msgs_can_Status_init_zero                {false, 0, false, _msgs_can_Status_StatusType_MIN, false, _msgs_can_Status_ErrorType_MIN, {{NULL}, NULL}}
 #define msgs_can_StatusReport_init_zero          {false, msgs_can_Status_init_zero}
@@ -180,6 +218,8 @@ extern "C" {
 #define msgs_can_ActCmd_init_zero                {false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_ActStatus_init_zero             {false, msgs_can_Status_init_zero, false, _msgs_can_ActActions_MIN, false, 0}
 #define msgs_can_LedRingDistances_init_zero      {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+#define msgs_can_TrackingSensorData_init_zero    {false, _msgs_can_TrackingSensorData_StatusType_MIN, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define msgs_can_ResetAndCalibrateTrackingSensor_init_zero {false, 0, false, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define msgs_can_BaseVel_x_tag                   1
@@ -210,6 +250,15 @@ extern "C" {
 #define msgs_can_ActStatus_action_tag            2
 #define msgs_can_ActStatus_plant_count_tag       3
 #define msgs_can_LedRingDistances_distances_tag  1
+#define msgs_can_TrackingSensorData_status_tag   1
+#define msgs_can_TrackingSensorData_pose_x_mm_tag 2
+#define msgs_can_TrackingSensorData_pose_y_mm_tag 3
+#define msgs_can_TrackingSensorData_theta_rad_tag 4
+#define msgs_can_TrackingSensorData_pose_x_std_tag 5
+#define msgs_can_TrackingSensorData_pose_y_std_tag 6
+#define msgs_can_TrackingSensorData_theta_std_tag 7
+#define msgs_can_ResetAndCalibrateTrackingSensor_reset_tag 1
+#define msgs_can_ResetAndCalibrateTrackingSensor_calibrate_tag 2
 
 /* Struct field encoding specification for nanopb */
 #define msgs_can_BaseVel_FIELDLIST(X, a) \
@@ -286,6 +335,23 @@ X(a, STATIC,   FIXARRAY, FLOAT,    distances,         1)
 #define msgs_can_LedRingDistances_CALLBACK NULL
 #define msgs_can_LedRingDistances_DEFAULT NULL
 
+#define msgs_can_TrackingSensorData_FIELDLIST(X, a) \
+X(a, STATIC,   OPTIONAL, UENUM,    status,            1) \
+X(a, STATIC,   OPTIONAL, FLOAT,    pose_x_mm,         2) \
+X(a, STATIC,   OPTIONAL, FLOAT,    pose_y_mm,         3) \
+X(a, STATIC,   OPTIONAL, FLOAT,    theta_rad,         4) \
+X(a, STATIC,   OPTIONAL, FLOAT,    pose_x_std,        5) \
+X(a, STATIC,   OPTIONAL, FLOAT,    pose_y_std,        6) \
+X(a, STATIC,   OPTIONAL, FLOAT,    theta_std,         7)
+#define msgs_can_TrackingSensorData_CALLBACK NULL
+#define msgs_can_TrackingSensorData_DEFAULT NULL
+
+#define msgs_can_ResetAndCalibrateTrackingSensor_FIELDLIST(X, a) \
+X(a, STATIC,   OPTIONAL, BOOL,     reset,             1) \
+X(a, STATIC,   OPTIONAL, BOOL,     calibrate,         2)
+#define msgs_can_ResetAndCalibrateTrackingSensor_CALLBACK NULL
+#define msgs_can_ResetAndCalibrateTrackingSensor_DEFAULT NULL
+
 extern const pb_msgdesc_t msgs_can_BaseVel_msg;
 extern const pb_msgdesc_t msgs_can_Status_msg;
 extern const pb_msgdesc_t msgs_can_StatusReport_msg;
@@ -296,6 +362,8 @@ extern const pb_msgdesc_t msgs_can_ImuData_msg;
 extern const pb_msgdesc_t msgs_can_ActCmd_msg;
 extern const pb_msgdesc_t msgs_can_ActStatus_msg;
 extern const pb_msgdesc_t msgs_can_LedRingDistances_msg;
+extern const pb_msgdesc_t msgs_can_TrackingSensorData_msg;
+extern const pb_msgdesc_t msgs_can_ResetAndCalibrateTrackingSensor_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define msgs_can_BaseVel_fields &msgs_can_BaseVel_msg
@@ -308,6 +376,8 @@ extern const pb_msgdesc_t msgs_can_LedRingDistances_msg;
 #define msgs_can_ActCmd_fields &msgs_can_ActCmd_msg
 #define msgs_can_ActStatus_fields &msgs_can_ActStatus_msg
 #define msgs_can_LedRingDistances_fields &msgs_can_LedRingDistances_msg
+#define msgs_can_TrackingSensorData_fields &msgs_can_TrackingSensorData_msg
+#define msgs_can_ResetAndCalibrateTrackingSensor_fields &msgs_can_ResetAndCalibrateTrackingSensor_msg
 
 /* Maximum encoded size of messages (where known) */
 /* msgs_can_Status_size depends on runtime parameters */
@@ -321,6 +391,8 @@ extern const pb_msgdesc_t msgs_can_LedRingDistances_msg;
 #define msgs_can_BaseVel_size                    15
 #define msgs_can_ImuData_size                    30
 #define msgs_can_LedRingDistances_size           120
+#define msgs_can_ResetAndCalibrateTrackingSensor_size 4
+#define msgs_can_TrackingSensorData_size         32
 
 #ifdef __cplusplus
 } /* extern "C" */
