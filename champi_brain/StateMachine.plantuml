@@ -1,0 +1,40 @@
+
+state AutonomousMatch {
+
+    state Initialisation {
+        state lookAtARUCOAndCorrectPose
+        state waitingForStart
+        lookAtARUCOAndCorrectPose --> waitingForStart
+    }
+
+    state Match {
+
+        state goGrabElements
+        state grabbingElements
+        state goPutElements
+        state puttingElements
+        state goDisplayBanner
+        state displayBanner
+
+        state decisionState
+
+        decisionState --> goGrabElements
+        goGrabElements --> grabbingElements
+        grabbingElements--> decisionState
+
+        decisionState --> goPutElements
+        goPutElements --> puttingElements
+        puttingElements --> decisionState
+
+        decisionState --> goDisplayBanner
+        goDisplayBanner --> displayBanner
+        displayBanner --> decisionState
+    }
+    
+    state endOfMatch
+
+
+    Initialisation --> Match : tirette
+    Match --> endOfMatch : after 100s
+
+}

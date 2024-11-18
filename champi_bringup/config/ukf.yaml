@@ -148,7 +148,7 @@ ukf:
         pose1_config: [true,  true,  false,
                        false, false, false,
                        false, false, false,
-                       false, false, false,
+                       false, false, true,
                        false, false, false]
         pose1_differential: false
         pose1_relative: false

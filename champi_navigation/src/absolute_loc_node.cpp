@@ -20,7 +20,7 @@
 
 #include "icp_pcl.hpp"
 
-const double R_BEACON = 0.055;
+const double R_BEACON = 0.045;
 
 class AbsoluteLocNode : public rclcpp::Node
 {
@@ -38,6 +38,7 @@ public:
 
         ref_point_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ref_point_cloud", 10);
         current_point_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/current_point_cloud", 10);
+        matched_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/matched_point_cloud", 10);
         corrected_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/pose/absolute_loc", 10);
 
         timer_ = this->create_wall_timer(
@@ -56,6 +57,7 @@ private:
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ref_point_cloud_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr current_point_cloud_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr matched_point_cloud_pub;
     rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr corrected_pose_pub_;
 
     sensor_msgs::msg::LaserScan::SharedPtr last_scan_;
@@ -107,14 +109,27 @@ private:
         }
 
         // Appliquer l'ICP ici
-        auto transformation_matrix = applyICPFromROSPointClouds(ref_point_cloud, point_cloud_in_odom);
+        pcl::PointCloud<pcl::PointXYZ> aligned_cloud;
+        sensor_msgs::msg::PointCloud2 correspondence_cloud;
+        auto transformation_matrix = applyICPWithCorrespondences(ref_point_cloud, point_cloud_in_odom, aligned_cloud, correspondence_cloud);
 
         // Log la transformation
         std::cout << transformation_matrix << std::endl;
 
+
+        sensor_msgs::msg::PointCloud2 msg;
+        pcl::toROSMsg(aligned_cloud, msg);
+        msg.header.frame_id = "odom";
+        double ts = this->now().seconds();
+        msg.header.stamp.sec = int(ts);
+        msg.header.stamp.nanosec = (ts - msg.header.stamp.sec) * pow(10, 9);
+
         // Publier les nuages de points
+        // ref_point_cloud_pub_->publish(msg);
         ref_point_cloud_pub_->publish(ref_point_cloud);
+        // current_point_cloud_pub_->publish(msg);
         current_point_cloud_pub_->publish(point_cloud_in_odom);
+        matched_point_cloud_pub->publish(correspondence_cloud);
 
 
         // Corriger l'odométrie et publier la position corrigée
@@ -134,14 +149,17 @@ private:
         // Extraire la translation et la rotation calculées par ICP
         Eigen::Vector3f translation = transformation_matrix.block<3, 1>(0, 3);
         Eigen::Matrix3f rotation_matrix = transformation_matrix.block<3, 3>(0, 0);
-        Eigen::Quaternionf icp_rotation(rotation_matrix); // Rotation obtenue via ICP
 
-
+        //#### INVERSION TESTS
         Eigen::Matrix3f inverse_rotation = rotation_matrix.transpose();
         Eigen::Vector3f inverse_translation = -inverse_rotation * translation;
 
         rotation_matrix = inverse_rotation;
         translation = inverse_translation;
+        //#####
+
+
+        Eigen::Quaternionf icp_rotation(rotation_matrix); // Rotation obtenue via ICP
 
         // Créer un quaternion à partir de la rotation actuelle de l'odométrie
         Eigen::Quaternionf current_rotation(
@@ -173,18 +191,18 @@ private:
         corrected_pose_msg.pose.pose = current_pose;
         
         corrected_pose_msg.pose.covariance = {
-            0.1, 0,    0,    0,    0,    0,   // x
-            0,    0.1, 0,    0,    0,    0,   // y
-            0,    0,    0.1, 0,    0,    0,   // z
-            0,    0,    0,    0.05, 0,    0,   // roll
-            0,    0,    0,    0,    0.05, 0,   // pitch
-            0,    0,    0,    0,    0,    0.05 // yaw
+            0.1, 0,     0,    0,    0,    0,   // x
+            0,    0.1,  0,    0,    0,    0,   // y
+            0,    0,    0,    0,    0,    0,   // z
+            0,    0,    0,    0   , 0,    0,   // roll
+            0,    0,    0,    0,    0,    0,   // pitch
+            0,    0,    0,    0,    0,    0.00001 // yaw
         };
         // Publier la pose corrigée
-        corrected_pose_pub_->publish(corrected_pose_msg);
+        // corrected_pose_pub_->publish(corrected_pose_msg);
     }
 
-    sensor_msgs::msg::PointCloud2 generate_pointcloud_with_circles(double diameter, const std::vector<geometry_msgs::msg::PointStamped> &positions, int num_points = 60, double uniform = 0.0)
+    sensor_msgs::msg::PointCloud2 generate_pointcloud_with_circles(double diameter, const std::vector<geometry_msgs::msg::PointStamped> &positions, int num_points = 30, double uniform = 0.0)
     {
         sensor_msgs::msg::PointCloud2 cloud;
         cloud.header.frame_id = "odom";
@@ -250,10 +268,11 @@ private:
 
         double angle = laser_scan->angle_min;
         std::vector<float> points;
+        int i = 0;
 
         for (auto r : laser_scan->ranges)
         {
-            if (laser_scan->range_min < r && r < laser_scan->range_max)
+            if (laser_scan->intensities[i] >= 255 && laser_scan->range_min < r && r < laser_scan->range_max)
             {
                 geometry_msgs::msg::PointStamped point_in_scan;
                 point_in_scan.header.frame_id = laser_scan->header.frame_id;
@@ -278,6 +297,7 @@ private:
                 points.push_back(0.0); // z
             }
             angle += laser_scan->angle_increment;
+            i++;
         }
 
         // Copier les points dans le nuage de points

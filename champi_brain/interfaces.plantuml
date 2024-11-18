@@ -1,0 +1,17 @@
+
+class handleTribuneITF {
+    + virtual grabTribune()
+    + virtual putTribune()
+}
+
+class handleTribunePushOnly
+class handleTribuneWithMagnets
+class handleTribuneWithClamp
+
+handleTribuneITF <|-- handleTribunePushOnly
+handleTribuneITF <|-- handleTribuneWithMagnets
+handleTribuneITF <|-- handleTribuneWithClamp
+
+
+
+
