@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import champi_navigation.goal_checker as goal_checker
-from champi_libraries_py.data_types.geometry import Pose2D, Vel2D
 from champi_libraries_py.utils.angles import get_yaw
 from champi_libraries_py.data_types.robot_state import RobotState
 from champi_libraries_py.utils.diagnostics import create_topic_freq_diagnostic, ExecTimeMeasurer
