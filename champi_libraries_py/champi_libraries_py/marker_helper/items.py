@@ -312,12 +312,33 @@ class Spheres(Item):
         
     def __init__(self, poses, size=0.2, color=None):
         if not shared_variables.visualization_enabled: return
-
         super().__init__(1)
         self.set_type(Marker.SPHERE_LIST)
         self.set_scale(size)
         self.set_points(poses)
         self.set_color(color)
+
+
+class Cylinder(Item):
+            
+    def __init__(self, pose, length=0.5, radius=0.3, color=None):
+        if not shared_variables.visualization_enabled: return
+        super().__init__(1)
+        self.set_type(Marker.CYLINDER)
+        self.set_scale([radius, radius, length])
+        self.set_pose(pose)
+        self.set_color(color)
+
+
+class Cylinders(Item):
+        
+        def __init__(self, poses, length=0.5, radius=0.3, color=None):
+            if not shared_variables.visualization_enabled: return
+    
+            super().__init__(len(poses))
+            for pose in poses:
+                cylinder = Cylinder(pose, length, radius, color)
+                self.markers.extend(cylinder.get_marker_array())
 
 
 class Cubes(Item):

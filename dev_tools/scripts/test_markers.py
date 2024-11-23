@@ -66,6 +66,7 @@ class TestNode(Node):
         Canva().add(items.Sphere((0.5, 1), size=0.4))
         Canva().add(items.Arrows(self.some_poses2D))
         Canva().add(items.Cubes(self.some_poses, color=presets.MAGENTA))
+        Canva().add(items.Cylinders(self.some_poses, color=presets.GREEN))
         Canva().add(items.OrientedCubes(self.some_poses, color=presets.GOLD))
         Canva().add(items.Points(self.some_poses, color=presets.BROWN))
         Canva().add(items.Spheres(self.some_poses, color=presets.NAVY), frame_id='odom')
