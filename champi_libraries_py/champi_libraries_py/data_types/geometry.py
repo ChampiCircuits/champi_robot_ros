@@ -75,9 +75,6 @@ class Pose2D:
             self.theta = theta
 
     def to_ros_pose(self):
-        print("pose2D :")
-        print(self.x)
-        print(self.y)
         pose = Pose()
         pose.position.x = self.x
         pose.position.y = self.y

@@ -3,7 +3,11 @@ from rclpy.node import Node
 
 from geometry_msgs.msg import Point, Pose
 
-from champi_libraries_py.rviz_marker_display.canva import *
+import champi_libraries_py.data_types.geometry as geo
+
+from champi_libraries_py.marker_helper.canva import *
+
+import time
 
 
 
@@ -14,8 +18,7 @@ class TestNode(Node):
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        self.canva = Canva(self, enable=True)
-
+        Canva(self, enable=True)
 
         pose1 = Pose()
         pose1.position.x = 0.5
@@ -30,7 +33,7 @@ class TestNode(Node):
         pose2.position.x = -0.5
         pose2.position.y = -0.5
         pose2.position.z = -0.5
-        pose2.orientation.x = -0.5
+        pose2.orientation.x = 1.
         pose2.orientation.y = -0.5
         pose2.orientation.z = -0.5
         pose2.orientation.w = -0.5
@@ -46,26 +49,33 @@ class TestNode(Node):
 
         self.some_poses = [pose1, pose2, pose3]
 
+        self.some_poses2D = [geo.Pose2D(pose=pose1),geo.Pose2D(pose=pose2), geo.Pose2D(pose=pose3), geo.Pose2D(0.5, 0.3, 1.3)]
+
         self.angle=0.
 
 
     def timer_callback(self):
 
-        self.canva.clear()
-        
-        self.canva.add(Polyline(self.some_poses, size=MEDIUM, color=colors.GREEN))
-        self.canva.add(OrientedCube(self.some_poses[0], size=(0.1, 0.2, 0.3)))
-        self.canva.add(Sphere((0.5, 1), size=0.4, color=colors.BLUE))
-        self.canva.add(Arrows(self.some_poses, color=colors.RED))
-        self.canva.add(Cubes(self.some_poses, color=colors.MAGENTA))
-        self.canva.add(OrientedCubes(self.some_poses, color=colors.MAGENTA))
-        self.canva.add(Points(self.some_poses, color=colors.MAGENTA))
-        self.canva.add(Spheres(self.some_poses, color=colors.MAGENTA))
-        self.canva.add(Poses([(1,1), (1, -1), (-1, 1)], color=colors.CYAN, type=Poses.Types.POINTS))
 
-        self.canva.draw()
+        t_start = time.time()
 
-        self.angle += 0.1
+        Canva().clear()
+
+        Canva().add(items.Polyline(self.some_poses, size=presets.LINE_MEDIUM))
+        Canva().add(items.OrientedCube(self.some_poses[0], size=(0.1, 0.2, 0.3)))
+        Canva().add(items.Sphere((0.5, 1), size=0.4))
+        Canva().add(items.Arrows(self.some_poses2D))
+        Canva().add(items.Cubes(self.some_poses, color=presets.MAGENTA))
+        Canva().add(items.OrientedCubes(self.some_poses, color=presets.GOLD))
+        Canva().add(items.Points(self.some_poses, color=presets.BROWN))
+        Canva().add(items.Spheres(self.some_poses, color=presets.NAVY), frame_id='odom')
+
+        Canva().draw()
+
+        print('Time elapsed (ms):', (time.time()-t_start)*1000)
+
+        # 5 ms when enabled
+        # 0.02 ms when disabled
 
 
         
