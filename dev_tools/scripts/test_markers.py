@@ -52,12 +52,17 @@ class TestNode(Node):
     def timer_callback(self):
 
         self.canva.clear()
-        self.canva.add(Line((-1, 0), (1, 0), line_width=MEDIUM, color=colors.RED))
-        self.canva.add(Polyline(self.some_poses, line_width=MEDIUM, color=colors.GREEN))
-        self.canva.add(Poses(self.some_poses, size= 0.2, color=colors.GREEN, type=Poses.Types.CUBES))
+        
+        self.canva.add(Polyline(self.some_poses, size=MEDIUM, color=colors.GREEN))
+        self.canva.add(OrientedCube(self.some_poses[0], size=(0.1, 0.2, 0.3)))
+        self.canva.add(Sphere((0.5, 1), size=0.4, color=colors.BLUE))
+        self.canva.add(Arrows(self.some_poses, color=colors.RED))
+        self.canva.add(Cubes(self.some_poses, color=colors.MAGENTA))
+        self.canva.add(OrientedCubes(self.some_poses, color=colors.MAGENTA))
+        self.canva.add(Points(self.some_poses, color=colors.MAGENTA))
+        self.canva.add(Spheres(self.some_poses, color=colors.MAGENTA))
+        self.canva.add(Poses([(1,1), (1, -1), (-1, 1)], color=colors.CYAN, type=Poses.Types.POINTS))
 
-        self.canva.add(Cube(self.some_poses[0], size=(0.1, 0.2, 0.3)))
-        self.canva.add(Sphere((0.5, 1), radius=0.4, color=colors.BLUE))
         self.canva.draw()
 
         self.angle += 0.1
