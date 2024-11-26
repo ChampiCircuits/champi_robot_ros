@@ -27,18 +27,20 @@ class HoloBaseControlDummy(Node):
         super().__init__('holo_base_control_dummy_node')
 
         # Parameters
-        self.declare_parameter('enable_accel_limits', True)
-        self.declare_parameter('max_acceleration_linear', 0.2)  # Change these values in the config file, not here!
-        self.declare_parameter('max_acceleration_angular', 2.0)
-        self.declare_parameter('max_deceleration_linear', 1.0)
-        self.declare_parameter('max_deceleration_angular', 6.0)
-        self.declare_parameter('imu_vel_yaw_cov', 0.01)
+        self.declare_parameter('enable_accel_limits', rclpy.Parameter.Type.BOOL)
+        self.declare_parameter('max_acceleration_linear', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_acceleration_angular', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_deceleration_linear', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_deceleration_angular', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_acceleration_wheel', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('imu_vel_yaw_cov', rclpy.Parameter.Type.DOUBLE)
         # Get parameters
         self.enable_accel_limits_ = self.get_parameter('enable_accel_limits').value
         self.max_acceleration_linear_ = self.get_parameter('max_acceleration_linear').value
         self.max_acceleration_angular_ = self.get_parameter('max_acceleration_angular').value
         self.max_deceleration_linear_ = self.get_parameter('max_deceleration_linear').value
         self.max_deceleration_angular_ = self.get_parameter('max_deceleration_angular').value
+        self.max_acceleration_wheel = self.get_parameter('max_acceleration_wheel').value
         self.imu_vel_yaw_cov_ = self.get_parameter('imu_vel_yaw_cov').value
         # Print parameters
         get_logger('rclpy').info(f"enable_accel_limits: {self.enable_accel_limits_}")
@@ -46,6 +48,7 @@ class HoloBaseControlDummy(Node):
         get_logger('rclpy').info(f"max_acceleration_angular: {self.max_acceleration_angular_}")
         get_logger('rclpy').info(f"max_deceleration_linear: {self.max_deceleration_linear_}")
         get_logger('rclpy').info(f"max_deceleration_angular: {self.max_deceleration_angular_}")
+        get_logger('rclpy').info(f"max_acceleration_wheel: {self.max_acceleration_wheel}")
         get_logger('rclpy').info(f"imu_vel_yaw_cov: {self.imu_vel_yaw_cov_}")
 
         self.subscription = self.create_subscription(
@@ -69,8 +72,8 @@ class HoloBaseControlDummy(Node):
         # Initialize the transform broadcaster
         self.tf_broadcaster = TransformBroadcaster(self)
 
-        timer_period = 0.02  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.timer_period = 0.02  # seconds
+        self.timer = self.create_timer(self.timer_period, self.timer_callback)
 
         # Node variables
         self.latest_cmd_vel = [0., 0., 0.]
@@ -85,8 +88,6 @@ class HoloBaseControlDummy(Node):
         self.speed_wheel2 = 0
 
         self.robot_radius = 0.175
-
-        self.cnt = 0
 
         self.dt_ = 0.02
         self.last_time_ = 0.0
@@ -171,14 +172,6 @@ class HoloBaseControlDummy(Node):
         # if no cmd_vel received for 0.5s, set cmd_vel to 0
         if time.time() - self.t_last_cmd_vel_ > 0.5:
             self.latest_cmd_vel = [0., 0., 0.]
-
-        # # comppute speed of the robot and print it
-        # speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
-        # # print 1/20 times
-        # if self.cnt == 20:
-        #     # rclpy.logging.get_logger('rclpy').info(f"Speed: {speed}")
-        #     self.cnt = 0
-        # self.cnt += 1
 
         # Compute dt
         if self.last_time_ == 0.0:
@@ -303,15 +296,15 @@ class HoloBaseControlDummy(Node):
         abs_accel_roue_2 = abs(accel_roue_2)
         abs_accel_roues = [abs_accel_roue_0, abs_accel_roue_1, abs_accel_roue_2]
 
-        MAX_ACCEL_PER_CYCLE = 0.05 # TODO
+        max_accel_per_cycle = self.max_acceleration_wheel * self.timer_period
 
-        if abs_accel_roue_0 < MAX_ACCEL_PER_CYCLE and abs_accel_roue_1 < MAX_ACCEL_PER_CYCLE and abs_accel_roue_2 < MAX_ACCEL_PER_CYCLE:
+        if abs_accel_roue_0 < max_accel_per_cycle and abs_accel_roue_1 < max_accel_per_cycle and abs_accel_roue_2 < max_accel_per_cycle:
             # acceleration requested is ok, no need to accelerate gradually.
             self.speed_wheel0 = cmd_vitesse_roue0
             self.speed_wheel1 = cmd_vitesse_roue1
             self.speed_wheel2 = cmd_vitesse_roue2
         else:
-            speed_ratio = MAX_ACCEL_PER_CYCLE / max(abs_accel_roues)
+            speed_ratio = max_accel_per_cycle / max(abs_accel_roues)
             self.speed_wheel0 += speed_ratio * accel_roue_0
             self.speed_wheel1 += speed_ratio * accel_roue_1
             self.speed_wheel2 += speed_ratio * accel_roue_2

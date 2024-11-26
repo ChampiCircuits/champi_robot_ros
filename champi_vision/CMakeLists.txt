@@ -15,10 +15,6 @@ find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 
-# add_executable(enemy_detection_node src/enemy_detection_node.cpp)
-# ament_target_dependencies(enemy_detection_node rclcpp sensor_msgs tf2_ros)
-
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

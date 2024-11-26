@@ -8,6 +8,8 @@ base_controller_simu:
 
     max_acceleration_angular: 20.0 # rad/s^2
     max_deceleration_angular: 20.0 # rad/s^2
+    
+    max_acceleration_wheel: 10.0 # rad/s^2
 
     imu_vel_yaw_cov: 0.00001
 
@@ -115,7 +117,7 @@ costmap_updater:
 pose_controller:
   ros__parameters:
     control_loop_period: 0.1 # s
-    max_linear_acceleration: 0.3 # m/s^2
+    max_linear_acceleration: 0.1 # m/s^2
     max_angular_acceleration: 1.0 # rad/s^2
     # When the ctrl_goal is reached and end_speed!=0 (we expect a new goal to be sent right away),
     # the robot will emergency stop once the timeout is elapsed.

@@ -3,8 +3,10 @@
 import champi_navigation.goal_checker as goal_checker
 from champi_libraries_py.utils.angles import get_yaw
 from champi_libraries_py.data_types.robot_state import RobotState
+from champi_libraries_py.data_types.geometry import Pose2D, Vel2D
 from champi_libraries_py.utils.diagnostics import create_topic_freq_diagnostic, ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
+from champi_libraries_py.utils.dt_measurer import DtMeasurer
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
 from champi_navigation.path_follow_params import PathFollowParams
 
@@ -18,6 +20,8 @@ from rclpy.executors import ExternalShutdownException
 
 import diagnostic_msgs
 import diagnostic_updater
+
+from icecream import ic
 
 
 class PoseControllerNode(Node):
@@ -45,6 +49,7 @@ class PoseControllerNode(Node):
         # Other objects instantiation
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
         self.path_follow_params = PathFollowParams(max_linear_acceleration, max_angular_acceleration)
+        self.dt_measurer = DtMeasurer(control_loop_period)
         self.robot_current_state = None
         self.ctrl_goal: CtrlGoal = None
 
@@ -111,6 +116,8 @@ class PoseControllerNode(Node):
         # # Exectution time measurement for diagnostics. Check class definition for details.
         self.exec_time_measurer.start()
 
+        self.dt_measurer.tick()
+
         # Initialization checks or stop requested by planner
         if self.robot_current_state is None or self.ctrl_goal is None or self.stop_requested_by_planner:
             self.stop_robot()
@@ -141,7 +148,8 @@ class PoseControllerNode(Node):
 
         # Compute the velocity command
         self.path_follow_params.update_robot_state(self.robot_current_state)
-        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.path_follow_params)
+        dt = self.dt_measurer.get_dt()
+        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(dt, self.path_follow_params)
 
         # express cmd in the base_link frame (initially in the global fixed frame)
         cmd_vel = Vel2D.to_robot_frame(self.robot_current_state.pose, cmd_vel)

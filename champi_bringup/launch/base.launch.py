@@ -11,7 +11,6 @@ from launch.conditions import IfCondition, UnlessCondition
 
 """
 Ce launch file lance les nodes liés à la base et à la localisation du robot.
-TODO: il faudrait l'appeler depuis le bringup principal, pour ne pas répéter le code.
 """
 
 def generate_launch_description():

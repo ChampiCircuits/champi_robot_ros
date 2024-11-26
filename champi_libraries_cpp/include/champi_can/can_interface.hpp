@@ -87,7 +87,7 @@ class CanInterface {
      * @return int 0 if the frame was sent successfully, 1 otherwise.
      */
     int send(canid_t id, unsigned char* msg, int msg_size) {
-        assert(msg_size <= 8); // I left it so we can't miss a problem in the code (TODO remove ?)
+        assert(msg_size <= 8); // I left it so we can't miss a problem in the code
         struct can_frame frame;
         frame.can_id = id;
  

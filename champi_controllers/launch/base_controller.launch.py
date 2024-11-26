@@ -26,7 +26,7 @@ def generate_launch_description():
             config_file_path,
             {'can_interface_name': LaunchConfiguration('can_interface')}
         ],
-        remappings=[('/cmd_vel', '/base_controller/cmd_vel'), # TODO move this to bringup
+        remappings=[('/cmd_vel', '/base_controller/cmd_vel'),
                     ('/cmd_vel_limited', '/base_controller/cmd_vel_limited')]
     )
 

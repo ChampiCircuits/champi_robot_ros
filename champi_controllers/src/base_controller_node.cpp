@@ -19,7 +19,6 @@
 
 using namespace std;
 
-// TODO tester mes modifs (twist not stamped, twist not needed for init)
 
 class BaseControllerNode : public rclcpp::Node
 {

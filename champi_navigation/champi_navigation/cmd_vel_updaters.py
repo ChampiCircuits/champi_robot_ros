@@ -23,7 +23,7 @@ class CmdVelUpdaterInterface:
         self.stat_error_theta = None
 
 
-    def compute_cmd_vel(self, p: PathFollowParams):
+    def compute_cmd_vel(self, dt, p: PathFollowParams):
         """See class description.
 
         Args:
@@ -58,7 +58,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         self.pid_correct_dir = PID(5, 0, 1)
 
 
-    def compute_cmd_vel(self, p: PathFollowParams):
+    def compute_cmd_vel(self, dt, p: PathFollowParams):
 
 
         # ====================== Heading of the robot ======================
@@ -104,7 +104,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         current_state_mag = TrapezoidProfile.State(-dist_robot_to_goal, x_y_speed)
         goal_state_mag = TrapezoidProfile.State(0, p.end_speed)
         profile_mag = TrapezoidProfile(constraints_mag, goal_state_mag, current_state_mag)
-        cmd_vel_x_y = profile_mag.calculate(0.1).velocity
+        cmd_vel_x_y = profile_mag.calculate(dt).velocity
 
 
         # ========================= Angular velocity =========================
@@ -132,7 +132,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         current_state_theta = TrapezoidProfile.State(-theta_error, p.robot_state.vel.theta)
         goal_state_theta = TrapezoidProfile.State(0, 0)
         profile_theta = TrapezoidProfile(constraints_theta, goal_state_theta, current_state_theta)
-        cmd_vel_theta = profile_theta.calculate(0.1).velocity  # TODO pass dt as argument
+        cmd_vel_theta = profile_theta.calculate(dt).velocity
 
         # ========================= Final velocity command =========================
 
