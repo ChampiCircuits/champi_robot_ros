@@ -104,11 +104,12 @@ message TrackingSensorData {
   optional float pose_x_mm = 2;
   optional float pose_y_mm = 3;
   optional float theta_rad = 4;
+}
 
-  
-  optional float pose_x_std = 5;
-  optional float pose_y_std = 6;
-  optional float theta_std = 7;
+message TrackingSensorStd { 
+  optional float pose_x_std = 1;
+  optional float pose_y_std = 2;
+  optional float theta_std = 3;
 }
 
 message ResetAndCalibrateTrackingSensor {

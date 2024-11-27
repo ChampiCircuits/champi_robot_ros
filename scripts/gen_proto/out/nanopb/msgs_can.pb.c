@@ -39,6 +39,9 @@ PB_BIND(msgs_can_LedRingDistances, msgs_can_LedRingDistances, AUTO)
 PB_BIND(msgs_can_TrackingSensorData, msgs_can_TrackingSensorData, AUTO)
 
 
+PB_BIND(msgs_can_TrackingSensorStd, msgs_can_TrackingSensorStd, AUTO)
+
+
 PB_BIND(msgs_can_ResetAndCalibrateTrackingSensor, msgs_can_ResetAndCalibrateTrackingSensor, AUTO)
 
 

@@ -61,6 +61,10 @@ class TrackingSensorDataDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<TrackingSensorData> _instance;
 } _TrackingSensorData_default_instance_;
+class TrackingSensorStdDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<TrackingSensorStd> _instance;
+} _TrackingSensorStd_default_instance_;
 class ResetAndCalibrateTrackingSensorDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ResetAndCalibrateTrackingSensor> _instance;
@@ -240,7 +244,21 @@ static void InitDefaultsscc_info_TrackingSensorData_msgs_5fcan_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TrackingSensorData_msgs_5fcan_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_TrackingSensorData_msgs_5fcan_2eproto}, {}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[12];
+static void InitDefaultsscc_info_TrackingSensorStd_msgs_5fcan_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::msgs_can::_TrackingSensorStd_default_instance_;
+    new (ptr) ::msgs_can::TrackingSensorStd();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::msgs_can::TrackingSensorStd::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TrackingSensorStd_msgs_5fcan_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_TrackingSensorStd_msgs_5fcan_2eproto}, {}};
+
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_msgs_5fcan_2eproto[13];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_msgs_5fcan_2eproto[4];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_msgs_5fcan_2eproto = nullptr;
 
@@ -359,16 +377,21 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_msgs_5fcan_2eproto::offsets[] 
   PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorData, pose_x_mm_),
   PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorData, pose_y_mm_),
   PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorData, theta_rad_),
-  PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorData, pose_x_std_),
-  PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorData, pose_y_std_),
-  PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorData, theta_std_),
   0,
   1,
   2,
   3,
-  4,
-  5,
-  6,
+  PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorStd, _has_bits_),
+  PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorStd, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorStd, pose_x_std_),
+  PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorStd, pose_y_std_),
+  PROTOBUF_FIELD_OFFSET(::msgs_can::TrackingSensorStd, theta_std_),
+  0,
+  1,
+  2,
   PROTOBUF_FIELD_OFFSET(::msgs_can::ResetAndCalibrateTrackingSensor, _has_bits_),
   PROTOBUF_FIELD_OFFSET(::msgs_can::ResetAndCalibrateTrackingSensor, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -390,8 +413,9 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 79, 86, sizeof(::msgs_can::ActCmd)},
   { 88, 96, sizeof(::msgs_can::ActStatus)},
   { 99, -1, sizeof(::msgs_can::LedRingDistances)},
-  { 105, 117, sizeof(::msgs_can::TrackingSensorData)},
-  { 124, 131, sizeof(::msgs_can::ResetAndCalibrateTrackingSensor)},
+  { 105, 114, sizeof(::msgs_can::TrackingSensorData)},
+  { 118, 126, sizeof(::msgs_can::TrackingSensorStd)},
+  { 129, 136, sizeof(::msgs_can::ResetAndCalibrateTrackingSensor)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -406,6 +430,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ActStatus_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_LedRingDistances_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_TrackingSensorData_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_TrackingSensorStd_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::msgs_can::_ResetAndCalibrateTrackingSensor_default_instance_),
 };
 
@@ -436,21 +461,22 @@ const char descriptor_table_protodef_msgs_5fcan_2eproto[] PROTOBUF_SECTION_VARIA
   "us\022 \n\006status\030\001 \001(\0132\020.msgs_can.Status\022$\n\006"
   "action\030\002 \001(\0162\024.msgs_can.ActActions\022\023\n\013pl"
   "ant_count\030\003 \001(\005\"%\n\020LedRingDistances\022\021\n\td"
-  "istances\030\001 \003(\002\"\342\001\n\022TrackingSensorData\0227\n"
+  "istances\030\001 \003(\002\"\247\001\n\022TrackingSensorData\0227\n"
   "\006status\030\001 \001(\0162\'.msgs_can.TrackingSensorD"
   "ata.StatusType\022\021\n\tpose_x_mm\030\002 \001(\002\022\021\n\tpos"
-  "e_y_mm\030\003 \001(\002\022\021\n\ttheta_rad\030\004 \001(\002\022\022\n\npose_"
-  "x_std\030\005 \001(\002\022\022\n\npose_y_std\030\006 \001(\002\022\021\n\ttheta"
-  "_std\030\007 \001(\002\"\037\n\nStatusType\022\006\n\002OK\020\000\022\t\n\005ERRO"
-  "R\020\001\"C\n\037ResetAndCalibrateTrackingSensor\022\r"
-  "\n\005reset\030\001 \001(\010\022\021\n\tcalibrate\030\002 \001(\010*~\n\nActA"
-  "ctions\022\025\n\021START_GRAB_PLANTS\020\000\022\024\n\020STOP_GR"
-  "AB_PLANTS\020\001\022\021\n\rRELEASE_PLANT\020\002\022\024\n\020TURN_S"
-  "OLAR_PANEL\020\003\022\020\n\014INITIALIZING\020\004\022\010\n\004FREE\020\005"
+  "e_y_mm\030\003 \001(\002\022\021\n\ttheta_rad\030\004 \001(\002\"\037\n\nStatu"
+  "sType\022\006\n\002OK\020\000\022\t\n\005ERROR\020\001\"N\n\021TrackingSens"
+  "orStd\022\022\n\npose_x_std\030\001 \001(\002\022\022\n\npose_y_std\030"
+  "\002 \001(\002\022\021\n\ttheta_std\030\003 \001(\002\"C\n\037ResetAndCali"
+  "brateTrackingSensor\022\r\n\005reset\030\001 \001(\010\022\021\n\tca"
+  "librate\030\002 \001(\010*~\n\nActActions\022\025\n\021START_GRA"
+  "B_PLANTS\020\000\022\024\n\020STOP_GRAB_PLANTS\020\001\022\021\n\rRELE"
+  "ASE_PLANT\020\002\022\024\n\020TURN_SOLAR_PANEL\020\003\022\020\n\014INI"
+  "TIALIZING\020\004\022\010\n\004FREE\020\005"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_msgs_5fcan_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[12] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msgs_5fcan_2eproto_sccs[13] = {
   &scc_info_ActCmd_msgs_5fcan_2eproto.base,
   &scc_info_ActStatus_msgs_5fcan_2eproto.base,
   &scc_info_BaseConfig_msgs_5fcan_2eproto.base,
@@ -463,13 +489,14 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_msg
   &scc_info_Status_msgs_5fcan_2eproto.base,
   &scc_info_StatusReport_msgs_5fcan_2eproto.base,
   &scc_info_TrackingSensorData_msgs_5fcan_2eproto.base,
+  &scc_info_TrackingSensorStd_msgs_5fcan_2eproto.base,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_msgs_5fcan_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_msgs_5fcan_2eproto = {
-  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 1480,
-  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 12, 0,
+  false, false, descriptor_table_protodef_msgs_5fcan_2eproto, "msgs_can.proto", 1501,
+  &descriptor_table_msgs_5fcan_2eproto_once, descriptor_table_msgs_5fcan_2eproto_sccs, descriptor_table_msgs_5fcan_2eproto_deps, 13, 0,
   schemas, file_default_instances, TableStruct_msgs_5fcan_2eproto::offsets,
-  file_level_metadata_msgs_5fcan_2eproto, 12, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
+  file_level_metadata_msgs_5fcan_2eproto, 13, file_level_enum_descriptors_msgs_5fcan_2eproto, file_level_service_descriptors_msgs_5fcan_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -3401,15 +3428,6 @@ class TrackingSensorData::_Internal {
   static void set_has_theta_rad(HasBits* has_bits) {
     (*has_bits)[0] |= 8u;
   }
-  static void set_has_pose_x_std(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
-  static void set_has_pose_y_std(HasBits* has_bits) {
-    (*has_bits)[0] |= 32u;
-  }
-  static void set_has_theta_std(HasBits* has_bits) {
-    (*has_bits)[0] |= 64u;
-  }
 };
 
 TrackingSensorData::TrackingSensorData(::PROTOBUF_NAMESPACE_ID::Arena* arena)
@@ -3423,15 +3441,15 @@ TrackingSensorData::TrackingSensorData(const TrackingSensorData& from)
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::memcpy(&status_, &from.status_,
-    static_cast<size_t>(reinterpret_cast<char*>(&theta_std_) -
-    reinterpret_cast<char*>(&status_)) + sizeof(theta_std_));
+    static_cast<size_t>(reinterpret_cast<char*>(&theta_rad_) -
+    reinterpret_cast<char*>(&status_)) + sizeof(theta_rad_));
   // @@protoc_insertion_point(copy_constructor:msgs_can.TrackingSensorData)
 }
 
 void TrackingSensorData::SharedCtor() {
   ::memset(&status_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&theta_std_) -
-      reinterpret_cast<char*>(&status_)) + sizeof(theta_std_));
+      reinterpret_cast<char*>(&theta_rad_) -
+      reinterpret_cast<char*>(&status_)) + sizeof(theta_rad_));
 }
 
 TrackingSensorData::~TrackingSensorData() {
@@ -3466,10 +3484,10 @@ void TrackingSensorData::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  if (cached_has_bits & 0x0000007fu) {
+  if (cached_has_bits & 0x0000000fu) {
     ::memset(&status_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&theta_std_) -
-        reinterpret_cast<char*>(&status_)) + sizeof(theta_std_));
+        reinterpret_cast<char*>(&theta_rad_) -
+        reinterpret_cast<char*>(&status_)) + sizeof(theta_rad_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
@@ -3517,30 +3535,6 @@ const char* TrackingSensorData::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 37)) {
           _Internal::set_has_theta_rad(&has_bits);
           theta_rad_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
-          ptr += sizeof(float);
-        } else goto handle_unusual;
-        continue;
-      // optional float pose_x_std = 5;
-      case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 45)) {
-          _Internal::set_has_pose_x_std(&has_bits);
-          pose_x_std_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
-          ptr += sizeof(float);
-        } else goto handle_unusual;
-        continue;
-      // optional float pose_y_std = 6;
-      case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 53)) {
-          _Internal::set_has_pose_y_std(&has_bits);
-          pose_y_std_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
-          ptr += sizeof(float);
-        } else goto handle_unusual;
-        continue;
-      // optional float theta_std = 7;
-      case 7:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 61)) {
-          _Internal::set_has_theta_std(&has_bits);
-          theta_std_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
           ptr += sizeof(float);
         } else goto handle_unusual;
         continue;
@@ -3599,24 +3593,6 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(4, this->_internal_theta_rad(), target);
   }
 
-  // optional float pose_x_std = 5;
-  if (cached_has_bits & 0x00000010u) {
-    target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(5, this->_internal_pose_x_std(), target);
-  }
-
-  // optional float pose_y_std = 6;
-  if (cached_has_bits & 0x00000020u) {
-    target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(6, this->_internal_pose_y_std(), target);
-  }
-
-  // optional float theta_std = 7;
-  if (cached_has_bits & 0x00000040u) {
-    target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(7, this->_internal_theta_std(), target);
-  }
-
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -3634,7 +3610,7 @@ size_t TrackingSensorData::ByteSizeLong() const {
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  if (cached_has_bits & 0x0000007fu) {
+  if (cached_has_bits & 0x0000000fu) {
     // optional .msgs_can.TrackingSensorData.StatusType status = 1;
     if (cached_has_bits & 0x00000001u) {
       total_size += 1 +
@@ -3653,21 +3629,6 @@ size_t TrackingSensorData::ByteSizeLong() const {
 
     // optional float theta_rad = 4;
     if (cached_has_bits & 0x00000008u) {
-      total_size += 1 + 4;
-    }
-
-    // optional float pose_x_std = 5;
-    if (cached_has_bits & 0x00000010u) {
-      total_size += 1 + 4;
-    }
-
-    // optional float pose_y_std = 6;
-    if (cached_has_bits & 0x00000020u) {
-      total_size += 1 + 4;
-    }
-
-    // optional float theta_std = 7;
-    if (cached_has_bits & 0x00000040u) {
       total_size += 1 + 4;
     }
 
@@ -3704,7 +3665,7 @@ void TrackingSensorData::MergeFrom(const TrackingSensorData& from) {
   (void) cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
-  if (cached_has_bits & 0x0000007fu) {
+  if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
       status_ = from.status_;
     }
@@ -3716,15 +3677,6 @@ void TrackingSensorData::MergeFrom(const TrackingSensorData& from) {
     }
     if (cached_has_bits & 0x00000008u) {
       theta_rad_ = from.theta_rad_;
-    }
-    if (cached_has_bits & 0x00000010u) {
-      pose_x_std_ = from.pose_x_std_;
-    }
-    if (cached_has_bits & 0x00000020u) {
-      pose_y_std_ = from.pose_y_std_;
-    }
-    if (cached_has_bits & 0x00000040u) {
-      theta_std_ = from.theta_std_;
     }
     _has_bits_[0] |= cached_has_bits;
   }
@@ -3753,14 +3705,291 @@ void TrackingSensorData::InternalSwap(TrackingSensorData* other) {
   _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(TrackingSensorData, theta_std_)
-      + sizeof(TrackingSensorData::theta_std_)
+      PROTOBUF_FIELD_OFFSET(TrackingSensorData, theta_rad_)
+      + sizeof(TrackingSensorData::theta_rad_)
       - PROTOBUF_FIELD_OFFSET(TrackingSensorData, status_)>(
           reinterpret_cast<char*>(&status_),
           reinterpret_cast<char*>(&other->status_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata TrackingSensorData::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
+// ===================================================================
+
+void TrackingSensorStd::InitAsDefaultInstance() {
+}
+class TrackingSensorStd::_Internal {
+ public:
+  using HasBits = decltype(std::declval<TrackingSensorStd>()._has_bits_);
+  static void set_has_pose_x_std(HasBits* has_bits) {
+    (*has_bits)[0] |= 1u;
+  }
+  static void set_has_pose_y_std(HasBits* has_bits) {
+    (*has_bits)[0] |= 2u;
+  }
+  static void set_has_theta_std(HasBits* has_bits) {
+    (*has_bits)[0] |= 4u;
+  }
+};
+
+TrackingSensorStd::TrackingSensorStd(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+  SharedCtor();
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:msgs_can.TrackingSensorStd)
+}
+TrackingSensorStd::TrackingSensorStd(const TrackingSensorStd& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      _has_bits_(from._has_bits_) {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::memcpy(&pose_x_std_, &from.pose_x_std_,
+    static_cast<size_t>(reinterpret_cast<char*>(&theta_std_) -
+    reinterpret_cast<char*>(&pose_x_std_)) + sizeof(theta_std_));
+  // @@protoc_insertion_point(copy_constructor:msgs_can.TrackingSensorStd)
+}
+
+void TrackingSensorStd::SharedCtor() {
+  ::memset(&pose_x_std_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&theta_std_) -
+      reinterpret_cast<char*>(&pose_x_std_)) + sizeof(theta_std_));
+}
+
+TrackingSensorStd::~TrackingSensorStd() {
+  // @@protoc_insertion_point(destructor:msgs_can.TrackingSensorStd)
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+void TrackingSensorStd::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
+}
+
+void TrackingSensorStd::ArenaDtor(void* object) {
+  TrackingSensorStd* _this = reinterpret_cast< TrackingSensorStd* >(object);
+  (void)_this;
+}
+void TrackingSensorStd::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void TrackingSensorStd::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const TrackingSensorStd& TrackingSensorStd::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_TrackingSensorStd_msgs_5fcan_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void TrackingSensorStd::Clear() {
+// @@protoc_insertion_point(message_clear_start:msgs_can.TrackingSensorStd)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  if (cached_has_bits & 0x00000007u) {
+    ::memset(&pose_x_std_, 0, static_cast<size_t>(
+        reinterpret_cast<char*>(&theta_std_) -
+        reinterpret_cast<char*>(&pose_x_std_)) + sizeof(theta_std_));
+  }
+  _has_bits_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* TrackingSensorStd::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  _Internal::HasBits has_bits{};
+  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // optional float pose_x_std = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 13)) {
+          _Internal::set_has_pose_x_std(&has_bits);
+          pose_x_std_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+          ptr += sizeof(float);
+        } else goto handle_unusual;
+        continue;
+      // optional float pose_y_std = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 21)) {
+          _Internal::set_has_pose_y_std(&has_bits);
+          pose_y_std_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+          ptr += sizeof(float);
+        } else goto handle_unusual;
+        continue;
+      // optional float theta_std = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 29)) {
+          _Internal::set_has_theta_std(&has_bits);
+          theta_std_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<float>(ptr);
+          ptr += sizeof(float);
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  _has_bits_.Or(has_bits);
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* TrackingSensorStd::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:msgs_can.TrackingSensorStd)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  // optional float pose_x_std = 1;
+  if (cached_has_bits & 0x00000001u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(1, this->_internal_pose_x_std(), target);
+  }
+
+  // optional float pose_y_std = 2;
+  if (cached_has_bits & 0x00000002u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(2, this->_internal_pose_y_std(), target);
+  }
+
+  // optional float theta_std = 3;
+  if (cached_has_bits & 0x00000004u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteFloatToArray(3, this->_internal_theta_std(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:msgs_can.TrackingSensorStd)
+  return target;
+}
+
+size_t TrackingSensorStd::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:msgs_can.TrackingSensorStd)
+  size_t total_size = 0;
+
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  if (cached_has_bits & 0x00000007u) {
+    // optional float pose_x_std = 1;
+    if (cached_has_bits & 0x00000001u) {
+      total_size += 1 + 4;
+    }
+
+    // optional float pose_y_std = 2;
+    if (cached_has_bits & 0x00000002u) {
+      total_size += 1 + 4;
+    }
+
+    // optional float theta_std = 3;
+    if (cached_has_bits & 0x00000004u) {
+      total_size += 1 + 4;
+    }
+
+  }
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void TrackingSensorStd::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:msgs_can.TrackingSensorStd)
+  GOOGLE_DCHECK_NE(&from, this);
+  const TrackingSensorStd* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<TrackingSensorStd>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:msgs_can.TrackingSensorStd)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:msgs_can.TrackingSensorStd)
+    MergeFrom(*source);
+  }
+}
+
+void TrackingSensorStd::MergeFrom(const TrackingSensorStd& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:msgs_can.TrackingSensorStd)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._has_bits_[0];
+  if (cached_has_bits & 0x00000007u) {
+    if (cached_has_bits & 0x00000001u) {
+      pose_x_std_ = from.pose_x_std_;
+    }
+    if (cached_has_bits & 0x00000002u) {
+      pose_y_std_ = from.pose_y_std_;
+    }
+    if (cached_has_bits & 0x00000004u) {
+      theta_std_ = from.theta_std_;
+    }
+    _has_bits_[0] |= cached_has_bits;
+  }
+}
+
+void TrackingSensorStd::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:msgs_can.TrackingSensorStd)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void TrackingSensorStd::CopyFrom(const TrackingSensorStd& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:msgs_can.TrackingSensorStd)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool TrackingSensorStd::IsInitialized() const {
+  return true;
+}
+
+void TrackingSensorStd::InternalSwap(TrackingSensorStd* other) {
+  using std::swap;
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  swap(_has_bits_[0], other->_has_bits_[0]);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(TrackingSensorStd, theta_std_)
+      + sizeof(TrackingSensorStd::theta_std_)
+      - PROTOBUF_FIELD_OFFSET(TrackingSensorStd, pose_x_std_)>(
+          reinterpret_cast<char*>(&pose_x_std_),
+          reinterpret_cast<char*>(&other->pose_x_std_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata TrackingSensorStd::GetMetadata() const {
   return GetMetadataStatic();
 }
 
@@ -4049,6 +4278,9 @@ template<> PROTOBUF_NOINLINE ::msgs_can::LedRingDistances* Arena::CreateMaybeMes
 }
 template<> PROTOBUF_NOINLINE ::msgs_can::TrackingSensorData* Arena::CreateMaybeMessage< ::msgs_can::TrackingSensorData >(Arena* arena) {
   return Arena::CreateMessageInternal< ::msgs_can::TrackingSensorData >(arena);
+}
+template<> PROTOBUF_NOINLINE ::msgs_can::TrackingSensorStd* Arena::CreateMaybeMessage< ::msgs_can::TrackingSensorStd >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::msgs_can::TrackingSensorStd >(arena);
 }
 template<> PROTOBUF_NOINLINE ::msgs_can::ResetAndCalibrateTrackingSensor* Arena::CreateMaybeMessage< ::msgs_can::ResetAndCalibrateTrackingSensor >(Arena* arena) {
   return Arena::CreateMessageInternal< ::msgs_can::ResetAndCalibrateTrackingSensor >(arena);
