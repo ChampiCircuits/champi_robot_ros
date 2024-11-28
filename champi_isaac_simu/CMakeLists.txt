@@ -1,23 +1,13 @@
 cmake_minimum_required(VERSION 3.8)
-project(champi_vision)
+project(champi_isaac_simu)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 # find dependencies
-# Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclpy REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
-
-
-# add_executable(enemy_detection_node src/enemy_detection_node.cpp)
-# ament_target_dependencies(enemy_detection_node rclcpp sensor_msgs tf2_ros)
-
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -31,32 +21,16 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-
-
 # Allow lauch files to be found when calling them with ros2 launch
-install(DIRECTORY
-  launch
-  config
-  ressources
-  DESTINATION share/${PROJECT_NAME}
-)
+#install(DIRECTORY
+#  launch
+#  DESTINATION share/${PROJECT_NAME}
+#)
 
-# Install Python modules
-ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-        scripts/aruco_loc_node.py
-        scripts/camera_info_publisher_node.py
-        scripts/cv2_camera_publisher_node.py
-        scripts/enemy_tracker_node.py
-        scripts/platform_detection_node.py
-        DESTINATION lib/${PROJECT_NAME}
-)
-
-# Install C++ executables
-install(TARGETS
-        # enemy_detection_node
+        scripts/kaya_drive.py
         DESTINATION lib/${PROJECT_NAME}
 )
 
