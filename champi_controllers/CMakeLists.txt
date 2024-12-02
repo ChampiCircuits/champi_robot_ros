@@ -18,6 +18,10 @@ find_package(tf2_ros REQUIRED)
 find_package(diagnostic_updater REQUIRED)
 find_package(std_msgs REQUIRED)
 
+# Add the libmodbus library
+find_library(MODBUS_LIBRARY modbus REQUIRED)
+include_directories(${MODBUS_INCLUDE_DIRS})
+
 add_executable(base_controller_node src/base_controller_node.cpp)
 ament_target_dependencies(base_controller_node rclcpp geometry_msgs champi_libraries_cpp Protobuf nav_msgs tf2 tf2_ros diagnostic_updater)
 
@@ -26,6 +30,11 @@ ament_target_dependencies(imu_controller_node rclcpp champi_libraries_cpp Protob
 
 add_executable(actuators_controller_node src/actuators_controller_node.cpp)
 ament_target_dependencies(actuators_controller_node rclcpp champi_libraries_cpp Protobuf diagnostic_updater std_msgs)
+
+add_executable(hardware_interface_node src/hardware_interface_node.cpp)
+ament_target_dependencies(hardware_interface_node rclcpp)
+target_link_libraries(hardware_interface_node ${MODBUS_LIBRARY})
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -51,6 +60,7 @@ install(TARGETS
         base_controller_node
         imu_controller_node
         actuators_controller_node
+        hardware_interface_node
         DESTINATION lib/${PROJECT_NAME}
 )
 

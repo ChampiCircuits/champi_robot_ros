@@ -14,6 +14,7 @@
 
     <depend>diagnostic_updater</depend>
     <depend>champi_libraries_cpp</depend>
+    <depend>libmodbus-dev</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
