@@ -124,6 +124,7 @@ public:
         // Create Publishers
         pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
         pub_twist_limited_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_limited", 10);
+        pub_odom_tracking_sensor_ = this->create_publisher<nav_msgs::msg::Odometry>("odom_tracking", 10);
 
         // Initialize the transform broadcaster
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -141,6 +142,7 @@ private:
 
     // Publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_tracking_sensor_;
     // Publisher for cmd vel after limits have been applied
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_twist_limited_;
 
@@ -179,6 +181,7 @@ private:
         double y;
         double theta;
     } current_pose_{};
+    msgs_can::TrackingSensorData current_tracking_pose_;
 
     // Parameters
     struct BaseConfig {
@@ -422,6 +425,10 @@ private:
             auto buffer = champi_can_interface_.get_full_msg(can_ids::BASE_STATUS);
             current_status_.ParseFromString(buffer); // Update current_status_
         }
+        if (champi_can_interface_.check_if_new_full_msg(can_ids::TRACKING_SENSOR_DATA)) {
+            auto buffer = champi_can_interface_.get_full_msg(can_ids::TRACKING_SENSOR_DATA);
+            current_tracking_pose_.ParseFromString(buffer); // Update tracking sensor position
+        }
     }
 
     void send_twist_can(const geometry_msgs::msg::Twist::SharedPtr& twist) {
@@ -491,6 +498,36 @@ private:
         }
 
         pub_odom_->publish(msg);
+    }
+
+    void publish_odom_tracking() {
+        auto msg = nav_msgs::msg::Odometry();
+        msg.header.stamp = this->now();
+        msg.header.frame_id = "odom";
+        msg.child_frame_id = "base_link";
+
+        msg.pose.pose.position.x = (double) current_tracking_pose_.pose_x_mm();
+        msg.pose.pose.position.y = current_tracking_pose_.pose_y_mm();
+        msg.pose.pose.position.z = 0.0;
+
+        tf2::Quaternion q;
+        q.setRPY(0.0, 0.0, current_tracking_pose_.theta_rad());
+        msg.pose.pose.orientation.x = q.x();
+        msg.pose.pose.orientation.y = q.y();
+        msg.pose.pose.orientation.z = q.z();
+        msg.pose.pose.orientation.w = q.w();
+
+        msg.twist.twist.linear.x = this->current_vel_.x();
+        msg.twist.twist.linear.y = this->current_vel_.y();
+        msg.twist.twist.angular.z = this->current_vel_.theta();
+
+        // Covariance // TODO get cov
+        for(int i = 0; i < 6; i++) {
+            msg.pose.covariance[i * 6 + i] = cov_pose_[i];
+            msg.twist.covariance[i * 6 + i] = cov_vel_[i];
+        }
+
+        pub_odom_tracking_sensor_->publish(msg);
     }
 
     void broadcast_tf() {
@@ -607,6 +644,7 @@ private:
 
         // We always publish the odometry and broadcast the tf for the other nodes to initialize
         publish_odom();
+        publish_odom_tracking();
         // broadcast_tf();
         // broadcast_tf_map();
     }
