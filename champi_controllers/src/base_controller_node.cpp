@@ -7,6 +7,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/empty.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 #include "champi_can/msgs_can.pb.h"
@@ -30,7 +31,7 @@ public:
             diag_updater_node_(this),
             champi_can_interface_(
                     this->declare_parameter<std::string>("can_interface_name"),
-                    {can_ids::BASE_CURRENT_VEL, can_ids::BASE_RET_CONFIG, can_ids::BASE_STATUS},
+                    {can_ids::BASE_CURRENT_VEL, can_ids::BASE_RET_CONFIG, can_ids::BASE_STATUS, can_ids::TRACKING_SENSOR_DATA, can_ids::TRACKING_SENSOR_STD},
                     this->declare_parameter<bool>("champi_can_verbose_mode"))
     {
 
@@ -122,10 +123,13 @@ public:
         sub_initial_pose_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10, std::bind(
                 &BaseControllerNode::initial_pose_callback, this, std::placeholders::_1));
 
+        sub_do_reset_and_calibrate_ = this->create_subscription<std_msgs::msg::Empty>("/resetAndCalibrateTracking", 10, std::bind(
+                &BaseControllerNode::send_reset_command_tracking, this, std::placeholders::_1));
+
         // Create Publishers
         pub_odom_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
         pub_twist_limited_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_limited", 10);
-        pub_odom_tracking_sensor_ = this->create_publisher<nav_msgs::msg::Odometry>("odom_tracking", 10);
+        pub_odom_tracking_sensor_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("odom_tracking", 10);
 
         // Initialize the transform broadcaster
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -139,11 +143,12 @@ private:
     // Subscribers
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_twist_in_;
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_initial_pose_;
+    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr sub_do_reset_and_calibrate_;
 
 
     // Publishers
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_;
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_tracking_sensor_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pub_odom_tracking_sensor_;
     // Publisher for cmd vel after limits have been applied
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_twist_limited_;
 
@@ -183,6 +188,7 @@ private:
         double theta;
     } current_pose_{};
     msgs_can::TrackingSensorData current_tracking_pose_;
+    msgs_can::TrackingSensorStd current_tracking_std_;
 
     // Parameters
     struct BaseConfig {
@@ -429,7 +435,13 @@ private:
         if (champi_can_interface_.check_if_new_full_msg(can_ids::TRACKING_SENSOR_DATA)) {
             auto buffer = champi_can_interface_.get_full_msg(can_ids::TRACKING_SENSOR_DATA);
             current_tracking_pose_.ParseFromString(buffer); // Update tracking sensor position
+            // RCLCPP_INFO(this->get_logger(), "new odom tracking data");
         }
+        if (champi_can_interface_.check_if_new_full_msg(can_ids::TRACKING_SENSOR_STD)) {
+            auto buffer = champi_can_interface_.get_full_msg(can_ids::TRACKING_SENSOR_STD);
+            current_tracking_std_.ParseFromString(buffer); // Update tracking sensor std
+            // RCLCPP_INFO(this->get_logger(), "new odom tracking std");
+        }  
     }
 
     void send_twist_can(const geometry_msgs::msg::Twist::SharedPtr& twist) {
@@ -446,7 +458,17 @@ private:
         }
     }
 
+    void send_reset_command_tracking(const std_msgs::msg::Empty) {
+        msgs_can::ResetAndCalibrateTrackingSensor reset_tracking_cmd;
+        reset_tracking_cmd.set_reset(true);
+        reset_tracking_cmd.set_calibrate(true);
 
+        // Send message
+        if(champi_can_interface_.send(can_ids::RESET_AND_CALIBRATE_TRACKING_SENSOR, reset_tracking_cmd.SerializeAsString()) != 0) {
+            RCLCPP_ERROR(this->get_logger(), "Error sending message");
+            // TODO send diagnostic
+        }
+    }
 
 
     //  =========================================== Communication ROS2 =================================================
@@ -487,10 +509,7 @@ private:
         msg.pose.pose.orientation.y = q.y();
         msg.pose.pose.orientation.z = q.z();
         msg.pose.pose.orientation.w = q.w();
-
-        msg.twist.twist.linear.x = this->current_vel_.x();
-        msg.twist.twist.linear.y = this->current_vel_.y();
-        msg.twist.twist.angular.z = this->current_vel_.theta();
+ 
 
         // Covariance
         for(int i = 0; i < 6; i++) {
@@ -502,12 +521,11 @@ private:
     }
 
     void publish_odom_tracking() {
-        auto msg = nav_msgs::msg::Odometry();
+        auto msg = geometry_msgs::msg::PoseWithCovarianceStamped();
         msg.header.stamp = this->now();
         msg.header.frame_id = "odom";
-        msg.child_frame_id = "base_link";
 
-        msg.pose.pose.position.x = (double) current_tracking_pose_.pose_x_mm();
+        msg.pose.pose.position.x = current_tracking_pose_.pose_x_mm();
         msg.pose.pose.position.y = current_tracking_pose_.pose_y_mm();
         msg.pose.pose.position.z = 0.0;
 
@@ -518,17 +536,14 @@ private:
         msg.pose.pose.orientation.z = q.z();
         msg.pose.pose.orientation.w = q.w();
 
-        msg.twist.twist.linear.x = this->current_vel_.x();
-        msg.twist.twist.linear.y = this->current_vel_.y();
-        msg.twist.twist.angular.z = this->current_vel_.theta();
-
-        // Covariance // TODO get cov
-        for(int i = 0; i < 6; i++) {
-            msg.pose.covariance[i * 6 + i] = cov_pose_[i];
-            msg.twist.covariance[i * 6 + i] = cov_vel_[i];
-        }
+        // Covariance
+        msg.pose.covariance[0] = current_tracking_std_.pose_x_std();
+        msg.pose.covariance[6+1] = current_tracking_std_.pose_y_std();
+        msg.pose.covariance[6*6-1] = current_tracking_std_.theta_std();
 
         pub_odom_tracking_sensor_->publish(msg);
+
+        RCLCPP_WARN(this->get_logger(), "angle= %f", 2*atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)/M_PI*180.);
     }
 
     void broadcast_tf() {
