@@ -46,7 +46,7 @@ def generate_launch_description():
     return LaunchDescription([
         sim_arg,
         ldlidar_node,
-        lidar_simu_node,
+        #lidar_simu_node,
         enemy_tracker_node
     ])
 

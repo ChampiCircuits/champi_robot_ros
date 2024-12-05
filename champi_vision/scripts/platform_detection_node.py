@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from cv_bridge import CvBridge
+from std_msgs.msg import Bool
 
 class PlatformDetection(Node):
     def __init__(self):
@@ -15,6 +16,8 @@ class PlatformDetection(Node):
         self.timer = self.create_timer(0.1, self.timer_callback)  # 5Hz
 
         self.cv_bridge = CvBridge()
+
+        self.publisher_platform = self.create_publisher(Bool, 'platform_detection', 10)
 
         self.subscription_camera = self.create_subscription(
             Image,
@@ -25,6 +28,8 @@ class PlatformDetection(Node):
         self.is_color_segmentation = True
         self.latest_img = None
         self.edge_detector = "Canny"
+    
+        self.platform_detected = False
 
         # ==================================== CALLIBRATION ====================================
         
@@ -91,13 +96,15 @@ class PlatformDetection(Node):
         if len(rectangles) > 0:
             cv2.drawContours(img_contours, rectangles, -1, (0, 255, 0), thickness=cv2.FILLED)
             print("Rectangles found")
+            self.platform_detected = True
         else:
             print("No rectangles found")
+            self.platform_detected = False
             # Detect blobs
             #img_contours = detect_blobs(img, img_edges)
             # sharpened_canny = cv2.Canny(img_gray, 25, 175, apertureSize=3)
             # transformed_image = cv2.morphologyEx(sharpened_canny, cv2.MORPH_CLOSE, np.ones((11,11),np.uint8))
-            # #dilation_img = cv2.dilate(transformed_image, np.ones((3,3),np.uint8), iterations=1)
+            # #dilation_img = cv2.dilate(transf ormed_image, np.ones((3,3),np.uint8), iterations=1)
             # new_contours, _ = cv2.findContours(transformed_image, cv2.RETR_CCOMP , cv2.CHAIN_APPROX_SIMPLE)
             # # rectangles = detect_rectangles(new_contours)
             # # cv2.drawContours(img_contours, new_contours, -1, 255, thickness=cv2.FILLED)
@@ -112,6 +119,9 @@ class PlatformDetection(Node):
             #     if area > 4000 and aspect_ratio > 0.5:
             #         cv2.drawContours(img_contours, [cnt], -1, (0, 255, 0), 2)  # Draw one shape in green
 
+        msg = Bool()
+        msg.data = self.platform_detected
+        self.publisher_platform.publish(msg)
         cv2.imshow('Image', img_contours)
         cv2.waitKey(1)
         #Solution : essayer un nouvequ edge detector

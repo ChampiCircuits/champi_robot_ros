@@ -74,7 +74,7 @@ class VisualLocalizationNode(Node):
                                           cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
         self.aruco_dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-        self.aruco_parameters =  cv2.aruco.DetectorParameters()
+        self.aruco_parameters =  cv2.aruco.DetectorParameters_create()
         self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dictionary, self.aruco_parameters)
 
 

@@ -116,7 +116,7 @@ def generate_launch_description():
         static_tf_map_odom,
         description_broadcaster,
         base_controller_launch,
-        base_control_simu_node,
+        # base_control_simu_node,
         cmd_vel_mux_node,
         imu_controller_launch,
         ukf_node,
