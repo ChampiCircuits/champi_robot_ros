@@ -18,6 +18,9 @@ find_package(tf2_ros REQUIRED)
 find_package(diagnostic_updater REQUIRED)
 find_package(std_msgs REQUIRED)
 
+# Include headers from champi_controllers' include directory
+include_directories(include)
+
 # Add the libmodbus library
 find_library(MODBUS_LIBRARY modbus REQUIRED)
 include_directories(${MODBUS_INCLUDE_DIRS})
