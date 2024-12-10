@@ -3,7 +3,7 @@
 #include <vector>
 #include <chrono>
 
-#include <champi_controllers/modbus_registers.h>
+#include <champi_controllers/ModbusRegister.h>
 
 
 
@@ -20,12 +20,12 @@ public:
         this->baud_rate_ = this->get_parameter("baud_rate").as_int();
         this->slave_id_ = this->get_parameter("slave_id").as_int();
 
-        setup_registers_master();
+         mod_reg::setup_registers_master();
 
         setup_modbus();
 
         timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(20),
+            std::chrono::milliseconds(1000),
             std::bind(&HardwareInterfaceNode::loop, this));
 
     }
@@ -78,7 +78,7 @@ private:
     }
 
 
-    void write(register_metadata &reg_meta)
+    void write( mod_reg::register_metadata &reg_meta)
     {
         int rc = modbus_write_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         if (rc == -1) {
@@ -87,7 +87,7 @@ private:
         }
     }
 
-    void read(register_metadata &reg_meta)
+    void read( mod_reg::register_metadata &reg_meta)
     {
         int rc = modbus_read_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         if (rc == -1) {
@@ -100,16 +100,17 @@ private:
 
     void loop()
     {
-        cmd_vel->x = 0.1;
-        cmd_vel->y = 0.2;
-        cmd_vel->z = 0.3;
+         mod_reg::cmd_vel->x = 0.1;
+         mod_reg::cmd_vel->y = 0.2;
+         mod_reg::cmd_vel->theta = 0.3;
 
 
-        write(reg_cmd_vel);
+        write( mod_reg::reg_cmd_vel);
 
-        read(reg_measured_vel);
+        read( mod_reg::reg_measured_vel);
 
-        RCLCPP_INFO(this->get_logger(), "Measured velocity: x=%f, y=%f, z=%f", measured_vel->x, measured_vel->y, measured_vel->z);
+
+        RCLCPP_INFO(this->get_logger(), "Measured velocity: x=%f, y=%f, z=%f",  mod_reg::measured_vel->x,  mod_reg::measured_vel->y,  mod_reg::measured_vel->theta);
     }
 
     std::string device_;

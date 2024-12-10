@@ -20,6 +20,9 @@ find_package(std_msgs REQUIRED)
 
 # Include headers from champi_controllers' include directory
 include_directories(include)
+add_library(champi_controllers SHARED
+  src/ModbusRegister.cpp
+)
 
 # Add the libmodbus library
 find_library(MODBUS_LIBRARY modbus REQUIRED)
@@ -36,7 +39,7 @@ ament_target_dependencies(actuators_controller_node rclcpp champi_libraries_cpp 
 
 add_executable(hardware_interface_node src/hardware_interface_node.cpp)
 ament_target_dependencies(hardware_interface_node rclcpp)
-target_link_libraries(hardware_interface_node ${MODBUS_LIBRARY})
+target_link_libraries(hardware_interface_node champi_controllers ${MODBUS_LIBRARY})
 
 
 if(BUILD_TESTING)
