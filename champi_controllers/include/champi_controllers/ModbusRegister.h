@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "DataStructures.h"
 
-#define REGISTERS_SIZE 100
+#define REGISTERS_SIZE 500
 
 namespace mod_reg
 {
@@ -24,10 +24,12 @@ namespace mod_reg
     // Declare pointers to structures of data we want to send/receive
     extern Vector3* cmd_vel;
     extern Vector3* measured_vel;
+    extern BaseConfig* base_config;
 
     // Metadata to gather info needed to read/write the data (for master only)
     extern register_metadata reg_cmd_vel;
     extern register_metadata reg_measured_vel;
+    extern register_metadata reg_base_config;
 
     // EDIT HERE END
 

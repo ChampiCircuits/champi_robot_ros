@@ -15,7 +15,7 @@ base_controller_simu:
 
 
 
-base_controller:
+hardware_interface:
   ros__parameters:
 
     topic_twist_in: "/cmd_vel"

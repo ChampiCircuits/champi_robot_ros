@@ -20,9 +20,21 @@ public:
         this->baud_rate_ = this->get_parameter("baud_rate").as_int();
         this->slave_id_ = this->get_parameter("slave_id").as_int();
 
-         mod_reg::setup_registers_master();
+
+
+        base_config_.is_set = false;
+        base_config_.max_accel = (float) this->declare_parameter<float>("base_config.max_accel_wheels");
+        base_config_.wheel_radius = (float) this->declare_parameter<float>("base_config.wheel_radius");
+        base_config_.base_radius = (float) this->declare_parameter<float>("base_config.base_radius");
+        base_config_.cmd_vel_timeout = (float) this->declare_parameter<float>("base_config.cmd_vel_timeout");
+
+        mod_reg::setup_registers_master();
 
         setup_modbus();
+
+        configure_stm();
+
+
 
         timer_ = this->create_wall_timer(
             std::chrono::milliseconds(1000),
@@ -72,9 +84,6 @@ private:
         // modbus_get_response_timeout(mb_, &old_response_to_sec, &old_response_to_usec);
 
         // RCUTILS_LOG_INFO("Old response timeout: %d sec %d usec", old_response_to_sec, old_response_to_usec);
-
-
-
     }
 
 
@@ -97,6 +106,29 @@ private:
     }
 
 
+    void write_config()
+    {
+        *mod_reg::base_config = base_config_;
+        mod_reg::base_config->is_set = true;
+        write( mod_reg::reg_base_config);
+    }
+
+    void read_config()
+    {
+        read( mod_reg::reg_base_config);
+        base_config_ = *mod_reg::base_config;
+    }
+
+    void configure_stm()
+    {
+        while (!base_config_.is_set) {
+            write_config();
+            read_config();
+            RCLCPP_WARN_SKIPFIRST(this->get_logger(), "Writing config to STM did not work, retrying...");
+        }
+        RCLCPP_INFO(this->get_logger(), "STM configured successfully");
+    }
+
 
     void loop()
     {
@@ -118,6 +150,8 @@ private:
     int slave_id_;
     modbus_t *mb_{nullptr};
     rclcpp::TimerBase::SharedPtr timer_;
+
+    BaseConfig base_config_{};
 };
 
 int main(int argc, char **argv)

@@ -10,10 +10,12 @@ namespace mod_reg
     // Declare pointers to structures of data we want to send/receive
     Vector3* cmd_vel;
     Vector3* measured_vel;
+    BaseConfig* base_config;
 
     // Metadata to gather info needed to read/write the data (for master only)
     register_metadata reg_cmd_vel;
     register_metadata reg_measured_vel;
+    register_metadata reg_base_config;
 
     // EDIT HERE END
 
@@ -42,6 +44,7 @@ namespace mod_reg
 
         cmd_vel = (Vector3*) init_ptr_to_register( sizeof(Vector3) / sizeof(uint16_t));
         measured_vel = (Vector3*) init_ptr_to_register( sizeof(Vector3) / sizeof(uint16_t));
+        base_config = (BaseConfig*) init_ptr_to_register( sizeof(BaseConfig) / sizeof(uint16_t));
 
         // EDIT HERE END
     }
@@ -54,6 +57,7 @@ namespace mod_reg
 
         init_register_metadata(reg_cmd_vel, (uint16_t*) cmd_vel, sizeof(Vector3) / sizeof(uint16_t));
         init_register_metadata(reg_measured_vel, (uint16_t*) measured_vel, sizeof(Vector3) / sizeof(uint16_t));
+        init_register_metadata(reg_base_config, (uint16_t*) base_config, sizeof(BaseConfig) / sizeof(uint16_t));
 
         // EDIT HERE END
     }
