@@ -22,19 +22,24 @@ public:
 
 
 
-        base_config_.is_set = false;
-        base_config_.max_accel = (float) this->declare_parameter<float>("base_config.max_accel_wheels");
-        base_config_.wheel_radius = (float) this->declare_parameter<float>("base_config.wheel_radius");
-        base_config_.base_radius = (float) this->declare_parameter<float>("base_config.base_radius");
-        base_config_.cmd_vel_timeout = (float) this->declare_parameter<float>("base_config.cmd_vel_timeout");
+        stm_config_.is_set = false;
+
+        stm_config_.holo_drive_config.wheel_radius = (float) this->declare_parameter<float>("base_config.wheel_radius");
+        stm_config_.holo_drive_config.base_radius = (float) this->declare_parameter<float>("base_config.base_radius");
+        stm_config_.holo_drive_config.max_speed_linear = this->declare_parameter<double>("base_config.max_speed_linear");
+        stm_config_.holo_drive_config.max_accel_wheel = (float) this->declare_parameter<float>("base_config.max_accel_wheel");
+        stm_config_.holo_drive_config.max_accel_linear = this->declare_parameter<double>("base_config.max_acceleration_linear");
+        stm_config_.holo_drive_config.max_decel_linear = this->declare_parameter<double>("base_config.max_deceleration_linear");
+        stm_config_.holo_drive_config.max_accel_angular = this->declare_parameter<double>("base_config.max_acceleration_angular");
+        stm_config_.holo_drive_config.max_decel_angular = this->declare_parameter<double>("base_config.max_deceleration_angular");
+
+        stm_config_.cmd_vel_timeout = (float) this->declare_parameter<float>("base_config.cmd_vel_timeout");
 
         mod_reg::setup_registers_master();
 
         setup_modbus();
 
         configure_stm();
-
-
 
         timer_ = this->create_wall_timer(
             std::chrono::milliseconds(1000),
@@ -108,20 +113,20 @@ private:
 
     void write_config()
     {
-        *mod_reg::base_config = base_config_;
-        mod_reg::base_config->is_set = true;
-        write( mod_reg::reg_base_config);
+        *mod_reg::stm_config = stm_config_;
+        mod_reg::stm_config->is_set = true;
+        write( mod_reg::reg_stm_config);
     }
 
     void read_config()
     {
-        read( mod_reg::reg_base_config);
-        base_config_ = *mod_reg::base_config;
+        read( mod_reg::reg_stm_config);
+        stm_config_ = *mod_reg::stm_config;
     }
 
     void configure_stm()
     {
-        while (!base_config_.is_set) {
+        while (!stm_config_.is_set) {
             write_config();
             read_config();
             RCLCPP_WARN_SKIPFIRST(this->get_logger(), "Writing config to STM did not work, retrying...");
@@ -151,7 +156,7 @@ private:
     modbus_t *mb_{nullptr};
     rclcpp::TimerBase::SharedPtr timer_;
 
-    BaseConfig base_config_{};
+    StmConfig stm_config_{};
 };
 
 int main(int argc, char **argv)

@@ -8,13 +8,23 @@ struct Vector3
     double theta;
 };
 
-struct BaseConfig
+struct HoloDriveConfig
 {
-    bool is_set;
-    double max_accel;
     double wheel_radius;
     double base_radius;
+    double max_speed_linear;
+    double max_accel_wheel;
+    double max_accel_linear;
+    double max_decel_linear;
+    double max_accel_angular;
+    double max_decel_angular;
+};
+
+struct StmConfig
+{
+    bool is_set;
     double cmd_vel_timeout;
+    HoloDriveConfig holo_drive_config;
 };
 
 #endif //DATASTRUCTURES_H
