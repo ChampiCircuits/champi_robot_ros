@@ -35,6 +35,7 @@ class PlatformDetection(Node):
         
         # In calibration mode, the color segmentation is activated
         self.is_calibration = False
+        self.threshold_floodfill = 4
 
         # Define the lower and upper bounds for the color segmentation
         self.lower_bound = np.array([8, 140, 0])
@@ -127,10 +128,82 @@ class PlatformDetection(Node):
         #Solution : essayer un nouvequ edge detector
         #Solution : essayer de changer les paramètres de detection des blobs
 
+    def value_regionalGrowing(self, img):
+        
+        new_img = np.zeros_like(img)
+
+        # add Padding
+        padded_img = np.pad(img, pad_width=1, mode='constant', constant_values=0)
+
+        #print(padded_img)
+        # applying the regional growing algorithm
+        for i, lines in enumerate(img):
+            for j, pixel in enumerate(lines):
+                if i == 0 or j == 0 or i == img.shape[0] - 1 or j == img.shape[1] - 1:
+                    continue
+                window = np.array(padded_img[i:i+3, j:j+3]).astype(np.int32)
+                mask = (np.abs(window - pixel) < self.threshold_floodfill)
+                mask[1, 1] = False
+                indices = np.where(mask==True)
+                # if i> 194 and j > 63:
+                #     print("Indices", indices)
+                #     print("Window", window)
+                #     print("Pixel", pixel)
+                #     print("Mask", mask)
+                #     print(np.abs(window - pixel))
+                #     plt.imshow(new_img[i-1:i+2, j-1:j+2])
+                #     plt.show()
+                for k in range(indices[0].size):
+                    if new_img[i-1+indices[0][k], j-1+indices[1][k]] != 0:
+                        new_img[i, j] = new_img[i-1+indices[0][k], j-1+indices[1][k]]
+                        break
+                #print(mask)
+                if new_img[i, j] == 0:
+                    new_img[i, j] = np.random.randint(1, 255)
+
+              #  window[mask] = pixel
+                #new_img[i-1:i+2, j-1:j+2] = window
+
+                #print(window)
+        #print(new_img)
+        # Apply a binary threshold to the image
+        # _, thresh_img_segmented_region_growing = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)
+
+        # return thresh_img_segmented_region_growing
+
+    def display_histogram(self, img):
+           # Vérifier si l'image est en couleur ou en niveaux de gris
+        max_val = np.array([0, 0, 0])
+        if len(img.shape) == 2:  # Image en niveaux de gris
+            hist = cv2.calcHist([img], [0], None, [256], [1, 256])
+            max_val[0] = np.argmax(hist)
+            plt.plot(hist, color='gray')
+            plt.title("Histogramme (Niveaux de gris)m max : " + str(max_val))
+            plt.xlabel("Valeurs de pixels")
+            plt.ylabel("Fréquence")
+            plt.show()
+        else:  # Image en couleur (BGR)
+            colors = ('b', 'g', 'r')  # Canaux B, G, R
+            plt.figure()
+            plt.title("Histogramme (Couleur)")
+            plt.xlabel("Valeurs de pixels")
+            plt.ylabel("Fréquence")
+
+            for i, color in enumerate(colors):
+                hist = cv2.calcHist([img], [i], None, [256], [1, 256])
+                max_val[i] = np.argmax(hist)
+                plt.plot(hist, color=color)
+            plt.show()
+        print("Max values : ", max_val)
+        plt.imshow(img)
+        plt.show()
 
     def segmentation_color(self, img):
         # Convert the image to the HSV color space
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        h_img, s_img, v_img = cv2.split(img_hsv)
+
+        self.display_histogram(img_hsv)
 
         # Define the lower and upper bounds for the color segmentation
         self.lower_bound = np.array([8, 140, 0])

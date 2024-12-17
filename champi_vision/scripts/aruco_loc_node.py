@@ -43,44 +43,45 @@ class VisualLocalizationNode(Node):
 
         # Parameters
         self.enable_viz = True
-        self.angle_offset = 0.
-
-
+        self.img_viz = None
 
         # transformation matrix between base_link and camera using tf2
         self.tf_buffer = tf2_ros.Buffer()
+
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         # Map to undistort the image
         self.map1 = None
         self.map2 = None
 
-        self.img_viz = None
+        # Bird view / image 
         self.cv_bridge = CvBridge()
         self.curent_image = None
+        self.latest_img = None
         self.time_last_image = time.time()
         self.pos_cam_in_bird_view_pxls = None
         self.bird_view = None
 
-        ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
-        self.ref_img = self.load_ref_image(ref_img_path)
+        # unused
+        # #loard the ground reference image
+        # ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
+        # self.ref_img = self.load_ref_image(ref_img_path)
 
-        self.pxl_to_m_ref = self.ref_img.shape[1]/3.0
+        # self.borders_offsets = [150, 360]
 
-        self.borders_offsets = [150, 360]
-
-        self.ref_img = cv2.copyMakeBorder(self.ref_img, self.borders_offsets[1], self.borders_offsets[1],
-                                          self.borders_offsets[0], self.borders_offsets[0],
-                                          cv2.BORDER_CONSTANT, value=[0, 0, 0])
+        # # unused
+        # self.ref_img = cv2.copyMakeBorder(self.ref_img, self.borders_offsets[1], self.borders_offsets[1],
+        #                                   self.borders_offsets[0], self.borders_offsets[0],
+        #                                   cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
         self.aruco_dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-        self.aruco_parameters =  cv2.aruco.DetectorParameters_create()
+        self.aruco_parameters =  cv2.aruco.DetectorParameters()
         self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dictionary, self.aruco_parameters)
 
 
         self.timer = self.create_timer(0.1, self.timer_callback)  # 5Hz
 
-
+        # Subscribe to /camera_info and /image_raw---------------------------------------------------
 
         # handle camera info
         self.camera_info = None
@@ -90,7 +91,7 @@ class VisualLocalizationNode(Node):
             self.callback_cam_info,
             10)
 
-
+        # handle image
         self.subscription = self.create_subscription(
             Image,
             '/image_raw',
@@ -98,18 +99,15 @@ class VisualLocalizationNode(Node):
             10)
         self.subscription  # prevent unused variable warning
 
+        # Publisher for the visual localization and the image visualization
         self.pub_odom = self.create_publisher(PoseWithCovarianceStamped, '/pose/visual_loc', 10)
-
         self.pub_image = self.create_publisher(Image, '/image_viz', 10)
-
-        self.latest_img = None
 
 
     def timer_callback(self):
         if self.latest_img is None:
             return
         
-
         # get camera info if not already
         if self.camera_info is None:
             self.get_logger().info("waiting for camera info...", once=True)
@@ -140,22 +138,18 @@ class VisualLocalizationNode(Node):
 
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
-
         img_viz = bird_view_img.copy()
 
         # ================================== DETECTION =========================================
 
-        markerCorners, markerIds, rejectedCandidates = self.aruco_detector.detectMarkers(bird_view_img)
+        markerCorners, markerIds, _ = self.aruco_detector.detectMarkers(bird_view_img)
 
 
-        for i, corners in enumerate(markerCorners):
-            # self.get_logger().info(f"corners {corners}")
-            # self.get_logger().info(f"ids {markerIds[i]}")
-        
-            if markerIds[i] >= 20 and markerIds[i]<=23:# arucos au sol
+        for i, corners in enumerate(markerCorners):   
+            if markerIds[i] >= 20 and markerIds[i]<=23: # arucos on the ground
                 center_marker = np.mean(corners[0], axis=0)
 
-                # Angle du marqueur par rapport à l'axe horizontal (angle du premier côté)
+                # Marker angle relative to horizontal axis (first side angle)
                 dx = corners[0][1][0] - corners[0][0][0]
                 dy = corners[0][1][1] - corners[0][0][1]
                 angle_aruco_in_bv = np.arctan2(dy, dx)  # angle en radians
@@ -165,9 +159,6 @@ class VisualLocalizationNode(Node):
                 pos_aruco_in_bv = np.array([center_marker[0], center_marker[1], 1])
 
                 pos_aruco_in_bv_m = np.linalg.inv(self.bird_view.M_workplane_real_to_img_) @ pos_aruco_in_bv
-                # ic(pos_aruco_in_bv_m)
-                # pos_m = pos_m[:2]
-                # ic(pos_m)
 
                 if markerIds[i]==20:
                     x = 2.-0.45-0.12/2.
@@ -219,9 +210,7 @@ class VisualLocalizationNode(Node):
 
                 self.pub_odom.publish(pose_msg)
 
-    
                 if self.enable_viz:
-
                     # draw 2D axis
                     img_viz = self.draw_2D_axis(img_viz, pos_aruco_in_bv[:2], angle_aruco_in_bv)
                 
@@ -239,10 +228,10 @@ class VisualLocalizationNode(Node):
         try:
             # get transform, which is what we need to wait for
             transform = self.tf_buffer.lookup_transform('base_link', 'camera',rclpy.time.Time().to_msg()) # todo use camera info
-
+            print('transform received')
             # # unsubscribe from camera info (can't do that in the callback otherwise the nodes crashes) TODO IT MAKES THE NODE CRASH
             # self.subscription_cam_info.destroy()
-
+            
             # compute transform between the 2 frames as 1 matrix
             rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
             rot = rot.as_matrix()
@@ -261,7 +250,7 @@ class VisualLocalizationNode(Node):
             ic(self.pos_cam_in_bird_view_pxls)
 
             # compute undistortion map
-            self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (640,480), cv2.CV_32FC1)
+            self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (self.board_camera_info.width,self.board_camera_info.height), cv2.CV_32FC1)
 
             self.get_logger().info("Node Initialized", once=True)
 
@@ -276,10 +265,7 @@ class VisualLocalizationNode(Node):
 
 
     def image_callback(self, msg):
-
         self.latest_img = msg
-
-
 
 
     def publish_image(self, image):
