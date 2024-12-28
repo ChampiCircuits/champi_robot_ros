@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
 import rclpy
+import tf2_ros
 from rclpy.node import Node
+
 from sensor_msgs.msg import Image
+from sensor_msgs.msg import CameraInfo
+from std_msgs.msg import Bool
+
+
 import cv2
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from cv_bridge import CvBridge
-from std_msgs.msg import Bool
+
+from icecream import ic
+from scipy.spatial.transform import Rotation as R
+import champi_vision.bird_view as bv
+
+
 
 class PlatformDetection(Node):
     def __init__(self):
@@ -25,11 +36,59 @@ class PlatformDetection(Node):
             self.image_callback,
             10)
         
-        self.is_color_segmentation = True
+        self.champi_camera_info = None
+
+        # TODO: code plateforme state from the plateforme detected and the position of the robot
+        self.plateforme_state = [False, False, False, False, False, False, False, False, False, False]
+
+        # TODO: get camera info from board_camera/camera_info
+        self.subscription_boardCam_info = self.create_subscription(
+            CameraInfo,
+            'camera_info',
+            self.champi_camera_info_callback,
+            10)
+
+        self.platform_detected = False
+        # ==================================== BIRD VIEW ====================================
+
+        # transformation matrix between base_link and camera using tf2
+        self.tf_buffer = tf2_ros.Buffer()
+
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
+        self.cv_bridge = CvBridge()
         self.latest_img = None
+
+        self.pos_cam_in_bird_view_pxls = None
+        self.bird_view = None
+        self.map1 = None
+        self.map2 = None
+
+
+        # ==================================== COLOR ====================================
+        self.is_color_segmentation = True
+        self.numberMinPixel = 6000  # min number of pixel to detect a platform
         self.edge_detector = "Canny"
     
-        self.platform_detected = False
+
+
+        # ==================================== KEYPOINTS ====================================
+                # path to the platform image
+        self.platform_dir = "/home/sebastien/ws_champi/src/champi_robot_ros/champi_vision/ressources/images/plateform_champi2.png"
+
+        # descriptor to use for keypoints matching
+        self.descriptor = 'SIFT'
+
+        # crosscheck for keypoints matching (if True, it will only return the keypoints that are mutual) = 
+        # descriptor A in image 1 matches descriptor B in image 2, and descriptor B matches descriptor A
+        # set to true for more accuracy and less matchs
+        self.crosscheck = True
+
+        self.img_plateform = cv2.imread(self.platform_dir)
+        
+        # min number of keypoints to detect a platform
+        self.numberMinKeypoints = 7
+
 
         # ==================================== CALLIBRATION ====================================
         
@@ -38,8 +97,14 @@ class PlatformDetection(Node):
         self.threshold_floodfill = 4
 
         # Define the lower and upper bounds for the color segmentation
-        self.lower_bound = np.array([8, 140, 0])
+        self.lower_bound = np.array([13, 0, 0])
         self.upper_bound = np.array([15, 255, 255])
+
+        # ==================================== DEBUG ====================================
+        self.show_keypoint = True
+        self.show_histogram = False
+        self.show_edges = True
+        self.show_mask = False
 
 
 
@@ -47,129 +112,184 @@ class PlatformDetection(Node):
         if self.latest_img is None:
             return
 
-        #print('Image received')
+        # get camera info if not already
+        if self.champi_camera_info is None:
+            self.get_logger().info("waiting for camera info...", once=True)
+            return
+        self.get_logger().info("camera info received", once=True)
 
         # ==================================== PREPROCESSING ====================================
+
+
+        if self.bird_view is None:
+            self.init_bird_view()
+
+        if self.map1 is None:
+            return
+
+        # convert to cv2
+        cv_image = self.cv_bridge.imgmsg_to_cv2(self.latest_img, "bgr8")
+
+        #Blur the image
+        #img_blured = cv2.GaussianBlur(self.cv_image, (7,7), 0)
+        # img_gray = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2GRAY)
+
+        # undistortion
+        cv_image = cv2.remap(cv_image, self.map1, self.map2, interpolation=cv2.INTER_LINEAR)
+
+        self.curent_image = cv_image
         
-        # Convert the ROS image to OpenCV image
-        self.cv_image = self.cv_bridge.imgmsg_to_cv2(self.latest_img, 'bgr8')
+
+        # =================================== COMPUTE BIRD VIEW ===================================
+
+        # get bird view
+        bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
+
 
         if self.is_calibration and self.is_color_segmentation:
             print("----------Calibration mode Plateforme detection----------")
             print("put the robot in front of a plateforme and save the Hue Saturation range of the plateforme")
             print("Change the Hue Saturation Value in the code or in the calibration.yaml file in the self.lower_bound and self.upper_bound")    
-            img_hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
+            img_hsv = cv2.cvtColor(bird_view_img, cv2.COLOR_BGR2HSV)
             plt.imshow(img_hsv)
             plt.show()
             sys.exit()
             return
-        #Blur the image
-        # img_blured = cv2.GaussianBlur(self.cv_image, (7,7), 0)
-        # img_gray = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2GRAY)
-        #print('Image encoding: ', img_gray.shape)
+
+        #print('Image received')
+
         # ================================== DETECTION =========================================
-        
+        # cv2.imshow('Image', bird_view_img)
+        # cv2.waitKey(1)
+
+
         img_edges = None
+
         if self.is_color_segmentation:
             # Perform color segmentation
-            img_edges = self.segmentation_color(self.cv_image)
+            img_edges = self.segmentation_color(bird_view_img)
 
+            # Detect edges
+            #img_edges = self.detect_edges(img_gray, self.edge_detector)
 
+            # Detect lines
+            #img_lines = detect_lines(img, img_edges)
 
-        # Detect edges
-        #img_edges = self.detect_edges(img_gray, self.edge_detector)
-
-        # Detect lines
-        #img_lines = detect_lines(img, img_edges)
-
-        # Detect blobs
-        #img_blobs = detect_blobs(img, img_edges)
-
-        # find the countours
-        contours, _ = cv2.findContours(img_edges, cv2.RETR_CCOMP , cv2.CHAIN_APPROX_SIMPLE )
-
-        # Detect rectangles
-        rectangles = []
-        rectangles = self.detect_rectangles(contours)
-
-        # Draw the rectangles on the original image
-        img_contours = self.cv_image.copy()
-        if len(rectangles) > 0:
-            cv2.drawContours(img_contours, rectangles, -1, (0, 255, 0), thickness=cv2.FILLED)
-            print("Rectangles found")
-            self.platform_detected = True
-        else:
-            print("No rectangles found")
-            self.platform_detected = False
             # Detect blobs
-            #img_contours = detect_blobs(img, img_edges)
-            # sharpened_canny = cv2.Canny(img_gray, 25, 175, apertureSize=3)
-            # transformed_image = cv2.morphologyEx(sharpened_canny, cv2.MORPH_CLOSE, np.ones((11,11),np.uint8))
-            # #dilation_img = cv2.dilate(transf ormed_image, np.ones((3,3),np.uint8), iterations=1)
-            # new_contours, _ = cv2.findContours(transformed_image, cv2.RETR_CCOMP , cv2.CHAIN_APPROX_SIMPLE)
-            # # rectangles = detect_rectangles(new_contours)
-            # # cv2.drawContours(img_contours, new_contours, -1, 255, thickness=cv2.FILLED)
+            #img_blobs = detect_blobs(img, img_edges)
 
-            # for cnt in new_contours:
-            #     area = cv2.contourArea(cnt)
-            #     x, y, w, h = cv2.boundingRect(cnt)
-            #     aspect_ratio = float(w) / h
-                
-            #     # Filter contours based on size and/or aspect ratio
-            #     # Adjust the conditions to match the shapes
-            #     if area > 4000 and aspect_ratio > 0.5:
-            #         cv2.drawContours(img_contours, [cnt], -1, (0, 255, 0), 2)  # Draw one shape in green
+             # find the countours
+            contours, _ = cv2.findContours(img_edges, cv2.RETR_CCOMP , cv2.CHAIN_APPROX_SIMPLE)
+
+            # Draw the rectangles on the original image
+            img_contours = bird_view_img.copy()
+
+            self.platform_detected = False
+            for cnt in contours:
+
+                area = cv2.contourArea(cnt)
+                print("Area : ", area)
+                # Filter contours based on size and/or aspect ratio
+                # Adjust the conditions to match the shapes
+                if area > self.numberMinPixel:
+
+                    # Detect rectangles
+                    rectangle = self.detect_rectangle(cnt)
+                    #cv2.drawContours(img_contours, [cnt], -1, (0, 255, 0), 2)  # Draw one shape in green
+                    if rectangle is not None:
+                        cv2.drawContours(img_contours, rectangle, -1, (0, 255, 0), thickness=cv2.FILLED)
+                        print("Rectangles found")
+                        self.platform_detected = True
+
+            if self.show_edges:
+                cv2.imshow('Edges', img_contours)
+                cv2.waitKey(1)
+
+
+        else:
+            nbrKeypoints = self.segmentation_keypoints(bird_view_img)
+            #print(nbrKeypoints)
+            if nbrKeypoints > self.numberMinKeypoints:
+                self.platform_detected = True
+                print("Plateforme detected")
+            else:
+                self.platform_detected = False
 
         msg = Bool()
         msg.data = self.platform_detected
         self.publisher_platform.publish(msg)
-        cv2.imshow('Image', img_contours)
-        cv2.waitKey(1)
-        #Solution : essayer un nouvequ edge detector
-        #Solution : essayer de changer les paramètres de detection des blobs
+        # cv2.imshow('Image', img_contours)
+        # cv2.waitKey(1)
 
-    def value_regionalGrowing(self, img):
+
+
+    def segmentation_keypoints(self, img):
+        # Convert the image to the HSV color space
+        img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        img_plateform_hsv = cv2.cvtColor(self.img_plateform, cv2.COLOR_BGR2HSV)
+        # BRISK Detector
+        detector = cv2.BRISK_create()
+
+        # norme type (distance) for matching keypoint. More information here : https://docs.opencv.org/4.x/dc/dc3/tutorial_py_matcher.html
+        norm_Type = cv2.NORM_L2
+
+        # threshold for the distance between the keypoints
+        threshold = 1000
+
+        if self.descriptor == 'BRISK':   # very good for small images, but not many keypoints, fast and good for scale changes. Use Hamming Distance. 
+            detector = cv2.BRISK_create()
+            norm_Type = cv2.NORM_HAMMING
+            threshold = 140
+        elif self.descriptor == 'SIFT':    # more keypoints and very accurate and slower. Use Euclidean Distance
+            detector = cv2.SIFT_create()
+            norm_Type = cv2.NORM_L2
+            threshold = 300
+        elif self.descriptor == 'KAZE':  # less keypoints but less accurate than SIFT. use Euclidean Distance
+            detector = cv2.KAZE_create()
+            norm_Type = cv2.NORM_L2
+            threshold = 0.5
+        else:
+            print("Descriptor not found")
+            return 0
         
-        new_img = np.zeros_like(img)
+        # # Detect keypoints and descriptors
+        kp1, des1 = detector.detectAndCompute(img_plateform_hsv, None)
+        kp2, des2 = detector.detectAndCompute(img_hsv, None)
 
-        # add Padding
-        padded_img = np.pad(img, pad_width=1, mode='constant', constant_values=0)
+        if des1 is None:
+            #print("Descriptors are None1. Ensure the images have enough features.")
+            return 0
+        if des2 is None:
+            #print("Descriptors are None2. Ensure the images have enough features.")
+            return 0
 
-        #print(padded_img)
-        # applying the regional growing algorithm
-        for i, lines in enumerate(img):
-            for j, pixel in enumerate(lines):
-                if i == 0 or j == 0 or i == img.shape[0] - 1 or j == img.shape[1] - 1:
-                    continue
-                window = np.array(padded_img[i:i+3, j:j+3]).astype(np.int32)
-                mask = (np.abs(window - pixel) < self.threshold_floodfill)
-                mask[1, 1] = False
-                indices = np.where(mask==True)
-                # if i> 194 and j > 63:
-                #     print("Indices", indices)
-                #     print("Window", window)
-                #     print("Pixel", pixel)
-                #     print("Mask", mask)
-                #     print(np.abs(window - pixel))
-                #     plt.imshow(new_img[i-1:i+2, j-1:j+2])
-                #     plt.show()
-                for k in range(indices[0].size):
-                    if new_img[i-1+indices[0][k], j-1+indices[1][k]] != 0:
-                        new_img[i, j] = new_img[i-1+indices[0][k], j-1+indices[1][k]]
-                        break
-                #print(mask)
-                if new_img[i, j] == 0:
-                    new_img[i, j] = np.random.randint(1, 255)
+        # create BFMatcher object. Put crossCheck = True for better results.
+        # normType : Norm_L2 for SIFT, SURF, BRIEF, BRISK, NORM_HAMMING for ORB, FREAK
+        bf = cv2.BFMatcher(crossCheck=self.crosscheck, normType=norm_Type)
 
-              #  window[mask] = pixel
-                #new_img[i-1:i+2, j-1:j+2] = window
+        # Match descriptors.
+        matches = bf.match(des1,des2)
 
-                #print(window)
-        #print(new_img)
-        # Apply a binary threshold to the image
-        # _, thresh_img_segmented_region_growing = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)
+        # sort the matches based on distance
+        matches = sorted(matches, key=lambda val: val.distance)
 
-        # return thresh_img_segmented_region_growing
+        # Apply a distance threshold
+        good_matches = []
+        for m in matches:
+            if self.show_keypoint:
+                print(m.distance)
+            if m.distance < threshold:
+                good_matches.append(m)
+
+        if self.show_keypoint:
+            # Draw first 50 matches.
+            print('Number of keypoints in the img_plateform: ', len(kp1))
+            print('Number of keypoints in the img: ', len(kp2))
+            print('Number of good matches: ', len(good_matches))
+            out = cv2.drawMatches(img_plateform_hsv, kp1, img_hsv, kp2, good_matches, None, flags=2)
+            plt.imshow(out), plt.show()
+
+        return len(good_matches)
 
     def display_histogram(self, img):
            # Vérifier si l'image est en couleur ou en niveaux de gris
@@ -203,11 +323,7 @@ class PlatformDetection(Node):
         img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         h_img, s_img, v_img = cv2.split(img_hsv)
 
-        self.display_histogram(img_hsv)
-
-        # Define the lower and upper bounds for the color segmentation
-        self.lower_bound = np.array([8, 140, 0])
-        self.upper_bound = np.array([15, 255, 255])
+        #self.display_histogram(img_hsv)
 
         # Create a mask for the color segmentation
         mask = cv2.inRange(img_hsv, self.lower_bound, self.upper_bound)
@@ -219,13 +335,22 @@ class PlatformDetection(Node):
 
         _, thresh_img_segmented_gray= cv2.threshold(img_segmented_gray, 254, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-        return thresh_img_segmented_gray
+        #apply morphological operations to the image
+        opening = cv2.morphologyEx(thresh_img_segmented_gray, cv2.MORPH_OPEN, np.ones((7,7),np.uint8))
+
+        if self.show_mask:
+            cv2.imshow('Mask', opening)
+            cv2.waitKey(1)
+
+        return opening
 
     def image_callback(self, msg):
-
         self.latest_img = msg
 
-        # Function to calculate slope
+    def champi_camera_info_callback(self, msg):
+        self.champi_camera_info = msg
+
+    # Function to calculate slope
     def calculate_slope(self, x1, y1, x2, y2):
         if x2 - x1 == 0:  # To avoid division by zero for vertical lines
             return float('inf')  # Infinite slope for vertical lines
@@ -244,6 +369,7 @@ class PlatformDetection(Node):
         print("Parallel lines")
         return abs(slope_line1-slope_line2) < 2
 
+    # ==================================== LINES ====================================
     def detect_lines(self, img, edges):
 
         # Use Hough Line Transform to detect lines
@@ -302,6 +428,7 @@ class PlatformDetection(Node):
 
         return output
 
+    # ==================================== EDGES ====================================
     def detect_edges(self, img_gray, edge_detector):
 
         transformed_image = None
@@ -343,20 +470,20 @@ class PlatformDetection(Node):
         
         return transformed_image
 
-    def detect_rectangles(self, contours):
-        rectangles = []
-        for contour in contours:
-            # Approximate contour with accuracy proportional to contour perimeter
-            epsilon = 0.02 * cv2.arcLength(contour, True)
-            approx = cv2.approxPolyDP(contour, epsilon, True)
+    # ==================================== RECTANGLES ====================================
+    def detect_rectangle(self, contour):
+        # Approximate contour with accuracy proportional to contour perimeter
+        epsilon = 0.02 * cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, epsilon, True)
 
-            # Check if the approximated contour has 4 points (indicating a quadrilateral)
-            if len(approx) == 4:
-                # Optionally, check for convexity to ensure it's a proper shape
-                if cv2.isContourConvex(approx):
-                    rectangles.append(approx)
-        return rectangles
+        # Check if the approximated contour has 4 points (indicating a quadrilateral)
+        if len(approx) == 4:
+            # Optionally, check for convexity to ensure it's a proper shape
+            if cv2.isContourConvex(approx):
+                return approx
+        return None
 
+    # ==================================== BLOBS ====================================
     def detect_blobs(self, img, edges):
 
         # Setup SimpleBlobDetector parameters.
@@ -392,6 +519,42 @@ class PlatformDetection(Node):
         img_with_keypoints_canny = cv2.drawKeypoints(img, keypoints_canny, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
         return img_with_keypoints_canny
+    
+    # ==================================== BIRD VIEW ====================================
+    def init_bird_view(self):
+        transform = None
+        try:
+            # get transform, which is what we need to wait for
+            transform = self.tf_buffer.lookup_transform('base_link', 'camera',rclpy.time.Time().to_msg()) # todo use camera info
+            print('transform received')
+            # # unsubscribe from camera info (can't do that in the callback otherwise the nodes crashes) TODO IT MAKES THE NODE CRASH
+            # self.subscription_cam_info.destroy()
+            
+            # compute transform between the 2 frames as 1 matrix
+            rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
+            rot = rot.as_matrix()
+            trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
+
+            ic(trans)
+
+            transform_mtx = np.concatenate([rot, trans.reshape(3,1)], axis=1)
+            transform_mtx = np.concatenate([transform_mtx, np.array([[0,0,0,1]])], axis=0)
+
+            # initialize bird view
+            K = np.array(self.champi_camera_info.k).reshape(3,3)
+            self.bird_view = bv.BirdView(K, transform_mtx, (0.30, -0.25), (0.750, 0.25), resolution=700)
+
+            self.pos_cam_in_bird_view_pxls = self.bird_view.get_work_plane_pt_in_bird_img(np.array([0, 0, 1]))
+            ic(self.pos_cam_in_bird_view_pxls)
+
+            # compute undistortion map
+            self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.champi_camera_info.d), None, K, (self.champi_camera_info.width,self.champi_camera_info.height), cv2.CV_32FC1)
+
+            self.get_logger().info("Node Initialized", once=True)
+
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            self.get_logger().info("waiting for tf2 transform...", once=True)
+            return
 
         
 def main(args=None):

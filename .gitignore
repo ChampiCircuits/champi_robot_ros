@@ -6,3 +6,8 @@ compile_commands.json
 build/*
 install/*
 log/*
+champi_isaac_simu/resource/.thumbs/256x256/robot_wheels.usd.png
+champi_isaac_simu/resource/new_flattened_robot.usd
+champi_isaac_simu/resource/robot_wheels.usd
+champi_vision/ressources/images/plateform_champi.png
+champi_isaac_simu/resource/.thumbs/256x256/new_flattened_robot.usd.png

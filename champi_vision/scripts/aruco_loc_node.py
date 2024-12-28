@@ -139,7 +139,8 @@ class VisualLocalizationNode(Node):
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
         img_viz = bird_view_img.copy()
-
+        cv2.imshow('Image', bird_view_img)
+        cv2.waitKey(1)
         # ================================== DETECTION =========================================
 
         markerCorners, markerIds, _ = self.aruco_detector.detectMarkers(bird_view_img)
@@ -250,7 +251,7 @@ class VisualLocalizationNode(Node):
             ic(self.pos_cam_in_bird_view_pxls)
 
             # compute undistortion map
-            self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (self.board_camera_info.width,self.board_camera_info.height), cv2.CV_32FC1)
+            self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (self.camera_info.width,self.camera_info.height), cv2.CV_32FC1)
 
             self.get_logger().info("Node Initialized", once=True)
 
