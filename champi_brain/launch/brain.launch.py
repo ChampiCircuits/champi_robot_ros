@@ -45,6 +45,16 @@ def generate_launch_description():
                 'sim':LaunchConfiguration('sim')}]
     )
 
+    sm = Node(
+            package='champi_brain',
+            executable='state_machine.py',
+            name='state_machine',
+            output='screen',
+            parameters=[{
+                'color': LaunchConfiguration('color'),
+                'sim':LaunchConfiguration('sim')}]
+    )
+
     # sim_act_launch = Node(
     #         package='champi_brain',
     #         executable='simu_act_node.py',

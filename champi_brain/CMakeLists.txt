@@ -57,6 +57,7 @@ install(PROGRAMS
         scripts/rviz_markers.py
         scripts/strategy_engine_node.py
         scripts/simu_act_node.py
+        scripts/state_machine.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
