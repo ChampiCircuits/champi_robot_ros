@@ -23,23 +23,25 @@ base_controller:
     timeout_connexion_ros: 1000000000000.0
     timeout_connexion_stm: 1.2
 
-    start_x: 1.825 # m
-    start_y: 0.175 # m
-    start_theta: 1.57 # rad
+    start_x: 0.0 # m
+    start_y: 0.0 # m
+    start_theta: 0.0 # rad
 
     enable_accel_limits: false
 
     max_acceleration_linear: 0.1 # m/s^2
     max_deceleration_linear: 2.0 # m/s^2
 
-    max_acceleration_angular: 1.0 # rad/s^2
+    max_acceleration_angular: 0.1 # rad/s^2
     max_deceleration_angular: 20.0 # rad/s^2
 
     max_linear_speed: 0.4
 
     covariances:
       pose: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      pose_tracking: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
       velocity: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      tracking_velocity: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001] # x y z roll pitch yaw
 
     base_config:
       max_accel_wheels: 10.0 # rotation des roues en rotation/s²

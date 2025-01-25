@@ -48,7 +48,7 @@ ros2 launch champi_brain brain.launch.py color:=yellow
 
 ### Teleop
 ```bash
-ros2 launch bringup teleop.launch.py
+ros2 launch champi_bringup teleop.launch.py
 ```
 
 *Paramètres*:

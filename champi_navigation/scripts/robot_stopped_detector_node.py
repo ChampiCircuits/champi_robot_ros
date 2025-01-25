@@ -12,7 +12,7 @@ from math import acos
 
 class MyNode(Node):
     def __init__(self):
-        super().__init__('my_node')
+        super().__init__('robot_stopped_detector_node')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('imu_topic', '/imu')
         self.declare_parameter('odometry_topic', '/odometry')
@@ -57,6 +57,8 @@ class MyNode(Node):
         self.last_robot_pose = None
         self.robot_pose = None
         self.has_been_set_pose = False
+
+        self.get_logger().info('Launched robot_stopped_detector_node !')
 
     def update_robot_pose(self, msg):
 

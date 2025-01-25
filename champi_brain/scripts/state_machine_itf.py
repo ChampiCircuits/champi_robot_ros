@@ -4,7 +4,8 @@ from rclpy.clock import Clock
 from champi_interfaces.action import Navigate
 from geometry_msgs.msg import Point, Pose
 from rclpy.action import ActionClient
-
+from robot_localization.srv import SetPose
+from math import sin, cos, pi
 
 TOTAL_AVAILABLE_TIME = 100
 
@@ -36,11 +37,10 @@ class ChampiStateMachineITF(Node):
         
 
         # Action client for /navigate
+        self.goal_handle_navigate = None
         self.action_client_navigate = ActionClient(self, Navigate, '/navigate')
         self.action_client_navigate.wait_for_server()
         self.get_logger().info('Action client for /navigate is ready!')
-
-        self.goal_handle_navigate = None
 
         self.get_logger().warn('Launched ChampiSMRosInterface !')
 
@@ -51,6 +51,8 @@ class ChampiStateMachineITF(Node):
         if elapsed_time > 2.0 and not self.champi_sm.stm_initialized:
             self.stm_initialized_callback()
         if elapsed_time > 3.0 and not self.champi_sm.user_has_choosed_config:
+            self.init_robot_pose()
+            self.get_logger().info('Pose has been init')
             self.user_has_choosed_config_callback()
         if elapsed_time > 3.5 and not self.champi_sm.tirette_pulled:
             self.tirette_pulled_callback()
@@ -72,6 +74,24 @@ class ChampiStateMachineITF(Node):
                 self.champi_sm.match_ended = True
                 self.get_logger().info(f'No time left. Triggering end of match. Was in state {self.champi_sm.state}.')
 
+    def init_robot_pose(self):
+        init_pose = [1.0, 0.5, pi/2]
+        self.set_pose_client = self.create_client(SetPose, '/set_pose')
+        while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+
+        request = SetPose.Request()
+        request.pose.header.stamp = self.get_clock().now().to_msg()
+        request.pose.header.frame_id = 'odom'
+        request.pose.pose.pose.position.x = init_pose[0]
+        request.pose.pose.pose.position.y = init_pose[1]
+        request.pose.pose.pose.position.z = 0.
+        request.pose.pose.pose.orientation.x = 0.
+        request.pose.pose.pose.orientation.y = 0.
+        request.pose.pose.pose.orientation.z = sin(init_pose[2]/2)
+        request.pose.pose.pose.orientation.w = cos(init_pose[2]/2)
+
+        future = self.set_pose_client.call_async(request)
 
 
     # ==================================== Feedback Callbacks =====================================
@@ -133,8 +153,8 @@ class ChampiStateMachineITF(Node):
         
         goal.end_speed = 0.
 
-        goal.max_linear_speed = 0.2
-        goal.max_angular_speed = 1.5
+        goal.max_linear_speed = 0.4
+        goal.max_angular_speed = 2.5
         
         goal.linear_tolerance = 0.01
         goal.angular_tolerance = 0.1
@@ -148,7 +168,7 @@ class ChampiStateMachineITF(Node):
 
         goal.robot_angle_when_looking_at_point = 0.
 
-        goal.timeout = 10. # seconds
+        goal.timeout = 10000. # seconds
 
         return goal
 

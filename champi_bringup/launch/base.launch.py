@@ -101,13 +101,13 @@ def generate_launch_description():
 
     # =========================== IMU CONTROLLER ( SIMULATION OR REAL ROBOT ) ===========================
 
-    imu_controller_launch = IncludeLaunchDescription(
-        launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('champi_controllers'),
-            '/launch/imu_controller.launch.py'
-        ]),
-        condition=UnlessCondition(LaunchConfiguration('sim'))
-    )
+    # imu_controller_launch = IncludeLaunchDescription(
+    #     launch_description_source=PythonLaunchDescriptionSource([
+    #         get_package_share_directory('champi_controllers'),
+    #         '/launch/imu_controller.launch.py'
+    #     ]),
+    #     condition=UnlessCondition(LaunchConfiguration('sim'))
+    # )
 
 
     return LaunchDescription([
@@ -117,7 +117,7 @@ def generate_launch_description():
         base_controller_launch,
         base_control_simu_node,
         cmd_vel_mux_node,
-        imu_controller_launch,
+        # imu_controller_launch,
         ukf_node,
         call_set_pose_node
     ])

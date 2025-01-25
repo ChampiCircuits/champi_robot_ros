@@ -29,8 +29,8 @@ class HoloTeleopJoy(Node):
         self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.pub_stamped = self.create_publisher(TwistStamped, '/cmd_vel_stamped', 10) # for visualization in rviz
 
-        self.max_linear_speed = 1.  # m/s
-        self.max_angular_speed = 6.  # rad/s
+        self.max_linear_speed = 0.1  # m/s
+        self.max_angular_speed = 0.6  # rad/s
 
         self.id_steering = None # it changes between my 2 PCs :( 2 or 3 -> we check which one is at 0 at startup
         # (the other one is the trigger so it's non-zero when not pressed)
