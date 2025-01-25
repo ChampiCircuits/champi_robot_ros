@@ -12,7 +12,7 @@ class HardwareInterfaceNode : public rclcpp::Node
 public:
     HardwareInterfaceNode() : Node("modbus_sender_node")
     {
-        this->declare_parameter<std::string>("device", "/dev/ttyACM0");
+        this->declare_parameter<std::string>("device", "/dev/ttyACM1");
         this->declare_parameter<int>("baud_rate", 115200);
         this->declare_parameter<int>("slave_id", 1);
 
@@ -92,22 +92,24 @@ private:
     }
 
 
-    void write( mod_reg::register_metadata &reg_meta)
+    int write( mod_reg::register_metadata &reg_meta)
     {
         int rc = modbus_write_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         if (rc == -1) {
-            // TODO handle error
-            RCUTILS_LOG_ERROR("Failed to write data: %s", modbus_strerror(errno));
+
+            RCUTILS_LOG_ERROR("Failed to write data: error num: %d, message: %s", errno, modbus_strerror(errno));
         }
+        return rc;
     }
 
-    void read( mod_reg::register_metadata &reg_meta)
+    int read( mod_reg::register_metadata &reg_meta)
     {
         int rc = modbus_read_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         if (rc == -1) {
-            // TODO handle error
             RCUTILS_LOG_ERROR("Failed to read data: %s", modbus_strerror(errno));
         }
+        return rc;
+
     }
 
 
@@ -115,22 +117,33 @@ private:
     {
         *mod_reg::stm_config = stm_config_;
         mod_reg::stm_config->is_set = true;
-        write( mod_reg::reg_stm_config);
+        int result = write(mod_reg::reg_stm_config);
+        if (result == -1) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to write STM config: %s", modbus_strerror(errno));
+        }
+
+
     }
 
     void read_config()
     {
-        read( mod_reg::reg_stm_config);
+        int result = read( mod_reg::reg_stm_config);
         stm_config_ = *mod_reg::stm_config;
+        if (result == -1) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to read STM config: %s", modbus_strerror(errno));
+        }
+        // TODO check if the read config is the same as the written one
     }
 
     void configure_stm()
     {
-        while (!stm_config_.is_set) {
+        do {
             write_config();
             read_config();
-            RCLCPP_WARN_SKIPFIRST(this->get_logger(), "Writing config to STM did not work, retrying...");
+            RCLCPP_WARN_SKIPFIRST(this->get_logger(), "Writing config to STM...");
+            rclcpp::sleep_for(std::chrono::seconds(1));
         }
+        while (!stm_config_.is_set);
         RCLCPP_INFO(this->get_logger(), "STM configured successfully");
     }
 
