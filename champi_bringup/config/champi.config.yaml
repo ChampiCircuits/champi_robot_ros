@@ -27,15 +27,17 @@ hardware_interface:
     timeout_connexion_ros: 1000000000000.0
     timeout_connexion_stm: 1.2
 
-    start_x: 1.825 # m
-    start_y: 0.175 # m
-    start_theta: 1.57 # rad
+    start_x: 0.0 # m
+    start_y: 0.0 # m
+    start_theta: 0.0 # rad
 
 
 
     covariances:
       pose: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      pose_tracking: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
       velocity: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      tracking_velocity: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001] # x y z roll pitch yaw
 
     base_config:
       max_accel_wheel: 10.0 # rotation des roues en rotation/s²

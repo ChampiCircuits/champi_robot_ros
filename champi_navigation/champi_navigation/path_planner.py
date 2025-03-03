@@ -50,7 +50,13 @@ class PathPlanner:
 
     def __init__(self):
         self.is_initialized = False
-
+        # raw and optimized path stored for debug
+        self.raw_path = []
+        self.optimized_path = []
+        
+        # Latest result, for diagnostics
+        self.latest_result = None
+        
     def initialize(self, width: int, height: int, m_per_pixel: float):
         """Initializes the path planner.
 
@@ -65,13 +71,6 @@ class PathPlanner:
         self.m_per_pixel = m_per_pixel
         # A* path pathfinder
         self.costmap_path_finder = CostmapAStar(width, height)
-
-        # raw and optimized path stored for debug
-        self.raw_path = []
-        self.optimized_path = []
-        
-        # Latest result, for diagnostics
-        self.latest_result = None
 
 
     def compute_path(self, robot_pose: Pose, goal_pose: Pose, costmap) -> tuple[list[Pose], ComputePathResult]:

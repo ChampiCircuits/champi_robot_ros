@@ -37,7 +37,7 @@ Canva().add(items.Points(self.some_poses, color=presets.MAGENTA))
 Canva().draw()
 ```
 
-Check out the full example [here](../../../dev_tools/scripts/test_markers.py).
+Check out the full example [here](../../../quick_tests/scripts/test_markers.py).
 
 ## Performance
 

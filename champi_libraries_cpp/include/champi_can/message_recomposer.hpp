@@ -32,9 +32,11 @@ public:
         // TODO check if the number follows the expected order (0 -> 1 -> 2 -> 3 -> 0 -> ...)
         // But it's not that easy bc what if we miss an entire message ? we would loose the 3 messages that follow it
         if(msg_number_ != msg_number) {
+            // if (id_of_interest_ == 0x70 && !all_frames_received())
+            //     std::cout << "msg lost for 0x70" << std::endl;
             // new message
             if (verbose_) {
-                std::cout << "CHAMPI_CAN: New message advertised for ID: " << std::hex << id_of_interest_ << ". Msg number: " << msg_number << ". Msg size: " << msg_size << std::endl;
+                std::cout << "CHAMPI_CAN: New message advertised for ID: 0x" << std::hex << id_of_interest_ << ". Msg number: " << msg_number << ". Msg size: " << msg_size << std::endl;
             }
             msg_number_ = msg_number;
             n_frames_ = msg_size;
@@ -49,7 +51,7 @@ public:
         if(verbose_) {
             std::cout << "CHAMPI_CAN: New frame. Nb data bytes: " << frame.can_dlc-2 << ". Frame index: " << frame_index << std::endl;
             for(int i=0; i<n_frames_; i++) {
-                std::cout << "CHAMPI_CAN: Frame " << i << " received: " << frames_received_[i] << std::endl;
+                std::cout << "CHAMPI_CAN: Frame " << i << " received: " << frames_received_[i] << " for id : 0x" <<std::hex << id_of_interest_ << std::endl;
             }
         }
 
@@ -64,7 +66,7 @@ public:
                 frames_received_[i] = false;
             }
             if (verbose_) {
-                std::cout << "CHAMPI_CAN: Full message received for ID: " << std::hex << id_of_interest_ << ". Message: " << full_msg_ << std::endl;
+                std::cout << "CHAMPI_CAN: Full message received for ID: 0x" << std::hex << id_of_interest_ << ". Message: " << full_msg_ << std::endl;
             }
         }
         

@@ -94,3 +94,25 @@ message ActStatus {
 message LedRingDistances {
   repeated float distances = 1 [(nanopb).max_count = 24, (nanopb).fixed_count = true];  // comment me when compile for cpp and python
 }
+
+message TrackingSensorData {
+  enum StatusType {
+    OK = 0;
+    ERROR = 1;
+  }
+  optional StatusType status = 1;
+  optional float pose_x_mm = 2;
+  optional float pose_y_mm = 3;
+  optional float theta_rad = 4;
+}
+
+message TrackingSensorStd { 
+  optional float pose_x_std = 1;
+  optional float pose_y_std = 2;
+  optional float theta_std = 3;
+}
+
+message ResetAndCalibrateTrackingSensor {
+  optional bool reset = 1;
+  optional bool calibrate = 2;
+}

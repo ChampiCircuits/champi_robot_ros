@@ -102,7 +102,7 @@ def get_action_by_name(name: str, actions: dict) -> dict:
             return action
     return None
 
-def pose_from_position(position, stamp):
+def pose_from_position(position: list, stamp):
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = stamp

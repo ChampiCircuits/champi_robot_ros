@@ -16,7 +16,7 @@ class PathPlannerUINode(Node):
 
     def __init__(self):
         super().__init__('planner_ui')
-        get_logger('rclpy').info(f"\tLaunching Path planner UI...")
+        self.get_logger().info(f"\tLaunching Path planner UI...")
 
 
         # Subscriber for /goal_pose
@@ -30,13 +30,13 @@ class PathPlannerUINode(Node):
         self.goal_handle_navigate = None
 
         self.goal_pose = None
-        get_logger('rclpy').info(f"\tPath planner UI launched !")
+        self.get_logger().info(f"\tPath planner UI launched !")
     
 
     # ==================================== ROS2 Callbacks ==========================================
 
     def goal_pose_callback(self, msg):
-        # self.get_logger().info(f'New goal received!')
+        self.get_logger().info(f'New goal received!')
 
         self.goal_pose = msg.pose
 
@@ -158,6 +158,7 @@ def main(args=None):
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
+        node.get_logger().warn("Path Planner UI terminated")
         node.destroy_node()
         rclpy.try_shutdown()
 
