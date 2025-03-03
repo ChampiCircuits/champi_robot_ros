@@ -26,7 +26,7 @@ def generate_launch_description():
     )
 
     holo_teleop_joy_node = Node(
-        package='dev_tools',
+        package='champi_utils',
         executable='holo_teleop_joy_node.py',
         name='holo_teleop_joy_node',
         output='screen',

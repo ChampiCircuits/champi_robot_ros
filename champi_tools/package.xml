@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>dev_tools</name>
+  <name>champi_tools</name>
   <version>0.0.0</version>
   <description>A basket full of not-really-pretty mushrooms (they can be usefull sometimes)</description>
   <maintainer email="andrerusso02@gmail.com">andrerusso02</maintainer>

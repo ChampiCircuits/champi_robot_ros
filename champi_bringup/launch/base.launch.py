@@ -61,7 +61,7 @@ def generate_launch_description():
 
     # Calls the set_pose service of the UKF node
     call_set_pose_node = Node(
-        package='dev_tools',
+        package='champi_tools',
         executable='call_set_pose.py',
         name='call_set_pose',
         output='screen',

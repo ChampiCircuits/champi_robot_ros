@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(dev_tools)
+project(champi_tools)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -20,11 +20,6 @@ find_package(tf2_ros REQUIRED)
 find_package(diagnostic_updater REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
-add_executable(test_diag src/test_diag.cpp)
-ament_target_dependencies(test_diag rclcpp diagnostic_updater)
-
-add_executable(fun_node src/fun_node.cpp)
-ament_target_dependencies(fun_node rclcpp geometry_msgs nav_msgs sensor_msgs champi_libraries_cpp Protobuf)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -53,16 +48,8 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
         scripts/holo_teleop_joy_node.py
-        scripts/pub_goal_poses.py
         scripts/call_set_pose.py
-        scripts/test_markers.py
   DESTINATION lib/${PROJECT_NAME}
 )
-
-# Install C++ executables
-install(TARGETS
-        test_diag
-        fun_node
-  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

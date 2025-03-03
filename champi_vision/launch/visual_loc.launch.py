@@ -26,7 +26,7 @@ def generate_launch_description():
             output='screen'
         ),
         # Node(
-        #     package='dev_tools',
+        #     package='champi_vision',
         #     executable='camera_info_publisher_node.py',
         #     name='camera_info_publisher',
         #     output='screen',
