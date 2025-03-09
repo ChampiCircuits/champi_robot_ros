@@ -119,10 +119,6 @@ void Error_Handler(void);
 #define USB_FS_VBUS_GPIO_Port GPIOA
 #define USB_FS_ID_Pin GPIO_PIN_10
 #define USB_FS_ID_GPIO_Port GPIOA
-#define ENABLE_SERVOS_Pin GPIO_PIN_11
-#define ENABLE_SERVOS_GPIO_Port GPIOA
-#define TTL_SERVOS_Pin GPIO_PIN_12
-#define TTL_SERVOS_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14

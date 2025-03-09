@@ -25,6 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ModbusTask.h"
+#include "usb_device.h"
 
 /* USER CODE END Includes */
 
@@ -51,8 +53,8 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityLow,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -96,7 +98,8 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  ModbusTaskStart();
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

@@ -22,6 +22,7 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
+#include "ThirdParty/Modbus.h"
 
 /* USER CODE END INCLUDE */
 
@@ -264,6 +265,36 @@ static int8_t CDC_Control_HS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_HS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 11 */
+  // deal with 64 bytes packet
+  static int pos_start_write = 0;
+
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  int i, j;
+  for (i = 0; i<numberHandlers; i++ ) {
+    
+		if (mHandlers[i]->xTypeHW == USB_CDC_HW  ) {
+
+      for(j=0; j< *Len && j+pos_start_write<MAX_BUFFER; j++){
+      //xQueueSendToBackFromISR( mHandlers[i]->QueueModbusHandle, &Buf[j], pdFALSE);
+        mHandlers[i]->u8Buffer[pos_start_write+j] = Buf[j];
+      }
+      if(*Len> MAX_BUFFER) {
+        mHandlers[i]->u8BufferSize = ERR_BUFF_OVERFLOW;
+      }
+      else{
+        mHandlers[i]->u8BufferSize = pos_start_write+j;
+      }
+      if(*Len==64) {
+        pos_start_write = j;
+      }
+      else {
+        pos_start_write = 0;
+        xTaskNotifyFromISR(mHandlers[i]->myTaskModbusAHandle, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken );
+        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+        break;
+      }
+    }
+  }
   USBD_CDC_SetRxBuffer(&hUsbDeviceHS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceHS);
   return (USBD_OK);
