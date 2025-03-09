@@ -69,6 +69,14 @@ ros2 launch champi_bringup teleop.launch.py
 
 ## How to
 
+
+### STM32
+
+Create a symlink to the STM32 project in the workspace:
+```bash
+ln -s /ros2_ws/stm_main_board /stm_ws/stm_main_board
+```
+
 ### Configuration du projet
 
 La première fois, se placer à la racine du workspace et lancer la commande suivante pour installer les dépendances et ajouter
