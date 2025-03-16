@@ -18,9 +18,7 @@ base_controller_simu:
 hardware_interface:
   ros__parameters:
 
-
-
-    device: /dev/ttyACM1
+    device_ser_no: 3952366C3233
 
     topic_twist_in: "/cmd_vel"
     champi_can_verbose_mode: false

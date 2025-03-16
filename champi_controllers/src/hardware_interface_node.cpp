@@ -5,6 +5,66 @@
 
 #include <champi_controllers/ModbusRegister.h>
 
+#include <libudev.h>
+#include <iostream>
+
+
+#include <libudev.h>
+#include <iostream>
+#include <string>
+
+std::string findDeviceBySerial(const std::string& targetSerial) {
+    struct udev *udev = udev_new();
+    if (!udev) {
+        std::cerr << "Can't create udev\n";
+        return "";
+    }
+
+    struct udev_enumerate *enumerate = udev_enumerate_new(udev);
+    udev_enumerate_add_match_subsystem(enumerate, "tty");
+    udev_enumerate_scan_devices(enumerate);
+
+    struct udev_list_entry *devices = udev_enumerate_get_list_entry(enumerate);
+    struct udev_list_entry *dev_list_entry;
+
+    udev_list_entry_foreach(dev_list_entry, devices) {
+        const char *path = udev_list_entry_get_name(dev_list_entry);
+        struct udev_device *dev = udev_device_new_from_syspath(udev, path);
+
+        // Get the parent USB device (if it exists)
+        struct udev_device *parent = udev_device_get_parent_with_subsystem_devtype(
+            dev,
+            "usb",
+            "usb_device"
+        );
+
+        if (parent) {
+            const char *serial = udev_device_get_sysattr_value(parent, "serial");
+            const char *devNode = udev_device_get_devnode(dev);
+
+            if (serial && devNode) {
+                if (targetSerial == serial) {
+                    std::string result(devNode);
+
+                    // Cleanup
+                    udev_device_unref(dev);
+                    udev_enumerate_unref(enumerate);
+                    udev_unref(udev);
+
+                    return result;
+                }
+            }
+        }
+
+        udev_device_unref(dev);
+    }
+
+    udev_enumerate_unref(enumerate);
+    udev_unref(udev);
+
+    return "";
+}
+
 
 
 class HardwareInterfaceNode : public rclcpp::Node
@@ -12,15 +72,13 @@ class HardwareInterfaceNode : public rclcpp::Node
 public:
     HardwareInterfaceNode() : Node("modbus_sender_node")
     {
-        this->declare_parameter<std::string>("device", "/dev/ttyACM1");
+        this->declare_parameter<std::string>("device_ser_no", "3952366C3233");
         this->declare_parameter<int>("baud_rate", 115200);
         this->declare_parameter<int>("slave_id", 1);
 
-        this->device_ = this->get_parameter("device").as_string();
+        this->device_ser_no_ = this->get_parameter("device_ser_no").as_string();
         this->baud_rate_ = this->get_parameter("baud_rate").as_int();
         this->slave_id_ = this->get_parameter("slave_id").as_int();
-
-
 
         stm_config_.is_set = false;
 
@@ -58,7 +116,10 @@ public:
 private:
     void setup_modbus()
     {
-        mb_ = modbus_new_rtu(device_.c_str(), baud_rate_, 'N', 8, 1);
+
+        std::string device_path = findDeviceBySerial(device_ser_no_);
+
+        mb_ = modbus_new_rtu(device_path.c_str(), baud_rate_, 'N', 8, 1);
         if (!mb_) {
             RCLCPP_FATAL(this->get_logger(), "Failed to create Modbus RTU context");
             rclcpp::shutdown();
@@ -80,7 +141,7 @@ private:
             return;
         }
 
-        RCLCPP_INFO(this->get_logger(), "Modbus RTU connection established with device: %s", device_.c_str());
+        RCLCPP_INFO(this->get_logger(), "Modbus RTU connection established with device: %s", device_path.c_str());
 
         // uint32_t old_response_to_sec;
         // uint32_t old_response_to_usec;
@@ -128,10 +189,11 @@ private:
     void read_config()
     {
         int result = read( mod_reg::reg_stm_config);
-        stm_config_ = *mod_reg::stm_config;
         if (result == -1) {
             RCLCPP_ERROR(this->get_logger(), "Failed to read STM config: %s", modbus_strerror(errno));
+            return;
         }
+        stm_config_ = *mod_reg::stm_config;
         // TODO check if the read config is the same as the written one
     }
 
@@ -144,6 +206,7 @@ private:
             rclcpp::sleep_for(std::chrono::seconds(1));
         }
         while (!stm_config_.is_set);
+        std::cout << stm_config_.is_set << std::endl;
         RCLCPP_INFO(this->get_logger(), "STM configured successfully");
     }
 
@@ -163,7 +226,7 @@ private:
         RCLCPP_INFO(this->get_logger(), "Measured velocity: x=%f, y=%f, z=%f",  mod_reg::measured_vel->x,  mod_reg::measured_vel->y,  mod_reg::measured_vel->theta);
     }
 
-    std::string device_;
+    std::string device_ser_no_;
     int baud_rate_;
     int slave_id_;
     modbus_t *mb_{nullptr};

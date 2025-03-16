@@ -28,6 +28,8 @@ add_library(champi_controllers SHARED
 find_library(MODBUS_LIBRARY modbus REQUIRED)
 include_directories(${MODBUS_INCLUDE_DIRS})
 
+target_link_libraries(${PROJECT_NAME} PUBLIC udev)
+
 add_executable(base_controller_node src/base_controller_node.cpp)
 ament_target_dependencies(base_controller_node rclcpp geometry_msgs champi_libraries_cpp Protobuf nav_msgs tf2 tf2_ros diagnostic_updater)
 
