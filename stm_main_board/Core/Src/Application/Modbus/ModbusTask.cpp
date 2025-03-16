@@ -1,8 +1,7 @@
-#include <Modbus/ModbusRegister.h>
+#include "Application/Modbus/ModbusTask.h"
+
+#include "Application/Modbus/ModbusRegister.h"
 #include "usart.h"
-
-#include "Application/ModbusTask.h"
-
 
 
 modbusHandler_t ModbusH;
@@ -26,7 +25,4 @@ void ModbusTaskStart()
     // This function is weirdly named. It actualy performs configuration checks and does while(1) if bad configuration.
     // It doesn't start anything.
     ModbusStartCDC(&ModbusH);
-
 }
-
-

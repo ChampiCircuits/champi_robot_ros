@@ -8,15 +8,15 @@
 #ifndef THIRD_PARTY_MODBUS_INC_MODBUS_H_
 #define THIRD_PARTY_MODBUS_INC_MODBUS_H_
 
-
-#include "Config/ModbusConfig.h"
 #include <inttypes.h>
 #include <stdbool.h>
+#include "Config/ModbusConfig.h"
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
+#include "usart.h"
 
 
 typedef enum

@@ -25,7 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ModbusTask.h"
+#include "Application/Modbus/ModbusTask.h"
+#include "Application/HoloDrive/HoloDriveTask.h"
 #include "usb_device.h"
 
 /* USER CODE END Includes */
@@ -99,6 +100,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   ModbusTaskStart();
+  HoloDriveTaskStart();
 
   /* USER CODE END RTOS_THREADS */
 
