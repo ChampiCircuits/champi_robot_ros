@@ -25,8 +25,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "Application/Modbus/ModbusTask.h"
 #include "Application/HoloDrive/HoloDriveTask.h"
+#include "Application/Modbus/ModbusTask.h"
+#include "Devices/PosStepper.h"
+#include "tim.h"
 #include "usb_device.h"
 
 /* USER CODE END Includes */
@@ -123,9 +125,12 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
+  // PosStepper stepper_opt1(htim16, TIM_CHANNEL_1, STEP_OPT1_GPIO_Port, STEP_OPT1_Pin);
+  // stepper_opt1.set_goal(1.);
   for(;;)
   {
-    osDelay(1);
+    // stepper_opt1.spin_once(0.1);
+    osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }

@@ -1,10 +1,10 @@
-#include <SpeedStepper.h>
+#include <Devices/SpeedStepper.h>
 
 
 
-StepperTimer::StepperTimer() = default;
+SpeedStepper::SpeedStepper() = default;
 
-StepperTimer::StepperTimer(TIM_HandleTypeDef tim_handle_step, uint32_t tim_channel_step, GPIO_TypeDef *gpio_port_dir, uint16_t gpio_pin_dir) {
+SpeedStepper::SpeedStepper(TIM_HandleTypeDef tim_handle_step, uint32_t tim_channel_step, GPIO_TypeDef *gpio_port_dir, uint16_t gpio_pin_dir) {
 
 	this->tim_handle = tim_handle_step;
 	this->gpio_port_dir = gpio_port_dir;
@@ -20,17 +20,17 @@ StepperTimer::StepperTimer(TIM_HandleTypeDef tim_handle_step, uint32_t tim_chann
 	// NOTE: There is also a function HAL_RCC_GetPCLK2Freq() for some timers. But they usually have the same frequency.
 }
 
-void StepperTimer::PWM_set_high_duration(TIM_TypeDef *timx, int us) const {
+void SpeedStepper::PWM_set_high_duration(TIM_TypeDef *timx, int us) const {
 	timx->CCR1 = us * this->timer_input_hz / ((timx->PSC+1)*1000000); // TODO I'm not sure the calculation is correct!
 }
 
-void StepperTimer::PWM_set_freq(TIM_TypeDef *timx, int hz) const {
+void SpeedStepper::PWM_set_freq(TIM_TypeDef *timx, int hz) const {
 	const uint32_t arr = this->timer_input_hz / ((timx->PSC+1)*hz);
 	timx->CNT = 0;
 	timx->ARR = arr;
 }
 
-void StepperTimer::set_speed_step_freq(int hz, int dir) {
+void SpeedStepper::set_speed_step_freq(int hz, int dir) {
 	if(hz < 15){// todo calculer freq min automatiquement
 		if(!stopped) {
 			PWM_set_high_duration(this->tim_handle.Instance, 0);
@@ -52,7 +52,7 @@ void StepperTimer::set_speed_step_freq(int hz, int dir) {
 	}
 }
 
-void StepperTimer::set_speed_rps(float rps) {
+void SpeedStepper::set_speed_rps(float rps) {
 	// 3200 steps per revolution
 	int hz = rps * 3200.0;
 	if(hz>=0) {
@@ -61,8 +61,13 @@ void StepperTimer::set_speed_rps(float rps) {
 	else {
 		this->set_speed_step_freq(-hz, 0);
 	}
+	stopped ? current_speed_rps = 0 : current_speed_rps = rps;
+}
+
+float SpeedStepper::get_speed_rps() {
+	return current_speed_rps;
 }
 
 
 
-StepperTimer::~StepperTimer() = default;
+SpeedStepper::~SpeedStepper() = default;

@@ -4,18 +4,20 @@
 #include "stm32h7xx_hal.h"
 
 
-class StepperTimer {
+class SpeedStepper {
 public:
 
-	StepperTimer(); // default constructor, do not use.
+	SpeedStepper(); // default constructor, do not use.
 
-	StepperTimer(TIM_HandleTypeDef tim_handle_step, uint32_t tim_channel_step, GPIO_TypeDef *gpio_port_dir, uint16_t gpio_pin_dir);
+	SpeedStepper(TIM_HandleTypeDef tim_handle_step, uint32_t tim_channel_step, GPIO_TypeDef *gpio_port_dir, uint16_t gpio_pin_dir);
 
 	void set_speed_step_freq(int hz, int dir);
 
 	void set_speed_rps(float rps);
 
-	virtual ~StepperTimer();
+	float get_speed_rps();
+
+	virtual ~SpeedStepper();
 
 private:
 
@@ -30,6 +32,7 @@ private:
 	uint16_t gpio_pin_dir;
 
 	bool stopped;
+	float current_speed_rps;
 	int current_dir;
 
 	uint32_t timer_input_hz;

@@ -45,7 +45,7 @@ int get_index_max(const double* arr) {
 	}
 }
 
-HoloDrive::HoloDrive(const StepperTimer& stepper0, const StepperTimer& stepper1, const StepperTimer& stepper2) {
+HoloDrive::HoloDrive(const SpeedStepper& stepper0, const SpeedStepper& stepper1, const SpeedStepper& stepper2) {
 	this->steppers[0] = stepper0;
 	this->steppers[1] = stepper1;
 	this->steppers[2] = stepper2;

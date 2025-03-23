@@ -3,14 +3,14 @@
 #define INC_APPLICATION_HOLODRIVE_H_
 
 
-#include <SpeedStepper.h>
+#include <Devices/SpeedStepper.h>
 #include "Application/Modbus/DataStructures.h"
 
 
 class HoloDrive {
 public:
     HoloDrive();
-    HoloDrive(const StepperTimer& stepper0, const StepperTimer& stepper1, const StepperTimer& stepper2);
+    HoloDrive(const SpeedStepper& stepper0, const SpeedStepper& stepper1, const SpeedStepper& stepper2);
     virtual ~HoloDrive();
     void set_config(HoloDriveConfig config);
     bool is_configured();
@@ -22,7 +22,7 @@ public:
     void update_current_vel(const double *speeds_rps);
     Vector3 compute_limited_speed();
 private:
-    StepperTimer steppers[3];
+    SpeedStepper steppers[3];
     Vector3 cmd_vel{};
     double current_wheels_speeds_rps[3]{};
     Vector3 current_vel;

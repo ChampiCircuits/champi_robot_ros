@@ -3,3 +3,6 @@ Debug
 .settings
 Middlewares
 *.launch
+CMakeLists_template.txt
+CMakeLists.txt
+cmake-build-debug

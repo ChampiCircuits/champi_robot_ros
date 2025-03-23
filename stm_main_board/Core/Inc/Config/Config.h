@@ -4,6 +4,8 @@
 #define INC_CONFIG_CONFIG_H_
 
 
+// ======================== HOLODRIVE CONFIG ========================
+
 #define CONTROL_LOOP_FREQ_HZ 100 // Hz. Please don't change it, it can cause issues with the timers configurations.
 #define CONTROL_LOOP_PERIOD_MS (1000 / CONTROL_LOOP_FREQ_HZ) // ms
 #define CONTROL_LOOP_PERIOD_S (1.0 / ((float) CONTROL_LOOP_FREQ_HZ)) // s
@@ -37,6 +39,13 @@ WHEEL_L(eft)  WHEEL_R(ight)
 # define WHEEL_B_DIR_GPIO_PIN STEP_REAR_Pin
 # define WHEEL_L_DIR_GPIO_PIN STEP_LEFT_Pin
 # define WHEEL_R_DIR_GPIO_PIN STEP_RIGHT_Pin
+
+
+// ======================== POSSTEPPER CONFIG ========================
+
+#define STEPPER_MAX_SPEED_DEFAULT 1.0
+#define STEPPER_MAX_ACCEL_DEFAULT 1.0
+
 
 
 #endif /* INC_CONFIG_CONFIG_H_ */
