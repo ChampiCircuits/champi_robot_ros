@@ -3,7 +3,7 @@
 #define INC_APPLICATION_HOLODRIVE_H_
 
 
-#include "Devices/StepperTimer.h"
+#include <SpeedStepper.h>
 #include "Application/Modbus/DataStructures.h"
 
 

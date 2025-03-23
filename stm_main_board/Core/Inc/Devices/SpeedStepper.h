@@ -1,5 +1,5 @@
-#ifndef INC_DEVICES_STEPPERTIMER_H_
-#define INC_DEVICES_STEPPERTIMER_H_
+#ifndef INC_DEVICES_SPEEDSTEPPER_H_
+#define INC_DEVICES_SPEEDSTEPPER_H_
 
 #include "stm32h7xx_hal.h"
 
@@ -36,4 +36,4 @@ private:
 };
 
 
-#endif /* INC_DEVICES_STEPPERTIMER_H_ */
+#endif /* INC_DEVICES_SPEEDSTEPPER_H_ */
