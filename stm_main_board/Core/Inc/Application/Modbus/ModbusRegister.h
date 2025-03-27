@@ -2,7 +2,11 @@
 #define MODBUS_REGISTERS_H
 
 //#include <sys/_stdint.h>
-#include <Modbus/DataStructures.h>
+#ifdef MODBUS_MASTER
+#include <champi_controllers/DataStructures.h>
+#else
+#include <Application/Modbus/DataStructures.h>
+#endif // MODBUS_MASTER
 #include <stdint.h>
 
 #define REGISTERS_SIZE 500
@@ -24,25 +28,25 @@ namespace mod_reg
     // Declare pointers to structures of data we want to send/receive
     extern Vector3* cmd_vel;
     extern Vector3* measured_vel;
+    extern Vector3* otos_pose;
     extern StmConfig* stm_config;
 
+#ifdef MODBUS_MASTER
     // Metadata to gather info needed to read/write the data (for master only)
     extern register_metadata reg_cmd_vel;
     extern register_metadata reg_measured_vel;
+    extern register_metadata reg_otos_pose;
     extern register_metadata reg_stm_config;
 
     // EDIT HERE END
 
+    void init_register_metadata(register_metadata &reg_meta, uint16_t* ptr, uint16_t size);
+#endif // MODBUS_MASTER
+
     uint16_t* init_ptr_to_register(uint16_t size);
 
-    void init_register_metadata(register_metadata &reg_meta, uint16_t* ptr, uint16_t size);
-
-    void setup_registers_slave();
-
-    void setup_registers_master();
+    void setup_registers();
 
 }
-
-
 
 #endif //MODBUS_REGISTERS_H

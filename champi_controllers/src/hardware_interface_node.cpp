@@ -93,7 +93,7 @@ public:
 
         stm_config_.cmd_vel_timeout = (float) this->declare_parameter<float>("base_config.cmd_vel_timeout");
 
-        mod_reg::setup_registers_master();
+        mod_reg::setup_registers();
 
         setup_modbus();
 
@@ -222,8 +222,12 @@ private:
 
         read( mod_reg::reg_measured_vel);
 
+        read( mod_reg::reg_otos_pose);
+
 
         RCLCPP_INFO(this->get_logger(), "Measured velocity: x=%f, y=%f, z=%f",  mod_reg::measured_vel->x,  mod_reg::measured_vel->y,  mod_reg::measured_vel->theta);
+        RCLCPP_INFO(this->get_logger(), "Pose: x=%f, y=%f, z=%f",  mod_reg::otos_pose->x,  mod_reg::otos_pose->y,  mod_reg::otos_pose->theta);
+
     }
 
     std::string device_ser_no_;

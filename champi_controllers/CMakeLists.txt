@@ -18,11 +18,10 @@ find_package(tf2_ros REQUIRED)
 find_package(diagnostic_updater REQUIRED)
 find_package(std_msgs REQUIRED)
 
-# Include headers from champi_controllers' include directory
+# Create and configure champi_controllers library
 include_directories(include)
-add_library(champi_controllers SHARED
-  src/ModbusRegister.cpp
-)
+add_library(champi_controllers SHARED src/ModbusRegister.cpp)
+target_compile_definitions(champi_controllers PUBLIC MODBUS_MASTER)
 
 # Add the libmodbus library
 find_library(MODBUS_LIBRARY modbus REQUIRED)
@@ -30,14 +29,14 @@ include_directories(${MODBUS_INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC udev)
 
-add_executable(base_controller_node src/base_controller_node.cpp)
-ament_target_dependencies(base_controller_node rclcpp geometry_msgs champi_libraries_cpp Protobuf nav_msgs tf2 tf2_ros diagnostic_updater)
-
-add_executable(imu_controller_node src/imu_controller_node.cpp)
-ament_target_dependencies(imu_controller_node rclcpp champi_libraries_cpp Protobuf diagnostic_updater sensor_msgs)
-
-add_executable(actuators_controller_node src/actuators_controller_node.cpp)
-ament_target_dependencies(actuators_controller_node rclcpp champi_libraries_cpp Protobuf diagnostic_updater std_msgs)
+# add_executable(base_controller_node src/base_controller_node.cpp)
+# ament_target_dependencies(base_controller_node rclcpp geometry_msgs champi_libraries_cpp Protobuf nav_msgs tf2 tf2_ros diagnostic_updater)
+# 
+# add_executable(imu_controller_node src/imu_controller_node.cpp)
+# ament_target_dependencies(imu_controller_node rclcpp champi_libraries_cpp Protobuf diagnostic_updater sensor_msgs)
+# 
+# add_executable(actuators_controller_node src/actuators_controller_node.cpp)
+# ament_target_dependencies(actuators_controller_node rclcpp champi_libraries_cpp Protobuf diagnostic_updater std_msgs)
 
 add_executable(hardware_interface_node src/hardware_interface_node.cpp)
 ament_target_dependencies(hardware_interface_node rclcpp)
@@ -65,9 +64,6 @@ install(DIRECTORY
 )
 
 install(TARGETS
-        base_controller_node
-        imu_controller_node
-        actuators_controller_node
         hardware_interface_node
         DESTINATION lib/${PROJECT_NAME}
 )

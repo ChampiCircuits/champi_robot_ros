@@ -9,7 +9,7 @@ modbusHandler_t ModbusH;
 
 void ModbusTaskStart()
 {
-    mod_reg::setup_registers_slave();
+    mod_reg::setup_registers();
 
     ModbusH.uModbusType = MB_SLAVE;
     ModbusH.port =  NULL; // &huart1 for UART

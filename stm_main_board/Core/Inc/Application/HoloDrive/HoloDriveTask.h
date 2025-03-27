@@ -3,5 +3,4 @@
 
 void HoloDriveTaskStart();
 
-
 #endif /* INC_APPLICATION_HOLODRIVETASK_H_ */
