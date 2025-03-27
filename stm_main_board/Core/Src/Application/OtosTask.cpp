@@ -4,6 +4,7 @@
 #include "Devices/QwiicOTOS.h"
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
+#include "Util/logging.h"
 
 #include "i2c.h"
 
@@ -25,13 +26,14 @@ void OtosTask(void *argument)
    QwiicOTOS myOtos(&hi2c4, 0x17);
 
     while (!myOtos.isConnected()) {
-//    	printf("otos not connected\n"); // TODO
+        LOG_WARN("otos", "Connecting failed. Retrying...");
         osDelay(1000);
     }
 
     if (!myOtos.selfTest()) {
     	// ERROR WITH OTOS
-        osDelay(1000000000); // TODO better
+        LOG_WARN("otos", "Self-test failed.");
+        osDelay(1000000000); // TODO reset STM ?
     }
     
     myOtos.setAngularScalar(OTOS_ANGULAR_SCALAR);
@@ -45,20 +47,23 @@ void OtosTask(void *argument)
     myOtos.resetTracking();
 		osDelay(10);
     
-    // uint32_t start = osKernelGetTickCount();
+    uint32_t start = osKernelGetTickCount();
+
+    LOG_INFO("otos", "Starting loop.");
 
     while(true)
     {
       Pose2D otosPose = myOtos.getPosition();
+
+      LOG_DEBUG_THROTTLE("otos", 100, "reading: \t%f, \t%f, \t%f", otosPose.x, otosPose.y, otosPose.h);
+
       xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
       *mod_reg::otos_pose = {otosPose.x, otosPose.y, otosPose.h}; // TODO check units
       xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
-      // TODO check freq of otos
-      // https://community.st.com/t5/stm32cubeide-mcus/freertos-cmsis-v2-osdelayuntil-go-to-hardfaulhandler-only-with/td-p/263884
-      // osDelayUntil(start + CONTROL_LOOP_PERIOD_MS); // TODO vérifier que la freq est OK
-      osDelay(10); // TODO substract time taken by the loop
-      // start = osKernelGetTickCount();
+      uint32_t now = osKernelGetTickCount();
+      osDelay(OTOS_LOOP_PERIOD_MS - now + start);
+      start = osKernelGetTickCount();
     }
 }
 

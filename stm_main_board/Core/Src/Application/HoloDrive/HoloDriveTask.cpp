@@ -2,6 +2,7 @@
 #include "Application/HoloDrive/HoloDriveTask.h"
 
 #include "Config/Config.h"
+#include "Util/logging.h"
 #include "Application/HoloDrive/HoloDrive.h"
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
@@ -39,11 +40,14 @@ void HoloDriveTask(void *argument)
     // We wait for the config to be set by the master
     while (!mod_reg::stm_config->is_set) {
         osDelay(100);
+        LOG_WARN_THROTTLE("holo", 10, "Waiting for config...");
     }
 
     holoDrive.set_config(mod_reg::stm_config->holo_drive_config);
 
-//    uint32_t start = osKernelGetTickCount();
+    LOG_INFO("holo", "Config received. Starting loop.");
+
+    uint32_t start = osKernelGetTickCount();
 
     while(true)
     {
@@ -58,10 +62,11 @@ void HoloDriveTask(void *argument)
          *mod_reg::measured_vel = holoDrive.get_current_vel();
         xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
-//      // https://community.st.com/t5/stm32cubeide-mcus/freertos-cmsis-v2-osdelayuntil-go-to-hardfaulhandler-only-with/td-p/263884
-//      osDelayUntil(start + CONTROL_LOOP_PERIOD_MS); // TODO vérifier que la freq est OK
-        osDelay(10); // TODO substract time taken by the loop
-//      start = osKernelGetTickCount();
+        // https://community.st.com/t5/stm32cubeide-mcus/freertos-cmsis-v2-osdelayuntil-go-to-hardfaulhandler-only-with/td-p/263884
+        // osDelayUntil(start + CONTROL_LOOP_PERIOD_MS);
+        uint32_t now = osKernelGetTickCount();
+        osDelay(CONTROL_LOOP_PERIOD_MS - now + start);
+        start = osKernelGetTickCount();
     }
 }
 
