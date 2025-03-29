@@ -12,6 +12,7 @@ find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 
@@ -32,7 +33,6 @@ if(BUILD_TESTING)
 endif()
 
 
-
 # Allow lauch files to be found when calling them with ros2 launch
 install(DIRECTORY
   launch
@@ -48,12 +48,13 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
         scripts/aruco_loc_node.py
         scripts/camera_info_publisher_node.py
+        scripts/bird_view_publisher_node.py
         scripts/cv2_camera_publisher_node.py
         scripts/enemy_tracker_node.py
         scripts/platform_detection_node.py
         scripts/board_platform_detection_node.py
         DESTINATION lib/${PROJECT_NAME}
-)
+) 
 
 # Install C++ executables
 install(TARGETS

@@ -42,8 +42,9 @@ class VisualLocalizationNode(Node):
         super().__init__('visual_loc')
 
         # Parameters
-        self.enable_viz = True
+        self.enable_viz = False
         self.img_viz = None
+        self.enable_brid_view_publish = False
 
         # transformation matrix between base_link and camera using tf2
         self.tf_buffer = tf2_ros.Buffer()
@@ -62,18 +63,6 @@ class VisualLocalizationNode(Node):
         self.pos_cam_in_bird_view_pxls = None
         self.bird_view = None
 
-        # unused
-        # #loard the ground reference image
-        # ref_img_path = get_package_share_directory('champi_vision') + '/ressources/images/ref_img.png'
-        # self.ref_img = self.load_ref_image(ref_img_path)
-
-        # self.borders_offsets = [150, 360]
-
-        # # unused
-        # self.ref_img = cv2.copyMakeBorder(self.ref_img, self.borders_offsets[1], self.borders_offsets[1],
-        #                                   self.borders_offsets[0], self.borders_offsets[0],
-        #                                   cv2.BORDER_CONSTANT, value=[0, 0, 0])
-
         self.aruco_dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         self.aruco_parameters =  cv2.aruco.DetectorParameters()
         self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dictionary, self.aruco_parameters)
@@ -90,17 +79,19 @@ class VisualLocalizationNode(Node):
             '/camera_info',
             self.callback_cam_info,
             10)
-
+        
         # handle image
-        self.subscription = self.create_subscription(
+        self.image_subscriber = self.create_subscription(
             Image,
-            '/image_raw',
+            '/camera/camera/color/image_raw',
             self.image_callback,
             10)
-        self.subscription  # prevent unused variable warning
+        
+        self.image_subscriber  # prevent unused variable warning
 
         # Publisher for the visual localization and the image visualization
         self.pub_odom = self.create_publisher(PoseWithCovarianceStamped, '/pose/visual_loc', 10)
+        self.bird_view_RGB_publisher = self.create_publisher(Image, '/champi_bird_view_RGB', 10)
         self.pub_image = self.create_publisher(Image, '/image_viz', 10)
 
 
@@ -108,7 +99,7 @@ class VisualLocalizationNode(Node):
         if self.latest_img is None:
             return
         
-        # get camera info if not already
+         # get camera info if not already
         if self.camera_info is None:
             self.get_logger().info("waiting for camera info...", once=True)
             return
@@ -122,12 +113,10 @@ class VisualLocalizationNode(Node):
         if self.map1 is None:
             return
 
-
         # ==================================== PREPROCESSING ====================================
-
         # convert to cv2
         cv_image = self.cv_bridge.imgmsg_to_cv2(self.latest_img, 'bgr8')
-        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+       # cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
         # undistort
         cv_image = cv2.remap(cv_image, self.map1, self.map2, interpolation=cv2.INTER_LINEAR)
@@ -138,6 +127,11 @@ class VisualLocalizationNode(Node):
 
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
+        
+        if self.enable_bird_view_publish:
+            self.publish_imageRGB(bird_view_img)
+
+        bird_view_img = cv2.cvtColor(bird_view_img, cv2.COLOR_BGR2GRAY)
         img_viz = bird_view_img.copy()
         cv2.imshow('Image', bird_view_img)
         cv2.waitKey(1)
@@ -220,15 +214,13 @@ class VisualLocalizationNode(Node):
         if self.enable_viz:
 
             # publish image
-            self.publish_image(img_viz)
-
-
+            self.publish_imageMono(img_viz)
 
     def init_bird_view(self):
         transform = None
         try:
             # get transform, which is what we need to wait for
-            transform = self.tf_buffer.lookup_transform('base_link', 'camera',rclpy.time.Time().to_msg()) # todo use camera info
+            transform = self.tf_buffer.lookup_transform('base_link', 'camera_link',rclpy.time.Time().to_msg())
             print('transform received')
             # # unsubscribe from camera info (can't do that in the callback otherwise the nodes crashes) TODO IT MAKES THE NODE CRASH
             # self.subscription_cam_info.destroy()
@@ -263,13 +255,14 @@ class VisualLocalizationNode(Node):
         if self.camera_info is None:
             self.camera_info = msg
 
-
-
     def image_callback(self, msg):
         self.latest_img = msg
 
+    def publish_imageRGB(self, image):
+        image_msg = self.cv_bridge.cv2_to_imgmsg(image, encoding='rgb8')
+        self.bird_view_RGB_publisher.publish(image_msg)
 
-    def publish_image(self, image):
+    def publish_imageMono(self, image):
         image_msg = self.cv_bridge.cv2_to_imgmsg(image, encoding='mono8')
         self.pub_image.publish(image_msg)
 

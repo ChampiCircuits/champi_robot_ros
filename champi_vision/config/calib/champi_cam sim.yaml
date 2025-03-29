@@ -4,14 +4,14 @@ camera_name: mmal_service_16.1
 camera_matrix:
   rows: 3
   cols: 3
-  data: [628.757845,   0.     , 312.063610,
-           0.     , 632.341450 , 248.408798,
+  data: [475.145391,   0.     , 320.981340,
+           0.     , 501.558813 , 226.788808,
            0.     ,   0.     ,   1.     ]
 distortion_model: plumb_bob 
 distortion_coefficients:
   rows: 1
   cols: 5
-  data: [0.159577, -0.207655, 0.002495, -0.006916, 0.000000]
+  data: [-0.001028, -0.000274, 0.000791, 0.001105, 0.000000]
 rectification_matrix:
   rows: 3
   cols: 3
@@ -21,7 +21,7 @@ rectification_matrix:
 projection_matrix:
   rows: 3
   cols: 4
-  data: [648.600624,   0.     , 308.405628,   0.     ,
-           0.     , 655.658295, 249.368195,   0.     ,
+  data: [475.139283,   0.     , 321.801104,   0.     ,
+           0.     , 502.012248, 227.194611,   0.     ,
            0.     ,   0.     ,   1.     ,   0.     ]
 
