@@ -29,17 +29,8 @@ include_directories(${MODBUS_INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC udev)
 
-# add_executable(base_controller_node src/base_controller_node.cpp)
-# ament_target_dependencies(base_controller_node rclcpp geometry_msgs champi_libraries_cpp Protobuf nav_msgs tf2 tf2_ros diagnostic_updater)
-# 
-# add_executable(imu_controller_node src/imu_controller_node.cpp)
-# ament_target_dependencies(imu_controller_node rclcpp champi_libraries_cpp Protobuf diagnostic_updater sensor_msgs)
-# 
-# add_executable(actuators_controller_node src/actuators_controller_node.cpp)
-# ament_target_dependencies(actuators_controller_node rclcpp champi_libraries_cpp Protobuf diagnostic_updater std_msgs)
-
-add_executable(hardware_interface_node src/hw_interface_node.cpp src/hw_core.cpp src/hw_setup.cpp src/hw_loop.cpp)
-ament_target_dependencies(hardware_interface_node rclcpp)
+add_executable(hardware_interface_node src/hw_interface_node.cpp src/hw_core.cpp src/hw_setup.cpp src/hw_events.cpp)
+ament_target_dependencies(hardware_interface_node rclcpp geometry_msgs nav_msgs tf2)
 target_link_libraries(hardware_interface_node champi_controllers ${MODBUS_LIBRARY})
 
 

@@ -55,7 +55,7 @@ WHEEL_L(eft)  WHEEL_R(ight)
 #define OTOS_LINEAR_SCALAR 0.992
 #define OTOS_OFFSET_X 0.0
 #define OTOS_OFFSET_Y 0.0
-#define OTOS_OFFSET_H (-M_PI / 2.0)
+#define OTOS_OFFSET_H (M_PI / 2.0)
 
 // ========================== LOGGING ================================
 

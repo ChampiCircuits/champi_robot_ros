@@ -14,17 +14,16 @@ base_controller_simu:
     imu_vel_yaw_cov: 0.00001
 
 
-
 hardware_interface:
   ros__parameters:
 
     device_ser_no: 3952366C3233
 
     covariances:
-      holo_pose: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
-      pose_tracking: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
-      velocity: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
-      tracking_velocity: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001] # x y z roll pitch yaw
+      pose_wheels: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001] # x y z roll pitch yaw
+      vel_wheels: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      pose_otos: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      vel_otos: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
 
     base_config:
       max_accel_wheel: 10.0 # rotation des roues en rotation/s²
