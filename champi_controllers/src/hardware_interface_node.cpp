@@ -1,17 +1,15 @@
+
 #include <rclcpp/rclcpp.hpp>
 #include <modbus/modbus.h>
+#include <libudev.h>
+#include <boost/asio.hpp> // Compiles without, but makes vscode happy
+
+#include <iostream>
+#include <string>
 #include <vector>
 #include <chrono>
 
 #include <champi_controllers/ModbusRegister.h>
-
-#include <libudev.h>
-#include <iostream>
-
-
-#include <libudev.h>
-#include <iostream>
-#include <string>
 
 std::string findDeviceBySerial(const std::string& targetSerial) {
     struct udev *udev = udev_new();
@@ -157,8 +155,7 @@ private:
     {
         int rc = modbus_write_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         if (rc == -1) {
-
-            RCUTILS_LOG_ERROR("Failed to write data: error num: %d, message: %s", errno, modbus_strerror(errno));
+            RCLCPP_ERROR(this->get_logger(), "Failed to write data: error num: %d, message: %s", errno, modbus_strerror(errno));
         }
         return rc;
     }
@@ -167,7 +164,7 @@ private:
     {
         int rc = modbus_read_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         if (rc == -1) {
-            RCUTILS_LOG_ERROR("Failed to read data: %s", modbus_strerror(errno));
+            RCLCPP_ERROR(this->get_logger(), "Failed to read data: %s", modbus_strerror(errno));
         }
         return rc;
 
@@ -225,8 +222,8 @@ private:
         read( mod_reg::reg_otos_pose);
 
 
-        RCLCPP_INFO(this->get_logger(), "Measured velocity: x=%f, y=%f, z=%f",  mod_reg::measured_vel->x,  mod_reg::measured_vel->y,  mod_reg::measured_vel->theta);
-        RCLCPP_INFO(this->get_logger(), "Pose: x=%f, y=%f, z=%f",  mod_reg::otos_pose->x,  mod_reg::otos_pose->y,  mod_reg::otos_pose->theta);
+//        RCLCPP_INFO(this->get_logger(), "Measured velocity: x=%f, y=%f, z=%f",  mod_reg::measured_vel->x,  mod_reg::measured_vel->y,  mod_reg::measured_vel->theta);
+//        RCLCPP_INFO(this->get_logger(), "Pose: x=%f, y=%f, z=%f",  mod_reg::otos_pose->x,  mod_reg::otos_pose->y,  mod_reg::otos_pose->theta);
 
     }
 

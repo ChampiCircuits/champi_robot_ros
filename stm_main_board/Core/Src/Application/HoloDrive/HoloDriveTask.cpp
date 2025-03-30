@@ -56,6 +56,8 @@ void HoloDriveTask(void *argument)
          holoDrive.set_cmd_vel(cmd);
          xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
+        // TODO cmd vel timeout
+
          holoDrive.spin_once_motors_control();
 
         xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
