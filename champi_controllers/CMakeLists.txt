@@ -21,7 +21,7 @@ find_package(std_msgs REQUIRED)
 # Create and configure champi_controllers library
 include_directories(include)
 add_library(champi_controllers SHARED src/ModbusRegister.cpp)
-target_compile_definitions(champi_controllers PUBLIC MODBUS_MASTER)
+target_compile_definitions(champi_controllers PUBLIC -DMODBUS_MASTER)
 
 # Add the libmodbus library
 find_library(MODBUS_LIBRARY modbus REQUIRED)
@@ -38,7 +38,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC udev)
 # add_executable(actuators_controller_node src/actuators_controller_node.cpp)
 # ament_target_dependencies(actuators_controller_node rclcpp champi_libraries_cpp Protobuf diagnostic_updater std_msgs)
 
-add_executable(hardware_interface_node src/hardware_interface_node.cpp)
+add_executable(hardware_interface_node src/hw_interface_node.cpp src/hw_core.cpp src/hw_setup.cpp src/hw_loop.cpp)
 ament_target_dependencies(hardware_interface_node rclcpp)
 target_link_libraries(hardware_interface_node champi_controllers ${MODBUS_LIBRARY})
 
