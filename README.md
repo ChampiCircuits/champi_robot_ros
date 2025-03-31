@@ -13,38 +13,39 @@
 
 * [marker_helper](champi_libraries_py/champi_libraries_py/marker_helper/README.md)
 
+## Setup
+
+1) Make sure your workspace is `~/champi_ws`. The scripts are hardcoded to this path.
+2) Install dependencies:
+```bash
+~/champi_ws/src/champi_robot_ros/setup/install_deps.sh
+```
+3) Setup the environment (exports, aliases, etc.) by adding one of those line in your `.bashrc` or `.zshrc`:
+```bash
+source ~/champi_ws/src/champi_robot_ros/setup/env/champi_env_dev_pc.sh # on your PC
+# or
+source ~/champi_ws/src/champi_robot_ros/setup/env/champi_env_robot.sh # on the robot 
+```
+
+3) Every time you want to share your internet connection with the robot, run:
+```bash
+share_internet
+```
+
+## Using Clion
+
+When opening the project, a lot of build directories are displayed in the project tree.
+Remove them by un-ticking `clion.workspace.external.source.group.into.folders` in Registry (Search in Shift Shift menu).
+
+
+## Robot
+
+### IPs
+
+* Over Wifi (hotspot): `172.0.0.1`
+* Over direct Ethernet: `10.0.0.1`
 
 ## Commandes
-
-
-### Robot
-#### boot de la rpi
- ./dev/ws_0/src/champi_robot_ros/scripts/bringup-can0.sh
-
-
-### MATCH
-PLUS qu'à lancer :
-python3 /home/andre/dev/coupe/ros_ws/src/champi_robot_ros/champi_brain/scripts/screen_manager.py
-
-
-SINON en séparé :
-
-```bash
-ros2 launch champi_bringup bringup.launch.py sim:=False
-ros2 launch champi_brain brain.launch.py color:=blue
-OU
-ros2 launch champi_brain brain.launch.py color:=yellow
-```
-
-
-### si besoin
-```bash
-. /home/champi/dev/ws_0/src/champi_robot_ros/scripts/kill_nodes.sh
-```
-
-*Paramètres*:
-- *sim* : `true` | `false`.
-- *joy* : `true` | `false`.
 
 ### Teleop
 ```bash
