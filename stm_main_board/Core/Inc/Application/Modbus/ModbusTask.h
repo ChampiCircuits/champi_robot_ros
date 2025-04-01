@@ -5,8 +5,6 @@
 
 extern modbusHandler_t ModbusH;
 
-
 void ModbusTaskStart();
-
 
 #endif /* INC_APPLICATION_MODBUSTASK_H_ */

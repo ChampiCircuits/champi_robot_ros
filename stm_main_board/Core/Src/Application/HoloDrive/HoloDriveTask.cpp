@@ -1,20 +1,19 @@
-#include <Devices/SpeedStepper.h>
 #include "Application/HoloDrive/HoloDriveTask.h"
+#include <Devices/SpeedStepper.h>
 
-#include "Config/Config.h"
-#include "Util/logging.h"
 #include "Application/HoloDrive/HoloDrive.h"
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
+#include "Config/Config.h"
+#include "Util/logging.h"
 
 #include "cmsis_os2.h"
-#include "tim.h"
 #include "semphr.h"
+#include "tim.h"
 
-
-
-// Macro to convert value from # define WHEEL_B_TIMER 3 to htim3 (or any value from 1 to 16)
-#define CONCAT(a, b) a ## b
+// Macro to convert value from # define WHEEL_B_TIMER 3 to htim3 (or any value
+// from 1 to 16)
+#define CONCAT(a, b) a##b
 #define CONCAT2(a, b) CONCAT(a, b)
 
 #define WHEEL_B_TIMER_HANDLE CONCAT2(htim, WHEEL_B_TIMER_NUMBER)
@@ -25,53 +24,54 @@ osThreadId_t holoDriveTaskHandle;
 const osThreadAttr_t holoDriveTask_attributes = {
     .name = "holo_task",
     .stack_size = 1024 * 4,
-    .priority = (osPriority_t) osPriorityNormal,
-  };
+    .priority = (osPriority_t)osPriorityNormal,
+};
 
+void HoloDriveTask(void *argument) {
+  SpeedStepper stepper0(WHEEL_B_TIMER_HANDLE, WHEEL_B_TIMER_CHANNEL,
+                        WHEEL_B_DIR_GPIO_PORT, WHEEL_B_DIR_GPIO_PIN);
+  SpeedStepper stepper1(WHEEL_L_TIMER_HANDLE, WHEEL_L_TIMER_CHANNEL,
+                        WHEEL_L_DIR_GPIO_PORT, WHEEL_L_DIR_GPIO_PIN);
+  SpeedStepper stepper2(WHEEL_R_TIMER_HANDLE, WHEEL_R_TIMER_CHANNEL,
+                        WHEEL_R_DIR_GPIO_PORT, WHEEL_R_DIR_GPIO_PIN);
 
-void HoloDriveTask(void *argument)
-{
-    SpeedStepper stepper0(WHEEL_B_TIMER_HANDLE, WHEEL_B_TIMER_CHANNEL, WHEEL_B_DIR_GPIO_PORT, WHEEL_B_DIR_GPIO_PIN);
-    SpeedStepper stepper1(WHEEL_L_TIMER_HANDLE, WHEEL_L_TIMER_CHANNEL, WHEEL_L_DIR_GPIO_PORT, WHEEL_L_DIR_GPIO_PIN);
-    SpeedStepper stepper2(WHEEL_R_TIMER_HANDLE, WHEEL_R_TIMER_CHANNEL, WHEEL_R_DIR_GPIO_PORT, WHEEL_R_DIR_GPIO_PIN);
+  HoloDrive holoDrive(stepper0, stepper1, stepper2);
 
-    HoloDrive holoDrive(stepper0, stepper1, stepper2);
+  // We wait for the config to be set by the master
+  while (!mod_reg::stm_config->is_set) {
+    osDelay(100);
+    LOG_WARN_THROTTLE("holo", 10, "Waiting for config...");
+  }
 
-    // We wait for the config to be set by the master
-    while (!mod_reg::stm_config->is_set) {
-        osDelay(100);
-        LOG_WARN_THROTTLE("holo", 10, "Waiting for config...");
-    }
+  holoDrive.set_config(mod_reg::stm_config->holo_drive_config);
 
-    holoDrive.set_config(mod_reg::stm_config->holo_drive_config);
+  LOG_INFO("holo", "Config received. Starting loop.");
 
-    LOG_INFO("holo", "Config received. Starting loop.");
+  uint32_t start = osKernelGetTickCount();
 
-    uint32_t start = osKernelGetTickCount();
+  while (true) {
+    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+    Vector3 cmd = *mod_reg::cmd_vel;
+    holoDrive.set_cmd_vel(cmd);
+    xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
-    while(true)
-    {
-        xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-        Vector3 cmd = *mod_reg::cmd_vel;
-         holoDrive.set_cmd_vel(cmd);
-         xSemaphoreGive(ModbusH.ModBusSphrHandle);
+    // TODO cmd vel timeout
 
-        // TODO cmd vel timeout
+    holoDrive.spin_once_motors_control();
 
-         holoDrive.spin_once_motors_control();
+    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+    *mod_reg::measured_vel = holoDrive.get_current_vel();
+    xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
-        xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-         *mod_reg::measured_vel = holoDrive.get_current_vel();
-        xSemaphoreGive(ModbusH.ModBusSphrHandle);
-
-        // https://community.st.com/t5/stm32cubeide-mcus/freertos-cmsis-v2-osdelayuntil-go-to-hardfaulhandler-only-with/td-p/263884
-        // osDelayUntil(start + CONTROL_LOOP_PERIOD_MS);
-        uint32_t now = osKernelGetTickCount();
-        osDelay(CONTROL_LOOP_PERIOD_MS - now + start);
-        start = osKernelGetTickCount();
-    }
+    // https://community.st.com/t5/stm32cubeide-mcus/freertos-cmsis-v2-osdelayuntil-go-to-hardfaulhandler-only-with/td-p/263884
+    // osDelayUntil(start + CONTROL_LOOP_PERIOD_MS);
+    uint32_t now = osKernelGetTickCount();
+    osDelay(CONTROL_LOOP_PERIOD_MS - now + start);
+    start = osKernelGetTickCount();
+  }
 }
 
 void HoloDriveTaskStart() {
-    holoDriveTaskHandle = osThreadNew(HoloDriveTask, NULL, &holoDriveTask_attributes);
+  holoDriveTaskHandle =
+      osThreadNew(HoloDriveTask, NULL, &holoDriveTask_attributes);
 }
