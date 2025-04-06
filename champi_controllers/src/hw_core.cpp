@@ -36,7 +36,10 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
 
     mod_reg::setup_registers();
 
-    setup_modbus();
+    while (setup_modbus() != 0) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to setup modbus, retrying...");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 
     setup_stm();
 
@@ -139,6 +142,11 @@ void HardwareInterfaceNode::loop() {
     read( mod_reg::reg_measured_vel);
     read( mod_reg::reg_otos_pose);
 
+    if (errno == 5) {
+        RCLCPP_WARN(this->get_logger(), "Connection lost. Setting up modbus again...");
+        reconnect();
+    }
+
     pub_odom_wheels_->publish(make_odom_wheels(*mod_reg::measured_vel, dt));
     pub_odom_otos_->publish(make_odom_otos(*mod_reg::otos_pose, dt));
 
@@ -147,15 +155,18 @@ void HardwareInterfaceNode::loop() {
 }
 
 
-int HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
+
+
+int HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) {
     int rc = modbus_write_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
     if (rc == -1) {
         RCLCPP_ERROR(this->get_logger(), "Failed to write data: error num: %d, message: %s", errno, modbus_strerror(errno));
     }
+
     return rc;
 }
 
-int HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
+int HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) {
     int rc = modbus_read_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
     if (rc == -1) {
         RCLCPP_ERROR(this->get_logger(), "Failed to read data: %s", modbus_strerror(errno));

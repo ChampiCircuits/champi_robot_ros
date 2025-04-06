@@ -40,15 +40,15 @@ public:
     ~HardwareInterfaceNode() override;
 
 private:
-    
-    void setup_modbus();
+    int setup_modbus();
+    void reconnect();
 
     void write_config();
     void read_config();
     void setup_stm();
 
-    int write( mod_reg::register_metadata &reg_meta) const;
-    int read( mod_reg::register_metadata &reg_meta) const;
+    int write( mod_reg::register_metadata &reg_meta);
+    int read( mod_reg::register_metadata &reg_meta);
     void loop();
 
     void twist_callback(geometry_msgs::msg::Twist::SharedPtr msg);

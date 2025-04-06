@@ -55,7 +55,17 @@ std::string findDeviceBySerial(const std::string& targetSerial) {
     return "";
 }
 
-void HardwareInterfaceNode::setup_modbus()
+void HardwareInterfaceNode::reconnect() {
+    modbus_close(mb_);
+    modbus_free(mb_);
+    while (setup_modbus() != 0) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to setup modbus, retrying...");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    setup_stm();
+}
+
+int HardwareInterfaceNode::setup_modbus()
 {
 
     std::string device_path = findDeviceBySerial(device_ser_no_);
@@ -63,26 +73,25 @@ void HardwareInterfaceNode::setup_modbus()
     mb_ = modbus_new_rtu(device_path.c_str(), baud_rate_, 'N', 8, 1);
     if (!mb_) {
         RCLCPP_FATAL(this->get_logger(), "Failed to create Modbus RTU context");
-        rclcpp::shutdown();
-        return;
+        return -1;
     }
 
     if (modbus_connect(mb_) == -1) {
         RCLCPP_FATAL(this->get_logger(), "Connection to Modbus RTU device failed: %s", modbus_strerror(errno));
         modbus_free(mb_);
-        rclcpp::shutdown();
-        return;
+        return -1;
     }
 
     if (modbus_set_slave(mb_, slave_id_) == -1) {
         RCLCPP_FATAL(this->get_logger(), "Failed to set Modbus slave ID: %s", modbus_strerror(errno));
         modbus_close(mb_);
         modbus_free(mb_);
-        rclcpp::shutdown();
-        return;
+        return -1;
     }
 
     RCLCPP_INFO(this->get_logger(), "Modbus RTU connection established with device: %s", device_path.c_str());
+
+    return 0;
 
     // default timeout is 0.5s
     // uint32_t old_response_to_sec;
@@ -95,23 +104,16 @@ void HardwareInterfaceNode::write_config()
 {
     *mod_reg::stm_config = stm_config_;
     mod_reg::stm_config->is_set = true;
-    int result = write(mod_reg::reg_stm_config);
-    if (result == -1) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to write STM config: %s", modbus_strerror(errno));
-    }
-
-
+    write(mod_reg::reg_stm_config);
 }
 
 void HardwareInterfaceNode::read_config()
 {
     int result = read( mod_reg::reg_stm_config);
     if (result == -1) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to read STM config: %s", modbus_strerror(errno));
         return;
     }
     stm_config_ = *mod_reg::stm_config;
-    // TODO check if the read config is the same as the written one
 }
 
 void HardwareInterfaceNode::setup_stm()
