@@ -41,14 +41,16 @@ int get_index_max(const double *arr) {
   }
 }
 
-HoloDrive::HoloDrive(const SpeedStepper &stepper0, const SpeedStepper &stepper1,
-                     const SpeedStepper &stepper2) {
-  this->steppers[0] = stepper0;
-  this->steppers[1] = stepper1;
-  this->steppers[2] = stepper2;
+HoloDrive::HoloDrive(const SpeedStepper &stepper_left, const SpeedStepper &stepper_right,
+                     const SpeedStepper &stepper_back) {
+  this->steppers[0] = stepper_left;
+  this->steppers[1] = stepper_right;
+  this->steppers[2] = stepper_back;
   this->current_wheels_speeds_rps[0] = 0;
   this->current_wheels_speeds_rps[1] = 0;
   this->current_wheels_speeds_rps[2] = 0;
+
+  this->current_vel = {0, 0, 0};
 
   this->has_config = false;
 }
@@ -58,12 +60,12 @@ HoloDrive::HoloDrive() = default;
 void HoloDrive::set_cmd_vel(Vector3 cmd) { this->cmd_vel = cmd; }
 
 void HoloDrive::compute_wheels_speeds(Vector3 cmd, double *ret_speeds_rps) {
-  double wheel0_mps = 0.5 * this->cmd_vel.y + SQRT_3_OVER_2 * this->cmd_vel.x +
+  double wheel0_mps = - 0.5 * this->cmd_vel.y + SQRT_3_OVER_2 * this->cmd_vel.x -
                       this->config_.base_radius * this->cmd_vel.theta;
-  double wheel1_mps = 0.5 * this->cmd_vel.y - SQRT_3_OVER_2 * this->cmd_vel.x +
+  double wheel1_mps = - 0.5 * this->cmd_vel.y - SQRT_3_OVER_2 * this->cmd_vel.x -
                       this->config_.base_radius * this->cmd_vel.theta;
   double wheel2_mps =
-      -this->cmd_vel.y + this->config_.base_radius * this->cmd_vel.theta;
+      this->cmd_vel.y - this->config_.base_radius * this->cmd_vel.theta;
   // wheel mps -> wheel rps
   double wheel_circumference = this->config_.wheel_radius * 2.0 * PI;
   ret_speeds_rps[0] = wheel0_mps / wheel_circumference;
@@ -144,8 +146,8 @@ void HoloDrive::update_current_vel(const double *speeds_rps) {
 
   this->current_vel.x = SQRT_3_OVER_3 * (wheel0_mps - wheel1_mps);
   this->current_vel.y =
-      (1. / 3.) * (wheel0_mps + wheel1_mps) - (2. / 3.) * wheel2_mps;
-  this->current_vel.theta = (1. / (3. * config_.base_radius)) *
+      - (1. / 3.) * (wheel0_mps + wheel1_mps) + (2. / 3.) * wheel2_mps;
+  this->current_vel.theta = - (1. / (3. * config_.base_radius)) *
                             (wheel0_mps + wheel1_mps + wheel2_mps);
 }
 

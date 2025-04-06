@@ -9,6 +9,11 @@ from geometry_msgs.msg import Twist, TwistStamped
 from rclpy.executors import ExternalShutdownException
 
 
+INDICE_AXIS_X = 1
+INDICE_AXIS_Y = 0
+INDICE_AXIS_R = 2
+
+
 class HoloTeleopJoy(Node):
 
     def __init__(self):
@@ -32,23 +37,14 @@ class HoloTeleopJoy(Node):
         self.max_linear_speed = 0.1  # m/s
         self.max_angular_speed = 0.6  # rad/s
 
-        self.id_steering = None # it changes between my 2 PCs :( 2 or 3 -> we check which one is at 0 at startup
-        # (the other one is the trigger so it's non-zero when not pressed)
-
     def listener_callback(self, msg):
         self.latest_msg = msg
-
-        if self.id_steering is None:
-            if(msg.axes[2] == 0):
-                self.id_steering = 2
-            else:
-                self.id_steering = 3
 
     def timer_callback(self):
         if self.latest_msg is None:
             return
 
-        if self.latest_msg.axes[0] != 0 or self.latest_msg.axes[1] != 0 or self.latest_msg.axes[self.id_steering] != 0:
+        if self.latest_msg.axes[INDICE_AXIS_Y] != 0 or self.latest_msg.axes[INDICE_AXIS_X] != 0 or self.latest_msg.axes[INDICE_AXIS_R] != 0:
             self.t_latest_nonzero = self.get_clock().now()
 
         if self.t_latest_nonzero is None:
@@ -63,9 +59,9 @@ class HoloTeleopJoy(Node):
 
     def joy_to_twist(self, joy_msg):
         twist = Twist()
-        twist.linear.x = joy_msg.axes[1] * self.max_linear_speed
-        twist.linear.y = joy_msg.axes[0] * self.max_linear_speed
-        twist.angular.z = joy_msg.axes[self.id_steering] * self.max_angular_speed
+        twist.linear.x = joy_msg.axes[INDICE_AXIS_X] * self.max_linear_speed
+        twist.linear.y = joy_msg.axes[INDICE_AXIS_Y] * self.max_linear_speed
+        twist.angular.z = joy_msg.axes[INDICE_AXIS_R] * self.max_angular_speed
 
         return twist
 

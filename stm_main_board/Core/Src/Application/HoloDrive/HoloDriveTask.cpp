@@ -28,14 +28,14 @@ const osThreadAttr_t holoDriveTask_attributes = {
 };
 
 void HoloDriveTask(void *argument) {
-  SpeedStepper stepper0(WHEEL_B_TIMER_HANDLE, WHEEL_B_TIMER_CHANNEL,
+  SpeedStepper stepper_back(WHEEL_B_TIMER_HANDLE, WHEEL_B_TIMER_CHANNEL,
                         WHEEL_B_DIR_GPIO_PORT, WHEEL_B_DIR_GPIO_PIN);
-  SpeedStepper stepper1(WHEEL_L_TIMER_HANDLE, WHEEL_L_TIMER_CHANNEL,
+  SpeedStepper stepper_left(WHEEL_L_TIMER_HANDLE, WHEEL_L_TIMER_CHANNEL,
                         WHEEL_L_DIR_GPIO_PORT, WHEEL_L_DIR_GPIO_PIN);
-  SpeedStepper stepper2(WHEEL_R_TIMER_HANDLE, WHEEL_R_TIMER_CHANNEL,
+  SpeedStepper stepper_right(WHEEL_R_TIMER_HANDLE, WHEEL_R_TIMER_CHANNEL,
                         WHEEL_R_DIR_GPIO_PORT, WHEEL_R_DIR_GPIO_PIN);
 
-  HoloDrive holoDrive(stepper0, stepper1, stepper2);
+  HoloDrive holoDrive(stepper_left, stepper_right, stepper_back);
 
   // We wait for the config to be set by the master
   while (!mod_reg::stm_config->is_set) {

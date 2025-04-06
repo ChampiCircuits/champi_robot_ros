@@ -10,7 +10,7 @@
 class HoloDrive {
 public:
     HoloDrive();
-    HoloDrive(const SpeedStepper& stepper0, const SpeedStepper& stepper1, const SpeedStepper& stepper2);
+    HoloDrive(const SpeedStepper& stepper_left, const SpeedStepper& stepper_right, const SpeedStepper& stepper_back);
     virtual ~HoloDrive();
     void set_config(HoloDriveConfig config);
     bool is_configured();
@@ -25,7 +25,7 @@ private:
     SpeedStepper steppers[3];
     Vector3 cmd_vel{};
     double current_wheels_speeds_rps[3]{};
-    Vector3 current_vel;
+    Vector3 current_vel{};
 
     /*
      * max_accel_per_cycle, en rotation par seconde par cycle, est la vitesse maximale autorisée
