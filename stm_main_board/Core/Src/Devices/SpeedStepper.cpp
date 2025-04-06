@@ -1,4 +1,5 @@
 #include <Devices/SpeedStepper.h>
+#include "Config/Config.h"
 
 SpeedStepper::SpeedStepper() = default;
 
@@ -16,15 +17,24 @@ SpeedStepper::SpeedStepper(TIM_HandleTypeDef tim_handle_step,
   this->current_dir = 0;
   this->stopped = true;
 
-  this->timer_input_hz = HAL_RCC_GetPCLK1Freq(); // TODO check that it works.
+  this->timer_input_hz = STEPPER_TIMERS_INPUT_FREQ_HZ;
   // NOTE: There is also a function HAL_RCC_GetPCLK2Freq() for some timers. But
   // they usually have the same frequency.
 }
 
 void SpeedStepper::PWM_set_high_duration(TIM_TypeDef *timx, int us) const {
-  timx->CCR1 = us * this->timer_input_hz /
+  uint16_t ccrx = us * this->timer_input_hz /
                ((timx->PSC + 1) *
-                1000000); // TODO I'm not sure the calculation is correct!
+                1000000);
+  switch(this->tim_channel) {
+    case TIM_CHANNEL_1: timx->CCR1 = ccrx; break;
+    case TIM_CHANNEL_2: timx->CCR2 = ccrx; break;
+    case TIM_CHANNEL_3: timx->CCR3 = ccrx; break;
+    case TIM_CHANNEL_4: timx->CCR4 = ccrx; break;
+    case TIM_CHANNEL_5: timx->CCR5 = ccrx; break;
+    case TIM_CHANNEL_6: timx->CCR6 = ccrx; break;
+    default:;
+    }
 }
 
 void SpeedStepper::PWM_set_freq(TIM_TypeDef *timx, int hz) const {

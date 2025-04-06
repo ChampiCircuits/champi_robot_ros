@@ -84,12 +84,10 @@ void HardwareInterfaceNode::setup_modbus()
 
     RCLCPP_INFO(this->get_logger(), "Modbus RTU connection established with device: %s", device_path.c_str());
 
+    // default timeout is 0.5s
     // uint32_t old_response_to_sec;
     // uint32_t old_response_to_usec;
-
-    /* Save original timeout */
     // modbus_get_response_timeout(mb_, &old_response_to_sec, &old_response_to_usec);
-
     // RCUTILS_LOG_INFO("Old response timeout: %d sec %d usec", old_response_to_sec, old_response_to_usec);
 }
 
@@ -125,6 +123,5 @@ void HardwareInterfaceNode::setup_stm()
         rclcpp::sleep_for(std::chrono::seconds(1));
     }
     while (!stm_config_.is_set);
-    std::cout << stm_config_.is_set << std::endl;
     RCLCPP_INFO(this->get_logger(), "STM configured successfully");
 }
