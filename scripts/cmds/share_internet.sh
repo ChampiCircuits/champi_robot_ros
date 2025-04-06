@@ -4,7 +4,7 @@ IP_ETH="10.0.0.1"
 IP_WIFI="172.0.0.1"
 
 if ping -c 1 -W 0.2 $IP_WIFI >> /dev/null; then
-    ROBOT_IP=$IP_ETH
+    ROBOT_IP=$IP_WIFI
 elif ping -c 1 -W 0.2 $IP_ETH >> /dev/null; then
     ROBOT_IP=$IP_ETH
 else
@@ -33,10 +33,9 @@ sudo iptables -A FORWARD -i $LOCAL_IFACE_ROBOT -o $LOCAL_IFACE_INTERNET -j ACCEP
 #iptables -L -n -v
 #iptables -L -n -v -t nat
 
-
 IP_IFACE_ROBOT=$(ip route get $ROBOT_IP | grep -o "dev.*" | awk '{print $4}')
 
-cmd="sudo ip route del default; sudo ip route add default via $IP_IFACE_ROBOT; ip route"
+cmd="sudo ip route del default; sudo ip route add default via $IP_IFACE_ROBOT; ip route; sudo resolvectl dns wlp1s0 8.8.8.8; sudo resolvectl dns enp2s0 8.8.8.8"
 
 echo "Executing through ssh: $cmd"
 ssh -t champi@$ROBOT_IP "$cmd && echo Sharing set up. || echo Sharing set up failed."
