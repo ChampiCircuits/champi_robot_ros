@@ -41,8 +41,8 @@
   <joint name="base_to_camera" type="fixed">
     <parent link="base_link"/>
     <child link="camera_link"/>
-    <!-- <origin xyz="0.15 0. 0.31" rpy="-2.20 0.0 -1.57079632679"/> NEW TRANFORMATION ANGLE = 35deg -->
-    <origin xyz="0.15 0. 0.31" rpy="-2.35 0.0 -1.57079632679"/>  <!-- TRANFORMATION ANGLE = 40 deg-->
+    <origin xyz="0.15 0. 0.31" rpy="-2.20 0.0 -1.57079632679"/> <!--NEW TRANFORMATION ANGLE = 35deg -->
+    <!-- <origin xyz="0.15 0. 0.31" rpy="-2.35 0.0 -1.57079632679"/>  TRANFORMATION ANGLE = 40 deg -->
     <!-- <origin xyz="0.15 0 0.3" rpy="0.78539816339 3.14159265359 1.57079632679"/>--> <!-- old TRANFORMATION -->
     <!-- xyz = roll pitch yaw -->
   </joint>

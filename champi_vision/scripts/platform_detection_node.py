@@ -3,6 +3,7 @@ import rclpy
 import tf2_ros
 import tf2_geometry_msgs
 from rclpy.node import Node
+import time
 
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
@@ -12,6 +13,7 @@ from sensor_msgs_py.point_cloud2 import read_points, create_cloud_xyz32
 
 from std_msgs.msg import Bool
 from std_msgs.msg import Header
+
 #from skimage.filters import threshold_sauvola
 
 import cv2
@@ -36,7 +38,7 @@ class PlatformDetection(Node):
 
         self.cv_bridge = CvBridge()
 
-        #self.publisher_platform = self.create_publisher(Bool, 'platform_detection', 10)
+        self.publisher_platform = self.create_publisher(Bool, 'platform_detection', 10)
 
         self.subscription_camera = self.create_subscription(
             Image,
@@ -45,7 +47,6 @@ class PlatformDetection(Node):
             10)
         
         self.champi_camera_info = None
-
         # TODO: code plateforme state from the plateforme detected and the position of the robot
         self.plateforme_state = [False, False, False, False, False, False, False, False, False, False]
 
@@ -64,6 +65,7 @@ class PlatformDetection(Node):
         self.transform = None
         self.plateformHeight = 0.10
         self.interval_plateformHeight = [0.01, 0.03]
+        # self.interval_plateformHeight = [0.10, 0.10]
 
         self.champi_pointcloud = None
         self.isPointCloudPublished = False
@@ -124,10 +126,11 @@ class PlatformDetection(Node):
         # self.upper_bound = np.array([15, 255, 255])
 
         # ==================================== DEBUG ====================================
-        self.show_keypoint = True
+        self.show_keypoint = False
         self.show_histogram = False
-        self.show_edges = True
+        self.show_edges = False
         self.show_mask = False
+        self.debug = False
 
 
     def timer_callback(self):
@@ -140,8 +143,12 @@ class PlatformDetection(Node):
                # convert to cv2
         cv_image = self.cv_bridge.imgmsg_to_cv2(self.latest_img, 'bgr8')
         new_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-
+        
         self.platform_detected = self.detectArucoOnPillars(new_image) and self.isPlaneDetected
+        msg = Bool()
+        msg.data = self.platform_detected
+        self.publisher_platform.publish(msg)
+
         return
     
         # ==================================== PREPROCESSING WITH BIRD VIEW ====================================
@@ -245,7 +252,8 @@ class PlatformDetection(Node):
         # cv2.waitKey(1)
         markerCorners, _, _ = self.aruco_detector.detectMarkers(new_image)
 
-        print("nrb markers:", len(markerCorners))
+        if self.debug:
+            print("nrb markers:", len(markerCorners))
         if len(markerCorners) >= self.miniArucoToDetect:
             return True
         else:
@@ -255,18 +263,18 @@ class PlatformDetection(Node):
         self.latest_img = msg
 
     def champi_pointcloud_callback(self, msg):
-
         if self.transform is None:
             return
-
         # Read structured point cloud data
-        structured_points = np.array(list(read_points(msg, field_names=("x", "y", "z"), skip_nans=True)))
+        
+        structured_points = np.array(read_points(msg, field_names=("x", "y", "z"), skip_nans=True))
 
         if structured_points.size == 0:
             self.get_logger().warn("Received empty point cloud.")
             return
 
         # ====================================TRANSFORM POINT CLOUD TO BASE LINK ====================================
+
         # Convert to numpy array
         points = np.vstack([structured_points['x'], structured_points['y'], structured_points['z']]).T
 
@@ -283,19 +291,25 @@ class PlatformDetection(Node):
 
         # Step 3: Convert back to (N,3) by removing the homogeneous coordinate
         transformed_points = transformed_points_homogeneous[:, :3]
+
+
        # new_points = points @ self.transform
         #points = np.array(list(read_points(msg, field_names=("x", "y", "z"), skip_nans=True)))
 
         # ==================================== FILTER POINT CLOUD ====================================
+ 
         self.champi_pointcloud = []
         for point in transformed_points:
             x, y, z = point
             if (self.plateformHeight - self.interval_plateformHeight[0]) < z < (self.plateformHeight + self.interval_plateformHeight[1]):
                 self.champi_pointcloud.append(point)
 
+
         #self.champi_pointcloud = transformed_points
 
         # Detect planes
+        #get execution time
+
         self.isPlaneDetected = self.detect_plane(self.champi_pointcloud)
 
     # ==================================== INIT TRANSFORM FUNCTION POINT CLOUD FROM BASE LINK TO CAMERA ====================================
@@ -378,7 +392,8 @@ class PlatformDetection(Node):
                                 ransac_n=3,
                                 num_iterations=1000,
                                 min_points=2000)
-        print(f"Detected {len(planes)} planes.")
+        if self.debug:
+            print(f"Detected {len(planes)} planes.")
         if len(planes) == 0:
             return False
         else:
