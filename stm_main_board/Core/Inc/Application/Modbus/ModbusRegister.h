@@ -21,20 +21,21 @@ struct register_metadata {
 
 extern uint16_t registers[REGISTERS_SIZE];
 
+using namespace com_types;
+
 // EDIT HERE BEGIN
 
 // Declare pointers to structures of data we want to send/receive
-extern Vector3 *cmd_vel;
-extern Vector3 *measured_vel;
-extern Vector3 *otos_pose;
-extern StmConfig *stm_config;
+
+extern Config *config;
+extern State *state;
+extern Cmd *cmd;
 
 #ifdef MODBUS_MASTER
 // Metadata to gather info needed to read/write the data (for master only)
-extern register_metadata reg_cmd_vel;
-extern register_metadata reg_measured_vel;
-extern register_metadata reg_otos_pose;
-extern register_metadata reg_stm_config;
+extern register_metadata reg_config;
+extern register_metadata reg_state;
+extern register_metadata reg_cmd;
 
 // EDIT HERE END
 

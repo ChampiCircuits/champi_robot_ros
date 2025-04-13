@@ -102,18 +102,18 @@ int HardwareInterfaceNode::setup_modbus()
 
 void HardwareInterfaceNode::write_config()
 {
-    *mod_reg::stm_config = stm_config_;
-    mod_reg::stm_config->is_set = true;
-    write(mod_reg::reg_stm_config);
+    *mod_reg::config = stm_config_;
+    mod_reg::config->is_set = true;
+    write(mod_reg::reg_config);
 }
 
 void HardwareInterfaceNode::read_config()
 {
-    int result = read( mod_reg::reg_stm_config);
+    int result = read( mod_reg::reg_config);
     if (result == -1) {
         return;
     }
-    stm_config_ = *mod_reg::stm_config;
+    stm_config_ = *mod_reg::config;
 }
 
 void HardwareInterfaceNode::setup_stm()

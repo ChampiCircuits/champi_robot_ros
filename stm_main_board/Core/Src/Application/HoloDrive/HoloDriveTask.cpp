@@ -29,21 +29,21 @@ const osThreadAttr_t holoDriveTask_attributes = {
 
 void HoloDriveTask(void *argument) {
   SpeedStepper stepper_back(WHEEL_B_TIMER_HANDLE, WHEEL_B_TIMER_CHANNEL,
-                        WHEEL_B_DIR_GPIO_PORT, WHEEL_B_DIR_GPIO_PIN);
+                            WHEEL_B_DIR_GPIO_PORT, WHEEL_B_DIR_GPIO_PIN);
   SpeedStepper stepper_left(WHEEL_L_TIMER_HANDLE, WHEEL_L_TIMER_CHANNEL,
-                        WHEEL_L_DIR_GPIO_PORT, WHEEL_L_DIR_GPIO_PIN);
+                            WHEEL_L_DIR_GPIO_PORT, WHEEL_L_DIR_GPIO_PIN);
   SpeedStepper stepper_right(WHEEL_R_TIMER_HANDLE, WHEEL_R_TIMER_CHANNEL,
-                        WHEEL_R_DIR_GPIO_PORT, WHEEL_R_DIR_GPIO_PIN);
+                             WHEEL_R_DIR_GPIO_PORT, WHEEL_R_DIR_GPIO_PIN);
 
   HoloDrive holoDrive(stepper_left, stepper_right, stepper_back);
 
   // We wait for the config to be set by the master
-  while (!mod_reg::stm_config->is_set) {
+  while (!mod_reg::config->is_set) {
     osDelay(100);
     LOG_WARN_THROTTLE("holo", 10, "Waiting for config...");
   }
 
-  holoDrive.set_config(mod_reg::stm_config->holo_drive_config);
+  holoDrive.set_config(mod_reg::config->holo_drive_config);
 
   LOG_INFO("holo", "Config received. Starting loop.");
 
@@ -51,7 +51,7 @@ void HoloDriveTask(void *argument) {
 
   while (true) {
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-    Vector3 cmd = *mod_reg::cmd_vel;
+    com_types::Vector3 cmd = mod_reg::cmd->cmd_vel;
     holoDrive.set_cmd_vel(cmd);
     xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
@@ -60,7 +60,7 @@ void HoloDriveTask(void *argument) {
     holoDrive.spin_once_motors_control();
 
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-    *mod_reg::measured_vel = holoDrive.get_current_vel();
+    mod_reg::state->measured_vel = holoDrive.get_current_vel();
     xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
     // https://community.st.com/t5/stm32cubeide-mcus/freertos-cmsis-v2-osdelayuntil-go-to-hardfaulhandler-only-with/td-p/263884

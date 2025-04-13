@@ -13,6 +13,8 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
+using namespace com_types;
+
 class PoseIntegrator {
 public:
     PoseIntegrator() : pose_{0, 0, 0} {}
@@ -47,14 +49,14 @@ private:
     void read_config();
     void setup_stm();
 
-    int write( mod_reg::register_metadata &reg_meta);
-    int read( mod_reg::register_metadata &reg_meta);
+    int write( mod_reg::register_metadata &reg_meta) const;
+    int read( mod_reg::register_metadata &reg_meta) const;
     void loop();
 
     void twist_callback(geometry_msgs::msg::Twist::SharedPtr msg);
 
     nav_msgs::msg::Odometry make_odom_wheels(const Vector3 &vel, double dt);
-    nav_msgs::msg::Odometry make_odom_otos(const Vector3 &pose, double dt);
+    nav_msgs::msg::Odometry make_odom_otos(const Vector3 &pose, double dt) const;
 
     std::string device_ser_no_;
     int baud_rate_;
@@ -62,7 +64,7 @@ private:
     modbus_t *mb_{nullptr};
     rclcpp::TimerBase::SharedPtr timer_;
 
-    StmConfig stm_config_{};
+    Config stm_config_{};
 
     geometry_msgs::msg::Twist::SharedPtr latest_twist_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscriber_twist_;

@@ -107,11 +107,21 @@ nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_wheels(const Vector3 &v
         this->now());
 }
 
-nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_otos(const Vector3 &pose, const double dt) {
-    Vector3 vel;
-    vel.x = (pose.x - mod_reg::otos_pose->x) / dt;
-    vel.y = (pose.y - mod_reg::otos_pose->y) / dt;
-    vel.theta = (pose.theta - mod_reg::otos_pose->theta) / dt;
+nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_otos(const Vector3 &pose, const double dt) const {
+
+    static Vector3 prev_pose = {0, 0, 0};
+    static bool first_time = true;
+
+    Vector3 vel = {0, 0, 0};
+    if (first_time) {
+        prev_pose = pose;
+        first_time = false;
+    }
+    else {
+        vel.x = (pose.x - prev_pose.x) / dt;
+        vel.y = (pose.y - prev_pose.y) / dt;
+        vel.theta = (pose.theta - prev_pose.theta) / dt;
+    }
 
     return make_odom(
         pose,
@@ -134,30 +144,34 @@ void HardwareInterfaceNode::loop() {
     auto dt = (this->now() - last_time).seconds();
     last_time = this->now();
 
-    mod_reg::cmd_vel->x = latest_twist_->linear.x;
-    mod_reg::cmd_vel->y = latest_twist_->linear.y;
-    mod_reg::cmd_vel->theta = latest_twist_->angular.z;
+    // Read
 
-    write( mod_reg::reg_cmd_vel);
-    read( mod_reg::reg_measured_vel);
-    read( mod_reg::reg_otos_pose);
-
-    if (errno == 5) {
+    read(mod_reg::reg_state);
+    if (errno == 5) { // Happens when we upload new firmware to the STM32
         RCLCPP_WARN(this->get_logger(), "Connection lost. Setting up modbus again...");
         reconnect();
     }
 
-    pub_odom_wheels_->publish(make_odom_wheels(*mod_reg::measured_vel, dt));
-    pub_odom_otos_->publish(make_odom_otos(*mod_reg::otos_pose, dt));
+    pub_odom_wheels_->publish(make_odom_wheels(mod_reg::state->measured_vel, dt));
+    pub_odom_otos_->publish(make_odom_otos(mod_reg::state->otos_pose, dt));
 
     // RCLCPP_INFO(this->get_logger(), "Measured velocity: x=%f, y=%f, z=%f",  mod_reg::measured_vel->x,  mod_reg::measured_vel->y,  mod_reg::measured_vel->theta);
     // RCLCPP_INFO(this->get_logger(), "Pose: x=%f, y=%f, z=%f",  mod_reg::otos_pose->x,  mod_reg::otos_pose->y,  mod_reg::otos_pose->theta);
+
+    // Write
+
+    mod_reg::cmd->cmd_vel.x = latest_twist_->linear.x;
+    mod_reg::cmd->cmd_vel.y = latest_twist_->linear.y;
+    mod_reg::cmd->cmd_vel.theta = latest_twist_->angular.z;
+
+    write(mod_reg::reg_cmd);
+    if (errno == 5) { // Happens when we upload new firmware to the STM32
+        RCLCPP_WARN(this->get_logger(), "Connection lost. Setting up modbus again...");
+        reconnect();
+    }
 }
 
-
-
-
-int HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) {
+int HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
     int rc = modbus_write_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
     if (rc == -1) {
         RCLCPP_ERROR(this->get_logger(), "Failed to write data: error num: %d, message: %s", errno, modbus_strerror(errno));
@@ -166,7 +180,7 @@ int HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) {
     return rc;
 }
 
-int HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) {
+int HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
     int rc = modbus_read_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
     if (rc == -1) {
         RCLCPP_ERROR(this->get_logger(), "Failed to read data: %s", modbus_strerror(errno));

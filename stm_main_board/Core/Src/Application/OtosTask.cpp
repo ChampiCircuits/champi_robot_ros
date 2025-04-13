@@ -54,8 +54,8 @@ void OtosTask(void *argument) {
                        otosPose.y, otosPose.h);
 
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-    *mod_reg::otos_pose = {otosPose.x, otosPose.y,
-                           otosPose.h}; // TODO check units
+    mod_reg::state->otos_pose = {otosPose.x, otosPose.y,
+                                 otosPose.h}; // TODO check units
     xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
     uint32_t now = osKernelGetTickCount();

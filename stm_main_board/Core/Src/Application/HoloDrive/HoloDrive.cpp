@@ -41,7 +41,8 @@ int get_index_max(const double *arr) {
   }
 }
 
-HoloDrive::HoloDrive(const SpeedStepper &stepper_left, const SpeedStepper &stepper_right,
+HoloDrive::HoloDrive(const SpeedStepper &stepper_left,
+                     const SpeedStepper &stepper_right,
                      const SpeedStepper &stepper_back) {
   this->steppers[0] = stepper_left;
   this->steppers[1] = stepper_right;
@@ -57,12 +58,13 @@ HoloDrive::HoloDrive(const SpeedStepper &stepper_left, const SpeedStepper &stepp
 
 HoloDrive::HoloDrive() = default;
 
-void HoloDrive::set_cmd_vel(Vector3 cmd) { this->cmd_vel = cmd; }
+void HoloDrive::set_cmd_vel(com_types::Vector3 cmd) { this->cmd_vel = cmd; }
 
-void HoloDrive::compute_wheels_speeds(Vector3 cmd, double *ret_speeds_rps) {
-  double wheel0_mps = - 0.5 * this->cmd_vel.y + SQRT_3_OVER_2 * this->cmd_vel.x -
+void HoloDrive::compute_wheels_speeds(com_types::Vector3 cmd,
+                                      double *ret_speeds_rps) {
+  double wheel0_mps = -0.5 * this->cmd_vel.y + SQRT_3_OVER_2 * this->cmd_vel.x -
                       this->config_.base_radius * this->cmd_vel.theta;
-  double wheel1_mps = - 0.5 * this->cmd_vel.y - SQRT_3_OVER_2 * this->cmd_vel.x -
+  double wheel1_mps = -0.5 * this->cmd_vel.y - SQRT_3_OVER_2 * this->cmd_vel.x -
                       this->config_.base_radius * this->cmd_vel.theta;
   double wheel2_mps =
       this->cmd_vel.y - this->config_.base_radius * this->cmd_vel.theta;
@@ -87,7 +89,7 @@ void HoloDrive::spin_once_motors_control() {
                      (double)CONTROL_LOOP_FREQ_HZ; // max accel per cycle
 
   // Get cmd vel limited
-  Vector3 cmd_vel_limited = this->compute_limited_speed();
+  com_types::Vector3 cmd_vel_limited = this->compute_limited_speed();
 
   // compare current_vel and cmd_vel wheels speeds to check the required
   // acceleration to transition directly from current to command
@@ -136,7 +138,7 @@ void HoloDrive::spin_once_motors_control() {
   update_current_vel(this->current_wheels_speeds_rps);
 }
 
-Vector3 HoloDrive::get_current_vel() { return this->current_vel; }
+com_types::Vector3 HoloDrive::get_current_vel() { return this->current_vel; }
 
 void HoloDrive::update_current_vel(const double *speeds_rps) {
   double wheel_circumference = this->config_.wheel_radius * 2.0 * PI;
@@ -146,8 +148,8 @@ void HoloDrive::update_current_vel(const double *speeds_rps) {
 
   this->current_vel.x = SQRT_3_OVER_3 * (wheel0_mps - wheel1_mps);
   this->current_vel.y =
-      - (1. / 3.) * (wheel0_mps + wheel1_mps) + (2. / 3.) * wheel2_mps;
-  this->current_vel.theta = - (1. / (3. * config_.base_radius)) *
+      -(1. / 3.) * (wheel0_mps + wheel1_mps) + (2. / 3.) * wheel2_mps;
+  this->current_vel.theta = -(1. / (3. * config_.base_radius)) *
                             (wheel0_mps + wheel1_mps + wheel2_mps);
 }
 
@@ -157,7 +159,7 @@ void HoloDrive::update_current_vel(const double *speeds_rps) {
  * @param wheel_radius en mètres
  * @param base_radius en mètres
  */
-void HoloDrive::set_config(HoloDriveConfig config) {
+void HoloDrive::set_config(com_types::HoloDriveConfig config) {
 
   this->config_ = config;
 
@@ -167,9 +169,9 @@ void HoloDrive::set_config(HoloDriveConfig config) {
   this->has_config = true;
 }
 
-Vector3 HoloDrive::compute_limited_speed() {
+com_types::Vector3 HoloDrive::compute_limited_speed() {
 
-  Vector3 cmd_vel_limited;
+  com_types::Vector3 cmd_vel_limited;
 
   // Limit linear acceleration xy
   double current_speed = sqrt(pow(current_vel.x, 2) + pow(current_vel.y, 2));
