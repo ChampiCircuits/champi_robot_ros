@@ -47,7 +47,7 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
         std::chrono::milliseconds(50),
         std::bind(&HardwareInterfaceNode::loop, this));
     
-    subscriber_twist_ = this->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel_joy", 10, std::bind(
+    subscriber_twist_ = this->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 10, std::bind(
         &HardwareInterfaceNode::twist_callback, this, std::placeholders::_1));
 
     latest_twist_ = std::make_shared<geometry_msgs::msg::Twist>();

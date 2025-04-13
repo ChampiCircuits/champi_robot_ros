@@ -13,7 +13,7 @@ def generate_launch_description():
 
     joy_arg = DeclareLaunchArgument(
         'joy',
-        default_value='False',
+        default_value='True',
         description='Launch joystick'
     )
 

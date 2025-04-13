@@ -1,5 +1,5 @@
 
-base_controller_simu:
+hardware_interface_simu:
   ros__parameters:
     enable_accel_limits: true
 

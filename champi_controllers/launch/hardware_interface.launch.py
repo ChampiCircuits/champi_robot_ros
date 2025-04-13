@@ -17,10 +17,9 @@ def generate_launch_description():
         output='screen',
         parameters=[
             config_file_path,
-            # {'can_interface_name': LaunchConfiguration('can_interface')}
         ],
-        remappings=[('/cmd_vel', '/base_controller/cmd_vel'),
-                    ('/cmd_vel_limited', '/base_controller/cmd_vel_limited')]
+        remappings=[('/cmd_vel', '/hardware_interface/cmd_vel'),
+                    ('/cmd_vel_limited', '/hardware_interface/cmd_vel_limited')]
     )
 
     return LaunchDescription([

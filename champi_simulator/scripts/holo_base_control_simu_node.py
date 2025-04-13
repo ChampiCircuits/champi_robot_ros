@@ -60,7 +60,7 @@ class HoloBaseControlDummy(Node):
 
         self.pub = self.create_publisher(Odometry, '/odom', 10)
         self.pub_imu = self.create_publisher(Imu, '/imu', 10)
-        self.pub_cmd_vel_limited = self.create_publisher(Twist, '/base_controller/cmd_vel_limited', 10)
+        self.pub_cmd_vel_limited = self.create_publisher(Twist, '/hardware_interface/cmd_vel_limited', 10)
 
         self.subscription_initial_pose = self.create_subscription(
             PoseWithCovarianceStamped,

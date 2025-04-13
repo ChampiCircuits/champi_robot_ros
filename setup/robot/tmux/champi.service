@@ -1,0 +1,12 @@
+[Unit]
+Description=Service running Champi Stack
+After=basic.target
+
+[Service]
+User=champi
+Type=oneshot
+Environment=TMUX_TMPDIR=/tmp
+ExecStart=/usr/bin/tmux new-session -d -s champi_session '/home/champi/champi_ws/src/champi_robot_ros/champi_bringup/tmux/scripts/champi_launch_tmux.bash'
+
+[Install]
+WantedBy=multi-user.target
