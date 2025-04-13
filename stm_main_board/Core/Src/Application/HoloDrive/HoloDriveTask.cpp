@@ -48,6 +48,7 @@ void HoloDriveTask(void *argument) {
   LOG_INFO("holo", "Config received. Starting loop.");
 
   uint32_t start = osKernelGetTickCount();
+  uint32_t t_last_read = start;
 
   while (true) {
 
@@ -56,10 +57,23 @@ void HoloDriveTask(void *argument) {
       ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin,
       HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin));
 
-    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-    Vector3 cmd = mod_reg::cmd->cmd_vel;
-    holoDrive.set_cmd_vel(cmd);
-    xSemaphoreGive(ModbusH.ModBusSphrHandle);
+
+    // if cmd vel is read for more than 1 second, stop the motors
+    if (mod_reg::cmd->is_read) {
+      if (osKernelGetTickCount() - t_last_read > CMD_TIMEOUT_MS) {
+        holoDrive.set_cmd_vel(Vector3{0, 0, 0});
+        LOG_WARN_THROTTLE("holo", 10, "cmd vel timeout");
+      }
+    }
+    else {
+      xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+      Vector3 cmd = mod_reg::cmd->cmd_vel;
+      holoDrive.set_cmd_vel(cmd);
+      mod_reg::cmd->is_read = true;
+      xSemaphoreGive(ModbusH.ModBusSphrHandle);
+      t_last_read = osKernelGetTickCount();
+    }
+
 
     // TODO cmd vel timeout
 

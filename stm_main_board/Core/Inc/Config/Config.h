@@ -10,9 +10,11 @@
 
 // ======================== HOLODRIVE CONFIG ========================
 
+#define CMD_TIMEOUT_MS 1000
+
 #define CONTROL_LOOP_FREQ_HZ 100 // Hz. Please don't change it, it can cause issues with the timers configurations.
 #define CONTROL_LOOP_PERIOD_MS (1000 / CONTROL_LOOP_FREQ_HZ) // ms
-#define CONTROL_LOOP_PERIOD_S (1.0 / ((float) CONTROL_LOOP_FREQ_HZ)) // s
+#define CONTROL_LOOP_PERIOD_S (1.0 / ((float) CONTROL_LOOP_FREQ_HZ)) //
 
 /*
 

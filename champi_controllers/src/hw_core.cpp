@@ -159,7 +159,7 @@ void HardwareInterfaceNode::loop() {
     // RCLCPP_INFO(this->get_logger(), "Pose: x=%f, y=%f, z=%f",  mod_reg::otos_pose->x,  mod_reg::otos_pose->y,  mod_reg::otos_pose->theta);
 
     // Write
-
+    mod_reg::cmd->is_read = false;
     mod_reg::cmd->cmd_vel.x = latest_twist_->linear.x;
     mod_reg::cmd->cmd_vel.y = latest_twist_->linear.y;
     mod_reg::cmd->cmd_vel.theta = latest_twist_->angular.z;
