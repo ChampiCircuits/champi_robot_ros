@@ -50,8 +50,14 @@ void HoloDriveTask(void *argument) {
   uint32_t start = osKernelGetTickCount();
 
   while (true) {
+
+    // Enable steppers if E-Stop is released
+    HAL_GPIO_WritePin(
+      ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin,
+      HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin));
+
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-    com_types::Vector3 cmd = mod_reg::cmd->cmd_vel;
+    Vector3 cmd = mod_reg::cmd->cmd_vel;
     holoDrive.set_cmd_vel(cmd);
     xSemaphoreGive(ModbusH.ModBusSphrHandle);
 

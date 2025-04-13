@@ -125,6 +125,8 @@ void Error_Handler(void);
 #define SWCLK_GPIO_Port GPIOA
 #define DIR_OPT1_Pin GPIO_PIN_12
 #define DIR_OPT1_GPIO_Port GPIOC
+#define ENABLE_STEPPERS_Pin GPIO_PIN_4
+#define ENABLE_STEPPERS_GPIO_Port GPIOD
 #define D6_Pin GPIO_PIN_14
 #define D6_GPIO_Port GPIOG
 #define DIR_LEFT_Pin GPIO_PIN_15

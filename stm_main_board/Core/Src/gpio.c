@@ -67,7 +67,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOE, SPI4_SS0_Pin|LED_YELLOW_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, USB_FS_PWR_EN_Pin|GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, USB_FS_PWR_EN_Pin|ENABLE_STEPPERS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, XSHUT2_Pin|DIR_OPT1_Pin, GPIO_PIN_RESET);
@@ -88,11 +88,11 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BAU_Pin D4_Pin D7_Pin TIRETTE_Pin */
-  GPIO_InitStruct.Pin = BAU_Pin|D4_Pin|D7_Pin|TIRETTE_Pin;
+  /*Configure GPIO pin : BAU_Pin */
+  GPIO_InitStruct.Pin = BAU_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BAU_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DIR_OPT0_Pin XSHUT0_Pin */
   GPIO_InitStruct.Pin = DIR_OPT0_Pin|XSHUT0_Pin;
@@ -108,6 +108,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : D4_Pin D7_Pin TIRETTE_Pin */
+  GPIO_InitStruct.Pin = D4_Pin|D7_Pin|TIRETTE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
   /*Configure GPIO pins : SPI4_SS0_Pin LED_YELLOW_Pin */
   GPIO_InitStruct.Pin = SPI4_SS0_Pin|LED_YELLOW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -115,8 +121,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : USB_FS_PWR_EN_Pin PD4 */
-  GPIO_InitStruct.Pin = USB_FS_PWR_EN_Pin|GPIO_PIN_4;
+  /*Configure GPIO pins : USB_FS_PWR_EN_Pin ENABLE_STEPPERS_Pin */
+  GPIO_InitStruct.Pin = USB_FS_PWR_EN_Pin|ENABLE_STEPPERS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
