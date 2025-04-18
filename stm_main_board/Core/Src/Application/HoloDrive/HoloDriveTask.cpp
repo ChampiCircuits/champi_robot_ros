@@ -28,6 +28,9 @@ const osThreadAttr_t holoDriveTask_attributes = {
 };
 
 void HoloDriveTask(void *argument) {
+
+  HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, GPIO_PIN_SET);
+
   SpeedStepper stepper_back(WHEEL_B_TIMER_HANDLE, WHEEL_B_TIMER_CHANNEL,
                             WHEEL_B_DIR_GPIO_PORT, WHEEL_B_DIR_GPIO_PIN);
   SpeedStepper stepper_left(WHEEL_L_TIMER_HANDLE, WHEEL_L_TIMER_CHANNEL,

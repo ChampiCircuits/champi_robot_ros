@@ -52,8 +52,6 @@ HoloDrive::HoloDrive(const SpeedStepper &stepper_left,
   this->current_wheels_speeds_rps[2] = 0;
 
   this->current_vel = {0, 0, 0};
-
-  this->has_config = false;
 }
 
 HoloDrive::HoloDrive() = default;
@@ -85,11 +83,17 @@ void HoloDrive::write_wheels_speeds(double *speeds_rps) {
 void HoloDrive::spin_once_motors_control() {
 
   // Convenience variables
+  /*
+ * max_accel_per_cycle, en rotation par seconde par cycle, est la vitesse
+ * maximale autorisée ajoutable à la vitesse actuelle d'une roue à chaque
+ * cycle. Soit : Combien peut-on ajouter de vitesse à une roue à chaque cycle
+ * de contrôle ?
+ */
   double max_accel = config_.max_accel_wheel /
                      (double)CONTROL_LOOP_FREQ_HZ; // max accel per cycle
 
   // Get cmd vel limited
-  com_types::Vector3 cmd_vel_limited = this->compute_limited_speed();
+  Vector3 cmd_vel_limited = this->compute_limited_speed();
 
   // compare current_vel and cmd_vel wheels speeds to check the required
   // acceleration to transition directly from current to command
@@ -160,13 +164,7 @@ void HoloDrive::update_current_vel(const double *speeds_rps) {
  * @param base_radius en mètres
  */
 void HoloDrive::set_config(com_types::HoloDriveConfig config) {
-
   this->config_ = config;
-
-  this->max_accel_per_cycle =
-      config.max_accel_wheel / (double)CONTROL_LOOP_FREQ_HZ;
-
-  this->has_config = true;
 }
 
 com_types::Vector3 HoloDrive::compute_limited_speed() {
@@ -200,10 +198,6 @@ com_types::Vector3 HoloDrive::compute_limited_speed() {
       config_.max_decel_angular, CONTROL_LOOP_PERIOD_S);
 
   return cmd_vel_limited;
-}
-
-bool HoloDrive::is_configured() { // TODO remove .
-  return this->has_config;
 }
 
 HoloDrive::~HoloDrive() = default;
