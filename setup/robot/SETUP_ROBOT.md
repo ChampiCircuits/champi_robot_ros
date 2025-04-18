@@ -103,3 +103,14 @@ Current DNS Server: 8.8.8.8
        DNS Servers: 8.8.8.8
 
 ```
+
+
+```bash
+sudo usermod -a -G dialout $USER
+
+```
+
+```bash
+echo "set -g mouse on" >> ~/.tmux.conf
+```
+... Then log-out log-in.
