@@ -3,7 +3,7 @@
 
 // #include <sys/_stdint.h>
 #ifdef MODBUS_MASTER
-#include <champi_controllers/DataStructures.h>
+#include <champi_hw_interface/DataStructures.h>
 #else
 #include <Application/Modbus/DataStructures.h>
 #endif // MODBUS_MASTER

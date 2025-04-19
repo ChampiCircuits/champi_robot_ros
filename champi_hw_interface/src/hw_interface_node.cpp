@@ -1,6 +1,6 @@
 
 #include <rclcpp/rclcpp.hpp>
-#include "champi_controllers/hw_interface.h"
+#include "champi_hw_interface/hw_interface.h"
 
 int main(int argc, char **argv)
 {

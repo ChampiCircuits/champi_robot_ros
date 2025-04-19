@@ -80,7 +80,7 @@ def generate_launch_description():
 
     hardware_interface_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('champi_controllers'),
+            get_package_share_directory('champi_hw_interface'),
             '/launch/hardware_interface.launch.py'
         ]),
         condition=UnlessCondition(LaunchConfiguration('sim'))

@@ -1,5 +1,5 @@
 #ifdef MODBUS_MASTER
-#include "champi_controllers/ModbusRegister.h"
+#include "champi_hw_interface/ModbusRegister.h"
 #else
 #include "Application/Modbus/ModbusRegister.h"
 #endif // MODBUS_MASTER

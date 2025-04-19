@@ -1,4 +1,4 @@
-#include "champi_controllers/hw_interface.h"
+#include "champi_hw_interface/hw_interface.h"
 
 #include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
 #include <tf2/impl/utils.h>

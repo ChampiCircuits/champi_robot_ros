@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include <champi_controllers/ModbusRegister.h>
+#include <champi_hw_interface/ModbusRegister.h>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"

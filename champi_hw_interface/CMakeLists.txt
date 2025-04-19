@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(champi_controllers)
+project(champi_hw_interface)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -18,10 +18,10 @@ find_package(tf2_ros REQUIRED)
 find_package(diagnostic_updater REQUIRED)
 find_package(std_msgs REQUIRED)
 
-# Create and configure champi_controllers library
+# Create and configure champi_hw_interface library
 include_directories(include)
-add_library(champi_controllers SHARED src/ModbusRegister.cpp)
-target_compile_definitions(champi_controllers PUBLIC -DMODBUS_MASTER)
+add_library(champi_hw_interface SHARED src/ModbusRegister.cpp)
+target_compile_definitions(champi_hw_interface PUBLIC -DMODBUS_MASTER)
 
 # Add the libmodbus library
 find_library(MODBUS_LIBRARY modbus REQUIRED)
@@ -31,7 +31,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC udev)
 
 add_executable(hardware_interface_node src/hw_interface_node.cpp src/hw_core.cpp src/hw_setup.cpp src/hw_events.cpp)
 ament_target_dependencies(hardware_interface_node rclcpp geometry_msgs nav_msgs tf2)
-target_link_libraries(hardware_interface_node champi_controllers ${MODBUS_LIBRARY})
+target_link_libraries(hardware_interface_node champi_hw_interface ${MODBUS_LIBRARY})
 
 
 if(BUILD_TESTING)

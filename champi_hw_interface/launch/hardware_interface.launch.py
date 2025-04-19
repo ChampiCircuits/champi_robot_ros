@@ -11,7 +11,7 @@ def generate_launch_description():
     config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
 
     hardware_interface_node = Node(
-        package='champi_controllers',
+        package='champi_hw_interface',
         executable='hardware_interface_node',
         name='hardware_interface',
         output='screen',
