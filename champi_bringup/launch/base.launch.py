@@ -47,7 +47,7 @@ def generate_launch_description():
         name='twist_mux',
         output='screen', # TODO tester output='both'
         parameters=[config_file_path],
-        remappings=[('/cmd_vel_out', '/hardware_interface/cmd_vel')]
+        remappings=[('/cmd_vel_out', '/cmd_vel')]
     )
 
     ukf_node = Node(
@@ -56,7 +56,6 @@ def generate_launch_description():
         name='ukf',
         output='screen',
         parameters=[os.path.join(get_package_share_directory("champi_bringup"), "config", "ukf.yaml")],
-        remappings=[('/cmd_vel', '/hardware_interface/cmd_vel_limited')]
     )
 
     # Calls the set_pose service of the UKF node
@@ -93,7 +92,6 @@ def generate_launch_description():
         name='hardware_interface_simu',
         output='screen',
         parameters=[config_file_path],
-        remappings=[('/cmd_vel', '/hardware_interface/cmd_vel')],
         condition=IfCondition(LaunchConfiguration('sim'))
     )
 

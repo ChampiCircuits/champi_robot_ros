@@ -60,7 +60,7 @@ class HoloBaseControlDummy(Node):
 
         self.pub = self.create_publisher(Odometry, '/odom', 10)
         self.pub_imu = self.create_publisher(Imu, '/imu', 10)
-        self.pub_cmd_vel_limited = self.create_publisher(Twist, '/hardware_interface/cmd_vel_limited', 10)
+        # self.pub_cmd_vel_limited = self.create_publisher(Twist, '/hardware_interface/cmd_vel_limited', 10)
 
         self.subscription_initial_pose = self.create_subscription(
             PoseWithCovarianceStamped,
@@ -206,11 +206,11 @@ class HoloBaseControlDummy(Node):
         self.wheels_to_current_vel()
 
         # Publish the limited cmd_vel
-        cmd_vel_limited = Twist()
-        cmd_vel_limited.linear.x = cmd_vx_limited
-        cmd_vel_limited.linear.y = cmd_vy_limited
-        cmd_vel_limited.angular.z = cmd_wz_limited
-        self.pub_cmd_vel_limited.publish(cmd_vel_limited)
+        # cmd_vel_limited = Twist()
+        # cmd_vel_limited.linear.x = cmd_vx_limited
+        # cmd_vel_limited.linear.y = cmd_vy_limited
+        # cmd_vel_limited.angular.z = cmd_wz_limited
+        # self.pub_cmd_vel_limited.publish(cmd_vel_limited)
 
         self.update_pose()
 

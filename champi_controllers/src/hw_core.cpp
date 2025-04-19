@@ -1,4 +1,6 @@
 #include "champi_controllers/hw_interface.h"
+
+#include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
 #include <tf2/impl/utils.h>
 
 
@@ -52,8 +54,12 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
 
     latest_twist_ = std::make_shared<geometry_msgs::msg::Twist>();
 
-    pub_odom_wheels_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom_wheels", 10);
-    pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom_otos", 10);
+    pub_odom_wheels_ = this->create_publisher<nav_msgs::msg::Odometry>("/hw/odom_wheels", 10);
+    pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/hw/odom_otos", 10);
+
+    pub_pose_wheels_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/viz/pose_wheels", 10);
+    pub_pose_otos_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/viz/pose_otos", 10);
+
 }
 
 HardwareInterfaceNode::~HardwareInterfaceNode()
@@ -147,11 +153,21 @@ void HardwareInterfaceNode::loop() {
     // Read
     read(mod_reg::reg_state);
 
-    pub_odom_wheels_->publish(make_odom_wheels(mod_reg::state->measured_vel, dt));
-    pub_odom_otos_->publish(make_odom_otos(mod_reg::state->otos_pose, dt));
+    auto odom_wheels = make_odom_wheels(mod_reg::state->measured_vel, dt);
+    auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
 
-    // RCLCPP_INFO(this->get_logger(), "Measured velocity: x=%f, y=%f, z=%f",  mod_reg::measured_vel->x,  mod_reg::measured_vel->y,  mod_reg::measured_vel->theta);
-    // RCLCPP_INFO(this->get_logger(), "Pose: x=%f, y=%f, z=%f",  mod_reg::otos_pose->x,  mod_reg::otos_pose->y,  mod_reg::otos_pose->theta);
+    auto pose_wheels = geometry_msgs::msg::PoseStamped();
+    pose_wheels.header = odom_wheels.header;
+    pose_wheels.pose = odom_wheels.pose.pose;
+
+    auto pose_otos = geometry_msgs::msg::PoseStamped();
+    pose_otos.header = odom_otos.header;
+    pose_otos.pose = odom_wheels.pose.pose;
+
+    pub_odom_wheels_->publish(odom_wheels);
+    pub_odom_otos_->publish(odom_otos);
+    pub_pose_wheels_->publish(pose_wheels);
+    pub_pose_otos_->publish(pose_otos);
 
     // Write
     mod_reg::cmd->is_read = false;

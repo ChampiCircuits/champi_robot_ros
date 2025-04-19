@@ -31,8 +31,8 @@ class HoloTeleopJoy(Node):
         timer_period = 0.05  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.pub_stamped = self.create_publisher(TwistStamped, '/cmd_vel_stamped', 10) # for visualization in rviz
+        self.pub = self.create_publisher(Twist, '/teleop/cmd_vel', 10)
+        self.pub_stamped = self.create_publisher(TwistStamped, '/viz/cmd_vel_stamped', 10) # for visualization in rviz
 
         self.max_linear_speed = self.declare_parameter('max_linear_speed', rclpy.Parameter.Type.DOUBLE).value
         self.max_angular_speed = self.declare_parameter('max_angular_speed', rclpy.Parameter.Type.DOUBLE).value

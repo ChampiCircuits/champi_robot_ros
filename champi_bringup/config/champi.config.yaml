@@ -46,16 +46,16 @@ holo_teleop_joy_node:
 twist_mux:
   ros__parameters:
     topics:
-      navigation:
-        topic   : cmd_vel_stop
+      stop:
+        topic   : /ctrl/cmd_vel_stop
         timeout : 3.0
         priority: 102
       joystick:
-        topic   : cmd_vel_joy
+        topic   : /teleop/cmd_vel
         timeout : 0.5
         priority: 103
       behavior_server:
-        topic   : cmd_vel
+        topic   : /ctrl/cmd_vel
         timeout : 0.5
         priority: 101
 

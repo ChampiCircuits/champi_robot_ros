@@ -13,6 +13,7 @@
 
 #include <champi_controllers/ModbusRegister.h>
 
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
@@ -72,11 +73,13 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscriber_twist_;
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_wheels_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_pose_wheels_;
     PoseIntegrator pose_integrator_odom_wheels_;
     std::vector<double> cov_pose_odom_wheels_;
     std::vector<double> cov_vel_odom_wheels_;
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_otos_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_pose_otos_;
     std::vector<double> cov_pose_odom_otos_;
     std::vector<double> cov_vel_odom_otos_;
 

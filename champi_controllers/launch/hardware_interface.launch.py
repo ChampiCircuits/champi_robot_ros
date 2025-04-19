@@ -18,9 +18,7 @@ def generate_launch_description():
         respawn=True,
         parameters=[
             config_file_path,
-        ],
-        remappings=[('/cmd_vel', '/hardware_interface/cmd_vel'),
-                    ('/cmd_vel_limited', '/hardware_interface/cmd_vel_limited')]
+        ]
     )
 
     return LaunchDescription([

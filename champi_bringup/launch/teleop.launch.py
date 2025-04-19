@@ -34,7 +34,6 @@ def generate_launch_description():
         name='holo_teleop_joy_node',
         output='screen',
         parameters=[config_file_path],
-        remappings=[('/cmd_vel', '/cmd_vel_joy')],
         condition=IfCondition(LaunchConfiguration('joy'))
     )
 
@@ -43,7 +42,7 @@ def generate_launch_description():
         executable='teleop_twist_keyboard',
         name='teleop_twist_keyboard',
         output='screen',
-        remappings=[('/cmd_vel', '/cmd_vel_joy')],
+        remappings=[('/cmd_vel', '/teleop/cmd_vel')],
         prefix = 'xterm -e', # Workaround, see https://answers.ros.org/question/337885/is-teleop_twist_keyboard-launchable-in-ros2/
         condition=UnlessCondition(LaunchConfiguration('joy'))
     )
