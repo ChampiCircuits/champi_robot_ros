@@ -34,8 +34,8 @@ class HoloTeleopJoy(Node):
         self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.pub_stamped = self.create_publisher(TwistStamped, '/cmd_vel_stamped', 10) # for visualization in rviz
 
-        self.max_linear_speed = 0.1  # m/s
-        self.max_angular_speed = 0.6  # rad/s
+        self.max_linear_speed = self.declare_parameter('max_linear_speed', rclpy.Parameter.Type.DOUBLE).value
+        self.max_angular_speed = self.declare_parameter('max_angular_speed', rclpy.Parameter.Type.DOUBLE).value
 
     def listener_callback(self, msg):
         self.latest_msg = msg

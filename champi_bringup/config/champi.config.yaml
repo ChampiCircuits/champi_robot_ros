@@ -26,18 +26,22 @@ hardware_interface:
       vel_otos: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
 
     base_config:
-      max_accel_wheel: 10.0 # rotation des roues en rotation/s²
+      max_accel_wheel: 1000.0 # rotation des roues en rotation/s²
       wheel_radius: 0.0276 # en m # 0.029
       base_radius: 0.175 # en m
-      max_acceleration_linear: 0.1 # m/s^2
-      max_deceleration_linear: 2.0 # m/s^2
+      max_acceleration_linear: 0.4 # m/s^2
+      max_deceleration_linear: 1. # m/s^2
 
-      max_acceleration_angular: 1.0 # rad/s^2
-      max_deceleration_angular: 20.0 # rad/s^2
+      max_acceleration_angular: 1.8 # rad/s^2
+      max_deceleration_angular: 10.0 # rad/s^2
 
       max_speed_linear: 0.4
       cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
 
+holo_teleop_joy_node:
+  ros__parameters:
+    max_linear_speed: 0.5 # m/s
+    max_angular_speed: 4.0 # rad/s
 
 twist_mux:
   ros__parameters:

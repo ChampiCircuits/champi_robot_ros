@@ -11,6 +11,9 @@ from launch.conditions import IfCondition, UnlessCondition
 
 def generate_launch_description():
 
+    # Get configuration file
+    config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
+
     joy_arg = DeclareLaunchArgument(
         'joy',
         default_value='True',
@@ -30,6 +33,7 @@ def generate_launch_description():
         executable='holo_teleop_joy_node.py',
         name='holo_teleop_joy_node',
         output='screen',
+        parameters=[config_file_path],
         remappings=[('/cmd_vel', '/cmd_vel_joy')],
         condition=IfCondition(LaunchConfiguration('joy'))
     )

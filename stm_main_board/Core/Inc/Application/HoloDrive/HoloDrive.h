@@ -16,11 +16,10 @@ public:
   void set_config(HoloDriveConfig config);
   void set_cmd_vel(Vector3 cmd);
   void write_wheels_speeds(double *speeds_rps);
-  void compute_wheels_speeds(Vector3 cmd, double *ret_speeds_rps);
+  void compute_wheels_speeds(Vector3 cmd_vel, double *ret_speeds_rps) const;
   void spin_once_motors_control();
   Vector3 get_current_vel();
   void update_current_vel(const double *speeds_rps);
-  Vector3 compute_limited_speed();
 
 private:
   SpeedStepper steppers[3];

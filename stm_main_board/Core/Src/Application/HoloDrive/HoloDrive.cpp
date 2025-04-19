@@ -56,16 +56,14 @@ HoloDrive::HoloDrive(const SpeedStepper &stepper_left,
 
 HoloDrive::HoloDrive() = default;
 
-void HoloDrive::set_cmd_vel(com_types::Vector3 cmd) { this->cmd_vel = cmd; }
+void HoloDrive::set_cmd_vel(Vector3 cmd) { this->cmd_vel = cmd; }
 
-void HoloDrive::compute_wheels_speeds(com_types::Vector3 cmd,
-                                      double *ret_speeds_rps) {
-  double wheel0_mps = -0.5 * this->cmd_vel.y + SQRT_3_OVER_2 * this->cmd_vel.x -
-                      this->config_.base_radius * this->cmd_vel.theta;
-  double wheel1_mps = -0.5 * this->cmd_vel.y - SQRT_3_OVER_2 * this->cmd_vel.x -
-                      this->config_.base_radius * this->cmd_vel.theta;
-  double wheel2_mps =
-      this->cmd_vel.y - this->config_.base_radius * this->cmd_vel.theta;
+void HoloDrive::compute_wheels_speeds(Vector3 cmd_vel, double *ret_speeds_rps) const {
+  double wheel0_mps = -0.5 * cmd_vel.y + SQRT_3_OVER_2 * cmd_vel.x -
+                      config_.base_radius * cmd_vel.theta;
+  double wheel1_mps = -0.5 * cmd_vel.y - SQRT_3_OVER_2 * cmd_vel.x -
+                      config_.base_radius * cmd_vel.theta;
+  double wheel2_mps = cmd_vel.y - this->config_.base_radius * cmd_vel.theta;
   // wheel mps -> wheel rps
   double wheel_circumference = this->config_.wheel_radius * 2.0 * PI;
   ret_speeds_rps[0] = wheel0_mps / wheel_circumference;
@@ -93,17 +91,21 @@ void HoloDrive::spin_once_motors_control() {
                      (double)CONTROL_LOOP_FREQ_HZ; // max accel per cycle
 
   // Get cmd vel limited
-  Vector3 cmd_vel_limited = this->compute_limited_speed();
+  Vector3 cmd_vel_limited{};
+  cmd_vel_limited.x = limit_accel_decel(
+      this->current_vel.x, this->cmd_vel.x, config_.max_accel_linear,
+      config_.max_decel_linear, CONTROL_LOOP_PERIOD_S);
+  cmd_vel_limited.y = limit_accel_decel(
+      this->current_vel.y, this->cmd_vel.y, config_.max_accel_linear,
+      config_.max_decel_linear, CONTROL_LOOP_PERIOD_S);
+  cmd_vel_limited.theta = limit_accel_decel(
+      this->current_vel.theta, this->cmd_vel.theta, config_.max_accel_angular,
+      config_.max_decel_angular, CONTROL_LOOP_PERIOD_S);
 
   // compare current_vel and cmd_vel wheels speeds to check the required
   // acceleration to transition directly from current to command
   double cmd_wheels_speeds[3]; // rotations per second
   this->compute_wheels_speeds(cmd_vel_limited, cmd_wheels_speeds);
-
-  if (this->current_wheels_speeds_rps[2] !=
-      this->current_wheels_speeds_rps[2]) {
-    this->current_wheels_speeds_rps[2]--;
-  }
 
   double desired_accels_wheels[3];
   sub(cmd_wheels_speeds, this->current_wheels_speeds_rps,
@@ -142,7 +144,7 @@ void HoloDrive::spin_once_motors_control() {
   update_current_vel(this->current_wheels_speeds_rps);
 }
 
-com_types::Vector3 HoloDrive::get_current_vel() { return this->current_vel; }
+Vector3 HoloDrive::get_current_vel() { return this->current_vel; }
 
 void HoloDrive::update_current_vel(const double *speeds_rps) {
   double wheel_circumference = this->config_.wheel_radius * 2.0 * PI;
@@ -157,47 +159,8 @@ void HoloDrive::update_current_vel(const double *speeds_rps) {
                             (wheel0_mps + wheel1_mps + wheel2_mps);
 }
 
-/**
- *
- * @param max_accel en rotation.s^-2
- * @param wheel_radius en mètres
- * @param base_radius en mètres
- */
-void HoloDrive::set_config(com_types::HoloDriveConfig config) {
+void HoloDrive::set_config(HoloDriveConfig config) {
   this->config_ = config;
-}
-
-com_types::Vector3 HoloDrive::compute_limited_speed() {
-
-  com_types::Vector3 cmd_vel_limited;
-
-  // Limit linear acceleration xy
-  double current_speed = sqrt(pow(current_vel.x, 2) + pow(current_vel.y, 2));
-  double goal_speed = sqrt(pow(cmd_vel.x, 2) + pow(cmd_vel.y, 2));
-  if (goal_speed > config_.max_speed_linear) {
-    goal_speed = config_.max_speed_linear;
-  }
-  double cmd_vxy_limited =
-      limit_accel_decel(current_speed, goal_speed, config_.max_accel_linear,
-                        config_.max_decel_linear, CONTROL_LOOP_PERIOD_S);
-
-  double vel_vect_angle;
-  if (goal_speed == 0) {
-    // Use angle of the current vel of the robot. This is to avoid the robot to
-    // go forward when the goal speed is 0 but the robot is still moving
-    vel_vect_angle = atan2(current_vel.y, current_vel.x);
-  } else {
-    vel_vect_angle = atan2(cmd_vel.y, cmd_vel.x);
-  }
-  cmd_vel_limited.x = cmd_vxy_limited * cos(vel_vect_angle);
-  cmd_vel_limited.y = cmd_vxy_limited * sin(vel_vect_angle);
-
-  // Limit angular acceleration z
-  cmd_vel_limited.theta = limit_accel_decel(
-      current_vel.theta, cmd_vel.theta, config_.max_accel_angular,
-      config_.max_decel_angular, CONTROL_LOOP_PERIOD_S);
-
-  return cmd_vel_limited;
 }
 
 HoloDrive::~HoloDrive() = default;

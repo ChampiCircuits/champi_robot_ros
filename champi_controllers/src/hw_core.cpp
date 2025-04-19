@@ -44,7 +44,7 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     setup_stm();
 
     timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(50),
+        std::chrono::milliseconds(20),
         std::bind(&HardwareInterfaceNode::loop, this));
     
     subscriber_twist_ = this->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 10, std::bind(
@@ -145,12 +145,7 @@ void HardwareInterfaceNode::loop() {
     last_time = this->now();
 
     // Read
-
     read(mod_reg::reg_state);
-    if (errno == 5) { // Happens when we upload new firmware to the STM32
-        RCLCPP_WARN(this->get_logger(), "Connection lost. Setting up modbus again...");
-        reconnect();
-    }
 
     pub_odom_wheels_->publish(make_odom_wheels(mod_reg::state->measured_vel, dt));
     pub_odom_otos_->publish(make_odom_otos(mod_reg::state->otos_pose, dt));
@@ -165,25 +160,43 @@ void HardwareInterfaceNode::loop() {
     mod_reg::cmd->cmd_vel.theta = latest_twist_->angular.z;
 
     write(mod_reg::reg_cmd);
-    if (errno == 5) { // Happens when we upload new firmware to the STM32
-        RCLCPP_WARN(this->get_logger(), "Connection lost. Setting up modbus again...");
-        reconnect();
-    }
 }
 
-int HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
-    int rc = modbus_write_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
-    if (rc == -1) {
+void HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
+    int result;
+    int nb_attempts = 0;
+    do {
+        result = modbus_write_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
+        nb_attempts++;
+    }
+    while (result == -1 && nb_attempts++ < MODBUS_MAX_RETRIES);
+
+    if (nb_attempts > 1) {
+        RCLCPP_ERROR(this->get_logger(), "Read data after %d attempts", nb_attempts);
+    }
+
+    if (result == -1) {
         RCLCPP_ERROR(this->get_logger(), "Failed to write data: error num: %d, message: %s", errno, modbus_strerror(errno));
+        exit(1);
     }
-
-    return rc;
 }
 
-int HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
-    int rc = modbus_read_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
-    if (rc == -1) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to read data: %s", modbus_strerror(errno));
+void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
+
+    int result;
+    int nb_attempts = 0;
+    do {
+        result = modbus_read_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
+        nb_attempts++;
     }
-    return rc;
+    while (result == -1 && nb_attempts++ < MODBUS_MAX_RETRIES);
+
+    if (nb_attempts > 1) {
+        RCLCPP_ERROR(this->get_logger(), "Read data after %d attempts", nb_attempts);
+    }
+
+    if (result == -1) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to read data: error num: %d, message: %s", errno, modbus_strerror(errno));
+        exit(1);
+    }
 }

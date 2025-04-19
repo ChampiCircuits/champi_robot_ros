@@ -55,10 +55,6 @@ def generate_launch_description():
         description='Launch actuator controller (true|false)',
     )
 
-    # Get configuration file
-    config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
-
-
     base_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource([
             get_package_share_directory('champi_bringup'),

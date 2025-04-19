@@ -15,6 +15,7 @@ def generate_launch_description():
         executable='hardware_interface_node',
         name='hardware_interface',
         output='screen',
+        respawn=True,
         parameters=[
             config_file_path,
         ],

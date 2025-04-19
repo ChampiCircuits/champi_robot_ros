@@ -55,16 +55,6 @@ std::string findDeviceBySerial(const std::string& targetSerial) {
     return "";
 }
 
-void HardwareInterfaceNode::reconnect() {
-    modbus_close(mb_);
-    modbus_free(mb_);
-    while (setup_modbus() != 0) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to setup modbus, retrying...");
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-    setup_stm();
-}
-
 int HardwareInterfaceNode::setup_modbus()
 {
 
@@ -89,16 +79,14 @@ int HardwareInterfaceNode::setup_modbus()
         return -1;
     }
 
+    // default timeout is 0.5s
+    modbus_set_response_timeout(mb_, 0, MODBUS_TIMEOUT_US); // 0.05s
+
     RCLCPP_INFO(this->get_logger(), "Modbus RTU connection established with device: %s", device_path.c_str());
 
     return 0;
-
-    // default timeout is 0.5s
-    // uint32_t old_response_to_sec;
-    // uint32_t old_response_to_usec;
-    // modbus_get_response_timeout(mb_, &old_response_to_sec, &old_response_to_usec);
-    // RCUTILS_LOG_INFO("Old response timeout: %d sec %d usec", old_response_to_sec, old_response_to_usec);
 }
+
 
 void HardwareInterfaceNode::write_config()
 {
@@ -109,10 +97,8 @@ void HardwareInterfaceNode::write_config()
 
 void HardwareInterfaceNode::read_config()
 {
-    int result = read( mod_reg::reg_config);
-    if (result == -1) {
-        return;
-    }
+    read( mod_reg::reg_config);
+
     stm_config_ = *mod_reg::config;
 }
 

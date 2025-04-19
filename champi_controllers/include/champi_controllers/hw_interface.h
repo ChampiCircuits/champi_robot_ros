@@ -1,6 +1,9 @@
 #ifndef HW_INTERFACE_H
 #define HW_INTERFACE_H
 
+#define MODBUS_TIMEOUT_US 50000 // 50ms
+#define MODBUS_MAX_RETRIES 5
+
 #include <rclcpp/rclcpp.hpp>
 #include <modbus/modbus.h>
 #include <boost/asio.hpp> // Compiles without, but makes vscode happy
@@ -43,14 +46,13 @@ public:
 
 private:
     int setup_modbus();
-    void reconnect();
 
     void write_config();
     void read_config();
     void setup_stm();
 
-    int write( mod_reg::register_metadata &reg_meta) const;
-    int read( mod_reg::register_metadata &reg_meta) const;
+    void write( mod_reg::register_metadata &reg_meta) const;
+    void read( mod_reg::register_metadata &reg_meta) const;
     void loop();
 
     void twist_callback(geometry_msgs::msg::Twist::SharedPtr msg);
