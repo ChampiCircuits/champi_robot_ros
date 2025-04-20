@@ -64,6 +64,6 @@ WHEEL_L(eft)  WHEEL_R(ight)
 
 // ========================== LOGGING ================================
 
-#define ENABLE_LOG_DEBUG 0
+#define ENABLE_LOG_DEBUG 0 // 0: disable, 1: enable
 
 #endif /* INC_CONFIG_CONFIG_H_ */

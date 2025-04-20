@@ -17,6 +17,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(diagnostic_updater REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 # Create and configure champi_hw_interface library
 include_directories(include)
@@ -30,7 +31,7 @@ include_directories(${MODBUS_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC udev)
 
 add_executable(hardware_interface_node src/hw_interface_node.cpp src/hw_core.cpp src/hw_setup.cpp src/hw_events.cpp)
-ament_target_dependencies(hardware_interface_node rclcpp geometry_msgs nav_msgs tf2)
+ament_target_dependencies(hardware_interface_node rclcpp geometry_msgs nav_msgs tf2 champi_libraries_cpp tf2_geometry_msgs)
 target_link_libraries(hardware_interface_node champi_hw_interface ${MODBUS_LIBRARY})
 
 

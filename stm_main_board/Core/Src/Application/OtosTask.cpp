@@ -13,7 +13,7 @@
 
 osThreadId_t OtosTaskHandle;
 const osThreadAttr_t otosTask_attributes = {
-    .name = "holo_task",
+    .name = "otos_task",
     .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
@@ -48,6 +48,16 @@ void OtosTask(void *argument) {
   LOG_INFO("otos", "Starting loop.");
 
   while (true) {
+
+    if (mod_reg::requests->request_reset_otos) {
+      LOG_INFO("otos", "Resetting OTOS.");
+      mod_reg::requests->request_reset_otos = false;
+      myOtos.calibrateImu();
+      osDelay(10);
+      myOtos.resetTracking();
+      osDelay(10);
+    }
+
     Pose2D otosPose = myOtos.getPosition();
 
     LOG_DEBUG_THROTTLE("otos", 100, "reading: \t%f, \t%f, \t%f", otosPose.x,
@@ -57,8 +67,11 @@ void OtosTask(void *argument) {
     mod_reg::state->otos_pose = {otosPose.x, otosPose.y, otosPose.h};
     xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
-    uint32_t now = osKernelGetTickCount();
-    osDelay(OTOS_LOOP_PERIOD_MS - now + start);
+    int time_to_wait = OTOS_LOOP_PERIOD_MS - (int)osKernelGetTickCount() + (int)start;
+    if (time_to_wait > 0) {
+      // avoid negative delay (if calibration takes longer)
+      osDelay((uint32_t)time_to_wait);
+    }
     start = osKernelGetTickCount();
   }
 }

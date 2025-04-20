@@ -2,6 +2,7 @@
 #define DATASTRUCTURES_H
 
 namespace com_types {
+
 struct Vector3 {
   double x;
   double y;
@@ -34,6 +35,11 @@ struct State {
 struct Cmd {
   bool is_read;
   Vector3 cmd_vel;
+};
+
+struct Requests {
+  bool request_reset_otos;
+  bool request_reset_stm;
 };
 
 }

@@ -13,6 +13,7 @@
 
 #include <champi_hw_interface/ModbusRegister.h>
 
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -57,6 +58,7 @@ private:
     void loop();
 
     void twist_callback(geometry_msgs::msg::Twist::SharedPtr msg);
+    void initial_pose_callback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
     nav_msgs::msg::Odometry make_odom_wheels(const Vector3 &vel, double dt);
     nav_msgs::msg::Odometry make_odom_otos(const Vector3 &pose, double dt) const;
@@ -69,7 +71,7 @@ private:
 
     Config stm_config_{};
 
-    geometry_msgs::msg::Twist::SharedPtr latest_twist_;
+    geometry_msgs::msg::Twist latest_twist_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscriber_twist_;
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_wheels_;
@@ -82,6 +84,9 @@ private:
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_pose_otos_;
     std::vector<double> cov_pose_odom_otos_;
     std::vector<double> cov_vel_odom_otos_;
+
+    geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscriber_initial_pose_;
 
 };
 

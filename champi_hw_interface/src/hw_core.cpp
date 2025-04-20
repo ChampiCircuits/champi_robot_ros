@@ -1,7 +1,7 @@
 #include "champi_hw_interface/hw_interface.h"
 
-#include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
-#include <tf2/impl/utils.h>
+#include "util/ros_geometry.h"
+#include "tf2/impl/utils.h"
 
 
 HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
@@ -48,11 +48,14 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(20),
         std::bind(&HardwareInterfaceNode::loop, this));
-    
+
+    latest_twist_ = geometry_msgs::msg::Twist();
     subscriber_twist_ = this->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 10, std::bind(
         &HardwareInterfaceNode::twist_callback, this, std::placeholders::_1));
 
-    latest_twist_ = std::make_shared<geometry_msgs::msg::Twist>();
+    initial_pose_ = geometry_msgs::msg::PoseWithCovarianceStamped();
+    subscriber_initial_pose_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10, std::bind(
+        &HardwareInterfaceNode::initial_pose_callback, this, std::placeholders::_1));
 
     pub_odom_wheels_ = this->create_publisher<nav_msgs::msg::Odometry>("/hw/odom_wheels", 10);
     pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/hw/odom_otos", 10);
@@ -156,24 +159,29 @@ void HardwareInterfaceNode::loop() {
     auto odom_wheels = make_odom_wheels(mod_reg::state->measured_vel, dt);
     auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
 
+    odom_wheels.pose.pose = easy_geometry::add(initial_pose_.pose.pose, odom_wheels.pose.pose);
+    odom_otos.pose.pose = easy_geometry::add(initial_pose_.pose.pose, odom_otos.pose.pose);
+
     auto pose_wheels = geometry_msgs::msg::PoseStamped();
     pose_wheels.header = odom_wheels.header;
     pose_wheels.pose = odom_wheels.pose.pose;
 
     auto pose_otos = geometry_msgs::msg::PoseStamped();
     pose_otos.header = odom_otos.header;
-    pose_otos.pose = odom_wheels.pose.pose;
+    pose_otos.pose = odom_otos.pose.pose;
 
     pub_odom_wheels_->publish(odom_wheels);
     pub_odom_otos_->publish(odom_otos);
     pub_pose_wheels_->publish(pose_wheels);
     pub_pose_otos_->publish(pose_otos);
 
+
+
     // Write
     mod_reg::cmd->is_read = false;
-    mod_reg::cmd->cmd_vel.x = latest_twist_->linear.x;
-    mod_reg::cmd->cmd_vel.y = latest_twist_->linear.y;
-    mod_reg::cmd->cmd_vel.theta = latest_twist_->angular.z;
+    mod_reg::cmd->cmd_vel.x = latest_twist_.linear.x;
+    mod_reg::cmd->cmd_vel.y = latest_twist_.linear.y;
+    mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
 
     write(mod_reg::reg_cmd);
 }
