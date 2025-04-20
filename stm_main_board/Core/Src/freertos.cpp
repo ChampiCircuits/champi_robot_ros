@@ -28,6 +28,7 @@
 #include "Application/HoloDrive/HoloDriveTask.h"
 #include "Application/Modbus/ModbusTask.h"
 #include "Application/OtosTask.h"
+#include "Application/SysTask.h"
 #include "Devices/PosStepper.h"
 #include "tim.h"
 #include "usb_device.h"
@@ -103,6 +104,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   ModbusTaskStart();
+  SysTaskStart();
   HoloDriveTaskStart();
   OtosTaskStart();
 

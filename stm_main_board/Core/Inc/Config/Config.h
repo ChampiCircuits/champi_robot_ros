@@ -7,6 +7,8 @@
 // Values we're lazy to get programmatically :)
 #define STEPPER_TIMERS_INPUT_FREQ_HZ 275000000 // Before prescaler
 
+#define SYS_TASK_LOOP_PERIOD_MS 50
+
 
 // ======================== HOLODRIVE CONFIG ========================
 
