@@ -32,8 +32,14 @@ void OtosTask(void *argument) {
     osDelay(1000000000); // TODO reset STM ?
   }
 
-  myOtos.setAngularScalar(OTOS_ANGULAR_SCALAR);
-  myOtos.setLinearScalar(OTOS_LINEAR_SCALAR);
+  // We wait for the config to be set by the master
+  while (!mod_reg::config->is_set) {
+    osDelay(100);
+    LOG_WARN_THROTTLE("otos", 10, "Waiting for config...");
+  }
+
+  myOtos.setAngularScalar(mod_reg::config->otos_config.angular_scalar);
+  myOtos.setLinearScalar(mod_reg::config->otos_config.linear_scalar);
 
   myOtos.setOffset({OTOS_OFFSET_X, OTOS_OFFSET_Y, OTOS_OFFSET_H});
 
@@ -59,6 +65,7 @@ void OtosTask(void *argument) {
     }
 
     Pose2D otosPose = myOtos.getPosition();
+
 
     LOG_DEBUG_THROTTLE("otos", 100, "reading: \t%f, \t%f, \t%f", otosPose.x,
                        otosPose.y, otosPose.h);

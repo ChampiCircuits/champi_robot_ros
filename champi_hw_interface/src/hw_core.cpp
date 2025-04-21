@@ -16,16 +16,17 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
 
     stm_config_.is_set = false;
 
-    stm_config_.holo_drive_config.wheel_radius = (float) this->declare_parameter<float>("base_config.wheel_radius");
-    stm_config_.holo_drive_config.base_radius = (float) this->declare_parameter<float>("base_config.base_radius");
-    stm_config_.holo_drive_config.max_speed_linear = this->declare_parameter<double>("base_config.max_speed_linear");
-    stm_config_.holo_drive_config.max_accel_wheel = (float) this->declare_parameter<float>("base_config.max_accel_wheel");
-    stm_config_.holo_drive_config.max_accel_linear = this->declare_parameter<double>("base_config.max_acceleration_linear");
-    stm_config_.holo_drive_config.max_decel_linear = this->declare_parameter<double>("base_config.max_deceleration_linear");
-    stm_config_.holo_drive_config.max_accel_angular = this->declare_parameter<double>("base_config.max_acceleration_angular");
-    stm_config_.holo_drive_config.max_decel_angular = this->declare_parameter<double>("base_config.max_deceleration_angular");
+    stm_config_.holo_drive_config.wheel_radius = this->declare_parameter<double>("stm_config.holo_drive_config.wheel_radius");
+    stm_config_.holo_drive_config.base_radius = this->declare_parameter<double>("stm_config.holo_drive_config.base_radius");
+    stm_config_.holo_drive_config.max_accel_wheel = this->declare_parameter<double>("stm_config.holo_drive_config.max_accel_wheel");
+    stm_config_.holo_drive_config.max_accel_linear = this->declare_parameter<double>("stm_config.holo_drive_config.max_acceleration_linear");
+    stm_config_.holo_drive_config.max_decel_linear = this->declare_parameter<double>("stm_config.holo_drive_config.max_deceleration_linear");
+    stm_config_.holo_drive_config.max_accel_angular = this->declare_parameter<double>("stm_config.holo_drive_config.max_acceleration_angular");
+    stm_config_.holo_drive_config.max_decel_angular = this->declare_parameter<double>("stm_config.holo_drive_config.max_deceleration_angular");
+    stm_config_.otos_config.linear_scalar = this->declare_parameter<double>("stm_config.otos_config.linear_scalar");
+    stm_config_.otos_config.angular_scalar = this->declare_parameter<double>("stm_config.otos_config.angular_scalar");
 
-    stm_config_.cmd_vel_timeout = (float) this->declare_parameter<float>("base_config.cmd_vel_timeout");
+    stm_config_.cmd_vel_timeout = this->declare_parameter<double>("stm_config.cmd_vel_timeout");
 
     cov_pose_odom_wheels_ = this->declare_parameter<std::vector<double>>("covariances.pose_wheels");
     cov_vel_odom_wheels_ = this->declare_parameter<std::vector<double>>("covariances.vel_wheels");

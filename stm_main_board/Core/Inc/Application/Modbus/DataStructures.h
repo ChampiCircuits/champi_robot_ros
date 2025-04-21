@@ -12,7 +12,6 @@ struct Vector3 {
 struct HoloDriveConfig {
   double wheel_radius;
   double base_radius;
-  double max_speed_linear;
   double max_accel_wheel;
   double max_accel_linear;
   double max_decel_linear;
@@ -20,10 +19,16 @@ struct HoloDriveConfig {
   double max_decel_angular;
 };
 
+struct OtosConfig {
+  double linear_scalar;
+  double angular_scalar;
+};
+
 struct Config {
   bool is_set;
   double cmd_vel_timeout;
   HoloDriveConfig holo_drive_config;
+  OtosConfig otos_config;
 };
 
 struct State {

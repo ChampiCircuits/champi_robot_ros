@@ -25,18 +25,23 @@ hardware_interface:
       pose_otos: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
       vel_otos: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
 
-    base_config:
-      max_accel_wheel: 1000.0 # rotation des roues en rotation/s²
-      wheel_radius: 0.0276 # en m # 0.029
-      base_radius: 0.175 # en m
-      max_acceleration_linear: 0.4 # m/s^2
-      max_deceleration_linear: 1. # m/s^2
-
-      max_acceleration_angular: 1.8 # rad/s^2
-      max_deceleration_angular: 10.0 # rad/s^2
-
-      max_speed_linear: 0.4
+    stm_config:
       cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
+
+      holo_drive_config:
+        max_accel_wheel: 1000.0 # rotation des roues en rotation/s²
+        wheel_radius: 0.0276 # en m # 0.029
+
+        base_radius: 0.175 # en m
+        max_acceleration_linear: 0.4 # m/s^2
+        max_deceleration_linear: 1. # m/s^2
+
+        max_acceleration_angular: 1.8 # rad/s^2
+        max_deceleration_angular: 10.0 # rad/s^2
+
+      otos_config: # You have to restart node AND STM to apply the otos config (feature, not bug :))
+        linear_scalar: 0.992
+        angular_scalar: 1.07
 
 holo_teleop_joy_node:
   ros__parameters:
