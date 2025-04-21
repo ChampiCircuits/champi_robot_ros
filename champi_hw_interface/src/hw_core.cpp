@@ -3,6 +3,8 @@
 #include "util/ros_geometry.h"
 #include "tf2/impl/utils.h"
 
+#define THRESHOLD_REJECT_DIST 0.03
+
 
 HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
 {
@@ -46,6 +48,17 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
 
     setup_stm();
 
+    // Store initial Otos pose for otos_pose (viz) to start to 0.
+    read(mod_reg::reg_state);
+    tf2::Quaternion q;
+    q.setRPY(0.0, 0.0, mod_reg::state->otos_pose.theta);
+    offset_otos_.position.x = mod_reg::state->otos_pose.x;
+    offset_otos_.position.y = mod_reg::state->otos_pose.y;
+    offset_otos_.orientation.x = q.x();
+    offset_otos_.orientation.y = q.y();
+    offset_otos_.orientation.z = q.z();
+    offset_otos_.orientation.w = q.w();
+
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(20),
         std::bind(&HardwareInterfaceNode::loop, this));
@@ -58,8 +71,8 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     subscriber_initial_pose_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10, std::bind(
         &HardwareInterfaceNode::initial_pose_callback, this, std::placeholders::_1));
 
-    pub_odom_wheels_ = this->create_publisher<nav_msgs::msg::Odometry>("/hw/odom_wheels", 10);
-    pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/hw/odom_otos", 10);
+    pub_odom_wheels_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom_wheels", 10);
+    pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom_otos", 10);
 
     pub_pose_wheels_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/viz/pose_wheels", 10);
     pub_pose_otos_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/viz/pose_otos", 10);
@@ -117,6 +130,14 @@ nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_wheels(const Vector3 &v
         this->now());
 }
 
+
+// Normalize angle to be within [-pi, pi]
+double normalize_angle(double angle) {
+    while (angle > M_PI) angle -= 2.0 * M_PI;
+    while (angle < -M_PI) angle += 2.0 * M_PI;
+    return angle;
+}
+
 nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_otos(const Vector3 &pose, const double dt) const {
 
     static Vector3 prev_pose = {0, 0, 0};
@@ -124,14 +145,22 @@ nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_otos(const Vector3 &pos
 
     Vector3 vel = {0, 0, 0};
     if (first_time) {
-        prev_pose = pose;
         first_time = false;
     }
     else {
-        vel.x = (pose.x - prev_pose.x) / dt;
-        vel.y = (pose.y - prev_pose.y) / dt;
-        vel.theta = (pose.theta - prev_pose.theta) / dt;
+        const double delta_x = pose.x - prev_pose.x;
+        const double delta_y = pose.y - prev_pose.y;
+        const double delta_theta = pose.theta - prev_pose.theta;
+
+        // This is for when we call set_pose, the otos pose changes
+        const double cos_theta = std::cos(prev_pose.theta);
+        const double sin_theta = std::sin(prev_pose.theta);
+
+        vel.x = (delta_x * cos_theta + delta_y * sin_theta) / dt;
+        vel.y = (-delta_x * sin_theta + delta_y * cos_theta) / dt;
+        vel.theta = normalize_angle(delta_theta / dt);
     }
+    prev_pose = pose;
 
     return make_odom(
         pose,
@@ -160,23 +189,22 @@ void HardwareInterfaceNode::loop() {
     auto odom_wheels = make_odom_wheels(mod_reg::state->measured_vel, dt);
     auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
 
-    odom_wheels.pose.pose = easy_geometry::add(initial_pose_.pose.pose, odom_wheels.pose.pose);
-    odom_otos.pose.pose = easy_geometry::add(initial_pose_.pose.pose, odom_otos.pose.pose);
-
     auto pose_wheels = geometry_msgs::msg::PoseStamped();
     pose_wheels.header = odom_wheels.header;
-    pose_wheels.pose = odom_wheels.pose.pose;
+    pose_wheels.pose = ros_geometry::add(initial_pose_.pose.pose, odom_wheels.pose.pose);
 
     auto pose_otos = geometry_msgs::msg::PoseStamped();
     pose_otos.header = odom_otos.header;
-    pose_otos.pose = odom_otos.pose.pose;
+    pose_otos.pose = ros_geometry::add(ros_geometry::inverse(offset_otos_), odom_otos.pose.pose);
+    pose_otos.pose = ros_geometry::add(initial_pose_.pose.pose, pose_otos.pose);
+    // pose_otos.pose = ros_geometry::add(ros_geometry::inverse(offset_otos_), odom_otos.pose.pose); NON
+    // pose_otos.pose = ros_geometry::add(odom_otos.pose.pose, ros_geometry::inverse(offset_otos_)); NON
+    // pose_otos.pose = ros_geometry::add(ros_geometry::inverse(offset_otos_), odom_otos.pose.pose); POS OK
 
     pub_odom_wheels_->publish(odom_wheels);
     pub_odom_otos_->publish(odom_otos);
     pub_pose_wheels_->publish(pose_wheels);
     pub_pose_otos_->publish(pose_otos);
-
-
 
     // Write
     mod_reg::cmd->is_read = false;

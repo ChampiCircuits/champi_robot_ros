@@ -56,6 +56,7 @@ def generate_launch_description():
         name='ukf',
         output='screen',
         parameters=[os.path.join(get_package_share_directory("champi_bringup"), "config", "ukf.yaml")],
+        remappings=[("/odometry/filtered", "/odom")],
     )
 
     # Calls the set_pose service of the UKF node
@@ -102,7 +103,7 @@ def generate_launch_description():
         hardware_interface_launch,
         base_control_simu_node,
         cmd_vel_mux_node,
-        # ukf_node,
+        ukf_node,
         call_set_pose_node
     ])
 

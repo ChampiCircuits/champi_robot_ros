@@ -60,8 +60,8 @@ void OtosTask(void *argument) {
       mod_reg::requests->request_reset_otos = false;
       myOtos.calibrateImu();
       osDelay(10);
-      myOtos.resetTracking();
-      osDelay(10);
+      // myOtos.resetTracking(); // We don't reset because jumps are bad for UKF. Still it's a good time to calibrate the IMU
+      // osDelay(10);
     }
 
     Pose2D otosPose = myOtos.getPosition();

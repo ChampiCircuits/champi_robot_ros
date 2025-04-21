@@ -85,6 +85,7 @@ private:
     std::vector<double> cov_pose_odom_otos_;
     std::vector<double> cov_vel_odom_otos_;
 
+    geometry_msgs::msg::Pose offset_otos_; // For handling initial pose without actually resetting the OTOS pose.
     geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_;
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscriber_initial_pose_;
 
