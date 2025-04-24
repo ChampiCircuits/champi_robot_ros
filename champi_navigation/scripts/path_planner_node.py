@@ -58,7 +58,7 @@ class PlannerNode(Node):
         self.get_logger().info(f'debug: {self.debug}')
 
         # Subscribers
-        self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
+        self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.costmap_sub = self.create_subscription(OccupancyGrid, '/costmap', self.costmap_callback, 10)
 
         # Publisher
@@ -178,7 +178,7 @@ class PlannerNode(Node):
 
         # We're still waiting for first messages (init)
         while rclpy.ok() and (self.robot_pose is None or self.costmap is None) and goal_handle.is_active:
-            self.get_logger().info('Waiting for init messages', throttle_duration_sec=1.)
+            self.get_logger().info(f'Waiting for init messages, robot_pose={self.robot_pose is not None}, costmap={self.costmap is not None}', throttle_duration_sec=1.)
             
             # Feedback
             feedback_msg = get_feedback_msg(ComputePathResult.INITIALIZING, [], 0)
