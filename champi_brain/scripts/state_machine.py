@@ -4,7 +4,6 @@ import logging, rclpy, typing, time, yaml
 from rclpy.logging import get_logger
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
-from state_machine_itf import ChampiStateMachineITF
 from states import ChampiState, InitState, MoveState
 
 
@@ -119,19 +118,4 @@ class ChampiStateMachine(object):
                 exit()
 
             self.strategy.pop(0)
-
-
-
-def main(args=None):
-    rclpy.init(args=args)
-
-    sm = ChampiStateMachine()
-    ros_itf = ChampiStateMachineITF(sm)
-    rclpy.spin(ros_itf)
-
-    ros_itf.destroy_node()
-    rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()
 

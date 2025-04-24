@@ -7,6 +7,7 @@ from geometry_msgs.msg import Point, Pose
 from rclpy.action import ActionClient
 from robot_localization.srv import SetPose
 from math import sin, cos, pi
+from state_machine import ChampiStateMachine
 
 TOTAL_AVAILABLE_TIME = 100
 
@@ -21,20 +22,10 @@ class ChampiStateMachineITF(Node):
         self.champi_sm.tirette_pulled = True
         self.start_time = self.clock.now()
 
-    def __init__(self, champi_sm):
+    def __init__(self):
         super().__init__('sm_ros_itf')
         self.get_logger().info('Launching ChampiSMRosInterface...')
 
-        self.champi_sm = champi_sm
-        self.champi_sm.set_itf(self)
-
-        self.clock = Clock()
-        self.start_time = None
-        self.init_time = self.clock.now()
-        self.time_left = TOTAL_AVAILABLE_TIME
-
-        self.timer = self.create_timer(timer_period_sec=0.2, callback=self.callback_timer)
-        
         # Parameters
         strategy_file_param = self.declare_parameter('strategy_file', rclpy.Parameter.Type.STRING).value
         team_color_param = self.declare_parameter('team_color', rclpy.Parameter.Type.STRING).value
@@ -45,6 +36,18 @@ class ChampiStateMachineITF(Node):
         self.get_logger().info(f'strategy: {strategy_file_param}')
         self.get_logger().info(f'team_color: {team_color_param}')
 
+
+        self.champi_sm = ChampiStateMachine()
+        self.champi_sm.set_itf(self)
+
+        self.clock = Clock()
+        self.start_time = None
+        self.init_time = self.clock.now()
+        self.time_left = TOTAL_AVAILABLE_TIME
+
+        self.timer = self.create_timer(timer_period_sec=0.2, callback=self.callback_timer)
+        
+       
 
         # # Strategy
         self.get_logger().info('>> Loading strategy...')
@@ -210,3 +213,16 @@ class ChampiStateMachineITF(Node):
             return 'INTITIALIZING'
         else:
             return 'UNKNOWN (error)'
+        
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    ros_itf = ChampiStateMachineITF()
+    rclpy.spin(ros_itf)
+
+    ros_itf.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
