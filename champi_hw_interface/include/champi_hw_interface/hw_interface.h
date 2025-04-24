@@ -6,7 +6,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <modbus/modbus.h>
-#include <boost/asio.hpp> // Compiles without, but makes vscode happy
+// #include <boost/asio.hpp> // Compiles without, but makes vscode happy
 
 #include <string>
 #include <vector>
