@@ -1,0 +1,13 @@
+actions:
+
+  - action: move
+    target: { x: 1.0, y: 2.0, theta_rad: 0.0 }
+
+  - action: wait
+    duration: 3.0
+
+  - action: move
+    target: { x: 1.0, y: 0.0, theta_rad: 0.0 }
+
+  - action: wait
+    duration: 3.0

@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-import logging, rclpy, typing, time
+import logging, rclpy, typing, time, yaml
 from rclpy.logging import get_logger
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
 from state_machine_itf import ChampiStateMachineITF
 from states import ChampiState, InitState, MoveState
-
-strategy = ['move 1 1', 'grab', 'move 1 2', 'put']
 
 
 class ChampiStateMachine(object):
@@ -74,11 +72,18 @@ class ChampiStateMachine(object):
         get_logger(self.name).warn('Launched SM !')
         get_logger(self.name).warn(f'Starting in state [{self.state}].')
 
+        self.strategy = self.load_strategy('strategies/test_strat.yaml')
+
     def reset_flags(self):
         self.can_start_moving = False
         self.can_start_grabbing = False
         self.can_start_putting = False
         self.goal_reached = False
+
+    def load_strategy(self, file_path):
+        with open(file_path, 'r') as file:
+            data = yaml.safe_load(file)
+        return data['actions']
 
     def draw_graph(self, *args, **kwargs): 
         self.sm.get_combined_graph().draw('SM_diagram.png', prog='dot')
@@ -87,11 +92,13 @@ class ChampiStateMachine(object):
         get_logger(self.name).info(f'SM in [{self.state}], searching next action...')
         self.reset_flags()
 
-        if len(strategy) == 0:
+        if len(self.strategy) == 0:
             get_logger(self.name).warn(f'End of actions ! Staying in [{self.state}].')
         else:
-            action = strategy[0]
-            action_name = action.split(' ')[0]
+            action = self.strategy[0]
+            print(action)
+
+            action_name = action['action']
             if action_name == 'move':
                 x, y, theta_rad = action['target']['x'], action['target']['y'], action['target']['theta_rad']
                 self.can_start_moving = True
@@ -103,11 +110,14 @@ class ChampiStateMachine(object):
             elif action_name == 'put':
                 self.can_start_putting = True
                 self.start_put()
+            elif action_name == 'wait':
+                duration = action['duration']
+                time.sleep(duration) # TODO just a hack maybe problematic ?
             else:
                 get_logger(self.name).error('UNKNOWN ACTION')
                 exit()
 
-            strategy.pop(0)
+            self.strategy.pop(0)
 
 
 
