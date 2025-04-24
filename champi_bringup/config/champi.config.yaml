@@ -116,4 +116,3 @@ path_planner:
 sm_ros_itf:
   ros__parameters:
     strategy_file: 'test_strat.yaml'
-    team_color: 'blue'
