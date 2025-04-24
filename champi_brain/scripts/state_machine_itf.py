@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from rclpy.clock import Clock
@@ -52,7 +54,7 @@ class ChampiStateMachineITF(Node):
 
         # # Strategy
         self.get_logger().info('>> Loading strategy...')
-        self.champi_sm.strategy = self.champi_sm.load_strategy(get_package_share_directory('champi_bringup') + 'strategies/' + strategy_file_param)
+        self.champi_sm.strategy = self.champi_sm.load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param)
         self.get_logger().info(f'<< Strategy {strategy_file_param} loaded!')
 
         # Action client for /navigate
