@@ -131,11 +131,16 @@ class ChampiStateMachineITF(Node):
 
 
 # ============================================ Utils ==============================================
-    def send_goal(self, x, y):
+    def send_goal(self, x, y, theta_rad):
         self.get_logger().info(f' Call action to move to {x} {y}')
         goal_pose = Pose()
-        goal_pose.position.x = float(x)
-        goal_pose.position.y = float(y)  
+        goal_pose.position.x = x
+        goal_pose.position.y = y  
+
+        goal_pose.orientation.x = 0.0
+        goal_pose.orientation.y = 0.0
+        goal_pose.orientation.z = sin(theta_rad / 2.0)
+        goal_pose.orientation.w = cos(theta_rad / 2.0)
 
         # Create a Navigate request and send it
         goal = self.create_action_goal(goal_pose)

@@ -93,9 +93,9 @@ class ChampiStateMachine(object):
             action = strategy[0]
             action_name = action.split(' ')[0]
             if action_name == 'move':
-                x, y = action.split(' ')[1], action.split(' ')[2]
+                x, y, theta_rad = action['target']['x'], action['target']['y'], action['target']['theta_rad']
                 self.can_start_moving = True
-                self.start_move(x=x,y=y)
+                self.start_move(x=x, y=y, theta_rad=theta_rad)
 
             elif action_name == 'grab':
                 self.can_start_grabbing = True
