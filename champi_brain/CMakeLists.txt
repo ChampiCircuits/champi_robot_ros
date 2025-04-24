@@ -21,10 +21,6 @@ find_package(ament_index_cpp REQUIRED)
 
 
 find_package(ament_cmake REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
-
-add_executable(example_bt src/example_bt.cpp)
-ament_target_dependencies(example_bt rclcpp behaviortree_cpp)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
