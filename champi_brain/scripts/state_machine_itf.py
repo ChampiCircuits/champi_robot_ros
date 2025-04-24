@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.clock import Clock
+from ament_index_python.packages import get_package_share_directory
 
 from champi_interfaces.action import Navigate
 from geometry_msgs.msg import Point, Pose
@@ -51,15 +52,17 @@ class ChampiStateMachineITF(Node):
 
         # # Strategy
         self.get_logger().info('>> Loading strategy...')
-        self.champi_sm.strategy = self.champi_sm.load_strategy('strategies/' + strategy_file_param)
+        self.champi_sm.strategy = self.champi_sm.load_strategy(get_package_share_directory('champi_bringup') + 'strategies/' + strategy_file_param)
         self.get_logger().info(f'<< Strategy {strategy_file_param} loaded!')
 
         # Action client for /navigate
+        self.get_logger().info('>> Waiting for action client /navigate...')
         self.goal_handle_navigate = None
         self.action_client_navigate = ActionClient(self, Navigate, '/navigate')
         self.action_client_navigate.wait_for_server()
-        self.get_logger().info('Action client for /navigate is ready!')
+        self.get_logger().info('<< Action client /navigate is ready!')
 
+        self.champi_sm.ros_initialized = True # TODO more things ?
         self.get_logger().warn('Launched ChampiSMRosInterface !')
 
 
@@ -93,7 +96,7 @@ class ChampiStateMachineITF(Node):
                 self.get_logger().info(f'No time left. Triggering end of match. Was in state {self.champi_sm.state}.')
 
     def init_robot_pose(self):
-        init_pose = [1.0, 0.5, pi/2]
+        init_pose = [1.0, 1.0, 0.0] # TODO BETTER
         self.set_pose_client = self.create_client(SetPose, '/set_pose')
         while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
@@ -110,6 +113,7 @@ class ChampiStateMachineITF(Node):
         request.pose.pose.pose.orientation.w = cos(init_pose[2]/2)
 
         future = self.set_pose_client.call_async(request)
+        self.get_logger().info(f'requested setpose to {init_pose[0]} {init_pose[1]} {init_pose[2]} rad')
 
 
     # ==================================== Feedback Callbacks =====================================

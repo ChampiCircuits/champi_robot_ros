@@ -24,7 +24,7 @@ def generate_launch_description():
 
     sm = Node(
         package='champi_brain',
-        executable='state_machine.py',
+        executable='state_machine_itf.py',
         name='sm_ros_itf',
         output='screen',
         parameters=[config_file_path]
