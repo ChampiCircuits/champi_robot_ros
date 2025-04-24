@@ -1,3 +1,4 @@
+import rclpy
 from rclpy.node import Node
 from rclpy.clock import Clock
 
@@ -32,9 +33,23 @@ class ChampiStateMachineITF(Node):
         self.init_time = self.clock.now()
         self.time_left = TOTAL_AVAILABLE_TIME
 
-        self.timer = self.create_timer(timer_period_sec=0.2,
-                                       callback=self.callback_timer)
+        self.timer = self.create_timer(timer_period_sec=0.2, callback=self.callback_timer)
         
+        # Parameters
+        strategy_file_param = self.declare_parameter('strategy_file', rclpy.Parameter.Type.STRING).value
+        team_color_param = self.declare_parameter('team_color', rclpy.Parameter.Type.STRING).value
+            # TODO prendre en compte
+
+        # Print parameters
+        self.get_logger().info('SM interface started with the following parameters:')
+        self.get_logger().info(f'strategy: {strategy_file_param}')
+        self.get_logger().info(f'team_color: {team_color_param}')
+
+
+        # # Strategy
+        self.get_logger().info('>> Loading strategy...')
+        self.champi_sm.strategy = self.champi_sm.load_strategy('strategies/' + strategy_file_param)
+        self.get_logger().info(f'<< Strategy {strategy_file_param} loaded!')
 
         # Action client for /navigate
         self.goal_handle_navigate = None

@@ -111,3 +111,8 @@ path_planner:
     planner_loop_period: 0.2
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
     debug: false
+
+sm_ros_itf:
+  ros__parameters:
+    strategy_file: 'test_strat.yaml'
+    team_color: 'blue'

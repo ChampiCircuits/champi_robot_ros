@@ -36,7 +36,6 @@ endif()
 
 # Allow lauch files to be found when calling them with ros2 launch
 install(DIRECTORY
-  xml
   launch
   scripts
   # config
@@ -49,10 +48,6 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-        scripts/screen_manager.py
-        scripts/rviz_markers.py
-        scripts/strategy_engine_node.py
-        scripts/simu_act_node.py
         scripts/state_machine.py
   DESTINATION lib/${PROJECT_NAME}
 )

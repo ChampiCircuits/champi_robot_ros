@@ -65,6 +65,8 @@ class ChampiStateMachine(object):
         self.match_ended = False
         self.reset_flags()
 
+        # STRATEGY (TO BE INIT BY THE NODE)
+        self.strategy = None
 
         # OTHERS
         self.itf:ChampiStateMachineITF = None
@@ -72,7 +74,6 @@ class ChampiStateMachine(object):
         get_logger(self.name).warn('Launched SM !')
         get_logger(self.name).warn(f'Starting in state [{self.state}].')
 
-        self.strategy = self.load_strategy('strategies/test_strat.yaml')
 
     def reset_flags(self):
         self.can_start_moving = False
