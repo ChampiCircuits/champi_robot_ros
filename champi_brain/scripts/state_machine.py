@@ -37,12 +37,14 @@ class ChampiStateMachine(object):
         self.sm.add_state(ChampiState(name='endOfMatch', sm=self))
         # self.sm.add_state(ChampiState(name='stop', sm=self))
 
+        self.sm.get_state('init').add_substate(state=ChampiState(name='waitForRosInit', sm=self))
         self.sm.get_state('init').add_substate(state=ChampiState(name='waitForStmInit', sm=self))
         self.sm.get_state('init').add_substate(ChampiState(name='waitForUserChooseConfig', sm=self))
         self.sm.get_state('init').add_substate(ChampiState(name='waitForTirette', sm=self))
 
         # TRANSITIONS
-        self.sm.add_transition('init', 'stop', 'init_waitForStmInit')
+        self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
+        self.sm.add_transition('init_next', 'init_waitForRosInit', 'init_waitForStmInit', conditions='ros_initialized')
         self.sm.add_transition('init_next', 'init_waitForStmInit', 'init_waitForUserChooseConfig', conditions='stm_initialized')
         self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_waitForTirette', conditions='user_has_choosed_config')
         self.sm.add_transition('init_end', 'init_waitForTirette', 'idle', conditions='tirette_pulled')
@@ -57,7 +59,8 @@ class ChampiStateMachine(object):
         # ADDITIONALS CALLBACKS
         self.sm.get_state('idle').add_callback('enter', 'find_next_state')
 
-        # FLAGS TO BE UPDATED BY ROS MSG CALLBACKS
+        # FLAGS (TO BE UPDATED BY ROS MSG CALLBACKS)
+        self.ros_initialized = False
         self.stm_initialized = False
         self.user_has_choosed_config = False
         self.tirette_pulled = False
