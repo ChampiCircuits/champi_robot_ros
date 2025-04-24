@@ -50,6 +50,7 @@ holo_teleop_joy_node:
 
 twist_mux:
   ros__parameters:
+    use_stamped: false
     topics:
       stop:
         topic   : /ctrl/cmd_vel_stop
