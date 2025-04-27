@@ -1,7 +1,10 @@
 #include "Application/ActuatorsTask.h"
 
+#include "usart.h"
+
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/PosSteppersTask.h"
+#include "Application/SCServosApp.h"
 #include "Application/Modbus/ModbusTask.h"
 #include "Config/Config.h"
 #include "Util/logging.h"

@@ -173,7 +173,7 @@ void MX_USART10_UART_Init(void)
 
   /* USER CODE END USART10_Init 1 */
   huart10.Instance = USART10;
-  huart10.Init.BaudRate = 115200;
+  huart10.Init.BaudRate = 1000000;
   huart10.Init.WordLength = UART_WORDLENGTH_8B;
   huart10.Init.StopBits = UART_STOPBITS_1;
   huart10.Init.Parity = UART_PARITY_NONE;
@@ -183,7 +183,7 @@ void MX_USART10_UART_Init(void)
   huart10.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart10.Init.ClockPrescaler = UART_PRESCALER_DIV1;
   huart10.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart10) != HAL_OK)
+  if (HAL_HalfDuplex_Init(&huart10) != HAL_OK)
   {
     Error_Handler();
   }
@@ -335,8 +335,15 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     PG11     ------> USART10_RX
     PG12     ------> USART10_TX
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
+    GPIO_InitStruct.Pin = GPIO_PIN_11;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF4_USART10;
+    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_12;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF4_USART10;

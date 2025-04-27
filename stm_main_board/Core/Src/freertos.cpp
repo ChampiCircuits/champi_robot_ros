@@ -30,6 +30,7 @@
 #include "Application/OtosTask.h"
 #include "Application/SysTask.h"
 #include "Application/PosSteppersTask.h"
+#include "Application/SCServosApp.h"
 #include "ActuatorsTask.h"
 #include "tim.h"
 #include "usb_device.h"
@@ -105,6 +106,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   ModbusTaskStart();
+  SCServosApp_Init(); // Reminder: That one is not a task.
   SysTaskStart();
   HoloDriveTaskStart();
   OtosTaskStart();
