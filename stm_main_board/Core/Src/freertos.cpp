@@ -29,7 +29,8 @@
 #include "Application/Modbus/ModbusTask.h"
 #include "Application/OtosTask.h"
 #include "Application/SysTask.h"
-#include "Devices/PosStepper.h"
+#include "Application/PosSteppersTask.h"
+#include "ActuatorsTask.h"
 #include "tim.h"
 #include "usb_device.h"
 
@@ -107,6 +108,8 @@ void MX_FREERTOS_Init(void) {
   SysTaskStart();
   HoloDriveTaskStart();
   OtosTaskStart();
+  PosSteppersTaskStart();
+  ActuatorsTaskStart();
 
   /* USER CODE END RTOS_THREADS */
 
@@ -129,10 +132,7 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
-  // PosStepper stepper_opt1(htim16, TIM_CHANNEL_1, STEP_OPT1_GPIO_Port,
-  // STEP_OPT1_Pin); stepper_opt1.set_goal(1.);
   for (;;) {
-    // stepper_opt1.spin_once(0.1);
     osDelay(100);
   }
   /* USER CODE END StartDefaultTask */

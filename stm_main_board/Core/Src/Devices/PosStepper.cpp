@@ -44,13 +44,15 @@ void PosStepper::spin_once(double dt) {
     return;
   }
 
+  double current_speed = _speed_stepper.get_speed_rps();
+
   if (!_pos_reached) {
-    _current_pos += _speed_stepper.get_speed_rps() * dt;
+    _current_pos += current_speed * dt;
   }
 
   float delta_pos = _goal_pos - _current_pos;
 
-  if (abs(delta_pos) < 0.1) { // TODO
+  if ((current_speed > 0. && delta_pos <= 0) || (current_speed < 0. && delta_pos >= 0)) {
     cancel_goal();
     _pos_reached = true;
     return;

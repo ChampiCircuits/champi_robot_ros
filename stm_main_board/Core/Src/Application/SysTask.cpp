@@ -23,6 +23,11 @@ void SysTask(void *argument) {
 
   while (true) {
 
+    // Enable steppers if E-Stop is released
+    HAL_GPIO_WritePin(
+      ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin,
+      HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin));
+
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
 
     if (mod_reg::requests->request_reset_stm) {

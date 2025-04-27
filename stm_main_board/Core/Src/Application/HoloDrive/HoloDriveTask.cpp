@@ -55,12 +55,6 @@ void HoloDriveTask(void *argument) {
 
   while (true) {
 
-    // Enable steppers if E-Stop is released
-    HAL_GPIO_WritePin(
-      ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin,
-      HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin));
-
-
     // if cmd vel is read for more than 1 second, stop the motors
     if (mod_reg::cmd->is_read) {
       if (osKernelGetTickCount() - t_last_read > CMD_TIMEOUT_MS) {

@@ -50,8 +50,9 @@ WHEEL_L(eft)  WHEEL_R(ight)
 
 // ======================== POSSTEPPER CONFIG ========================
 
-#define STEPPER_MAX_SPEED_DEFAULT 1.0
-#define STEPPER_MAX_ACCEL_DEFAULT 1.0
+#define STEPPER_MAX_SPEED_DEFAULT 10.0
+#define STEPPER_MAX_ACCEL_DEFAULT 5.0
+#define POSSTEPPERS_LOOP_PERIOD_MS 10
 
 
 // ======================== OTOS CONFIG ==============================
