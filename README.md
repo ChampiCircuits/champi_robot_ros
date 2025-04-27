@@ -65,8 +65,8 @@ ros2 launch champi_bringup teleop.launch.py
 
 ## Requirements
 
-- Ubuntu 22
-- ROS2 Humble
+- Ubuntu 24
+- ROS2 Jazzy
 
 ## How to
 

@@ -1,12 +1,14 @@
 #!/bin/sh
 
+cd ~/champi_ws
+
 # Install python dependencies
 echo "Installing python dependencies..."
 pip3 install -r ~/champi_ws/src/champi_robot_ros/requirements.txt --break-system-packages
 
 # Install rosdep dependencies
 echo "Installing rosdep dependencies..."
-sudo apt install -y python3-rosdep2
+sudo apt install -y python3-rosdep
 sudo rosdep init
 rosdep update
 rosdep install --from src --ignore-src -y
