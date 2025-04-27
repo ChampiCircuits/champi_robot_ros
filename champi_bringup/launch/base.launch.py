@@ -103,7 +103,7 @@ def generate_launch_description():
         hardware_interface_launch,
         base_control_simu_node,
         cmd_vel_mux_node,
-        ukf_node,
+        #ukf_node,
         call_set_pose_node
     ])
 

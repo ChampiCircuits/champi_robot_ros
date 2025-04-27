@@ -72,7 +72,7 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
         &HardwareInterfaceNode::initial_pose_callback, this, std::placeholders::_1));
 
     pub_odom_wheels_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom_wheels", 10);
-    pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom_otos", 10);
+    pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
 
     pub_pose_wheels_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/viz/pose_wheels", 10);
     pub_pose_otos_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/viz/pose_otos", 10);

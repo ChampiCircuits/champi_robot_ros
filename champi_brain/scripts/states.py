@@ -25,7 +25,7 @@ class WaitState(ChampiState):
         duration = event_data.kwargs.get('duration', None)
 
         get_logger(self.name).info(f'Waiting for {duration} seconds')
-        time.sleep(duration) # TODO just a hack maybe problematic ?
+        time.sleep(duration)
         get_logger(self.name).info(f'Waited for {duration} seconds')
 
         self.sm.end_of_wait = True
