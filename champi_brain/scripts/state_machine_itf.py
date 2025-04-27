@@ -11,6 +11,7 @@ from rclpy.action import ActionClient
 from robot_localization.srv import SetPose
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
+import time
 
 TOTAL_AVAILABLE_TIME = 100
 
@@ -102,6 +103,7 @@ class ChampiStateMachineITF(Node):
         self.set_pose_client = self.create_client(SetPose, '/set_pose')
         while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
+            time.sleep(0.5)
 
         request = SetPose.Request()
         request.pose.header.stamp = self.get_clock().now().to_msg()
