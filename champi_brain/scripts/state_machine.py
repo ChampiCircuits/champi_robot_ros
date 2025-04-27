@@ -4,7 +4,7 @@ import logging, rclpy, typing, time, yaml
 from rclpy.logging import get_logger
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
-from states import ChampiState, InitState, MoveState
+from states import ChampiState, InitState, MoveState, WaitState
 
 
 class ChampiStateMachine(object):
@@ -31,6 +31,7 @@ class ChampiStateMachine(object):
         # !! States names must not contain underscores _ as they are used for substates naming
         self.sm.add_state(InitState(name='init', sm=self))
         self.sm.add_state(ChampiState(name='idle', sm=self))
+        self.sm.add_state(WaitState(name='wait', sm=self))
         self.sm.add_state(MoveState(name='move', sm=self))
         self.sm.add_state(ChampiState(name='grab', sm=self))
         self.sm.add_state(ChampiState(name='put', sm=self))
@@ -52,8 +53,10 @@ class ChampiStateMachine(object):
         self.sm.add_transition('start_move', 'idle', 'move', conditions='can_start_moving')
         self.sm.add_transition('start_grab', 'idle', 'grab', conditions='can_start_grabbing')
         self.sm.add_transition('start_put', 'idle', 'put', conditions='can_start_putting')
+        self.sm.add_transition('start_wait', 'idle', 'wait', conditions='can_start_waiting')
         self.sm.add_transition('back_to_idle', 'move', 'idle', conditions='goal_reached')
         self.sm.add_transition('back_to_idle', ['grab', 'put'], 'idle')
+        self.sm.add_transition('back_to_idle', 'wait', 'idle', conditions='end_of_wait')
         self.sm.add_transition('end_of_match', '*', 'endOfMatch', conditions=['match_has_ended'])
 
         # ADDITIONALS CALLBACKS
@@ -81,11 +84,16 @@ class ChampiStateMachine(object):
         self.can_start_moving = False
         self.can_start_grabbing = False
         self.can_start_putting = False
+        self.can_start_waiting = False
         self.goal_reached = False
+        self.end_of_wait = False
 
     def load_strategy(self, file_path):
         with open(file_path, 'r') as file:
             data = yaml.safe_load(file)
+
+        for (i, action) in enumerate(data['actions']):
+            get_logger(self.name).info(f'Action {i}: {action}')
         return data['actions']
 
     def draw_graph(self, *args, **kwargs): 
@@ -99,7 +107,7 @@ class ChampiStateMachine(object):
             get_logger(self.name).warn(f'End of actions ! Staying in [{self.state}].')
         else:
             action = self.strategy[0]
-            print(action)
+            get_logger(self.name).info(f'{action}')
 
             action_name = action['action']
             if action_name == 'move':
@@ -114,8 +122,8 @@ class ChampiStateMachine(object):
                 self.can_start_putting = True
                 self.start_put()
             elif action_name == 'wait':
-                duration = action['duration']
-                time.sleep(duration) # TODO just a hack maybe problematic ?
+                self.can_start_waiting = True
+                self.start_wait(duration=action['duration'])
             else:
                 get_logger(self.name).error('UNKNOWN ACTION')
                 exit()

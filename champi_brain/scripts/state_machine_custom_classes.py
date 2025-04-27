@@ -2,6 +2,7 @@ from transitions.extensions.nesting import NestedState
 from transitions.extensions import HierarchicalGraphMachine
 from threading import Thread
 import time
+from rclpy.logging import get_logger
 
 
 class ChampiState(NestedState):
@@ -10,11 +11,11 @@ class ChampiState(NestedState):
         self.sm = sm
 
     def enter(self, event_data):
-        print(f'\033[92m>> Entering state [{self.name}]\033[0m')
+        get_logger('sm').info(f'\033[92m>> Entering state [{self.name}]\033[0m')
         super().enter(event_data)
 
     def exit(self, event_data):
-        print(f'\033[91m<< Exiting state [{self.name}]\033[0m') 
+        get_logger('sm').info(f'\033[91m<< Exiting state [{self.name}]\033[0m')
         super().exit(event_data)
 
 
