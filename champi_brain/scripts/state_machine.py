@@ -2,6 +2,7 @@
 
 import logging, rclpy, typing, time, yaml
 from rclpy.logging import get_logger
+from ament_index_python.packages import get_package_share_directory
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
 from states import ChampiState, InitState, MoveState, WaitState
@@ -75,7 +76,7 @@ class ChampiStateMachine(object):
 
         # OTHERS
         self.itf:ChampiStateMachineITF = None
-        self.sm.get_graph().draw('SM_diagram.png', prog='dot')
+        self.draw_graph()
         get_logger(self.name).warn('Launched SM !')
         get_logger(self.name).warn(f'Starting in state [{self.state}].')
 
@@ -97,7 +98,7 @@ class ChampiStateMachine(object):
         return data['actions']
 
     def draw_graph(self, *args, **kwargs): 
-        self.sm.get_combined_graph().draw('SM_diagram.png', prog='dot')
+        self.sm.get_combined_graph().draw(get_package_share_directory('champi_brain')+'SM_diagram.png', prog='dot')
 
     def find_next_state(self):
         get_logger(self.name).info(f'SM in [{self.state}], searching next action...')

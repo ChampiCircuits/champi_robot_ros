@@ -2,3 +2,6 @@ libprotobuf-dev
 libudev-dev
 protobuf-compiler
 libmodbus-dev
+gcc-arm-none-eabi
+graphviz
+graphviz-dev
