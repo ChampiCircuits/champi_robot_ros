@@ -1,5 +1,6 @@
 # Coupe de France de Robotique 2024 : Code ROS2
 
+sudo systemctl restart isc-dhcp-server
 
 ## Pictures
 

@@ -114,3 +114,27 @@ sudo usermod -a -G dialout $USER
 echo "set -g mouse on" >> ~/.tmux.conf
 ```
 ... Then log-out log-in.
+
+
+
+If this gives an output like this
+champi@circuits:~$ sudo nft list ruleset
+table ip nm-shared-wlp1s0 {
+chain nat_postrouting {
+type nat hook postrouting priority srcnat; policy accept;
+ip saddr 172.0.0.0/24 ip daddr != 172.0.0.0/24 masquerade
+}
+
+        chain filter_forward {
+                type filter hook forward priority filter; policy accept;
+                ip daddr 172.0.0.0/24 oifname "wlp1s0" ct state { established, related } accept
+                ip saddr 172.0.0.0/24 iifname "wlp1s0" accept
+                iifname "wlp1s0" oifname "wlp1s0" accept
+                iifname "wlp1s0" reject
+                oifname "wlp1s0" reject
+        }
+}
+
+Then run
+sudo nft flush ruleset
+to make ros multi-pc work again.
