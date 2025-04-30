@@ -98,23 +98,21 @@ class ChampiStateMachineITF(Node):
                 self.get_logger().info(f'No time left. Triggering end of match. Was in state {self.champi_sm.state}.')
 
     def init_robot_pose(self):
-        init_pose = [1.0, 1.0, 0.0] # TODO BETTER
-
         set_pose_pub = self.create_publisher(PoseWithCovarianceStamped, '/set_pose', 10)
 
         msg = PoseWithCovarianceStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = 'odom'
-        msg.pose.pose.position.x = init_pose[0]
-        msg.pose.pose.position.y = init_pose[1]
+        msg.pose.pose.position.x = self.champi_sm.init_pose[0]
+        msg.pose.pose.position.y = self.champi_sm.init_pose[1]
         msg.pose.pose.position.z = 0.
         msg.pose.pose.orientation.x = 0.
         msg.pose.pose.orientation.y = 0.
-        msg.pose.pose.orientation.z = sin(init_pose[2]/2)
-        msg.pose.pose.orientation.w = cos(init_pose[2]/2)
+        msg.pose.pose.orientation.z = sin(self.champi_sm.init_pose[2]/2)
+        msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]/2)
 
         set_pose_pub.publish(msg)
-        self.get_logger().info(f'requested set_pose to {init_pose[0]} {init_pose[1]} {init_pose[2]} rad')
+        self.get_logger().info(f'requested set_pose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
 
     # ==================================== Feedback Callbacks =====================================
 

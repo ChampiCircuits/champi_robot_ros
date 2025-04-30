@@ -5,6 +5,7 @@ from rclpy.logging import get_logger
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
 from states import ChampiState, InitState, MoveState, WaitState
+from ament_index_python.packages import get_package_share_directory
 
 
 class ChampiStateMachine(object):
@@ -72,10 +73,14 @@ class ChampiStateMachine(object):
 
         # STRATEGY (TO BE INIT BY THE NODE)
         self.strategy = None
+        self.init_pose = None
 
         # OTHERS
         self.itf:ChampiStateMachineITF = None
-        self.sm.get_graph().draw('SM_diagram.png', prog='dot')
+        path = get_package_share_directory('champi_brain') + '/SM_diagram.png'
+        get_logger(self.name).warn(f'PATH: {path}')
+
+        self.sm.get_graph().draw(path, prog='dot')
         get_logger(self.name).warn('Launched SM !')
         get_logger(self.name).warn(f'Starting in state [{self.state}].')
 
@@ -92,8 +97,12 @@ class ChampiStateMachine(object):
         with open(file_path, 'r') as file:
             data = yaml.safe_load(file)
 
+        self.init_pose = [data['init_pose']['x'], data['init_pose']['y'], data['init_pose']['theta_rad']]
+        self.itf.get_logger().info(f'<< Init pose will be {self.init_pose[0]} {self.init_pose[1]} {self.init_pose[2]}rad!')
+
         for (i, action) in enumerate(data['actions']):
             get_logger(self.name).info(f'Action {i}: {action}')
+
         return data['actions']
 
     def draw_graph(self, *args, **kwargs): 
