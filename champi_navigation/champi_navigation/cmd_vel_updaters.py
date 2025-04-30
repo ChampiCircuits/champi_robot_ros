@@ -103,8 +103,8 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         constraints_mag = TrapezoidProfile.Constraints(p.max_speed_linear, p.max_acc_linear)
         current_state_mag = TrapezoidProfile.State(-dist_robot_to_goal, x_y_speed)
         goal_state_mag = TrapezoidProfile.State(0, p.end_speed)
-        profile_mag = TrapezoidProfile(constraints_mag, goal_state_mag, current_state_mag)
-        cmd_vel_x_y = profile_mag.calculate(dt).velocity
+        profile_mag = TrapezoidProfile(constraints_mag)
+        cmd_vel_x_y = profile_mag.calculate(dt, current_state_mag, goal_state_mag).velocity
 
 
         # ========================= Angular velocity =========================
@@ -131,8 +131,8 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         constraints_theta = TrapezoidProfile.Constraints(p.max_speed_angular, p.max_acc_angular)
         current_state_theta = TrapezoidProfile.State(-theta_error, p.robot_state.vel.theta)
         goal_state_theta = TrapezoidProfile.State(0, 0)
-        profile_theta = TrapezoidProfile(constraints_theta, goal_state_theta, current_state_theta)
-        cmd_vel_theta = profile_theta.calculate(dt).velocity
+        profile_theta = TrapezoidProfile(constraints_theta)
+        cmd_vel_theta = profile_theta.calculate(dt, current_state_theta, goal_state_theta).velocity
 
         # ========================= Final velocity command =========================
 
