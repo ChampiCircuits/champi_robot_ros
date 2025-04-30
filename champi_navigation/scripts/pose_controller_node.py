@@ -42,7 +42,7 @@ class PoseControllerNode(Node):
 
         # ROS subscriptions, publishers and timers
         self.timer = self.create_timer(control_loop_period, self.control_loop_spin_once)
-        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_vel_pub = self.create_publisher(Twist, '/ctrl/cmd_vel', 10)
         self.champi_path_sub = self.create_subscription(CtrlGoal, '/ctrl_goal', self.ctrl_goal_callback, 10)
         self.current_pose_sub = self.create_subscription(Odometry, '/odom', self.current_pose_callback, 10)
 
