@@ -15,9 +15,9 @@ void HardwareInterfaceNode::initial_pose_callback(geometry_msgs::msg::PoseWithCo
     initial_offset_ = msg->pose.pose;
 
     tf2::Quaternion q;
-    q.setRPY(0.0, 0.0, mod_reg::state->otos_pose_.theta);
-    offset_otos_when_set_pose_.position.x = mod_reg::state->otos_pose_.x;
-    offset_otos_when_set_pose_.position.y = mod_reg::state->otos_pose_.y;
+    q.setRPY(0.0, 0.0, mod_reg::state->otos_pose.theta);
+    offset_otos_when_set_pose_.position.x = mod_reg::state->otos_pose.x;
+    offset_otos_when_set_pose_.position.y = mod_reg::state->otos_pose.y;
     offset_otos_when_set_pose_.orientation.x = q.x();
     offset_otos_when_set_pose_.orientation.y = q.y();
     offset_otos_when_set_pose_.orientation.z = q.z();

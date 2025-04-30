@@ -50,9 +50,9 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     // Store initial Otos pose for otos_pose (viz) to start to 0.
     read(mod_reg::reg_state);
     tf2::Quaternion q;
-    q.setRPY(0.0, 0.0, mod_reg::state->otos_pose_.theta);
-    offset_otos_when_set_pose_.position.x = mod_reg::state->otos_pose_.x;
-    offset_otos_when_set_pose_.position.y = mod_reg::state->otos_pose_.y;
+    q.setRPY(0.0, 0.0, mod_reg::state->otos_pose.theta);
+    offset_otos_when_set_pose_.position.x = mod_reg::state->otos_pose.x;
+    offset_otos_when_set_pose_.position.y = mod_reg::state->otos_pose.y;
     offset_otos_when_set_pose_.orientation.x = q.x();
     offset_otos_when_set_pose_.orientation.y = q.y();
     offset_otos_when_set_pose_.orientation.z = q.z();
@@ -189,7 +189,7 @@ void HardwareInterfaceNode::loop() {
     read(mod_reg::reg_state);
 
     ////auto odom_wheels = make_odom_wheels(mod_reg::state->measured_vel, dt);
-    auto odom_otos = make_odom_otos(mod_reg::state->otos_pose_, dt);
+    auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
 
 
     // add offset initial_pose to odom
