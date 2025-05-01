@@ -5,3 +5,5 @@ libmodbus-dev
 gcc-arm-none-eabi
 graphviz
 graphviz-dev
+ros-jazzy-librealsense2
+ros-jazzy-realsense2-*
