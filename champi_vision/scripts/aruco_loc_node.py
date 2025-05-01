@@ -41,6 +41,8 @@ class VisualLocalizationNode(Node):
     def __init__(self):
         super().__init__('visual_loc')
 
+        self.get_logger().info("Launching visual localization node")
+
         # Parameters
         self.enable_viz = True
         self.angle_offset = 0.
@@ -86,14 +88,14 @@ class VisualLocalizationNode(Node):
         self.camera_info = None
         self.subscription_cam_info = self.create_subscription(
             CameraInfo,
-            '/camera_info',
+            '/camera/camera/color/camera_info',
             self.callback_cam_info,
             10)
 
 
         self.subscription = self.create_subscription(
             Image,
-            '/image_raw',
+            '/camera/camera/color/image_raw',
             self.image_callback,
             10)
         self.subscription  # prevent unused variable warning
@@ -104,15 +106,18 @@ class VisualLocalizationNode(Node):
 
         self.latest_img = None
 
+        self.get_logger().info("Visual localization node launched !")
 
     def timer_callback(self):
+
         if self.latest_img is None:
             return
         
 
         # get camera info if not already
         if self.camera_info is None:
-            self.get_logger().info("waiting for camera info...", once=True)
+            # self.get_logger().info("waiting for camera info...", once=True)
+            self.get_logger().warn("waiting for camera info...")
             return
         self.get_logger().info("camera info received", once=True)
 
@@ -273,20 +278,12 @@ class VisualLocalizationNode(Node):
         if self.camera_info is None:
             self.camera_info = msg
 
-
-
     def image_callback(self, msg):
-
         self.latest_img = msg
-
-
-
 
     def publish_image(self, image):
         image_msg = self.cv_bridge.cv2_to_imgmsg(image, encoding='mono8')
         self.pub_image.publish(image_msg)
-
-
 
     def call_set_pose(self, pose):
 

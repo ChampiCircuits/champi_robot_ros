@@ -12,6 +12,8 @@ def generate_launch_description():
     # Get configuration file
     config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
 
+
+# https://github.com/IntelRealSense/realsense-ros/blob/ros2-master/README.md
     realsense2_camera_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             get_package_share_directory('realsense2_camera'),
