@@ -12,11 +12,12 @@ def generate_launch_description():
     # Get configuration file
     config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
 
-    raspi_cam_launch = IncludeLaunchDescription(
-        launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('champi_vision'),
-            '/launch/raspi_cam.launch.py'
-        ])
+    realsense2_camera_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            get_package_share_directory('realsense2_camera'),
+            '/launch/rs_launch.py'
+        ]),
+        launch_arguments={'pointcloud.enable': 'true'}.items()
     )
 
     visual_loc = Node(
@@ -27,7 +28,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        raspi_cam_launch,
+        realsense2_camera_launch,
         visual_loc
     ])
 
