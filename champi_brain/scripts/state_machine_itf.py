@@ -6,8 +6,9 @@ from rclpy.clock import Clock
 from ament_index_python.packages import get_package_share_directory
 
 from champi_interfaces.action import Navigate
-from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
+from geometry_msgs.msg import Point, Pose
 from rclpy.action import ActionClient
+from robot_localization.srv import SetPose
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
 import time
@@ -98,21 +99,26 @@ class ChampiStateMachineITF(Node):
                 self.get_logger().info(f'No time left. Triggering end of match. Was in state {self.champi_sm.state}.')
 
     def init_robot_pose(self):
-        set_pose_pub = self.create_publisher(PoseWithCovarianceStamped, '/set_pose', 10)
+        init_pose = [1.0, 1.0, 0.0] # TODO BETTER
+        self.set_pose_client = self.create_client(SetPose, '/set_pose')
+        while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+            time.sleep(0.5)
 
-        msg = PoseWithCovarianceStamped()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.header.frame_id = 'odom'
-        msg.pose.pose.position.x = self.champi_sm.init_pose[0]
-        msg.pose.pose.position.y = self.champi_sm.init_pose[1]
-        msg.pose.pose.position.z = 0.
-        msg.pose.pose.orientation.x = 0.
-        msg.pose.pose.orientation.y = 0.
-        msg.pose.pose.orientation.z = sin(self.champi_sm.init_pose[2]/2)
-        msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]/2)
+        request = SetPose.Request()
+        request.pose.header.stamp = self.get_clock().now().to_msg()
+        request.pose.header.frame_id = 'odom'
+        request.pose.pose.pose.position.x = init_pose[0]
+        request.pose.pose.pose.position.y = init_pose[1]
+        request.pose.pose.pose.position.z = 0.
+        request.pose.pose.pose.orientation.x = 0.
+        request.pose.pose.pose.orientation.y = 0.
+        request.pose.pose.pose.orientation.z = sin(init_pose[2]/2)
+        request.pose.pose.pose.orientation.w = cos(init_pose[2]/2)
 
-        set_pose_pub.publish(msg)
-        self.get_logger().info(f'requested set_pose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
+        future = self.set_pose_client.call_async(request)
+        self.get_logger().info(f'requested setpose to {init_pose[0]} {init_pose[1]} {init_pose[2]} rad')
+
 
     # ==================================== Feedback Callbacks =====================================
 
@@ -193,7 +199,7 @@ class ChampiStateMachineITF(Node):
 
         goal.robot_angle_when_looking_at_point = 0.
 
-        goal.timeout = 10. # seconds
+        goal.timeout = 10000. # seconds
 
         return goal
 
