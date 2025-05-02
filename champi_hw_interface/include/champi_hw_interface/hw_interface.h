@@ -18,6 +18,8 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/int8.hpp"
+#include "std_msgs/msg/int8_multi_array.hpp"
 #include "util/ros_geometry.h"
 #include <tf2/utils.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -68,6 +70,9 @@ private:
 
     void set_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
+    void actuators_control_callback(const std_msgs::msg::Int8 msg) const;
+    void check_for_actuators_state() const;
+
     nav_msgs::msg::Odometry make_odom_wheels(const Vector3 &vel, double dt);
     nav_msgs::msg::Odometry make_odom_otos(const Vector3 &pose, double dt) const;
 
@@ -98,6 +103,10 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscriber_set_pose_;
 
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
+    rclcpp::Subscription<std_msgs::msg::Int8>::SharedPtr subscriber_ctrl_actuators_;
+    rclcpp::Publisher<std_msgs::msg::Int8MultiArray>::SharedPtr pub_ctrl_actuators_;
+
 };
 
 

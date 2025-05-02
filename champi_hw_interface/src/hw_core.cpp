@@ -2,6 +2,8 @@
 
 #include "tf2/impl/utils.h"
 
+#include <champi_hw_interface/hw_actuators.h>
+
 #define THRESHOLD_REJECT_DIST 0.03
 
 
@@ -77,6 +79,11 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
         &HardwareInterfaceNode::initial_pose_callback, this, std::placeholders::_1));
 
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+
+    // ACTUATORS
+    subscriber_ctrl_actuators_ = this->create_subscription<std_msgs::msg::Int8>("/ctrl/actuators", 10, std::bind(
+        &HardwareInterfaceNode::actuators_control_callback, this, std::placeholders::_1));
+    pub_ctrl_actuators_ = this->create_publisher<std_msgs::msg::Int8MultiArray>("/actuators_finished", 10);
 }
 
 HardwareInterfaceNode::~HardwareInterfaceNode()
@@ -91,32 +98,32 @@ nav_msgs::msg::Odometry make_odom(const Vector3 &pose, const Vector3 &vel,
                                   const std::vector<double> &cov_pose,
                                   const std::vector<double> &cov_vel,
                                   const builtin_interfaces::msg::Time stamp) {
-    auto msg = nav_msgs::msg::Odometry();
-    msg.header.stamp = stamp;
-    msg.header.frame_id = "odom";
-    msg.child_frame_id = "base_link";
+  auto msg = nav_msgs::msg::Odometry();
+  msg.header.stamp = stamp;
+  msg.header.frame_id = "odom";
+  msg.child_frame_id = "base_link";
 
-    msg.pose.pose.position.x = pose.x;
-    msg.pose.pose.position.y = pose.y;
-    msg.pose.pose.position.z = 0.0;
+  msg.pose.pose.position.x = pose.x;
+  msg.pose.pose.position.y = pose.y;
+  msg.pose.pose.position.z = 0.0;
 
-    tf2::Quaternion q;
-    q.setRPY(0.0, 0.0, pose.theta);
-    msg.pose.pose.orientation.x = q.x();
-    msg.pose.pose.orientation.y = q.y();
-    msg.pose.pose.orientation.z = q.z();
-    msg.pose.pose.orientation.w = q.w();
+  tf2::Quaternion q;
+  q.setRPY(0.0, 0.0, pose.theta);
+  msg.pose.pose.orientation.x = q.x();
+  msg.pose.pose.orientation.y = q.y();
+  msg.pose.pose.orientation.z = q.z();
+  msg.pose.pose.orientation.w = q.w();
 
-    msg.twist.twist.linear.x = vel.x;
-    msg.twist.twist.linear.y = vel.y;
-    msg.twist.twist.angular.z = vel.theta;
+  msg.twist.twist.linear.x = vel.x;
+  msg.twist.twist.linear.y = vel.y;
+  msg.twist.twist.angular.z = vel.theta;
 
-    // Covariance
-    for(int i = 0; i < 6; i++) {
-        msg.pose.covariance[i * 6 + i] = cov_pose[i];
-        msg.twist.covariance[i * 6 + i] = cov_vel[i];
-    }
-    return msg;
+  // Covariance
+  for (int i = 0; i < 6; i++) {
+    msg.pose.covariance[i * 6 + i] = cov_pose[i];
+    msg.twist.covariance[i * 6 + i] = cov_vel[i];
+  }
+  return msg;
 }
 
 
@@ -245,6 +252,8 @@ void HardwareInterfaceNode::loop() {
     mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
 
     write(mod_reg::reg_cmd);
+
+    check_for_actuators_state();
 }
 
 void HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
@@ -284,4 +293,29 @@ void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
         RCLCPP_ERROR(this->get_logger(), "Failed to read data: error num: %d, message: %s", errno, modbus_strerror(errno));
         exit(1);
     }
+}
+
+
+void HardwareInterfaceNode::check_for_actuators_state() const
+{
+    std::string states_string;
+    for (int i=0; i<ACTUATORS_COUNT; i++)
+    {
+        int state = mod_reg::cmd->actuators_state[i];
+        states_string += std::to_string(state);
+
+        // check for state DONE
+        if (state == static_cast<int>(ActuatorState::DONE))
+        {
+            // set state to NOTHING
+            mod_reg::cmd->actuators_state[i] = static_cast<int>(ActuatorState::NOTHING);
+            write(mod_reg::reg_cmd);
+            // pub to topic
+            auto msg = std_msgs::msg::Int8MultiArray();
+            msg.data[i] = static_cast<int>(ActuatorState::DONE);
+            pub_ctrl_actuators_->publish(msg);
+        }
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Actuators states %s", states_string.c_str());
 }
