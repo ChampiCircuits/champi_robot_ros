@@ -5,10 +5,10 @@ from nicegui import ui
 
 # Liste des fichiers de lancement ROS2
 launch_dic = [
-    {"text":"bringup SIM ","command":"ros2 launch champi_bringup bringup.launch.py sim:=True", "color":"blue"},
-    {"text":"bringup REAL","command":"ros2 launch champi_bringup bringup.launch.py sim:=False", "color":"blue"},
-    {"text":"KILL NODES","command":"python3 /home/champi/dev/ws_0/src/champi_robot_ros/scripts/kill_nodes.py", "color":"red"},
-    {"text":"strategy engine","command":"ros2 run champi_brain strategy_engine_node.py --ros-args -p color:=blue", "color":"blue"},
+    {"text":"chapi ","command":"chapi", "color":"blue"},
+    {"text":"chapo ","command":"chapo", "color":"blue"},
+    {"text":"launch brain","command":"ros2 launch champi_brain brain.launch.py", "color":"blue"},
+    {"text":"KILL NODES","command":"kill_nodes", "color":"red"},
     {"text":"","command":"", "color":"blue"},
 ]
 

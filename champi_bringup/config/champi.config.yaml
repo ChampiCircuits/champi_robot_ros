@@ -11,8 +11,6 @@ hardware_interface_simu:
     
     max_acceleration_wheel: 10.0 # rad/s^2
 
-    imu_vel_yaw_cov: 0.00001
-
 
 hardware_interface:
   ros__parameters:

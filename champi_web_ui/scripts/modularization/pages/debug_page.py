@@ -157,7 +157,7 @@ def create() -> None:
     @ui.page('/debug')
     def page_a():
         with theme.frame('Debug'):
-            with ui.grid(columns=3).style('width: 100%'):
+            with ui.grid(columns=1).style('width: 100%'):
                 with ui.element('div'):
                     with ui.card().style('align-items: center'):
                         with ui.row():
@@ -179,60 +179,15 @@ def create() -> None:
                             with ui.column():
                                 ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
                                 ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
                             with ui.column():
                                 ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
                                 ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                            with ui.column():
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-
-                with ui.column():
-                    with ui.card().style('align-items: center'):
-                        ui.toggle([MOVE_ROBOT_STRING, INIT_ROBOT_POSE_STRING], value=MOVE_ROBOT_STRING).bind_value_to(globals(), 'toggle_pose_effect_value')
-                        global interactive_image_table
-                        interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay+svg_plants_overlay).on('svg:pointerdown', zone_chosen).style('width:100%')
 
                     with ui.card().style('align-items: center'):
                         def tirette_publish():
                             e = Empty()
                             tirette_pub.publish(e)
                         ui.button('Tirette', on_click=tirette_publish)
-
-                        with ui.row():
-                            with ui.column():
-                                ui.joystick(color='green', size=100, on_move=joystick_update).style('width:95%')
-                                ui.label('joystick').classes('text-h6 text-grey-8')
-
-                            with ui.knob(color='orange', track_color='blue', size='9vmax', on_change=knob_update).bind_value(globals(), robot_rotation_normalized_to_one):
-                                ui.icon('3d_rotation')
-                
-                
-                with ui.card().style('align-items: center'):
-                    "..."
 
 
 #################################################
