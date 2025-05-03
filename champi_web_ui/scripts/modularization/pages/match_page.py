@@ -84,21 +84,21 @@ def create() -> None:
                         with ui.stepper_navigation():
                             ui.button('Robot placé ✓', on_click=stepper.next)
 
-                    with ui.step('Choisir la position de départ'):
-                        interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay).on('svg:pointerdown', zone_chosen).style('width:50%')
-                        def next_if_zone_chosen():
-                            if zone_has_been_chosen:
-                                msg = String()
-                                msg.data = chosen_zone
-                                ros_node.zone_pub.publish(msg)
-                                print("pub ID")
-                                stepper.next()
-                            else:
-                                ui.notify('Choisir une zone...')
+                    # with ui.step('Choisir la position de départ'):
+                    #     interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay).on('svg:pointerdown', zone_chosen).style('width:50%')
+                    #     def next_if_zone_chosen():
+                    #         if zone_has_been_chosen:
+                    #             msg = String()
+                    #             msg.data = chosen_zone
+                    #             ros_node.zone_pub.publish(msg)
+                    #             print("pub ID")
+                    #             stepper.next()
+                    #         else:
+                    #             ui.notify('Choisir une zone...')
 
-                        with ui.stepper_navigation():
-                            ui.button('Suivant', on_click=next_if_zone_chosen)
-                            ui.button('Retour', on_click=stepper.previous).props('flat')
+                        # with ui.stepper_navigation():
+                        #     ui.button('Suivant', on_click=next_if_zone_chosen)
+                        #     ui.button('Retour', on_click=stepper.previous).props('flat')
 
                     with ui.step('Choisir la strategie'):
                         radio_strategy_selection = ui.radio(['Homologation', 'Soft','Agressive', 'Demi-table'], value='Homologation')

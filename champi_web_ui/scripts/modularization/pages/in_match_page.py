@@ -57,7 +57,7 @@ def update_time():
             if 100 - int(time.time() - start_time) > 0:
                 time_left_label.set_text(f"Temps restant: {100 - int(time.time() - start_time)} secondes")
             else:
-                time_left_label.set_text(f"Temps restant: {0} secondes")
+                time_left_label.set_text(f"Temps restant: {0} seconds")
 
 
 def update_score(received_score: Int32):
