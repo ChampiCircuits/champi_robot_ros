@@ -1,3 +1,5 @@
+#include "cmsis_os2.h"
+
 #include <Devices/SCServos.h>
 #include <cstdio>
 
@@ -427,13 +429,13 @@ int SCServos::ReadTemper(uint8_t ID)
 
 void SCServos::RotateClockwise(){
     EnableTorque(16, 1);
-    HAL_Delay(200);
+    osDelay(200);
     WritePos(16, 400, 500);
 }
 
 void SCServos::RotateCounterClockwise(){
     EnableTorque(16, 1);
-    HAL_Delay(200);
+    osDelay(200);
     WritePos(16, 750, 500);
 }
 

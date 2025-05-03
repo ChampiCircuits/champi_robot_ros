@@ -21,13 +21,23 @@ const osThreadAttr_t actuatorsTask_attributes = {
 
 void ActuatorsTask(void *argument) {
 
+    SCServosApp_Init(); // Reminder: blocking until the servos are found
+
     LOG_INFO("act", "Starting loop.");
 
     while (true) {
+
         // devices::stepper_opt0.set_goal(4.);
-        // osDelay(2000);
+
+        devices::scs_servos::set_angle(ID_SERVO_ARM, 100, 1000);
+
+        osDelay(2000);
         // devices::stepper_opt0.set_goal(0.);
-        // osDelay(2000);
+        devices::scs_servos::set_angle(ID_SERVO_ARM, 120, 1000);
+
+        osDelay(2000);
+
+
     }
 }
 

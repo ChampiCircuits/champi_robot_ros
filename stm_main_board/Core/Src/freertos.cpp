@@ -21,7 +21,13 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os.h"//#include "Application/HoloDrive/HoloDriveTask.h"
+//#include "Application/Modbus/ModbusTask.h"
+//#include "Application/OtosTask.h"
+//#include "Application/SysTask.h"
+//#include "Application/PosSteppersTask.h"
+//#include "Application/ActuatorsTask.h"
+#include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -30,8 +36,7 @@
 #include "Application/OtosTask.h"
 #include "Application/SysTask.h"
 #include "Application/PosSteppersTask.h"
-#include "Application/SCServosApp.h"
-#include "ActuatorsTask.h"
+#include "Application/ActuatorsTask.h"
 #include "tim.h"
 #include "usb_device.h"
 
@@ -100,18 +105,30 @@ void MX_FREERTOS_Init(void) {
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
+
+
+
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+  // while (1) {
+  //   uint8_t data = 0x10;
+  //   HAL_UART_Transmit(&huart10, &data, 1, 10);
+  //   osDelay(10);
+  //   // servos.ReadPos(ID_SERVO_Y_SIDE);
+  // }
+
+  // We release the steppers.
+  HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, GPIO_PIN_SET);
+
   ModbusTaskStart();
-//  SCServosApp_Init(); // Reminder: That one is not a task.
   SysTaskStart();
   HoloDriveTaskStart();
   OtosTaskStart();
   PosSteppersTaskStart();
-//  ActuatorsTaskStart();
+  ActuatorsTaskStart();
 
   /* USER CODE END RTOS_THREADS */
 

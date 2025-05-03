@@ -35,7 +35,7 @@ void OtosTask(void *argument) {
   // We wait for the config to be set by the master
   while (!mod_reg::config->is_set) {
     osDelay(100);
-    LOG_WARN_THROTTLE("otos", 10, "Waiting for config...");
+    LOG_WARN_THROTTLE("otos", 100, "Waiting for config...");
   }
 
   myOtos.setAngularScalar(mod_reg::config->otos_config.angular_scalar);

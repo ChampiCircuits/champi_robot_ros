@@ -5,21 +5,22 @@
 #ifndef SCSERVOSAPP_H
 #define SCSERVOSAPP_H
 
-#include <vector>
-
-#include "Devices/SCServos.h"
-#include "stm32h7xx_hal.h"
+#define N_SERVOS 4
 
 #define ID_SERVO_ARM_END 7
-#define ID_SERVO_ARM 10 // TODO wrong
+#define ID_SERVO_ARM 15
 #define ID_SERVO_Y_FRONT 13
-#define ID_SERVO_Y_SIDE 15
+#define ID_SERVO_Y_SIDE 8
+
+#include "cmsis_os2.h"
+
+#include "Devices/SCServos.h"
 
 namespace devices
 {
     namespace scs_servos {
 
-        extern std::vector<uint8_t> ids_servos;
+        extern uint8_t ids_servos[N_SERVOS];
         extern SCServos servos;
         extern bool init_successful;
 
@@ -27,6 +28,7 @@ namespace devices
         void set_enable(bool enable);
         void set_angle(uint8_t id, float angle, int ms);
         void set_angle_async(uint8_t id, float angle, int ms);
+        void test_angle(uint8_t id, float angle); // Tests a given angle, then reverts it to original angle.
     }
 }
 

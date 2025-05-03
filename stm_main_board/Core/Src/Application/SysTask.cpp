@@ -2,6 +2,7 @@
 
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
+#include "Application/SCServosApp.h"
 #include "Config/Config.h"
 #include "Util/logging.h"
 
@@ -17,16 +18,16 @@ const osThreadAttr_t sysTask_attributes = {
 
 void SysTask(void *argument) {
 
-  uint32_t start = osKernelGetTickCount();
-
   LOG_INFO("sys", "Starting loop.");
+
+  uint32_t start = osKernelGetTickCount();
 
   while (true) {
 
+    bool e_stop_released = HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin);
+
     // Enable steppers if E-Stop is released
-    HAL_GPIO_WritePin(
-      ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin,
-      HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin));
+    HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, (GPIO_PinState) e_stop_released);
 
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
 
@@ -34,9 +35,12 @@ void SysTask(void *argument) {
       LOG_INFO("sys", "Resetting STM.");
       HAL_NVIC_SystemReset();
     }
-
     xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
+    // TODO create semaophore for this
+    /*if (devices::scs_servos::init_successful) {
+      devices::scs_servos::set_enable(e_stop_released);
+    }*/
 
     int time_to_wait = SYS_TASK_LOOP_PERIOD_MS - (int)osKernelGetTickCount() + (int)start;
     if (time_to_wait > 0) {

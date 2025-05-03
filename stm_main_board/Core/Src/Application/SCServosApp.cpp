@@ -1,6 +1,4 @@
-#include "Application/SCServosApp.h"
-
-#include "cmsis_os2.h"
+ #include "Application/SCServosApp.h"
 
 #include "Config/Config.h"
 #include "Util/logging.h"
@@ -12,18 +10,28 @@ namespace devices
 {
     namespace scs_servos {
 
-        std::vector<uint8_t> ids_servos = std::vector<uint8_t>();
+        uint8_t ids_servos[N_SERVOS] = {ID_SERVO_ARM_END, ID_SERVO_ARM, ID_SERVO_Y_FRONT, ID_SERVO_Y_SIDE};
         SCServos servos;
         bool init_successful = false;
 
+        void find_ids(uint8_t from_id, uint8_t to_id) {
+            for (uint8_t id=from_id; id<=to_id; id++) {
+                if (servos.ReadPos(id) != -1) {
+                	osDelay(100);
+                    LOG_INFO("scs", "Found servo: %d, pos = %d", id, servos.ReadPos(id));
+                    osDelay(100);
+                }
+            }
+        }
+
         int test() {
             int result = 0;
-            for (const auto id : ids_servos) {
-                if (servos.ReadPos(ids_servos[id]) == -1) {
-                    LOG_ERROR("act", "Error reading servo number %d", ids_servos[id]);
+            for (int i = 0; i < N_SERVOS; i++) {
+                if (servos.ReadPos(ids_servos[i]) == -1) {
+                    LOG_ERROR("scs", "Error reading servo number %d", ids_servos[i]);
                     result = -1;
                 } else {
-                    LOG_INFO("act", "Servo number %d read succesful", ids_servos[id]);
+                    LOG_INFO("scs", "Servo number %d read successful", ids_servos[i]);
                 }
             }
             return result;
@@ -42,7 +50,25 @@ namespace devices
 
         void set_angle_async(uint8_t id, float angle, int ms) {
             int position = (int)(angle * DEG_TO_UNIT);
+            if (position < 0) {
+                position = 0;
+            } else if (position > 1023) {
+                position = 1023;
+            }
             servos.WritePos(id, position, ms);
+        }
+
+        void test_angle(uint8_t id, float angle) {
+            int pos = servos.ReadPos(id);
+            if (pos == -1) {
+                LOG_ERROR("scs", "Error reading servo number %d", id);
+                return;
+            }
+            set_angle(id, angle, 1000);
+            osDelay(1500);
+            set_angle(id, pos * UNIT_TO_DEG, 1000);
+            osDelay(1500);
+
         }
 
 
@@ -52,24 +78,24 @@ namespace devices
 using namespace devices::scs_servos;
 
 int SCServosApp_Init() {
-    ids_servos.push_back(ID_SERVO_ARM_END);
-    ids_servos.push_back(ID_SERVO_ARM);
-    ids_servos.push_back(ID_SERVO_Y_FRONT);
-    ids_servos.push_back(ID_SERVO_Y_SIDE);
 
     servos = SCServos(&huart10);
+    //find_ids(0, 16);
+    //test_angle(ID_SERVO_Y_FRONT, 270);
+    //while (1);
 
-    if (test() == -1) {
-        init_successful = false;
-        return -1;
+    init_successful = false;
+    while (test() == -1) {
+        LOG_ERROR("scs", "Error initializing servos. Retrying.");
+        osDelay(1000);
     }
-    init_successful = true;
 
-    set_enable(1); // TODO move to sysTask
+    set_enable(true); // TODO move to sysTask
 
     for (const auto id : ids_servos) {
         servos.WriteLimitTroque(id, SCSERVOS_TORQUE_LIMIT);
     }
+    init_successful = true;
 
     return 0;
 }
