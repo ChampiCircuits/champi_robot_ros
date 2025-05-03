@@ -40,6 +40,8 @@ struct State {
 struct Cmd {
   bool is_read;
   Vector3 cmd_vel;
+  // list of actuators commands. The number of actuators is 7.
+  int actuators_state[7];
 };
 
 struct Requests {

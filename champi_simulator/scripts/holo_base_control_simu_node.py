@@ -64,7 +64,7 @@ class HoloBaseControlDummy(Node):
 
         self.subscription_initial_pose = self.create_subscription(
             PoseWithCovarianceStamped,
-            '/initialpose',
+            '/set_pose',
             self.initial_pose_callback,
             10)
 

@@ -23,7 +23,6 @@ echo "\nSetting up iptables rules\n"
 
 # Flush standard and NAT rules
 sudo iptables -F
-sudo iptables -t nat -F
 
 sudo iptables -t nat -A POSTROUTING -o $LOCAL_IFACE_INTERNET -j MASQUERADE
 sudo iptables -A FORWARD -i $LOCAL_IFACE_INTERNET -o $LOCAL_IFACE_ROBOT -m state --state RELATED,ESTABLISHED -j ACCEPT

@@ -1,0 +1,56 @@
+---
+State Machine
+---
+stateDiagram-v2
+  direction LR
+  classDef s_default fill:white,color:black
+  classDef s_inactive fill:white,color:black
+  classDef s_parallel color:black,fill:white
+  classDef s_active color:red,fill:darksalmon
+  classDef s_previous color:blue,fill:azure
+  
+  state "stop" as stop
+  Class stop s_default
+  state "init" as init
+  Class init s_default
+  state init {
+    state "waitForRosInit" as init_waitForRosInit
+    state "waitForStmInit" as init_waitForStmInit
+    state "waitForUserChooseConfig" as init_waitForUserChooseConfig
+    state "waitForTirette" as init_waitForTirette
+  }
+  state "idle" as idle
+  Class idle s_previous
+  state "wait" as wait
+  Class wait s_default
+  state "move" as move
+  Class move s_default
+  state "grab" as grab
+  Class grab s_default
+  state "put" as put
+  Class put s_default
+  state "endOfMatch" as endOfMatch
+  Class endOfMatch s_active
+  
+  stop --> init_waitForRosInit: init
+  stop --> endOfMatch: end_of_match
+  init_waitForRosInit --> init_waitForStmInit: init_next
+  init_waitForStmInit --> init_waitForUserChooseConfig: init_next
+  init_waitForUserChooseConfig --> init_waitForTirette: init_next
+  init_waitForTirette --> idle: init_end
+  idle --> move: start_move
+  idle --> grab: start_grab
+  idle --> put: start_put
+  idle --> wait: start_wait
+  idle --> endOfMatch: end_of_match
+  move --> idle: back_to_idle
+  move --> endOfMatch: end_of_match
+  grab --> idle: back_to_idle
+  grab --> endOfMatch: end_of_match
+  put --> idle: back_to_idle
+  put --> endOfMatch: end_of_match
+  wait --> idle: back_to_idle
+  wait --> endOfMatch: end_of_match
+  init --> endOfMatch: end_of_match
+  endOfMatch --> endOfMatch: end_of_match
+  [*] --> stop

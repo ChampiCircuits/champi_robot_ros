@@ -1,7 +1,8 @@
 #include "champi_hw_interface/hw_interface.h"
 
-#include "util/ros_geometry.h"
 #include "tf2/impl/utils.h"
+
+#include <champi_hw_interface/hw_actuators.h>
 
 #define THRESHOLD_REJECT_DIST 0.03
 
@@ -52,12 +53,12 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     read(mod_reg::reg_state);
     tf2::Quaternion q;
     q.setRPY(0.0, 0.0, mod_reg::state->otos_pose.theta);
-    offset_otos_.position.x = mod_reg::state->otos_pose.x;
-    offset_otos_.position.y = mod_reg::state->otos_pose.y;
-    offset_otos_.orientation.x = q.x();
-    offset_otos_.orientation.y = q.y();
-    offset_otos_.orientation.z = q.z();
-    offset_otos_.orientation.w = q.w();
+    offset_otos_when_set_pose_.position.x = mod_reg::state->otos_pose.x;
+    offset_otos_when_set_pose_.position.y = mod_reg::state->otos_pose.y;
+    offset_otos_when_set_pose_.orientation.x = q.x();
+    offset_otos_when_set_pose_.orientation.y = q.y();
+    offset_otos_when_set_pose_.orientation.z = q.z();
+    offset_otos_when_set_pose_.orientation.w = q.w();
 
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(20),
@@ -67,16 +68,22 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     subscriber_twist_ = this->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 10, std::bind(
         &HardwareInterfaceNode::twist_callback, this, std::placeholders::_1));
 
-    initial_pose_ = geometry_msgs::msg::PoseWithCovarianceStamped();
-    subscriber_initial_pose_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10, std::bind(
-        &HardwareInterfaceNode::initial_pose_callback, this, std::placeholders::_1));
-
     pub_odom_wheels_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom_wheels", 10);
     pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
 
     pub_pose_wheels_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/viz/pose_wheels", 10);
     pub_pose_otos_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/viz/pose_otos", 10);
 
+    initial_offset_ = geometry_msgs::msg::Pose();
+    subscriber_set_pose_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/set_pose", 10, std::bind(
+        &HardwareInterfaceNode::initial_pose_callback, this, std::placeholders::_1));
+
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+
+    // ACTUATORS
+    subscriber_ctrl_actuators_ = this->create_subscription<std_msgs::msg::Int8>("/ctrl/actuators", 10, std::bind(
+        &HardwareInterfaceNode::actuators_control_callback, this, std::placeholders::_1));
+    pub_ctrl_actuators_ = this->create_publisher<std_msgs::msg::Int8MultiArray>("/actuators_finished", 10);
 }
 
 HardwareInterfaceNode::~HardwareInterfaceNode()
@@ -91,32 +98,32 @@ nav_msgs::msg::Odometry make_odom(const Vector3 &pose, const Vector3 &vel,
                                   const std::vector<double> &cov_pose,
                                   const std::vector<double> &cov_vel,
                                   const builtin_interfaces::msg::Time stamp) {
-    auto msg = nav_msgs::msg::Odometry();
-    msg.header.stamp = stamp;
-    msg.header.frame_id = "odom";
-    msg.child_frame_id = "base_link";
+  auto msg = nav_msgs::msg::Odometry();
+  msg.header.stamp = stamp;
+  msg.header.frame_id = "odom";
+  msg.child_frame_id = "base_link";
 
-    msg.pose.pose.position.x = pose.x;
-    msg.pose.pose.position.y = pose.y;
-    msg.pose.pose.position.z = 0.0;
+  msg.pose.pose.position.x = pose.x;
+  msg.pose.pose.position.y = pose.y;
+  msg.pose.pose.position.z = 0.0;
 
-    tf2::Quaternion q;
-    q.setRPY(0.0, 0.0, pose.theta);
-    msg.pose.pose.orientation.x = q.x();
-    msg.pose.pose.orientation.y = q.y();
-    msg.pose.pose.orientation.z = q.z();
-    msg.pose.pose.orientation.w = q.w();
+  tf2::Quaternion q;
+  q.setRPY(0.0, 0.0, pose.theta);
+  msg.pose.pose.orientation.x = q.x();
+  msg.pose.pose.orientation.y = q.y();
+  msg.pose.pose.orientation.z = q.z();
+  msg.pose.pose.orientation.w = q.w();
 
-    msg.twist.twist.linear.x = vel.x;
-    msg.twist.twist.linear.y = vel.y;
-    msg.twist.twist.angular.z = vel.theta;
+  msg.twist.twist.linear.x = vel.x;
+  msg.twist.twist.linear.y = vel.y;
+  msg.twist.twist.angular.z = vel.theta;
 
-    // Covariance
-    for(int i = 0; i < 6; i++) {
-        msg.pose.covariance[i * 6 + i] = cov_pose[i];
-        msg.twist.covariance[i * 6 + i] = cov_vel[i];
-    }
-    return msg;
+  // Covariance
+  for (int i = 0; i < 6; i++) {
+    msg.pose.covariance[i * 6 + i] = cov_pose[i];
+    msg.twist.covariance[i * 6 + i] = cov_vel[i];
+  }
+  return msg;
 }
 
 
@@ -159,6 +166,8 @@ nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_otos(const Vector3 &pos
         vel.x = (delta_x * cos_theta + delta_y * sin_theta) / dt;
         vel.y = (-delta_x * sin_theta + delta_y * cos_theta) / dt;
         vel.theta = normalize_angle(delta_theta / dt);
+
+        //RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, "pose otos: %f, %f, %f", pose.x, pose.y, pose.theta);
     }
     prev_pose = pose;
 
@@ -186,25 +195,55 @@ void HardwareInterfaceNode::loop() {
     // Read
     read(mod_reg::reg_state);
 
-    auto odom_wheels = make_odom_wheels(mod_reg::state->measured_vel, dt);
+    ////auto odom_wheels = make_odom_wheels(mod_reg::state->measured_vel, dt);
     auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
 
-    auto pose_wheels = geometry_msgs::msg::PoseStamped();
-    pose_wheels.header = odom_wheels.header;
-    pose_wheels.pose = ros_geometry::add(initial_pose_.pose.pose, odom_wheels.pose.pose);
 
-    auto pose_otos = geometry_msgs::msg::PoseStamped();
-    pose_otos.header = odom_otos.header;
-    pose_otos.pose = ros_geometry::add(ros_geometry::inverse(offset_otos_), odom_otos.pose.pose);
-    pose_otos.pose = ros_geometry::add(initial_pose_.pose.pose, pose_otos.pose);
-    // pose_otos.pose = ros_geometry::add(ros_geometry::inverse(offset_otos_), odom_otos.pose.pose); NON
-    // pose_otos.pose = ros_geometry::add(odom_otos.pose.pose, ros_geometry::inverse(offset_otos_)); NON
-    // pose_otos.pose = ros_geometry::add(ros_geometry::inverse(offset_otos_), odom_otos.pose.pose); POS OK
+    // add offset initial_pose to odom
+    ////odom_wheels.pose.pose = ros_geometry::add(odom_wheels.pose.pose, initial_offset_);
 
-    pub_odom_wheels_->publish(odom_wheels);
+    ////auto pose_wheels = geometry_msgs::msg::PoseStamped();
+    ////pose_wheels.header = odom_wheels.header;
+    //pose_wheels.pose = ros_geometry::add(initial_offset_.pose.pose, odom_wheels.pose.pose);
+
+    auto robot_pose_ = geometry_msgs::msg::PoseStamped();
+    robot_pose_.header = odom_otos.header;
+
+    robot_pose_.pose = ros_geometry::add(robot_pose_.pose,  initial_offset_);
+    robot_pose_.pose = ros_geometry::add(robot_pose_.pose, ros_geometry::inverse(offset_otos_when_set_pose_));
+    robot_pose_.pose = ros_geometry::add(robot_pose_.pose, odom_otos.pose.pose);
+
+    odom_otos.pose.pose = robot_pose_.pose;
+
+    /*
+    // robot_pose_.pose = ros_geometry::add(ros_geometry::inverse(offset_otos_when_set_pose_), odom_otos.pose.pose); NON
+    // robot_pose_.pose = ros_geometry::add(odom_otos.pose.pose, ros_geometry::inverse(offset_otos_when_set_pose_)); NON
+    // robot_pose_.pose = ros_geometry::add(ros_geometry::inverse(offset_otos_when_set_pose_), odom_otos.pose.pose); POS OK
+    */
+
+    ////pub_odom_wheels_->publish(odom_wheels);
     pub_odom_otos_->publish(odom_otos);
-    pub_pose_wheels_->publish(pose_wheels);
-    pub_pose_otos_->publish(pose_otos);
+    ////pub_pose_wheels_->publish(pose_wheels);
+    pub_pose_otos_->publish(robot_pose_);
+
+    geometry_msgs::msg::TransformStamped transform_stamped;
+
+    // Horodatage actuel
+    transform_stamped.header.stamp = this->get_clock()->now();
+    transform_stamped.header.frame_id = "odom";        // Frame de référence
+    transform_stamped.child_frame_id = "base_link";    // Frame cible
+
+    // Position (translation) à partir de l'odomètre
+    transform_stamped.transform.translation.x = odom_otos.pose.pose.position.x;
+    transform_stamped.transform.translation.y = odom_otos.pose.pose.position.y;
+    transform_stamped.transform.translation.z = odom_otos.pose.pose.position.z;
+
+    // Rotation (quaternion) à partir de l'odomètre
+    transform_stamped.transform.rotation = odom_otos.pose.pose.orientation;
+
+    // Publier la transformation
+    tf_broadcaster_->sendTransform(transform_stamped);
+
 
     // Write
     mod_reg::cmd->is_read = false;
@@ -213,6 +252,8 @@ void HardwareInterfaceNode::loop() {
     mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
 
     write(mod_reg::reg_cmd);
+
+    check_for_actuators_state();
 }
 
 void HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
@@ -252,4 +293,29 @@ void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
         RCLCPP_ERROR(this->get_logger(), "Failed to read data: error num: %d, message: %s", errno, modbus_strerror(errno));
         exit(1);
     }
+}
+
+
+void HardwareInterfaceNode::check_for_actuators_state() const
+{
+    std::string states_string;
+    for (int i=0; i<ACTUATORS_COUNT; i++)
+    {
+        int state = mod_reg::cmd->actuators_state[i];
+        states_string += std::to_string(state);
+
+        // check for state DONE
+        if (state == static_cast<int>(ActuatorState::DONE))
+        {
+            // set state to NOTHING
+            mod_reg::cmd->actuators_state[i] = static_cast<int>(ActuatorState::NOTHING);
+            write(mod_reg::reg_cmd);
+            // pub to topic
+            auto msg = std_msgs::msg::Int8MultiArray();
+            msg.data[i] = static_cast<int>(ActuatorState::DONE);
+            pub_ctrl_actuators_->publish(msg);
+        }
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Actuators states %s", states_string.c_str());
 }

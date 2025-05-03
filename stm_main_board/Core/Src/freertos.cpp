@@ -106,12 +106,12 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   ModbusTaskStart();
-  SCServosApp_Init(); // Reminder: That one is not a task.
+//  SCServosApp_Init(); // Reminder: That one is not a task.
   SysTaskStart();
   HoloDriveTaskStart();
   OtosTaskStart();
   PosSteppersTaskStart();
-  ActuatorsTaskStart();
+//  ActuatorsTaskStart();
 
   /* USER CODE END RTOS_THREADS */
 

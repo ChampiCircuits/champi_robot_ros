@@ -102,7 +102,7 @@ class ChampiStateMachineITF(Node):
         init_pose = [1.0, 1.0, 0.0] # TODO BETTER
         self.set_pose_client = self.create_client(SetPose, '/set_pose')
         while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service set_pose not available, waiting again...')
+            self.get_logger().info('service not available, waiting again...')
             time.sleep(0.5)
 
         request = SetPose.Request()

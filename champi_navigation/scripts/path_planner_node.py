@@ -45,7 +45,8 @@ class PlannerNode(Node):
 
     def __init__(self):
         super().__init__('planner_node')
-        
+        #self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
+
         # Parameters
         self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
         self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
@@ -74,7 +75,8 @@ class PlannerNode(Node):
                                                    goal_callback=self.navigate_callback,
                                                    cancel_callback=self.cancel_callback,
                                                    callback_group=ReentrantCallbackGroup())
-        
+        self.get_logger().info('Path Planner started /navigate server')
+
 
         # Path planner object
         self.path_planner = PathPlanner()
@@ -136,6 +138,8 @@ class PlannerNode(Node):
         """ Called when a new Navigate goal is received
         """
         self.get_logger().debug('New Navigate request received!')
+        self.get_logger().info('New Navigate request received to pose: '
+                                f'({navigate_goal.pose.position.x}, {navigate_goal.pose.position.y})')
 
         # Store the goal
         self.current_navigate_goal = navigate_goal
@@ -144,7 +148,7 @@ class PlannerNode(Node):
         if self.planning:
             self.goal_handle_navigate.abort()
 
-            self.get_logger().debug('Received a new Navigate request, cancelling the current one!')
+            self.get_logger().info('Received a new Navigate request, cancelling the current one!')
         
         self.planning = True
 
