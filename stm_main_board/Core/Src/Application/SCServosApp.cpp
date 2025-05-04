@@ -10,7 +10,7 @@ namespace devices
 {
     namespace scs_servos {
 
-        uint8_t ids_servos[N_SERVOS] = {ID_SERVO_ARM_END, ID_SERVO_ARM, ID_SERVO_Y_FRONT, ID_SERVO_Y_SIDE};
+        uint8_t ids_servos[N_SERVOS] = {ID_SERVO_ARM_END, ID_SERVO_ARM, ID_SERVO_Y_FRONT, ID_SERVO_Y_SIDE, ID_SERVO_BANNER};
         SCServos servos;
         bool init_successful = false;
 
@@ -41,6 +41,11 @@ namespace devices
             for (const auto id : ids_servos) {
                 servos.EnableTorque(id, enable);
             }
+        }
+
+        float read_angle(uint8_t id)
+        {
+            return static_cast<float>(servos.ReadPos(id)) * UNIT_TO_DEG;
         }
 
         void set_angle(uint8_t id, float angle, int ms) {
