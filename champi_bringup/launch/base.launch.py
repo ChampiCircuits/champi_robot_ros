@@ -50,21 +50,11 @@ def generate_launch_description():
         remappings=[('/cmd_vel_out', '/cmd_vel')]
     )
 
-    ukf_node = Node(
-        package='robot_localization',
-        executable='ukf_node',
-        name='ukf',
-        output='screen',
-        parameters=[os.path.join(get_package_share_directory("champi_bringup"), "config", "ukf.yaml")],
-        remappings=[("/odometry/filtered", "/odom")],
-    )
-
-    # Calls the set_pose service of the UKF node
-    call_set_pose_node = Node(
-        package='champi_tools',
-        executable='call_set_pose.py',
-        name='call_set_pose',
-        output='screen',
+    loc_node = Node(
+        package='champi_navigation',
+        executable='loc_node.py',
+        name='loc_node',
+        output='screen'
     )
 
     # Static transform map -> odom
@@ -102,8 +92,7 @@ def generate_launch_description():
         description_broadcaster,
         hardware_interface_launch,
         base_control_simu_node,
+        loc_node,
         cmd_vel_mux_node,
-        #ukf_node,
-        call_set_pose_node
     ])
 

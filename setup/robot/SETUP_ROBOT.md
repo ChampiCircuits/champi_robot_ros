@@ -138,3 +138,28 @@ ip saddr 172.0.0.0/24 ip daddr != 172.0.0.0/24 masquerade
 Then run
 sudo nft flush ruleset
 to make ros multi-pc work again.
+
+
+
+To solve isc dhcp server starting too early
+
+sudo systemctl edit isc-dhcp-server
+
+Paste
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+then
+
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl restart isc-dhcp-server
+
+and reboot
+
+
+
+sudo systemctl disable ufw
+sudo apt remove ufw
