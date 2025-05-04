@@ -87,22 +87,11 @@ private:
     geometry_msgs::msg::Twist latest_twist_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscriber_twist_;
 
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_wheels_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_pose_wheels_;
-    PoseIntegrator pose_integrator_odom_wheels_;
-    std::vector<double> cov_pose_odom_wheels_;
-    std::vector<double> cov_vel_odom_wheels_;
-
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_otos_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_pose_otos_;
     std::vector<double> cov_pose_odom_otos_;
     std::vector<double> cov_vel_odom_otos_;
 
-    geometry_msgs::msg::Pose offset_otos_when_set_pose_;
-    geometry_msgs::msg::Pose initial_offset_; // For handling initial pose without actually resetting the OTOS pose.
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscriber_set_pose_;
-
-    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
     rclcpp::Subscription<std_msgs::msg::Int8>::SharedPtr subscriber_ctrl_actuators_;
     rclcpp::Publisher<std_msgs::msg::Int8MultiArray>::SharedPtr pub_ctrl_actuators_;
