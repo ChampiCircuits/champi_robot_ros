@@ -228,15 +228,18 @@ void HardwareInterfaceNode::check_for_actuators_state() const
     std::string states_string;
     for (int i=0; i<ACTUATORS_COUNT; i++)
     {
-        const ActuatorState state = mod_reg::actuators->actuators_state[i];
+        const ActuatorState state = mod_reg::actuators_states->actuators_states[i];
         states_string += to_string(state) + " ";
 
         // check for state DONE
         if (state == ActuatorState::DONE)
         {
             // set state to NOTHING
-            mod_reg::actuators->actuators_state[i] = ActuatorState::NOTHING;
-            write(mod_reg::reg_actuators);
+            // mod_reg::actuators_states->actuators_states[i] = ActuatorState::NOTHING;
+            // mod_reg::actuators_requests->actuators_requests[i] = ActuatorState::NOTHING;
+            // this->write(mod_reg::reg_actuators_states);
+            // this->write(mod_reg::reg_actuators_requests);
+            RCLCPP_INFO(this->get_logger(), "Actuator %s is done", to_string(static_cast<ActuatorCommand>(i)).c_str());
 
             // pub to topic
             auto msg = std_msgs::msg::Int8MultiArray();
@@ -245,5 +248,9 @@ void HardwareInterfaceNode::check_for_actuators_state() const
         }
     }
 
-    // RCLCPP_INFO(this->get_logger(), "Actuators states %s", states_string.c_str());
+    auto state = to_string(mod_reg::actuators_states->actuators_states[0]);
+    auto req = to_string(mod_reg::actuators_requests->actuators_requests[0]);
+
+    // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, "Actuator 2 state=%s request=%s", state.c_str(), req.c_str());
+    RCLCPP_INFO(this->get_logger(), "Actuators states %s", states_string.c_str());
 }

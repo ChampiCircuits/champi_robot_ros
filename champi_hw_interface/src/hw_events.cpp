@@ -16,7 +16,7 @@ void HardwareInterfaceNode::initial_pose_callback(geometry_msgs::msg::PoseWithCo
 void HardwareInterfaceNode::actuators_control_callback(const std_msgs::msg::Int8 msg) const
 {
     int actuator_number = msg.data;
-    RCLCPP_INFO(this->get_logger(), "New actuator command received! %d = %s", actuator_number, act_cmd_to_string(static_cast<ActuatorCommand>(actuator_number)).c_str());
-    mod_reg::actuators->actuators_state[actuator_number] = static_cast<int>(ActuatorState::REQUESTED);
-    this->write(mod_reg::reg_actuators);
+    RCLCPP_INFO(this->get_logger(), "New actuator command received! %d = %s", actuator_number, to_string(static_cast<ActuatorCommand>(actuator_number)).c_str());
+    mod_reg::actuators_requests->actuators_requests[actuator_number] = ActuatorState::REQUESTED;
+    this->write(mod_reg::reg_actuators_requests);
 }

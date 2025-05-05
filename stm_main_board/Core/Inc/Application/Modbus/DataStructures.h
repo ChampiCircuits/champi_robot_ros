@@ -48,10 +48,14 @@ struct Requests {
   bool request_reset_stm;
 };
 
-struct Actuators
+struct ActuatorsRequests
 {
   // list of actuators commands. The number of actuators is 7.
-  ActuatorState actuators_state[ACTUATORS_COUNT];
+  ActuatorState actuators_requests[ACTUATORS_COUNT];
+};
+
+struct ActuatorsStates {
+  ActuatorState actuators_states[ACTUATORS_COUNT];
 };
 
 }

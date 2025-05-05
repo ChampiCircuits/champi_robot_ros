@@ -158,6 +158,10 @@ void PutBanner()
     devices::scs_servos::set_angle(ID_SERVO_BANNER, 250, 1000);
 }
 
+void HandleRequest(ActuatorCommand cmd) {
+    osDelay(5000);
+}
+
 void ActuatorsTask(void *argument) {
 
     SCServosApp_Init(); // Reminder: blocking until the servos are found
@@ -193,29 +197,39 @@ void ActuatorsTask(void *argument) {
     // devices::scs_servos::set_enable(false);
     // auto angle = devices::scs_servos::read_angle(ID_SERVO_Y_FRONT);
     // LOG_INFO("act", "Servo Y front angle: %f", angle);
-    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-    mod_reg::actuators->actuators_state[2] = ActuatorState::REQUESTED;
-    xSemaphoreGive(ModbusH.ModBusSphrHandle);
+
+
+
 
     while (true) {
+        xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+        mod_reg::actuators_states->actuators_states[0] = ActuatorState::DONE;
+        mod_reg::actuators_requests->actuators_requests[0] = ActuatorState::DONE;
+        xSemaphoreGive(ModbusH.ModBusSphrHandle);
+        LOG_INFO("act","ca devrait set...");
+        osDelay(1000);
+    }
+        /*
         for (int i=0; i < ACTUATORS_COUNT; i++)
         {
-            ActuatorState actuator_state = mod_reg::actuators->actuators_state[i];
-            if (actuator_state == ActuatorState::REQUESTED)
+            ActuatorState actuator_request = mod_reg::actuators_requests->actuators_requests[i];
+            ActuatorState actuator_state = mod_reg::actuators_states->actuators_states[i];
+            if (actuator_request == ActuatorState::REQUESTED && actuator_state == ActuatorState::NOTHING)
             {
                 ActuatorCommand actuator = static_cast<ActuatorCommand>(i);
-                LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(actuator_state).c_str());
-                // HandleRequest(actuator);
+                LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(actuator_request).c_str());
+                HandleRequest(actuator);
                 xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-                mod_reg::actuators->actuators_state[i] = ActuatorState::DONE;
+                mod_reg::actuators_states->actuators_states[i] = ActuatorState::DONE;
                 xSemaphoreGive(ModbusH.ModBusSphrHandle);
-                LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(mod_reg::actuators->actuators_state[i]).c_str());
+                LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(mod_reg::actuators_states->actuators_states[i]).c_str());
             }
         }
         // LOG_INFO("act", "Actuator requested is %s to state %s", to_string(static_cast<ActuatorCommand>(2)).c_str(), to_string(mod_reg::requests->actuators_state[2]).c_str());
 
         osDelay(100);
     }
+         */
 }
 
 void ActuatorsTaskStart() {
