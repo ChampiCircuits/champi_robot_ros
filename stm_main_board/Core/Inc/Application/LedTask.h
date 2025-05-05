@@ -1,6 +1,6 @@
 #ifndef FUNTASK_H
 #define FUNTASK_H
 
-void FunTaskStart();
+void LedTaskStart();
 
 #endif //FUNTASK_H

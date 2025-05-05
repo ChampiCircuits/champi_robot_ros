@@ -4,6 +4,7 @@
 #include "Application/HoloDrive/HoloDrive.h"
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
+#include "Application/Leds.h"
 #include "Config/Config.h"
 #include "Util/logging.h"
 
@@ -28,6 +29,7 @@ const osThreadAttr_t holoDriveTask_attributes = {
 };
 
 void HoloDriveTask(void *argument) {
+  led_holo::setRed();
 
   HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, GPIO_PIN_SET);
 
@@ -54,12 +56,14 @@ void HoloDriveTask(void *argument) {
   uint32_t t_last_read = start;
 
   while (true) {
+    led_holo::setGreen();
 
     // if cmd vel is read for more than 1 second, stop the motors
     if (mod_reg::cmd->is_read) {
       if (osKernelGetTickCount() - t_last_read > CMD_TIMEOUT_MS) {
         holoDrive.set_cmd_vel(Vector3{0, 0, 0});
         LOG_WARN_THROTTLE("holo", 10, "cmd vel timeout");
+        led_holo::setOrange();
       }
     }
     else {

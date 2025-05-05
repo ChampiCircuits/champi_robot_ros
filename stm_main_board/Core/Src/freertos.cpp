@@ -25,13 +25,13 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "Application/ActuatorsTask.h"
 #include "Application/HoloDrive/HoloDriveTask.h"
-#include "Application/FunTask.h"
+#include "Application/LedTask.h"
 #include "Application/Modbus/ModbusTask.h"
 #include "Application/OtosTask.h"
-#include "Application/SysTask.h"
 #include "Application/PosSteppersTask.h"
-#include "Application/ActuatorsTask.h"
+#include "Application/SysTask.h"
 #include "tim.h"
 #include "usb_device.h"
 
@@ -115,13 +115,13 @@ void MX_FREERTOS_Init(void) {
   // We release the steppers.
   HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, GPIO_PIN_SET);
 
+  LedTaskStart();
   ModbusTaskStart();
   SysTaskStart();
   HoloDriveTaskStart();
   OtosTaskStart();
   PosSteppersTaskStart();
-  ActuatorsTaskStart();
-  FunTaskStart();
+  //ActuatorsTaskStart();
 
   /* USER CODE END RTOS_THREADS */
 

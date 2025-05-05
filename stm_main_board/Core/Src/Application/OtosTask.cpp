@@ -2,6 +2,7 @@
 
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
+#include "Application/Leds.h"
 #include "Config/Config.h"
 #include "Devices/QwiicOTOS.h"
 #include "Util/logging.h"
@@ -23,14 +24,25 @@ void OtosTask(void *argument) {
 
   while (!myOtos.isConnected()) {
     LOG_WARN("otos", "Connecting failed. Retrying...");
+    led_otos::setOrange();
+    osDelay(1000);
+    led_otos::clear(); // TODO does not work ? setbrightness instead ?
     osDelay(1000);
   }
 
   if (!myOtos.selfTest()) {
     // ERROR WITH OTOS
     LOG_WARN("otos", "Self-test failed.");
-    osDelay(1000000000); // TODO reset STM ?
+    // osDelay(1000000000); // TODO reset STM ?
+    while (1) {
+      led_otos::setRed();
+      osDelay(1000);
+      led_otos::clear();
+      osDelay(1000);
+    }
   }
+
+  led_otos::setRed();
 
   // We wait for the config to be set by the master
   while (!mod_reg::config->is_set) {
@@ -54,14 +66,15 @@ void OtosTask(void *argument) {
   LOG_INFO("otos", "Starting loop.");
 
   while (true) {
+    led_otos::setGreen();
 
     if (mod_reg::requests->request_reset_otos) {
+      led_otos::setOrange();
       LOG_INFO("otos", "Resetting OTOS.");
       mod_reg::requests->request_reset_otos = false;
       myOtos.calibrateImu();
-      osDelay(10);
       // myOtos.resetTracking(); // We don't reset because jumps are bad for UKF. Still it's a good time to calibrate the IMU
-      // osDelay(10);
+      osDelay(10);
     }
 
     Pose2D otosPose = myOtos.getPosition();
