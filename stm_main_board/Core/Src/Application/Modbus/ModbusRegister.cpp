@@ -15,6 +15,7 @@ Config *config;
 State *state;
 Cmd *cmd;
 Requests *requests;
+Actuators *actuators;
 
 #ifdef MODBUS_MASTER
 // Metadata to gather info needed to read/write the data (for master only)
@@ -22,6 +23,7 @@ register_metadata reg_config;
 register_metadata reg_state;
 register_metadata reg_cmd;
 register_metadata reg_requests;
+register_metadata reg_actuators;
 
 // EDIT HERE END
 
@@ -61,12 +63,14 @@ void setup_registers() {
   state = (State *)init_ptr_to_register(sizeof(State) / sizeof(uint16_t));
   cmd = (Cmd *)init_ptr_to_register(sizeof(Cmd) / sizeof(uint16_t));
   requests = (Requests *)init_ptr_to_register(sizeof(Requests) / sizeof(uint16_t));
+  actuators = (Actuators *)init_ptr_to_register(sizeof(Actuators) / sizeof(uint16_t));
 
 #ifdef MODBUS_MASTER
   init_register_metadata(reg_config, (uint16_t *)config, sizeof(Config) / sizeof(uint16_t));
   init_register_metadata(reg_state, (uint16_t *)state, sizeof(State) / sizeof(uint16_t));
   init_register_metadata(reg_cmd, (uint16_t *)cmd,sizeof(Cmd) / sizeof(uint16_t));
   init_register_metadata(reg_requests, (uint16_t *)requests, sizeof(Requests) / sizeof(uint16_t));
+  init_register_metadata(reg_actuators, (uint16_t *)actuators, sizeof(Actuators) / sizeof(uint16_t));
 
 #endif // MODBUS_MASTER
 

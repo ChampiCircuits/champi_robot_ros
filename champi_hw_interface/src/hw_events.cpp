@@ -17,6 +17,6 @@ void HardwareInterfaceNode::actuators_control_callback(const std_msgs::msg::Int8
 {
     int actuator_number = msg.data;
     RCLCPP_INFO(this->get_logger(), "New actuator command received! %d = %s", actuator_number, act_cmd_to_string(static_cast<ActuatorCommand>(actuator_number)).c_str());
-    mod_reg::cmd->actuators_state[actuator_number] = static_cast<int>(ActuatorState::REQUESTED);
-    this->write(mod_reg::reg_cmd);
+    mod_reg::actuators->actuators_state[actuator_number] = static_cast<int>(ActuatorState::REQUESTED);
+    this->write(mod_reg::reg_actuators);
 }

@@ -228,15 +228,16 @@ void HardwareInterfaceNode::check_for_actuators_state() const
     std::string states_string;
     for (int i=0; i<ACTUATORS_COUNT; i++)
     {
-        int state = mod_reg::cmd->actuators_state[i];
-        states_string += std::to_string(state);
+        const ActuatorState state = mod_reg::actuators->actuators_state[i];
+        states_string += to_string(state) + " ";
 
         // check for state DONE
-        if (state == static_cast<int>(ActuatorState::DONE))
+        if (state == ActuatorState::DONE)
         {
             // set state to NOTHING
-            mod_reg::cmd->actuators_state[i] = static_cast<int>(ActuatorState::NOTHING);
-            write(mod_reg::reg_cmd);
+            mod_reg::actuators->actuators_state[i] = ActuatorState::NOTHING;
+            write(mod_reg::reg_actuators);
+
             // pub to topic
             auto msg = std_msgs::msg::Int8MultiArray();
             msg.data[i] = static_cast<int>(ActuatorState::DONE);
