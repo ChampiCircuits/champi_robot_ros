@@ -21,17 +21,12 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "cmsis_os.h"//#include "Application/HoloDrive/HoloDriveTask.h"
-//#include "Application/Modbus/ModbusTask.h"
-//#include "Application/OtosTask.h"
-//#include "Application/SysTask.h"
-//#include "Application/PosSteppersTask.h"
-//#include "Application/ActuatorsTask.h"
-#include "usart.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Application/HoloDrive/HoloDriveTask.h"
+#include "Application/FunTask.h"
 #include "Application/Modbus/ModbusTask.h"
 #include "Application/OtosTask.h"
 #include "Application/SysTask.h"
@@ -105,9 +100,6 @@ void MX_FREERTOS_Init(void) {
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
-
-
-
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
@@ -129,6 +121,7 @@ void MX_FREERTOS_Init(void) {
   OtosTaskStart();
   PosSteppersTaskStart();
   ActuatorsTaskStart();
+  FunTaskStart();
 
   /* USER CODE END RTOS_THREADS */
 
