@@ -6,9 +6,8 @@ from rclpy.clock import Clock
 from ament_index_python.packages import get_package_share_directory
 
 from champi_interfaces.action import Navigate
-from geometry_msgs.msg import Point, Pose
+from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
 from rclpy.action import ActionClient
-from robot_localization.srv import SetPose
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
 import time
@@ -65,6 +64,9 @@ class ChampiStateMachineITF(Node):
         self.action_client_navigate.wait_for_server()
         self.get_logger().info('<< Action client /navigate is ready!')
 
+        # publisher topic /set_pose
+        self.set_pose_pub = self.create_publisher(PoseWithCovarianceStamped, '/set_pose', 10)
+
         self.champi_sm.ros_initialized = True # TODO more things ?
         self.get_logger().warn('Launched ChampiSMRosInterface !')
 
@@ -100,23 +102,19 @@ class ChampiStateMachineITF(Node):
 
     def init_robot_pose(self):
         init_pose = [1.0, 1.0, 0.0] # TODO BETTER
-        self.set_pose_client = self.create_client(SetPose, '/set_pose')
-        while not self.set_pose_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-            time.sleep(0.5)
 
-        request = SetPose.Request()
-        request.pose.header.stamp = self.get_clock().now().to_msg()
-        request.pose.header.frame_id = 'odom'
-        request.pose.pose.pose.position.x = init_pose[0]
-        request.pose.pose.pose.position.y = init_pose[1]
-        request.pose.pose.pose.position.z = 0.
-        request.pose.pose.pose.orientation.x = 0.
-        request.pose.pose.pose.orientation.y = 0.
-        request.pose.pose.pose.orientation.z = sin(init_pose[2]/2)
-        request.pose.pose.pose.orientation.w = cos(init_pose[2]/2)
+        msg = PoseWithCovarianceStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'odom'
+        msg.pose.pose.position.x = init_pose[0]
+        msg.pose.pose.position.y = init_pose[1]
+        msg.pose.pose.position.z = 0.
+        msg.pose.pose.orientation.x = 0.
+        msg.pose.pose.orientation.y = 0.
+        msg.pose.pose.orientation.z = sin(init_pose[2]/2)
+        msg.pose.pose.orientation.w = cos(init_pose[2]/2)
 
-        future = self.set_pose_client.call_async(request)
+        self.set_pose_pub.publish(msg)
         self.get_logger().info(f'requested setpose to {init_pose[0]} {init_pose[1]} {init_pose[2]} rad')
 
 
