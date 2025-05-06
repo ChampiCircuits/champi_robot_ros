@@ -2,14 +2,17 @@
 
 #include "usart.h"
 
+#include "Application/Modbus/DataStructures.h"
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/PosSteppersTask.h"
 #include "Application/SCServosApp.h"
 #include "Application/Modbus/ModbusTask.h"
+#include "Application/Modbus/hw_actuators.h"
 #include "Config/Config.h"
 #include "Util/logging.h"
 
 #include "cmsis_os2.h"
+#include "semphr.h"
 
 
 osThreadId_t ActuatorsTaskHandle;
@@ -155,6 +158,13 @@ void PutBanner()
     devices::scs_servos::set_angle(ID_SERVO_BANNER, 250, 1000);
 }
 
+void HandleRequest(ActuatorCommand cmd) {
+    if (cmd == ActuatorCommand::PUT_BANNER) {
+        PutBanner();
+    }
+    osDelay(5000);
+}
+
 void ActuatorsTask(void *argument) {
 
     SCServosApp_Init(); // Reminder: blocking until the servos are found
@@ -164,38 +174,58 @@ void ActuatorsTask(void *argument) {
 
     LOG_INFO("act", "Starting loop.");
 
-    {
-        //move in front
-        TakePlank(LOWER_PLANK);
-        osDelay(4000);
-        //move to the right two cans
-        TakeCanFront();
-        osDelay(4000);
-        //move and rotate to the left two cans
-        TakeCanSide();
-        osDelay(4000);
-    }
+    // //move in front
+    // TakePlank(LOWER_PLANK);
+    // osDelay(4000);
+    // //move to the right two cans
+    // TakeCanFront();
+    // osDelay(4000);
+    // //move and rotate to the left two cans
+    // TakeCanSide();
+    // osDelay(4000);
+    //
+    // //move somewhere
+    //
+    // PutCanFront(1);
+    // osDelay(4000);
+    // PutPlanks(1);
+    // TakePlank(UPPER_PLANK);
+    // osDelay(4000);
+    // //rotate
+    // PutCanSide(2);
+    // PutPlanks(2);
+    //
+    // devices::stepper_opt0.set_goal(3.0);
 
-    //move somewhere
-    {
-        PutCanFront(1);
-        osDelay(4000);
-        PutPlanks(1);
-        TakePlank(UPPER_PLANK);
-        osDelay(4000);
-        //rotate
-        PutCanSide(2);
-        PutPlanks(2);
-    }
+    // devices::scs_servos::set_enable(false);
+    // auto angle = devices::scs_servos::read_angle(ID_SERVO_Y_FRONT);
+    // LOG_INFO("act", "Servo Y front angle: %f", angle);
 
-    devices::stepper_opt0.set_goal(3.0);
+
+
 
     while (true) {
-        // devices::scs_servos::set_enable(false);
-        // auto angle = devices::scs_servos::read_angle(ID_SERVO_Y_FRONT);
-        // LOG_INFO("act", "Servo Y front angle: %f", angle);
-        osDelay(1000);
+
+        for (int i=0; i < ACTUATORS_COUNT; i++)
+        {
+            ActuatorState actuator_request = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
+
+            if (actuator_request == ActuatorState::REQUESTED)
+            {
+                ActuatorCommand actuator = static_cast<ActuatorCommand>(i);
+                LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(actuator_request).c_str());
+                HandleRequest(actuator);
+                xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+                mod_reg::actuators->requests[i] = static_cast<uint8_t>(ActuatorState::DONE);
+                xSemaphoreGive(ModbusH.ModBusSphrHandle);
+                LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(static_cast<ActuatorState>(mod_reg::actuators->requests[i])).c_str());
+            }
+        }
+        // LOG_INFO("act", "Actuator requested is %s to state %s", to_string(static_cast<ActuatorCommand>(2)).c_str(), to_string(mod_reg::requests->actuators_state[2]).c_str());
+
+        osDelay(100);
     }
+
 }
 
 void ActuatorsTaskStart() {

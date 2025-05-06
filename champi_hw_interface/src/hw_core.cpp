@@ -223,26 +223,39 @@ void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
 }
 
 
-void HardwareInterfaceNode::check_for_actuators_state() const
+void HardwareInterfaceNode::check_for_actuators_state() const // TODO checker a 5Hz
 {
     std::string states_string;
+    read(mod_reg::reg_actuators);
     for (int i=0; i<ACTUATORS_COUNT; i++)
     {
-        int state = mod_reg::cmd->actuators_state[i];
-        states_string += std::to_string(state);
+        const ActuatorState state = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
+        states_string += to_string(state) + " ";
 
-        // check for state DONE
-        if (state == static_cast<int>(ActuatorState::DONE))
+        if (state == ActuatorState::DONE)
         {
             // set state to NOTHING
-            mod_reg::cmd->actuators_state[i] = static_cast<int>(ActuatorState::NOTHING);
-            write(mod_reg::reg_cmd);
+            mod_reg::actuators->requests[i] = static_cast<uint8_t>(ActuatorState::NOTHING);
+            this->write(mod_reg::reg_actuators);
+            RCLCPP_INFO(this->get_logger(), "Actuator %s is done", to_string(static_cast<ActuatorCommand>(i)).c_str());
+
             // pub to topic
             auto msg = std_msgs::msg::Int8MultiArray();
-            msg.data[i] = static_cast<int>(ActuatorState::DONE);
+            // 1. Initialiser les données
+            msg.data.resize(7);
+
+            // 2. Définir la structure (layout) du tableau
+            msg.layout.dim.resize(1);  // 1 dimension (1D array)
+            msg.layout.dim[0].label = "actuator_states";  // facultatif, pour info
+            msg.layout.dim[0].size = 7;                   // taille totale du tableau
+            msg.layout.dim[0].stride = 7;                 // stride = nb d’éléments pour "sauter" une ligne (comme en matrice)
+
+            // 3. offset à 0 (début du tableau)
+            msg.layout.data_offset = 0;
+            msg.data[i] = static_cast<int8_t>(ActuatorState::DONE);
             pub_ctrl_actuators_->publish(msg);
         }
     }
 
-    // RCLCPP_INFO(this->get_logger(), "Actuators states %s", states_string.c_str());
+    // RCLCPP_INFO(this->get_logger(), "Actuators requests %s", states_string.c_str());
 }

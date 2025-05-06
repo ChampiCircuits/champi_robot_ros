@@ -31,6 +31,7 @@ extern Config *config;
 extern State *state;
 extern Cmd *cmd;
 extern Requests *requests;
+extern Actuators *actuators;
 
 #ifdef MODBUS_MASTER
 // Metadata to gather info needed to read/write the data (for master only)
@@ -38,6 +39,7 @@ extern register_metadata reg_config;
 extern register_metadata reg_state;
 extern register_metadata reg_cmd;
 extern register_metadata reg_requests;
+extern register_metadata reg_actuators;
 
 // EDIT HERE END
 

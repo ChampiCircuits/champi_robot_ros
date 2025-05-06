@@ -15,6 +15,7 @@ Config *config;
 State *state;
 Cmd *cmd;
 Requests *requests;
+Actuators *actuators;
 
 #ifdef MODBUS_MASTER
 // Metadata to gather info needed to read/write the data (for master only)
@@ -22,6 +23,7 @@ register_metadata reg_config;
 register_metadata reg_state;
 register_metadata reg_cmd;
 register_metadata reg_requests;
+register_metadata reg_actuators;
 
 // EDIT HERE END
 

@@ -1,6 +1,8 @@
 #ifndef DATASTRUCTURES_H
 #define DATASTRUCTURES_H
 
+#include <stdint.h>
+
 namespace com_types {
 
 struct Vector3 {
@@ -40,13 +42,17 @@ struct State {
 struct Cmd {
   bool is_read;
   Vector3 cmd_vel;
-  // list of actuators commands. The number of actuators is 7.
-  int actuators_state[7];
 };
 
 struct Requests {
   bool request_reset_otos;
   bool request_reset_stm;
+};
+
+struct Actuators
+{
+  // list of actuators commands. The number of actuators is 7.
+  uint8_t requests[7];
 };
 
 }

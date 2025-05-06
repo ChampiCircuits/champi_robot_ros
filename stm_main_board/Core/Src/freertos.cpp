@@ -121,7 +121,7 @@ void MX_FREERTOS_Init(void) {
   HoloDriveTaskStart();
   OtosTaskStart();
   PosSteppersTaskStart();
-  //ActuatorsTaskStart();
+  ActuatorsTaskStart();
 
   /* USER CODE END RTOS_THREADS */
 

@@ -1,0 +1,1 @@
+/home/andre/champi_ws/src/champi_robot_ros/champi_hw_interface/include/champi_hw_interface/hw_actuators.h

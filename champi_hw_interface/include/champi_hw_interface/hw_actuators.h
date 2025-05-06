@@ -9,13 +9,13 @@
   Enum for actuator commands.
 */
 enum class ActuatorCommand {
-  PUT_BANNER = 1,
-  TAKE_PLANKS = 2,
-  PUT_PLANKS = 3,
-  TAKE_CANS_LEFT = 4,
-  TAKE_CANS_RIGHT = 5,
-  PUT_CANS_LEFT = 6,
-  PUT_CANS_RIGHT = 7
+  PUT_BANNER = 0,
+  TAKE_PLANKS = 1,
+  PUT_PLANKS = 2,
+  TAKE_CANS_LEFT = 3,
+  TAKE_CANS_RIGHT = 4,
+  PUT_CANS_LEFT = 5,
+  PUT_CANS_RIGHT = 6
 
 };
 
@@ -28,7 +28,7 @@ enum class ActuatorCommand {
 */
 enum class ActuatorState { NOTHING = 0, REQUESTED = 1, DONE = 2 };
 
-inline std::string act_cmd_to_string(ActuatorCommand command) {
+inline std::string to_string(ActuatorCommand command) {
   switch (command) {
   case ActuatorCommand::PUT_BANNER:
     return "PUT_BANNER";
@@ -49,7 +49,7 @@ inline std::string act_cmd_to_string(ActuatorCommand command) {
   }
 }
 
-inline std::string act_state_to_string(ActuatorState state) {
+inline std::string to_string(ActuatorState state) {
   switch (state) {
     case ActuatorState::NOTHING:
       return "NOTHING";
