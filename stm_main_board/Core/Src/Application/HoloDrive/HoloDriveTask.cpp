@@ -29,7 +29,8 @@ const osThreadAttr_t holoDriveTask_attributes = {
 };
 
 void HoloDriveTask(void *argument) {
-  // led_holo::setRed();
+  led_holo::setRed();
+  led_holo::SetBrightness(20);
 
   HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, GPIO_PIN_SET);
 
@@ -55,7 +56,7 @@ void HoloDriveTask(void *argument) {
   uint32_t start = osKernelGetTickCount();
   uint32_t t_last_read = start;
 
-  // led_holo::setGreen();
+  led_holo::setGreen();
 
   while (true) {
 
@@ -64,7 +65,7 @@ void HoloDriveTask(void *argument) {
       if (osKernelGetTickCount() - t_last_read > CMD_TIMEOUT_MS) {
         holoDrive.set_cmd_vel(Vector3{0, 0, 0});
         LOG_WARN_THROTTLE("holo", 10, "cmd vel timeout");
-        // led_holo::setOrange();
+        led_holo::setOrange();
       }
     }
     else {

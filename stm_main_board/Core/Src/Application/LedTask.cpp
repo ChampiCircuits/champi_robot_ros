@@ -287,6 +287,31 @@ void BAU_pushed_animation()
 //---------------------------------TASK---------------------------------------//
 //----------------------------------------------------------------------------//
 
+struct LedState {
+  int color;
+  float brightness;
+};
+
+void applyLedState(const LedState& state) {
+  switch (state.color) {
+  case CLEAR:
+    led::clear(0, state.brightness);
+    break;
+  case GREEN:
+    led::setGreen(0, state.brightness);
+    break;
+  case RED:
+    led::setRed(0, state.brightness);
+    break;
+  case ORANGE:
+    led::setOrange(0, state.brightness);
+    break;
+  case BLUE:
+    led::setBlue(0, state.brightness);
+    break;
+  }
+}
+
 
 void LedTask(void *argument) {
 
@@ -316,9 +341,13 @@ void LedTask(void *argument) {
       osDelay(10);
     }*/
 
-    BAU_pushed_animation();
+    applyLedState({led_holo::color, led_holo::brightness});
+    applyLedState({led_otos::color, led_otos::brightness});
+
+
+    // BAU_pushed_animation();
     WS2812_Send();
-    osDelay(10);
+    osDelay(500);
   }
 }
 

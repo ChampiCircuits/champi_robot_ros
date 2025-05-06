@@ -12,6 +12,13 @@
 #define LED_HOLO 0
 #define LED_OTOS 1
 
+enum COLOR {
+  CLEAR = 0,
+  RED = 1,
+  GREEN = 2,
+  BLUE = 3,
+  ORANGE = 4
+};
 
 void WS2812_Send();
 
@@ -62,7 +69,7 @@ void clear_Ring();
 
 namespace led
 {
-inline void setColor(int ledIndex, float r, float g, float b, float brightness) {
+inline void setColor(int ledIndex, int r, int g, int b, float brightness) {
   Set_LED(ledIndex, r, g, b);
   Set_Brightness(brightness, ledIndex);
   WS2812_Send();
@@ -92,12 +99,13 @@ inline void setBlue(int ledIndex, float brightness) {
 namespace led_holo
 {
 inline float brightness = 10;
+inline int color;
 
-inline void clear()   { led::clear(LED_HOLO, brightness); }
-inline void setGreen(){ led::setGreen(LED_HOLO, brightness); }
-inline void setRed()  { led::setRed(LED_HOLO, brightness); }
-inline void setOrange(){ led::setOrange(LED_HOLO, brightness); }
-inline void setBlue() { led::setBlue(LED_HOLO, brightness); }
+inline void clear()   { color = CLEAR; }
+inline void setGreen(){ color = GREEN; }
+inline void setRed()  { color = RED; }
+inline void setOrange(){ color = ORANGE; }
+inline void setBlue() { color = BLUE; }
 
 inline void SetBrightness(float b) { brightness = b; }
 }
@@ -105,12 +113,13 @@ inline void SetBrightness(float b) { brightness = b; }
 namespace led_otos
 {
 inline float brightness = 10;
+inline int color;
 
-inline void clear()   { led::clear(LED_OTOS, brightness); }
-inline void setGreen(){ led::setGreen(LED_OTOS, brightness); }
-inline void setRed()  { led::setRed(LED_OTOS, brightness); }
-inline void setOrange(){ led::setOrange(LED_OTOS, brightness); }
-inline void setBlue() { led::setBlue(LED_OTOS, brightness); }
+inline void clear()   { color = CLEAR; }
+inline void setGreen(){ color = GREEN; }
+inline void setRed()  { color = RED; }
+inline void setOrange(){ color = ORANGE; }
+inline void setBlue() { color = BLUE; }
 
 inline void SetBrightness(float b) { brightness = b; }
 }

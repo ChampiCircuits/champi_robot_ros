@@ -52,20 +52,20 @@ uint16_t *init_ptr_to_register(uint16_t n_bytes) { // size in bytes
   if (n_coils == 0) {
     printf("Error: Message length < 16 bits, please make the message bigger.\n");
     // TODO handle error
-    exit(1);
+    return nullptr;
   }
 
   if (n_coils % 32 == 0) {
     printf("Error: Message length is multiple of 32, which is not handled "
            "properly for now. Please add dummy data to the message type.\n");
     // TODO handle error
-    exit(1);
+    return nullptr;
   }
 
   if (offset + n_coils > REGISTERS_SIZE) {
     printf("Error: Not enough space in registers\n");
     // TODO handle error
-    exit(1);
+    return nullptr;
   }
   uint16_t *ptr = registers + offset;
   offset += n_coils;
