@@ -78,14 +78,14 @@ class ChampiStateMachine(object):
 
         # OTHERS
         self.itf:ChampiStateMachineITF = None
-<<<<<<< HEAD
+
         path = get_package_share_directory('champi_brain') + '/SM_diagram.png'
         get_logger(self.name).warn(f'PATH: {path}')
 
         self.sm.get_graph().draw(path, prog='dot')
-=======
+
         self.draw_graph()
->>>>>>> origin/main
+
         get_logger(self.name).warn('Launched SM !')
         get_logger(self.name).warn(f'Starting in state [{self.state}].')
 

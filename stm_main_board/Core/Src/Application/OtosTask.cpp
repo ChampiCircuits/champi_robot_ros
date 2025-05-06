@@ -24,9 +24,9 @@ void OtosTask(void *argument) {
 
   while (!myOtos.isConnected()) {
     LOG_WARN("otos", "Connecting failed. Retrying...");
-    led_otos::setOrange();
+    // led_otos::setOrange();
     osDelay(1000);
-    led_otos::clear(); // TODO does not work ? setbrightness instead ?
+    // led_otos::clear(); // TODO does not work ? setbrightness instead ?
     osDelay(1000);
   }
 
@@ -35,14 +35,14 @@ void OtosTask(void *argument) {
     LOG_WARN("otos", "Self-test failed.");
     // osDelay(1000000000); // TODO reset STM ?
     while (1) {
-      led_otos::setRed();
+      // led_otos::setRed();
       osDelay(1000);
-      led_otos::clear();
+      // led_otos::clear();
       osDelay(1000);
     }
   }
 
-  led_otos::setRed();
+  // led_otos::setRed();
 
   // We wait for the config to be set by the master
   while (!mod_reg::config->is_set) {
@@ -64,12 +64,12 @@ void OtosTask(void *argument) {
   uint32_t start = osKernelGetTickCount();
 
   LOG_INFO("otos", "Starting loop.");
+  // led_otos::setGreen();
 
   while (true) {
-    led_otos::setGreen();
 
     if (mod_reg::requests->request_reset_otos) {
-      led_otos::setOrange();
+      // led_otos::setOrange();
       LOG_INFO("otos", "Resetting OTOS.");
       mod_reg::requests->request_reset_otos = false;
       myOtos.calibrateImu();

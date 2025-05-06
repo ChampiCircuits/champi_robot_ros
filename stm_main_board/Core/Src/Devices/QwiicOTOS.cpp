@@ -1,6 +1,7 @@
 #include "Devices/QwiicOTOS.h"
 #include <cmath>
 #include <cstring>
+#include "cmsis_os2.h"
 
 bool QwiicOTOS::isConnected() {
   auto a = HAL_I2C_IsDeviceReady(hi2c_, address << 1, 3, 1000);
@@ -18,14 +19,14 @@ bool QwiicOTOS::selfTest() {
     return false;
   }
 
-  HAL_Delay(5);
+  osDelay(5);
   uint8_t regValue;
   for (int i = 0; i < 10; ++i) {
     regValue = readByte(kRegSelfTest);
     if (((regValue >> 1) & 0x01) == 0) {
       break;
     }
-    HAL_Delay(5);
+    osDelay(5);
   }
   return ((regValue >> 2) & 0x01) == 1;
 }
@@ -35,7 +36,7 @@ bool QwiicOTOS::calibrateImu(uint8_t numSamples, bool waitUntilDone) {
     return false;
   }
 
-  HAL_Delay(3);
+  osDelay(3);
 
   if (!waitUntilDone) {
     return true;
@@ -45,7 +46,7 @@ bool QwiicOTOS::calibrateImu(uint8_t numSamples, bool waitUntilDone) {
     if (readByte(kRegImuCalib) == 0) {
       return true;
     }
-    HAL_Delay(3);
+    osDelay(3);
   }
   return false;
 }
