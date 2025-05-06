@@ -51,8 +51,8 @@ struct Requests {
 
 struct Actuators
 {
-  // list of actuators commands. The number of actuators is 7.
-  uint8_t requests[7];
+  // list of actuators commands. The number of actuators is 9.
+  uint8_t requests[9];
 };
 
 }

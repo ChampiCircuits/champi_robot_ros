@@ -10,12 +10,14 @@
 */
 enum class ActuatorCommand {
   PUT_BANNER = 0,
-  TAKE_PLANKS = 1,
-  PUT_PLANKS = 2,
-  TAKE_CANS_LEFT = 3,
-  TAKE_CANS_RIGHT = 4,
-  PUT_CANS_LEFT = 5,
-  PUT_CANS_RIGHT = 6
+  TAKE_LOWER_PLANK = 1,
+  TAKE_UPPER_PLANK = 2,
+  PUT_LOWER_PLANK_LAYER_1 = 3,
+  PUT_UPPER_PLANK_LAYER_2 = 4,
+  TAKE_CANS_FRONT = 5,
+  TAKE_CANS_SIDE = 6,
+  PUT_CANS_FRONT_LAYER_1 = 7,
+  PUT_CANS_SIDE_LAYER_2 = 8
 
 };
 
@@ -32,18 +34,22 @@ inline std::string to_string(ActuatorCommand command) {
   switch (command) {
   case ActuatorCommand::PUT_BANNER:
     return "PUT_BANNER";
-  case ActuatorCommand::TAKE_PLANKS:
-    return "TAKE_PLANKS";
-  case ActuatorCommand::PUT_PLANKS:
-    return "PUT_PLANKS";
-  case ActuatorCommand::TAKE_CANS_LEFT:
-    return "TAKE_CANS_LEFT";
-  case ActuatorCommand::TAKE_CANS_RIGHT:
-    return "TAKE_CANS_RIGHT";
-  case ActuatorCommand::PUT_CANS_LEFT:
-    return "PUT_CANS_LEFT";
-  case ActuatorCommand::PUT_CANS_RIGHT:
-    return "PUT_CANS_RIGHT";
+  case ActuatorCommand::TAKE_LOWER_PLANK:
+    return "TAKE_LOWER_PLANK";
+  case ActuatorCommand::TAKE_UPPER_PLANK:
+    return "TAKE_UPPER_PLANK";
+  case ActuatorCommand::PUT_LOWER_PLANK_LAYER_1:
+    return "PUT_LOWER_PLANK_LAYER_1";
+  case ActuatorCommand::PUT_UPPER_PLANK_LAYER_2:
+    return "PUT_UPPER_PLANK_LAYER_2";
+  case ActuatorCommand::TAKE_CANS_FRONT:
+    return "TAKE_CANS_FRONT";
+  case ActuatorCommand::TAKE_CANS_SIDE:
+    return "TAKE_CANS_SIDE";
+  case ActuatorCommand::PUT_CANS_FRONT_LAYER_1:
+    return "PUT_CANS_FRONT_LAYER_1";
+  case ActuatorCommand::PUT_CANS_SIDE_LAYER_2:
+    return "PUT_CANS_SIDE_LAYER_2";
   default:
     return "UNKNOWN_COMMAND";
   }

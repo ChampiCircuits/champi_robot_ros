@@ -5,7 +5,7 @@ from rclpy.logging import get_logger
 from ament_index_python.packages import get_package_share_directory
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
-from states import ChampiState, InitState, MoveState, WaitState
+from states import ChampiState, InitState, MoveState, WaitState, ActuatorState
 from ament_index_python.packages import get_package_share_directory
 
 
@@ -40,8 +40,7 @@ class ChampiStateMachine(object):
         self.sm.add_state(ChampiState(name='endOfMatch', sm=self))
         # self.sm.add_state(ChampiState(name='stop', sm=self))
 
-        self.sm.add_state(ChampiState(name='take_planks', sm=self))
-        self.sm.add_state(ChampiState(name='take_front_cans', sm=self))
+        self.sm.add_state(ActuatorState(name='action', sm=self))
 
         self.sm.get_state('init').add_substate(state=ChampiState(name='waitForRosInit', sm=self))
         self.sm.get_state('init').add_substate(state=ChampiState(name='waitForStmInit', sm=self))
@@ -59,12 +58,11 @@ class ChampiStateMachine(object):
         self.sm.add_transition('start_move', 'idle', 'move', conditions='can_start_moving')
         self.sm.add_transition('start_wait', 'idle', 'wait', conditions='can_start_waiting')
         self.sm.add_transition('back_to_idle', 'move', 'idle', conditions='goal_reached')
-        self.sm.add_transition('back_to_idle', ['take_planks', 'take_front_cans'], 'idle', conditions='end_of_actuator_state')
+        self.sm.add_transition('back_to_idle', 'action', 'idle', conditions='end_of_actuator_state')
         self.sm.add_transition('back_to_idle', 'wait', 'idle', conditions='end_of_wait')
         self.sm.add_transition('end_of_match', '*', 'endOfMatch', conditions=['match_has_ended'])
         ## ACTIONS
-        self.sm.add_transition('start_take_planks', 'idle', 'take_planks', conditions='can_start_take_planks')
-        self.sm.add_transition('start_take_front_cans', 'idle', 'take_front_cans', conditions='can_start_take_front_cans')
+        self.sm.add_transition('start_action', 'idle', 'action', conditions='can_start_action')
 
         # ADDITIONALS CALLBACKS
         self.sm.get_state('idle').add_callback('enter', 'find_next_state')
@@ -75,6 +73,7 @@ class ChampiStateMachine(object):
         self.user_has_choosed_config = False
         self.tirette_pulled = False
         self.match_ended = False
+        self.end_of_actuator_state = False
         self.reset_flags()
 
         # STRATEGY (TO BE INIT BY THE NODE)
@@ -83,6 +82,12 @@ class ChampiStateMachine(object):
 
         # OTHERS
         self.itf:ChampiStateMachineITF = None
+
+        self.action_list = ['PUT_BANNER',
+                            'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
+                            'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
+                            'TAKE_CANS_FRONT', 'TAKE_CANS_SIDE',
+                            'PUT_CANS_FRONT_LAYER_1', 'PUT_CANS_SIDE_LAYER_2']
 
         path = get_package_share_directory('champi_brain') + '/SM_diagram.png'
         get_logger(self.name).warn(f'PATH: {path}')
@@ -103,8 +108,7 @@ class ChampiStateMachine(object):
         self.end_of_wait = False
 
         # action flags
-        self.can_start_take_planks = False
-        self.can_start_take_front_cans = False
+        self.can_start_action = False
 
     def load_strategy(self, file_path):
         with open(file_path, 'r') as file:
@@ -137,13 +141,9 @@ class ChampiStateMachine(object):
                 self.can_start_moving = True
                 self.start_move(x=x, y=y, theta_deg=theta_deg)
 
-            elif action_name == 'take_planks':
-                self.can_start_take_planks = True
-                self.start_take_planks()
-
-            elif action_name == 'take_front_cans':
-                self.can_start_take_front_cans = True
-                self.start_take_front_cans()
+            elif action_name in self.action_list:
+                self.can_start_action = True
+                self.start_action(action=action_name)
 
             elif action_name == 'wait':
                 self.can_start_waiting = True

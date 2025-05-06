@@ -7,6 +7,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from champi_interfaces.action import Navigate
 from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
+from std_msgs.msg import Int8
 from rclpy.action import ActionClient
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
@@ -66,6 +67,9 @@ class ChampiStateMachineITF(Node):
 
         # publisher topic /set_pose
         self.set_pose_pub = self.create_publisher(PoseWithCovarianceStamped, '/set_pose', 10)
+
+        # publisher topic /ctrl/actuators
+        self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
 
         self.champi_sm.ros_initialized = True # TODO more things ?
         self.get_logger().warn('Launched ChampiSMRosInterface !')

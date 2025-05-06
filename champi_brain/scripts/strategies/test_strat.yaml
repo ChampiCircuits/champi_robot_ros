@@ -11,10 +11,10 @@ actions:
   - action: move
     target: { x: 1.2, y: 1.1, theta_deg: 180.0 } # devant les conserves
 
-  - action: take_planks
+  - action: TAKE_LOWER_PLANK
   - action: move
     target: { x: 1.2, y: 1.25, theta_deg: 180.0 } # décale sur les deux conserves de droite
-  - action: take_front_cans
+  - action: TAKE_CANS_FRONT
 
   - action: move
     target: { x: 1.4, y: 1.1, theta_deg: 180.0 } # recule
@@ -22,13 +22,13 @@ actions:
   - action: move
     target: { x: 1.2, y: 1.1, theta_deg: 120.0 } # re-avance mais avec le côté de l'actionneur en face
 
-#  - action: take_side_cans
+#  - action: TAKE_CANS_SIDE
 
   - action: move
     target: { x: 1.7, y: 1.25, theta_deg: 0.0 } # retour dans la zone du bas
 
-#  - action: put_front_cans_layer1
-#  - action: put_lower_plank
+#  - action: PUT_CANS_FRONT_LAYER_1
+#  - action: PUT_LOWER_PLANK_LAYER_1
 
   - action: move
     target: { x: 1.5, y: 1.25, theta_deg: 0.0 } # recule
@@ -36,7 +36,7 @@ actions:
   - action: move
     target: { x: 1.7, y: 1.25, theta_deg: 300.0 } # re-avance mais avec le côté de l'actionneur en face
 
-#  - action: put_side_cans_layer2
+#  - action: PUT_CANS_SIDE_LAYER_2
 
   - action: move
     target: { x: 1.5, y: 1.25, theta_deg: 0.0 } # recule
@@ -44,7 +44,7 @@ actions:
   - action: move
     target: { x: 1.7, y: 1.25, theta_deg: 0.0 } # re-avance
 
-#  - action: put_upper_plank
+#  - action: PUT_UPPER_PLANK_LAYER_2
 
   - action: move
     target: { x: 1.5, y: 0.8, theta_deg: 180.0 } # autre mouv

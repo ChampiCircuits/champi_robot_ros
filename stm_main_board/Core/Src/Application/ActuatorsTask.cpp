@@ -40,8 +40,8 @@ const osThreadAttr_t actuatorsTask_attributes = {
 void InitArm()
 {
     // OPEN THE ARM and END_ARM
-    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_UP_POSITION, 300);
-    devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 100);
+    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_UP_POSITION, 1000);
+    devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 1000);
 }
 
 void InitBanner()
@@ -159,10 +159,36 @@ void PutBanner()
 }
 
 void HandleRequest(ActuatorCommand cmd) {
-    if (cmd == ActuatorCommand::PUT_BANNER) {
+    switch (cmd) {
+    case ActuatorCommand::PUT_BANNER:
         PutBanner();
+        break;
+    case ActuatorCommand::TAKE_LOWER_PLANK:
+        TakePlank(LOWER_PLANK);
+        break;
+    case ActuatorCommand::TAKE_UPPER_PLANK:
+        TakePlank(UPPER_PLANK);
+        break;
+    case ActuatorCommand::PUT_LOWER_PLANK_LAYER_1:
+        PutPlanks(1);
+        break;
+    case ActuatorCommand::PUT_UPPER_PLANK_LAYER_2:
+        PutPlanks(2);
+        break;
+    case ActuatorCommand::TAKE_CANS_FRONT:
+        TakeCanFront();
+        break;
+    case ActuatorCommand::TAKE_CANS_SIDE:
+        TakeCanSide();
+        break;
+    case ActuatorCommand::PUT_CANS_FRONT_LAYER_1:
+        PutCanFront(1);
+        break;
+    case ActuatorCommand::PUT_CANS_SIDE_LAYER_2:
+        PutCanSide(2);
+        break;
     }
-    osDelay(5000);
+    // osDelay(5000);
 }
 
 void ActuatorsTask(void *argument) {
