@@ -42,10 +42,10 @@ extern register_metadata reg_requests;
 // EDIT HERE END
 
 void init_register_metadata(register_metadata &reg_meta, uint16_t *ptr,
-                            uint16_t size);
+                            uint16_t n_bytes);
 #endif // MODBUS_MASTER
 
-uint16_t *init_ptr_to_register(uint16_t size);
+uint16_t *init_ptr_to_register(uint16_t n_bytes);
 
 void setup_registers();
 

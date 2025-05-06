@@ -26,30 +26,47 @@ register_metadata reg_requests;
 // EDIT HERE END
 
 void init_register_metadata(register_metadata &reg_meta, uint16_t *ptr,
-                            uint16_t size) {
+                            uint16_t n_bytes) { // size in bytes
+
+  uint16_t n_coils = n_bytes / sizeof(uint16_t);
+  if (n_bytes % sizeof(uint16_t) != 0) {
+    n_coils += 1;
+  }
+
   reg_meta.ptr = ptr;
-  reg_meta.size = size;
+  reg_meta.size = n_coils;
   reg_meta.address = ptr - registers;
 }
 #endif // MODBUS_MASTER
 
-uint16_t *init_ptr_to_register(uint16_t size) {
+uint16_t *init_ptr_to_register(uint16_t n_bytes) { // size in bytes
+  uint16_t n_coils = n_bytes / sizeof(uint16_t);
+  if (n_bytes % sizeof(uint16_t) != 0) {
+    n_coils += 1;
+  }
+
   static uint16_t offset = 0;
 
-  if (size % 64 == 0) {
-    printf("Error: Message length is multiple of 64, which is not handled "
-           "properly for now. Please add dummy data to the message type.\n");
+  if (n_coils == 0) {
+    printf("Error: Message length < 16 bits, please make the message bigger.\n");
     // TODO handle error
-    return nullptr;
+    exit(1);
   }
 
-  if (offset + size > REGISTERS_SIZE) {
+  if (n_coils % 32 == 0) {
+    printf("Error: Message length is multiple of 32, which is not handled "
+           "properly for now. Please add dummy data to the message type.\n");
+    // TODO handle error
+    exit(1);
+  }
+
+  if (offset + n_coils > REGISTERS_SIZE) {
     printf("Error: Not enough space in registers\n");
     // TODO handle error
-    return nullptr;
+    exit(1);
   }
   uint16_t *ptr = registers + offset;
-  offset += size;
+  offset += n_coils;
   return ptr;
 }
 
@@ -57,16 +74,18 @@ void setup_registers() {
 
   // EDIT HERE BEGIN
 
-  config = (Config *)init_ptr_to_register(sizeof(Config) / sizeof(uint16_t));
-  state = (State *)init_ptr_to_register(sizeof(State) / sizeof(uint16_t));
-  cmd = (Cmd *)init_ptr_to_register(sizeof(Cmd) / sizeof(uint16_t));
-  requests = (Requests *)init_ptr_to_register(sizeof(Requests) / sizeof(uint16_t));
+  config = (Config *)init_ptr_to_register(sizeof(Config));
+  state = (State *)init_ptr_to_register(sizeof(State));
+  cmd = (Cmd *)init_ptr_to_register(sizeof(Cmd));
+  requests = (Requests *)init_ptr_to_register(sizeof(Requests));
+  actuators= (Actuators *)init_ptr_to_register(sizeof(Actuators));
 
 #ifdef MODBUS_MASTER
-  init_register_metadata(reg_config, (uint16_t *)config, sizeof(Config) / sizeof(uint16_t));
-  init_register_metadata(reg_state, (uint16_t *)state, sizeof(State) / sizeof(uint16_t));
-  init_register_metadata(reg_cmd, (uint16_t *)cmd,sizeof(Cmd) / sizeof(uint16_t));
-  init_register_metadata(reg_requests, (uint16_t *)requests, sizeof(Requests) / sizeof(uint16_t));
+  init_register_metadata(reg_config, (uint16_t *)config, sizeof(Config));
+  init_register_metadata(reg_state, (uint16_t *)state, sizeof(State));
+  init_register_metadata(reg_cmd, (uint16_t *)cmd,sizeof(Cmd));
+  init_register_metadata(reg_requests, (uint16_t *)requests, sizeof(Requests));
+  init_register_metadata(reg_actuators, (uint16_t *)actuators, sizeof(Actuators));
 
 #endif // MODBUS_MASTER
 
