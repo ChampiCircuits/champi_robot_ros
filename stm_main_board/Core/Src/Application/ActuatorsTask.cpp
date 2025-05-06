@@ -164,26 +164,29 @@ void ActuatorsTask(void *argument) {
 
     LOG_INFO("act", "Starting loop.");
 
-    //move in front
-    TakePlank(LOWER_PLANK);
-    osDelay(4000);
-    //move to the right two cans
-    TakeCanFront();
-    osDelay(4000);
-    //move and rotate to the left two cans
-    TakeCanSide();
-    osDelay(4000);
+    {
+        //move in front
+        TakePlank(LOWER_PLANK);
+        osDelay(4000);
+        //move to the right two cans
+        TakeCanFront();
+        osDelay(4000);
+        //move and rotate to the left two cans
+        TakeCanSide();
+        osDelay(4000);
+    }
 
     //move somewhere
-
-    PutCanFront(1);
-    osDelay(4000);
-    PutPlanks(1);
-    TakePlank(UPPER_PLANK);
-    osDelay(4000);
-    //rotate
-    PutCanSide(2);
-    PutPlanks(2);
+    {
+        PutCanFront(1);
+        osDelay(4000);
+        PutPlanks(1);
+        TakePlank(UPPER_PLANK);
+        osDelay(4000);
+        //rotate
+        PutCanSide(2);
+        PutPlanks(2);
+    }
 
     devices::stepper_opt0.set_goal(3.0);
 

@@ -11,7 +11,10 @@ actions:
   - action: move
     target: { x: 1.2, y: 1.1, theta_deg: 180.0 } # devant les conserves
 
-#  - action: take_planks_and_front_cans
+  - action: take_planks
+  - action: move
+    target: { x: 1.2, y: 1.25, theta_deg: 180.0 } # décale sur les deux conserves de droite
+  - action: take_front_cans
 
   - action: move
     target: { x: 1.4, y: 1.1, theta_deg: 180.0 } # recule

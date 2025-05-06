@@ -7,7 +7,6 @@ class InitState(ChampiState):
 
 
 class MoveState(ChampiState):
-
     def enter(self, event_data):
         super().enter(event_data)
 
@@ -30,3 +29,15 @@ class WaitState(ChampiState):
         get_logger(self.name).info(f'Waited for {duration} seconds')
 
         self.sm.end_of_wait = True
+
+class ActuatorState(ChampiState):
+    def enter(self, event_data):
+        super().enter(event_data)
+
+        action = event_data.kwargs.get('action', None)
+
+        get_logger(self.name).info(f'Performing action: {action}')
+        time.sleep(2)
+        get_logger(self.name).info(f'Action {action} completed')
+
+        self.end_of_actuator_state = True

@@ -40,26 +40,31 @@ class ChampiStateMachine(object):
         self.sm.add_state(ChampiState(name='endOfMatch', sm=self))
         # self.sm.add_state(ChampiState(name='stop', sm=self))
 
+        self.sm.add_state(ChampiState(name='take_planks', sm=self))
+        self.sm.add_state(ChampiState(name='take_front_cans', sm=self))
+
         self.sm.get_state('init').add_substate(state=ChampiState(name='waitForRosInit', sm=self))
         self.sm.get_state('init').add_substate(state=ChampiState(name='waitForStmInit', sm=self))
         self.sm.get_state('init').add_substate(ChampiState(name='waitForUserChooseConfig', sm=self))
         self.sm.get_state('init').add_substate(ChampiState(name='waitForTirette', sm=self))
 
         # TRANSITIONS
+        ## INIT
         self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
         self.sm.add_transition('init_next', 'init_waitForRosInit', 'init_waitForStmInit', conditions='ros_initialized')
         self.sm.add_transition('init_next', 'init_waitForStmInit', 'init_waitForUserChooseConfig', conditions='stm_initialized')
         self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_waitForTirette', conditions='user_has_choosed_config')
         self.sm.add_transition('init_end', 'init_waitForTirette', 'idle', conditions='tirette_pulled')
-
+        ## BASIC ACTIONS
         self.sm.add_transition('start_move', 'idle', 'move', conditions='can_start_moving')
-        self.sm.add_transition('start_grab', 'idle', 'grab', conditions='can_start_grabbing')
-        self.sm.add_transition('start_put', 'idle', 'put', conditions='can_start_putting')
         self.sm.add_transition('start_wait', 'idle', 'wait', conditions='can_start_waiting')
         self.sm.add_transition('back_to_idle', 'move', 'idle', conditions='goal_reached')
-        self.sm.add_transition('back_to_idle', ['grab', 'put'], 'idle')
+        self.sm.add_transition('back_to_idle', ['take_planks', 'take_front_cans'], 'idle', conditions='end_of_actuator_state')
         self.sm.add_transition('back_to_idle', 'wait', 'idle', conditions='end_of_wait')
         self.sm.add_transition('end_of_match', '*', 'endOfMatch', conditions=['match_has_ended'])
+        ## ACTIONS
+        self.sm.add_transition('start_take_planks', 'idle', 'take_planks', conditions='can_start_take_planks')
+        self.sm.add_transition('start_take_front_cans', 'idle', 'take_front_cans', conditions='can_start_take_front_cans')
 
         # ADDITIONALS CALLBACKS
         self.sm.get_state('idle').add_callback('enter', 'find_next_state')
@@ -91,12 +96,15 @@ class ChampiStateMachine(object):
 
 
     def reset_flags(self):
+        # basic flags
         self.can_start_moving = False
-        self.can_start_grabbing = False
-        self.can_start_putting = False
         self.can_start_waiting = False
         self.goal_reached = False
         self.end_of_wait = False
+
+        # action flags
+        self.can_start_take_planks = False
+        self.can_start_take_front_cans = False
 
     def load_strategy(self, file_path):
         with open(file_path, 'r') as file:
@@ -129,18 +137,20 @@ class ChampiStateMachine(object):
                 self.can_start_moving = True
                 self.start_move(x=x, y=y, theta_deg=theta_deg)
 
-            elif action_name == 'grab':
-                self.can_start_grabbing = True
-                self.start_grab()
-            elif action_name == 'put':
-                self.can_start_putting = True
-                self.start_put()
+            elif action_name == 'take_planks':
+                self.can_start_take_planks = True
+                self.start_take_planks()
+
+            elif action_name == 'take_front_cans':
+                self.can_start_take_front_cans = True
+                self.start_take_front_cans()
+
             elif action_name == 'wait':
                 self.can_start_waiting = True
                 self.start_wait(duration=action['duration'])
             else:
                 get_logger(self.name).error('UNKNOWN ACTION')
-                # exit()
+                exit()
 
             self.strategy.pop(0)
 
