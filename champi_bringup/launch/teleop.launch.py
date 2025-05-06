@@ -21,8 +21,8 @@ def generate_launch_description():
     )
 
     joy_node = Node(
-        package='joy',
-        executable='joy_node',
+        package='joy_linux',
+        executable='joy_linux_node',
         name='game_controller_node',
         output='screen',
         condition=IfCondition(LaunchConfiguration('joy'))
