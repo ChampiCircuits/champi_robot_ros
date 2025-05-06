@@ -7,7 +7,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from champi_interfaces.action import Navigate
 from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
-from std_msgs.msg import Int8
+from std_msgs.msg import Int8, Int8MultiArray
 from rclpy.action import ActionClient
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
@@ -70,10 +70,18 @@ class ChampiStateMachineITF(Node):
 
         # publisher topic /ctrl/actuators
         self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
+        # subscriber topic //actuators_finished
+        self.actuators_finished_sub = self.create_subscription(Int8MultiArray, '/actuators_finished', self.actuators_finished_callback, 10)
 
         self.champi_sm.ros_initialized = True # TODO more things ?
         self.get_logger().warn('Launched ChampiSMRosInterface !')
 
+
+    def actuators_finished_callback(self, msg):
+        array = msg.data # 9 elements
+        self.get_logger().info(f'Actuators finished: {array}') # TODO check for which one
+
+        self.champi_sm.end_of_actuator_state = True
 
     def sim(self):
         elapsed_time = (self.clock.now() - self.init_time).nanoseconds / 1e9

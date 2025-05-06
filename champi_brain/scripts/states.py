@@ -37,7 +37,7 @@ class ActuatorState(ChampiState):
         super().enter(event_data)
 
         action = event_data.kwargs.get('action', None)
-
+        self.action = action
         get_logger(self.name).info(f'Performing action: {action}')
 
         msg = Int8()
@@ -60,9 +60,9 @@ class ActuatorState(ChampiState):
             msg.data = 7
         elif action == 'PUT_CANS_SIDE_LAYER_2':
             msg.data = 8
+
+
         self.sm.itf.actuators_ctrl_pub.publish(msg)
 
-
-        get_logger(self.name).info(f'Action {action} completed')
-
-        self.sm.end_of_actuator_state = True
+    def exit(self, event_data):
+        get_logger(self.name).info(f'Action {self.action} completed')
