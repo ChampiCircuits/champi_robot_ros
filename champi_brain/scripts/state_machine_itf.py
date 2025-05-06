@@ -106,16 +106,16 @@ class ChampiStateMachineITF(Node):
         msg = PoseWithCovarianceStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = 'odom'
-        msg.pose.pose.position.x = init_pose[0]
-        msg.pose.pose.position.y = init_pose[1]
+        msg.pose.pose.position.x = self.champi_sm.init_pose[0]
+        msg.pose.pose.position.y = self.champi_sm.init_pose[1]
         msg.pose.pose.position.z = 0.
         msg.pose.pose.orientation.x = 0.
         msg.pose.pose.orientation.y = 0.
-        msg.pose.pose.orientation.z = sin(init_pose[2]/2)
-        msg.pose.pose.orientation.w = cos(init_pose[2]/2)
+        msg.pose.pose.orientation.z = sin(self.champi_sm.init_pose[2]*3.14159/180/2)
+        msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]*3.14159/180/2)
 
         self.set_pose_pub.publish(msg)
-        self.get_logger().info(f'requested setpose to {init_pose[0]} {init_pose[1]} {init_pose[2]} rad')
+        self.get_logger().info(f'requested setpose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
 
 
     # ==================================== Feedback Callbacks =====================================

@@ -102,8 +102,8 @@ class ChampiStateMachine(object):
         with open(file_path, 'r') as file:
             data = yaml.safe_load(file)
 
-        self.init_pose = [data['init_pose']['x'], data['init_pose']['y'], data['init_pose']['theta_rad']]
-        self.itf.get_logger().info(f'<< Init pose will be {self.init_pose[0]} {self.init_pose[1]} {self.init_pose[2]}rad!')
+        self.init_pose = [data['init_pose']['x'], data['init_pose']['y'], data['init_pose']['theta_deg']]
+        self.itf.get_logger().info(f'<< Init pose will be {self.init_pose[0]} {self.init_pose[1]} {self.init_pose[2]}°!')
 
         for (i, action) in enumerate(data['actions']):
             get_logger(self.name).info(f'Action {i}: {action}')
@@ -125,9 +125,9 @@ class ChampiStateMachine(object):
 
             action_name = action['action']
             if action_name == 'move':
-                x, y, theta_rad = action['target']['x'], action['target']['y'], action['target']['theta_rad']
+                x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
                 self.can_start_moving = True
-                self.start_move(x=x, y=y, theta_rad=theta_rad)
+                self.start_move(x=x, y=y, theta_deg=theta_deg)
 
             elif action_name == 'grab':
                 self.can_start_grabbing = True
@@ -140,7 +140,7 @@ class ChampiStateMachine(object):
                 self.start_wait(duration=action['duration'])
             else:
                 get_logger(self.name).error('UNKNOWN ACTION')
-                exit()
+                # exit()
 
             self.strategy.pop(0)
 

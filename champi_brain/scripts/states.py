@@ -13,9 +13,10 @@ class MoveState(ChampiState):
 
         x = event_data.kwargs.get('x', None)
         y = event_data.kwargs.get('y', None)
-        theta_rad = event_data.kwargs.get('theta_rad', None)
+        theta_deg = event_data.kwargs.get('theta_deg', None)
+        theta_rad = theta_deg * 3.14159 / 180.0
 
-        get_logger(self.name+'_state').info(f"Start moving to x={x}, y={y}, theta_rad={theta_rad}")
+        get_logger(self.name+'_state').info(f"Start moving to x={x}, y={y}, theta={theta_deg}°")
         self.sm.itf.send_goal(x, y, theta_rad)
 
 class WaitState(ChampiState):

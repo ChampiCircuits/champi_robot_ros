@@ -1,15 +1,47 @@
-init_pose: { x: 1.0, y: 1.0, theta_rad: 0.0 }
+init_pose: { x: 1.7, y: 1.25, theta_deg: 180.0 } # dans la zone de départ jaune en bas
 
 actions:
 
   - action: move
-    target: { x: 1.0, y: 1.5, theta_rad: 0.0 }
+    target: { x: 1.5, y: 1.25, theta_deg: 180.0 }
 
   - action: move
-    target: { x: 1.5, y: 1.5, theta_rad: 0.0 }
+    target: { x: 1.5, y: 1.1, theta_deg: 180.0 }
 
   - action: move
-    target: { x: 1.5, y: 1.0, theta_rad: 0.0 }
+    target: { x: 1.2, y: 1.1, theta_deg: 180.0 } # devant les conserves
+
+#  - action: take_planks_and_front_cans
 
   - action: move
-    target: { x: 1.0, y: 1.0, theta_rad: 0.0 }
+    target: { x: 1.4, y: 1.1, theta_deg: 180.0 } # recule
+
+  - action: move
+    target: { x: 1.2, y: 1.1, theta_deg: 120.0 } # re-avance mais avec le côté de l'actionneur en face
+
+#  - action: take_side_cans
+
+  - action: move
+    target: { x: 1.7, y: 1.25, theta_deg: 0.0 } # retour dans la zone du bas
+
+#  - action: put_front_cans_layer1
+#  - action: put_lower_plank
+
+  - action: move
+    target: { x: 1.5, y: 1.25, theta_deg: 0.0 } # recule
+
+  - action: move
+    target: { x: 1.7, y: 1.25, theta_deg: 300.0 } # re-avance mais avec le côté de l'actionneur en face
+
+#  - action: put_side_cans_layer2
+
+  - action: move
+    target: { x: 1.5, y: 1.25, theta_deg: 0.0 } # recule
+
+  - action: move
+    target: { x: 1.7, y: 1.25, theta_deg: 0.0 } # re-avance
+
+#  - action: put_upper_plank
+
+  - action: move
+    target: { x: 1.5, y: 0.8, theta_deg: 180.0 } # autre mouv

@@ -4,9 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /TF1
-        - /TF1/Status1
         - /TF1/Frames1
+        - /Plan (viz only)1
         - /Enemy Pose1/Shape1
       Splitter Ratio: 0.3418940603733063
     Tree Height: 625
@@ -87,7 +86,13 @@ Visualization Manager:
       Tree:
         map:
           odom:
-            {}
+            base_link:
+              base_laser:
+                {}
+              camera:
+                {}
+              imu_link:
+                {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -166,7 +171,7 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
-      Color: 0; 255; 255
+      Color: 255; 0; 0
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
@@ -375,7 +380,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 1.5749988555908203
+      Angle: 1.5549988746643066
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -385,11 +390,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 231.7608642578125
+      Scale: 354.2530212402344
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 0.777755081653595
-      Y: 2.0293071269989014
+      X: 0.9414126873016357
+      Y: 1.913995623588562
     Saved: ~
 Window Geometry:
   Displays:
