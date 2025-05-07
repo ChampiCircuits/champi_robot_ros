@@ -242,12 +242,12 @@ void HardwareInterfaceNode::check_for_actuators_state() const // TODO checker a 
             // pub to topic
             auto msg = std_msgs::msg::Int8MultiArray();
             // 1. Initialiser les données
-            msg.data.resize(7);
+            msg.data.resize(ACTUATORS_COUNT);
 
             // 2. Définir la structure (layout) du tableau
             msg.layout.dim.resize(1);  // 1 dimension (1D array)
             msg.layout.dim[0].label = "actuator_states";  // facultatif, pour info
-            msg.layout.dim[0].size = 7;                   // taille totale du tableau
+            msg.layout.dim[0].size = ACTUATORS_COUNT;                   // taille totale du tableau
             msg.layout.dim[0].stride = 7;                 // stride = nb d’éléments pour "sauter" une ligne (comme en matrice)
 
             // 3. offset à 0 (début du tableau)

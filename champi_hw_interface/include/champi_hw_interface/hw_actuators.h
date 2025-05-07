@@ -4,7 +4,7 @@
 #include <string>
 
 
-#define ACTUATORS_COUNT 7
+#define ACTUATORS_COUNT 9
 /*
   Enum for actuator commands.
 */

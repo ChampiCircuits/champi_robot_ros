@@ -106,6 +106,7 @@ class ChampiStateMachine(object):
         self.can_start_waiting = False
         self.goal_reached = False
         self.end_of_wait = False
+        self.end_of_actuator_state = False
 
         # action flags
         self.can_start_action = False
