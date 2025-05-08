@@ -1,0 +1,26 @@
+##########################################
+# IN SUB FILES, EVERY POSITION ARE OFFSETS
+##########################################
+# o -----> y
+# |
+# v
+# x
+actions:
+  - action: PUT_CANS_FRONT_LAYER_1
+  - action: PUT_LOWER_PLANK_LAYER_1
+
+  - action: move
+    target: { x: 0.4, y: 0.0, theta_deg: 0.0 } # recule
+
+  - action: move
+    target: { x: 0.0, y: 0.0, theta_deg: 60.0 } # re-avance mais avec le côté de l'actionneur en face
+
+  - action: PUT_CANS_SIDE_LAYER_2
+
+  - action: move
+    target: { x: 0.4, y: 0.0, theta_deg: 0.0 } # recule
+
+  - action: move
+    target: { x: 0.0, y: 0.0, theta_deg: 0.0 } # re-avance
+
+  - action: PUT_UPPER_PLANK_LAYER_2
