@@ -22,12 +22,20 @@ void PosStepper::set_max_speed(float speed) { _max_speed = speed; }
 
 void PosStepper::set_max_accel(float accel) { _max_accel = accel; }
 
-void PosStepper::set_goal(float goal_pos) {
+void PosStepper::set_goal_async(float goal_pos) {
   if (!_pos_reached) {
     cancel_goal();
   }
   _goal_pos = goal_pos;
   _pos_reached = false;
+}
+
+void PosStepper::set_goal_sync(float goal_pos) {
+  set_goal_async(goal_pos);
+
+  while (!_pos_reached) {
+    osDelay(10);
+  }
 }
 
 void PosStepper::set_zero() { _current_pos = 0; }

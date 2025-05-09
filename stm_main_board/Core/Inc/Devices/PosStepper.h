@@ -13,7 +13,9 @@ public:
 
   void set_max_accel(float accel);
 
-  void set_goal(float goal_pos);
+  void set_goal_async(float goal_pos);
+
+  void set_goal_sync(float goal_pos);
 
   void set_zero();
 
