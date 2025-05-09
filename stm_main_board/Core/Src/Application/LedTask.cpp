@@ -30,9 +30,10 @@ const osThreadAttr_t ledTask_attributes = {
 //-------------------------------ANIMATIONS-----------------------------------//
 //----------------------------------------------------------------------------//
 
-void explosion_animation() // TODO refaire les animations pour commencer à +2
-{
+void explosion_animation() {
+  static float brightness = LED_RING_BRIGHTNESS;
   Set_LED(0, 255, 255, 255);
+  Set_Ring_Brightness(LED_RING_BRIGHTNESS);
   WS2812_Send();
 
   static int pos_1 = 0;
@@ -44,12 +45,14 @@ void explosion_animation() // TODO refaire les animations pour commencer à +2
     // applique
     Set_LED(pos_1, 255, 0, 0);
     Set_LED(pos_2, 0, 255, 255);
+    Set_Ring_Brightness(LED_RING_BRIGHTNESS);
     WS2812_Send();
 
     osDelay(100);
     //efface
     Set_LED(pos_1, 0, 0, 0);
     Set_LED(pos_2, 0, 0, 0);
+    Set_Ring_Brightness(LED_RING_BRIGHTNESS);
     WS2812_Send();
 
     //update
@@ -67,11 +70,11 @@ void explosion_animation() // TODO refaire les animations pour commencer à +2
   {
     if (pos_1==MAX_LED || pos_2<0)
     {
-      pos_1 = 0;
+      pos_1 = 2;
       pos_2 = MAX_LED-1;
       in_explosion = 0;
       for (int t=255;t>=0;t-=3) {
-        for (int i=0;i<MAX_LED;i++) {
+        for (int i=2;i<MAX_LED;i++) {
           Set_LED(i, t, t, 0);
         }
         WS2812_Send();
@@ -81,6 +84,7 @@ void explosion_animation() // TODO refaire les animations pour commencer à +2
     }
     Set_LED(pos_1, 255, 255, 0);
     Set_LED(pos_2, 255, 255, 0);
+    Set_Ring_Brightness(LED_RING_BRIGHTNESS);
     WS2812_Send();
     pos_1++;
     pos_2--;
@@ -88,14 +92,14 @@ void explosion_animation() // TODO refaire les animations pour commencer à +2
   }
 
 }
-void unique_led_animation()
-{
-  static int count_red = 0;
+void unique_led_animation() {
+  static float brightness = LED_RING_BRIGHTNESS;
+  static int count_red = 2;
   static int count_blue = MAX_LED-1;
   Set_LED(count_red, 255, 0, 0);
   Set_LED(count_blue, 0, 0, 255);
 
-  if (count_red > 0)
+  if (count_red > 2)
     Set_LED(count_red-1, 0, 0, 0);
   if (count_blue < MAX_LED-1)
     Set_LED(count_blue+1, 0, 0, 0);
@@ -106,21 +110,22 @@ void unique_led_animation()
     Set_LED(MAX_LED-1, 0, 0, 0);
     count_red = 0;
   }
-  if (count_blue <= 0)
+  if (count_blue <= 2)
   {
     Set_LED(1, 0, 0, 0);
     count_blue = MAX_LED-1;
   }
+  Set_Ring_Brightness(LED_RING_BRIGHTNESS);
   WS2812_Send();
   osDelay(20);
 }
-void snake_animation()
-{
+void snake_animation() {
+  static float brightness = LED_RING_BRIGHTNESS;
   static int offset = 0;
   static float step = 255/50;
   // generation du tableau
   static int leds_val[MAX_LED];
-  for (int i=0;i<15;i++)
+  for (int i=2;i<15;i++)
   {
     leds_val[i] = 1/(1+exp((((MAX_LED-i)*step/21)-6)*-1))*255;
 
@@ -131,14 +136,14 @@ void snake_animation()
   }
 
   int c;
-  for (int i=0;i<MAX_LED;i++)
+  for (int i=2;i<MAX_LED;i++)
   {
     c = i+offset;
     if (c>MAX_LED)
       c -= MAX_LED;
     Set_LED(i, 0, 0, leds_val[c]);
   }
-
+  Set_Ring_Brightness(LED_RING_BRIGHTNESS);
   WS2812_Send();
   osDelay(50);
 
@@ -148,6 +153,7 @@ void snake_animation()
     offset = 0;
 }
 void brush_animation() {
+  static float brightness = LED_RING_BRIGHTNESS;
   static int ON = 1;
   static int red;
 
@@ -156,8 +162,9 @@ void brush_animation() {
   else
     red = 0;
 
-  for (int i=0;i<MAX_LED;i++) {
+  for (int i=2;i<MAX_LED;i++) {
     Set_LED(i, red, 0, 0);
+    Set_Ring_Brightness(LED_RING_BRIGHTNESS);
     WS2812_Send();
     osDelay(18);
   }
@@ -167,7 +174,8 @@ void brush_animation() {
     ON = 1;
 }
 void mistake_animation() {
-  static int count = 0;
+  static float brightness = LED_RING_BRIGHTNESS;
+  static int count = 2;
   static int ON = 1;
   static int red;
 
@@ -178,6 +186,7 @@ void mistake_animation() {
 
   for (int i=MAX_LED-1;i>count;i--) {
     Set_LED(i, red, 0, 0);
+    Set_Ring_Brightness(LED_RING_BRIGHTNESS);
     WS2812_Send();
     osDelay(20);
   }
@@ -189,39 +198,44 @@ void mistake_animation() {
 
   count++;
   if (count==MAX_LED)
-    count = 0;
+    count = 2;
 }
 void loading_animation() {
+  static float brightness = LED_RING_BRIGHTNESS;
   static int count = 0;
   static float h,s,v, r,g,b;
   h = 0;
   s = 1;
   v = 1;
 
-	for (int i=0;i<count;i++) {
+	for (int i=2;i<count;i++) {
 	  h = i*10;
 	  HSVtoRGB(&r,&g,&b,h,s,v);
 		Set_LED(i, r, g, b); // R G B
 	}
+  Set_Ring_Brightness(brightness);
   WS2812_Send();
 
 
-    for (int i=MAX_LED-1;i>count;i--) {
-      h = i*10;
-      HSVtoRGB(&r,&g,&b,h,s,v);
-    	Set_LED(i, r, g, b);
-    	if (i+1<MAX_LED)
-    		Set_LED(i+1, 0, 0, 0);
-    	WS2812_Send();
-    	osDelay(20);
+  for (int i=MAX_LED-1;i>count;i--) {
+    h = i*10;
+    HSVtoRGB(&r,&g,&b,h,s,v);
+    Set_LED(i, r, g, b);
+    if (i+1<MAX_LED) {
+    	Set_LED(i+1, 0, 0, 0);
     }
 
-    count++;
-    if (count==MAX_LED)
-    	count = 0;
+    Set_Ring_Brightness(brightness);
+    WS2812_Send();
+    osDelay(20);
+  }
+
+  count++;
+  if (count==MAX_LED)
+    count = 0;
 }
-void hyper_style_animation()
-{
+void hyper_style_animation() {
+  static float brightness = LED_RING_BRIGHTNESS;
   static float h,s,v, r,g,b;
   h = 0;
   s = 1;
@@ -230,18 +244,20 @@ void hyper_style_animation()
   static float step = 360/MAX_LED;
   static int offset = 0;
 
-  for (int i=0;i<MAX_LED;i++) {
+  for (int i=2;i<MAX_LED;i++) {
     HSVtoRGB(&r,&g,&b,h,s,v);
     Set_LED(i, r, g, b);
     h+=step+offset;
     if (h>360)
       h = h-360;
   }
+  Set_Ring_Brightness(brightness);
   WS2812_Send();
   osDelay(100);
   offset+=1;
 }
 void turning_rainbow_animation() {
+  static float brightness = LED_RING_BRIGHTNESS;
   static float h,s,v, r,g,b;
   h = 0;
   s = 1;
@@ -259,15 +275,14 @@ void turning_rainbow_animation() {
     if (h>=360)
       h = h-360;
   }
+  Set_Ring_Brightness(brightness);
   WS2812_Send();
-  osDelay(1);
-  offset+=1;
+  offset+=5;
   if (offset>=360)
     offset = 0;
 }
-void BAU_pushed_animation()
-{
-  float step = 2;
+void BAU_pushed_animation() {
+  float step = 0.5;
   static float brightness = 0;
   static int dir = 1;
 
@@ -278,10 +293,9 @@ void BAU_pushed_animation()
   Set_Ring_Brightness(brightness);
   brightness += dir * step;
 
-  if (brightness > 100.0 or brightness < 0.0)
+  if (brightness > LED_RING_BRIGHTNESS or brightness < 0.0)
     dir *= -1;
 
-  osDelay(1);
 }
 //----------------------------------------------------------------------------//
 //---------------------------------TASK---------------------------------------//
@@ -292,22 +306,22 @@ struct LedState {
   float brightness;
 };
 
-void applyLedState(const LedState& state) {
+void applyStatusLedState(const LedState& state, int ledIndex) {
   switch (state.color) {
   case CLEAR:
-    led::clear(0, state.brightness);
+    led::clear(ledIndex, state.brightness);
     break;
   case GREEN:
-    led::setGreen(0, state.brightness);
+    led::setGreen(ledIndex, state.brightness);
     break;
   case RED:
-    led::setRed(0, state.brightness);
+    led::setRed(ledIndex, state.brightness);
     break;
   case ORANGE:
-    led::setOrange(0, state.brightness);
+    led::setOrange(ledIndex, state.brightness);
     break;
   case BLUE:
-    led::setBlue(0, state.brightness);
+    led::setBlue(ledIndex, state.brightness);
     break;
   }
 }
@@ -322,32 +336,18 @@ void LedTask(void *argument) {
   osDelay(100);
 
   while (true) {
-    //clear_Ring();
-    //loading_animation();
-    /*for (int i=0;i<50;i++) {
-      clear();
-      Set_LED(0, 255.0, 0.0, 0.0);
-      Set_Ring_Brightness(i); // Must be done avec Set_LED
-      WS2812_Send();
+    applyStatusLedState({led_holo::color, led_holo::brightness}, LED_HOLO);
+    applyStatusLedState({led_otos::color, led_otos::brightness}, LED_OTOS);
 
-      osDelay(10);
+    if (led_ring::is_BAU_pressed) {
+      BAU_pushed_animation();
     }
-    for (int i=50;i>0;i--) {
-      clear();
-      Set_LED(0, 255.0, 0.0, 0.0);
-      Set_Ring_Brightness(i);
-      WS2812_Send();
-
-      osDelay(10);
-    }*/
-
-    applyLedState({led_holo::color, led_holo::brightness});
-    applyLedState({led_otos::color, led_otos::brightness});
-
-
-    // BAU_pushed_animation();
+    else {
+      turning_rainbow_animation();
+    }
     WS2812_Send();
-    osDelay(500);
+
+    osDelay(50);
   }
 }
 

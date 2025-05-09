@@ -22,7 +22,6 @@ const osThreadAttr_t otosTask_attributes = {
 void OtosTask(void *argument) {
   QwiicOTOS myOtos(&hi2c4, 0x17);
   led_otos::setRed();
-  led_otos::SetBrightness(20);
 
   while (!myOtos.isConnected()) {
     LOG_WARN("otos", "Connecting failed. Retrying...");

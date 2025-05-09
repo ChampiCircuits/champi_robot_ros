@@ -9,6 +9,8 @@
 #include "cmsis_os2.h"
 #include "semphr.h"
 
+#include <Application/Leds.h>
+
 osThreadId_t SysTaskHandle;
 const osThreadAttr_t sysTask_attributes = {
     .name = "sys_task",
@@ -25,6 +27,7 @@ void SysTask(void *argument) {
   while (true) {
 
     bool e_stop_released = HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin);
+    led_ring::is_BAU_pressed = e_stop_released;
 
     // Enable steppers if E-Stop is released
     HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, (GPIO_PinState) e_stop_released);

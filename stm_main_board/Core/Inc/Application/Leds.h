@@ -6,6 +6,7 @@
 
 #define MAX_LED (24+2)
 #define USE_BRIGHTNESS 1
+#define LED_RING_BRIGHTNESS 10
 
 #define PI 3.14159265
 
@@ -66,6 +67,9 @@ void Set_Ring_Brightness (float brightness);  // [0-100] Must be done after Set_
 
 void clear_Ring();
 
+namespace led_ring {
+inline bool is_BAU_pressed = false;
+}
 
 namespace led
 {
@@ -98,7 +102,7 @@ inline void setBlue(int ledIndex, float brightness) {
 
 namespace led_holo
 {
-inline float brightness = 10;
+inline float brightness = 5;
 inline int color;
 
 inline void clear()   { color = CLEAR; }
@@ -112,7 +116,7 @@ inline void SetBrightness(float b) { brightness = b; }
 
 namespace led_otos
 {
-inline float brightness = 10;
+inline float brightness = 5;
 inline int color;
 
 inline void clear()   { color = CLEAR; }
