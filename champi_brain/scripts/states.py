@@ -40,6 +40,11 @@ class ActuatorState(ChampiState):
         self.action = action
         get_logger(self.name).info(f'Performing action: {action}')
 
+        if self.sm.itf.sim_param:
+            get_logger(self.name).info(f'Action {action} skipped in simulation mode')
+            self.sm.end_of_actuator_state = True
+            return
+
         msg = Int8()
 
         if action == 'PUT_BANNER':
