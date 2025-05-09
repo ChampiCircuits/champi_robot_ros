@@ -26,13 +26,13 @@ const osThreadAttr_t actuatorsTask_attributes = {
 #define SERVO_END_CLOSE_POSITION 0
 
 #define SERVO_ARM_UP_POSITION 90
-#define SERVO_ARM_DOWN_POSITION 215
+#define SERVO_ARM_DOWN_POSITION 220
 
 #define STEPPER_UPPER_POSITION 3.3
 #define STEPPER_LOWER_POSITION 0. //0.3
 
 #define SERVO_Y_OUT_POS 225
-#define SERVO_Y_IN_POS 145
+#define SERVO_Y_IN_POS 155
 
 #define LOWER_PLANK 0
 #define UPPER_PLANK 1
@@ -50,16 +50,16 @@ void InitBanner()
 }
 void InitYServos()
 {
-    devices::scs_servos::set_angle_async(ID_SERVO_Y_FRONT, SERVO_Y_IN_POS, 1000);
-    devices::scs_servos::set_angle_async(ID_SERVO_Y_SIDE, SERVO_Y_IN_POS, 1000);
+    devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_OUT_POS, 1000);
+    devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_OUT_POS, 1000);
+    devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_IN_POS, 1000);
+    devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_IN_POS, 1000);
 }
 void InitEverything()
 {
     devices::stepper_opt0.set_zero();
     InitBanner();
-    devices::stepper_opt0.set_goal(0.0); // TODO not useful?
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(0.0); // TODO not useful?
     InitArm();
     InitYServos();
 }
@@ -77,16 +77,12 @@ void TakePlank(int plank) { // !!! lift should be down
     // CLOSED TO TAKE PLANK
     devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300);
 
-    devices::stepper_opt0.set_goal(plank_height);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(plank_height);
 
     devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_CLOSE_POSITION, 1000);
     osDelay(1000);
 
-    devices::stepper_opt0.set_goal(plank_height + 1.0);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(plank_height + 1.0);
 }
 
 void PutPlanks(int layer)
@@ -100,33 +96,21 @@ void PutPlanks(int layer)
     // CLOSED TO PUT PLANK
     devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300);
 
-    devices::stepper_opt0.set_goal(layer_height);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(layer_height);
 
     devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 100);
     osDelay(1000);
-
-    devices::stepper_opt0.set_goal(layer_height + 1.0);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
 }
 
 void TakeCanFront()
 {
-    devices::stepper_opt0.set_goal(1.0);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(1.0);
     devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_OUT_POS,500);
-    devices::stepper_opt0.set_goal(0.4);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(0.4);
     devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_IN_POS,500);
 
     // juste pour lever au-dessus du sol
-    devices::stepper_opt0.set_goal(1.0);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(1.0);
 }
 
 void PutCanFront(int layer)
@@ -137,35 +121,23 @@ void PutCanFront(int layer)
     else if (layer==2)
         layer_base_height = 3.0;
 
-    devices::stepper_opt0.set_goal(layer_base_height);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(layer_base_height);
     devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_OUT_POS,500);
 
     // little movement to get the Y inside
-    devices::stepper_opt0.set_goal(layer_base_height + 0.5);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(layer_base_height + 0.5);
     devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_IN_POS,500);
-    // devices::stepper_opt0.set_goal(layer_base_height);
-    // while (!devices::stepper_opt0.pos_reached())
-    //     osDelay(100);
+    // devices::stepper_opt0.set_goal_sync(layer_base_height);
 }
 void TakeCanSide()
 {
-    devices::stepper_opt0.set_goal(1.0);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(1.0);
     devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_OUT_POS,500);
-    devices::stepper_opt0.set_goal(0.4);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(0.4);
     devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_IN_POS,500);
 
     // juste pour lever au-dessus du sol
-    devices::stepper_opt0.set_goal(1.0);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(1.0);
 }
 
 void PutCanSide(int layer)
@@ -175,19 +147,13 @@ void PutCanSide(int layer)
         layer_base_height = 0.4;
     else if (layer==2)
         layer_base_height = 3.0;
-    devices::stepper_opt0.set_goal(layer_base_height);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(layer_base_height);
     devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_OUT_POS,500);
 
     // little movement to get the Y inside
-    devices::stepper_opt0.set_goal(layer_base_height + 0.5);
-    while (!devices::stepper_opt0.pos_reached())
-        osDelay(100);
+    devices::stepper_opt0.set_goal_sync(layer_base_height + 0.5);
     devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_IN_POS,500);
-    // devices::stepper_opt0.set_goal(layer_base_height);
-    // while (!devices::stepper_opt0.pos_reached())
-    //     osDelay(100);
+    // devices::stepper_opt0.set_goal_sync(layer_base_height);
 }
 void PutBanner()
 {
@@ -224,11 +190,11 @@ void HandleRequest(ActuatorCommand cmd) {
         PutCanSide(2);
         break;
     }
-    // osDelay(5000);
 }
 
 void ActuatorsTask(void *argument) {
 
+    osDelay(1000);
     SCServosApp_Init(); // Reminder: blocking until the servos are found
 
     InitEverything();
