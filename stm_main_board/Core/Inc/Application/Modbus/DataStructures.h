@@ -1,6 +1,8 @@
 #ifndef DATASTRUCTURES_H
 #define DATASTRUCTURES_H
 
+#include "hw_actuators.h"
+
 #include <stdint.h>
 
 namespace com_types {
@@ -51,8 +53,8 @@ struct Requests {
 
 struct Actuators
 {
-  // list of actuators commands. The number of actuators is 9.
-  uint8_t requests[9];
+  // list of actuators commands.
+  uint8_t requests[ACTUATORS_COUNT];
 };
 
 }

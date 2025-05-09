@@ -4,7 +4,7 @@
 #include <string>
 
 
-#define ACTUATORS_COUNT 9
+#define ACTUATORS_COUNT 11
 /*
   Enum for actuator commands.
 */
@@ -17,8 +17,9 @@ enum class ActuatorCommand {
   TAKE_CANS_FRONT = 5,
   TAKE_CANS_SIDE = 6,
   PUT_CANS_FRONT_LAYER_1 = 7,
-  PUT_CANS_SIDE_LAYER_2 = 8
-
+  PUT_CANS_SIDE_LAYER_2 = 8,
+  RESET_ACTUATORS = 9,
+  PUT_CANS_SIDE_LAYER_1 = 10,
 };
 
 /*
@@ -50,6 +51,10 @@ inline std::string to_string(ActuatorCommand command) {
     return "PUT_CANS_FRONT_LAYER_1";
   case ActuatorCommand::PUT_CANS_SIDE_LAYER_2:
     return "PUT_CANS_SIDE_LAYER_2";
+  case ActuatorCommand::RESET_ACTUATORS:
+    return "RESET_ACTUATORS";
+  case ActuatorCommand::PUT_CANS_SIDE_LAYER_1:
+    return "PUT_CANS_SIDE_LAYER_1";
   default:
     return "UNKNOWN_COMMAND";
   }

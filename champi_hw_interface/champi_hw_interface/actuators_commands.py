@@ -1,16 +1,19 @@
 from enum import Enum
 
-ACTUATORS_COUNT = 7
+ACTUATORS_COUNT = 9
 
 class ActuatorCommand(Enum):
     """Enum for actuator commands."""
-    PUT_BANNER = 1
-    TAKE_PLANKS = 2
-    PUT_PLANKS = 3
-    TAKE_CANS_LEFT = 4
-    TAKE_CANS_RIGHT = 5
-    PUT_CANS_LEFT = 6
-    PUT_CANS_RIGHT = 7
+    PUT_BANNER = 0
+    TAKE_LOWER_PLANK = 1
+    TAKE_UPPER_PLANK = 2
+    PUT_LOWER_PLANK_LAYER_1 = 3
+    PUT_UPPER_PLANK_LAYER_2 = 4
+    TAKE_CANS_FRONT = 5
+    TAKE_CANS_SIDE = 6
+    PUT_CANS_FRONT_LAYER_1 = 7
+    PUT_CANS_SIDE_LAYER_2 = 8
+    RESET_ACTUATORS = 9
 
 class ActuatorState(Enum):
     """Enum for actuator states.
@@ -27,15 +30,23 @@ def to_string(command):
     """Convert an actuator command to a string."""
     if command == ActuatorCommand.PUT_BANNER:
         return "PUT_BANNER"
-    elif command == ActuatorCommand.TAKE_PLANKS:
-        return "TAKE_PLANKS"
-    elif command == ActuatorCommand.PUT_PLANKS:
-        return "PUT_PLANKS"
-    elif command == ActuatorCommand.TAKE_CANS_LEFT:
-        return "TAKE_CANS_LEFT"
-    elif command == ActuatorCommand.TAKE_CANS_RIGHT:
-        return "TAKE_CANS_RIGHT"
-    elif command == ActuatorCommand.PUT_CANS_LEFT:
-        return "PUT_CANS_LEFT"
-    elif command == ActuatorCommand.PUT_CANS_RIGHT:
-        return "PUT_CANS_RIGHT"
+    elif command == ActuatorCommand.TAKE_LOWER_PLANK:
+        return "TAKE_LOWER_PLANK"
+    elif command == ActuatorCommand.TAKE_UPPER_PLANK:
+        return "TAKE_UPPER_PLANK"
+    elif command == ActuatorCommand.PUT_LOWER_PLANK_LAYER_1:
+        return "PUT_LOWER_PLANK_LAYER_1"
+    elif command == ActuatorCommand.PUT_UPPER_PLANK_LAYER_2:
+        return "PUT_UPPER_PLANK_LAYER_2"
+    elif command == ActuatorCommand.TAKE_CANS_FRONT:
+        return "TAKE_CANS_FRONT"
+    elif command == ActuatorCommand.TAKE_CANS_SIDE:
+        return "TAKE_CANS_SIDE"
+    elif command == ActuatorCommand.PUT_CANS_FRONT_LAYER_1:
+        return "PUT_CANS_FRONT_LAYER_1"
+    elif command == ActuatorCommand.PUT_CANS_SIDE_LAYER_2:
+        return "PUT_CANS_SIDE_LAYER_2"
+    elif command == ActuatorCommand.RESET_ACTUATORS:
+        return "RESET_ACTUATORS"
+    else:
+        return "UNKNOWN"

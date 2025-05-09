@@ -85,7 +85,7 @@ class ChampiStateMachine(object):
                             'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
                             'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
                             'TAKE_CANS_FRONT', 'TAKE_CANS_SIDE',
-                            'PUT_CANS_FRONT_LAYER_1', 'PUT_CANS_SIDE_LAYER_2']
+                            'PUT_CANS_FRONT_LAYER_1', 'PUT_CANS_SIDE_LAYER_2', 'PUT_CANS_SIDE_LAYER_1']
 
         path = get_package_share_directory('champi_brain') + '/SM_diagram.png'
         get_logger(self.name).warn(f'PATH: {path}')
@@ -191,7 +191,7 @@ class ChampiStateMachine(object):
         theta_sub = sub_action['target']['theta_deg']
 
         # Convert angles to radians
-        theta_rad = math.radians(theta_deg_action)
+        theta_rad = math.radians(theta_deg_action+180.0)
 
         # Apply rotation and translation
         x_transformed = (x_sub * math.cos(theta_rad) - y_sub * math.sin(theta_rad)) + x_action

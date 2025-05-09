@@ -60,6 +60,8 @@ class ActuatorState(ChampiState):
             msg.data = 7
         elif action == 'PUT_CANS_SIDE_LAYER_2':
             msg.data = 8
+        elif action == 'PUT_CANS_SIDE_LAYER_1':
+            msg.data = 10
 
 
         self.sm.itf.actuators_ctrl_pub.publish(msg)
