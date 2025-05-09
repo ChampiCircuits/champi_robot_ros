@@ -10,6 +10,7 @@ hardware_interface_simu:
     max_deceleration_angular: 20.0 # rad/s^2
     
     max_acceleration_wheel: 10.0 # rad/s^2
+    imu_vel_yaw_cov: 0.00001
 
 
 hardware_interface:
@@ -38,8 +39,8 @@ hardware_interface:
         max_deceleration_angular: 10.0 # rad/s^2
 
       otos_config: # You have to restart node AND STM to apply the otos config (feature, not bug :))
-        linear_scalar: 0.992
-        angular_scalar: 1.07
+        linear_scalar: 1.05 # [0.872 - 1.127]
+        angular_scalar: 0.990 # [0.872 - 1.127]
 
 holo_teleop_joy_node:
   ros__parameters:
