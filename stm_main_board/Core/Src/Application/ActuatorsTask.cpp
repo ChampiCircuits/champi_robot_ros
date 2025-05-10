@@ -223,7 +223,9 @@ void ActuatorsTask(void *argument) {
 
         for (int i=0; i < ACTUATORS_COUNT; i++)
         {
+            xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
             ActuatorState actuator_request = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
+            xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
             if (actuator_request == ActuatorState::REQUESTED)
             {
