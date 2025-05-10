@@ -14,6 +14,7 @@
 #include <champi_hw_interface/ModbusRegister.h>
 #include "tf2_ros/transform_broadcaster.h"
 
+#include <champi_interfaces/msg/stm_state.hpp>
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -72,6 +73,7 @@ private:
 
     void actuators_control_callback(const std_msgs::msg::Int8 msg) const;
     void check_for_actuators_state() const;
+    void read_stm_state();
 
     nav_msgs::msg::Odometry make_odom_wheels(const Vector3 &vel, double dt);
     nav_msgs::msg::Odometry make_odom_otos(const Vector3 &pose, double dt) const;
@@ -96,6 +98,7 @@ private:
     rclcpp::Subscription<std_msgs::msg::Int8>::SharedPtr subscriber_ctrl_actuators_;
     rclcpp::Publisher<std_msgs::msg::Int8MultiArray>::SharedPtr pub_ctrl_actuators_;
 
+    rclcpp::Publisher<champi_interfaces::msg::STMState>::SharedPtr pub_stm_state;
 };
 
 

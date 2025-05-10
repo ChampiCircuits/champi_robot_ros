@@ -67,6 +67,7 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     subscriber_ctrl_actuators_ = this->create_subscription<std_msgs::msg::Int8>("/ctrl/actuators", 10, std::bind(
         &HardwareInterfaceNode::actuators_control_callback, this, std::placeholders::_1));
     pub_ctrl_actuators_ = this->create_publisher<std_msgs::msg::Int8MultiArray>("/actuators_finished", 10);
+    pub_stm_state = this->create_publisher<champi_interfaces::msg::STMState>("/STM_state", 10);
 }
 
 HardwareInterfaceNode::~HardwareInterfaceNode()
@@ -181,6 +182,7 @@ void HardwareInterfaceNode::loop() {
     write(mod_reg::reg_cmd);
 
     check_for_actuators_state();
+    read_stm_state();
 }
 
 void HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
@@ -223,7 +225,7 @@ void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
 }
 
 
-void HardwareInterfaceNode::check_for_actuators_state() const // TODO checker a 5Hz
+void HardwareInterfaceNode::check_for_actuators_state() const // TODO  checker a 5Hz
 {
     std::string states_string;
     read(mod_reg::reg_actuators);
@@ -258,4 +260,15 @@ void HardwareInterfaceNode::check_for_actuators_state() const // TODO checker a 
     }
 
     // RCLCPP_INFO(this->get_logger(), "Actuators requests %s", states_string.c_str());
+}
+
+void HardwareInterfaceNode::read_stm_state()
+{
+    read(mod_reg::reg_state);
+
+    auto msg = champi_interfaces::msg::STMState();
+    msg.e_stop_pressed = mod_reg::state->e_stop_pressed;
+    msg.tirette_released = mod_reg::state->tirette_released;
+
+    pub_stm_state->publish(msg);
 }

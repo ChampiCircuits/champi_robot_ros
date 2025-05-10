@@ -41,6 +41,7 @@ struct State {
   Vector3 otos_pose;
   bool e_stop_pressed;
   bool tirette_released;
+  double dummy; // to not be multiple of 32
 };
 
 struct Cmd {

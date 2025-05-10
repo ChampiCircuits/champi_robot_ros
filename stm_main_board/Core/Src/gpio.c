@@ -88,11 +88,11 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : BAU_Pin */
-  GPIO_InitStruct.Pin = BAU_Pin;
+  /*Configure GPIO pins : BAU_Pin TIRETTE_Pin */
+  GPIO_InitStruct.Pin = BAU_Pin|TIRETTE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(BAU_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DIR_OPT0_Pin XSHUT0_Pin */
   GPIO_InitStruct.Pin = DIR_OPT0_Pin|XSHUT0_Pin;
@@ -108,8 +108,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : D4_Pin D7_Pin TIRETTE_Pin */
-  GPIO_InitStruct.Pin = D4_Pin|D7_Pin|TIRETTE_Pin;
+  /*Configure GPIO pins : D4_Pin D7_Pin */
+  GPIO_InitStruct.Pin = D4_Pin|D7_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
