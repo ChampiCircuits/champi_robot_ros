@@ -6,6 +6,7 @@ from rclpy.clock import Clock
 from ament_index_python.packages import get_package_share_directory
 
 from champi_interfaces.action import Navigate
+from champi_interfaces.msg import STMState
 from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
 from std_msgs.msg import Int8, Int8MultiArray
 from rclpy.action import ActionClient
@@ -19,7 +20,7 @@ TOTAL_AVAILABLE_TIME = 100
 class ChampiStateMachineITF(Node):
 
     def stm_initialized_callback(self): self.champi_sm.stm_initialized = True
-    def user_has_choosed_config_callback(self): self.champi_sm.user_has_choosed_config = True
+    def user_has_chosen_config_callback(self): self.champi_sm.user_has_choosed_config = True
     def goal_reached_callback(self): self.champi_sm.goal_reached = True
 
     def tirette_pulled_callback(self): 
@@ -71,10 +72,19 @@ class ChampiStateMachineITF(Node):
         self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
         # subscriber topic //actuators_finished
         self.actuators_finished_sub = self.create_subscription(Int8MultiArray, '/actuators_finished', self.actuators_finished_callback, 10)
+        # subscriber e_stop+tirette state
+        self.STM_State_sub = self.create_subscription(STMState, '/STM_state', self.stm_state_callback, 10)
+        self.e_stop_pressed = None
+        self.tirette_released = None
 
         self.champi_sm.ros_initialized = True # TODO more things ?
         self.get_logger().warn('Launched ChampiSMRosInterface !')
 
+        self.sim_user_choose_strat_and_pose() # TODO remove in real robot
+
+    def stm_state_callback(self, msg):
+        self.e_stop_pressed = msg.e_stop_pressed
+        self.tirette_released = msg.tirette_released
 
     def actuators_finished_callback(self, msg):
         array = msg.data # 9 elements
@@ -82,20 +92,14 @@ class ChampiStateMachineITF(Node):
 
         self.champi_sm.end_of_actuator_state = True
 
-    def sim(self):
-        elapsed_time = (self.clock.now() - self.init_time).nanoseconds / 1e9
-
-        if elapsed_time > 0.0 and not self.champi_sm.stm_initialized:
-            self.stm_initialized_callback()
-        if elapsed_time > 0.5 and not self.champi_sm.user_has_choosed_config:
-            self.init_robot_pose()
-            self.get_logger().info('Pose has been init')
-            self.user_has_choosed_config_callback()
-        if elapsed_time > 1.0 and not self.champi_sm.tirette_pulled:
-            self.tirette_pulled_callback()
+    def sim_user_choose_strat_and_pose(self):
+        self.init_robot_pose()
+        self.get_logger().info('Pose has been init')
+        self.user_has_chosen_config_callback()
 
     def callback_timer(self):
-        self.sim()
+        if self.tirette_released and not self.champi_sm.tirette_pulled:
+            self.tirette_pulled_callback()
 
         in_match = self.champi_sm.tirette_pulled and self.champi_sm.state != 'end_of_match'
         if in_match:
