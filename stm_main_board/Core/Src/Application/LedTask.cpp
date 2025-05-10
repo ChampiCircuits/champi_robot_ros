@@ -339,7 +339,7 @@ void LedTask(void *argument) {
     applyStatusLedState({led_holo::color, led_holo::brightness}, LED_HOLO);
     applyStatusLedState({led_otos::color, led_otos::brightness}, LED_OTOS);
 
-    if (led_ring::is_BAU_pressed) {
+    if (led_ring::e_stop_pressed) {
       BAU_pushed_animation();
     }
     else {

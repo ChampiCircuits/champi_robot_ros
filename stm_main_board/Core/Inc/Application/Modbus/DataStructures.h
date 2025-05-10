@@ -39,6 +39,8 @@ struct State {
   bool is_read;
   Vector3 measured_vel;
   Vector3 otos_pose;
+  bool e_stop_pressed;
+  bool tirette_released;
 };
 
 struct Cmd {

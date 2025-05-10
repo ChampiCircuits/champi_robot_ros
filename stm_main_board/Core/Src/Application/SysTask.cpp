@@ -25,12 +25,17 @@ void SysTask(void *argument) {
   uint32_t start = osKernelGetTickCount();
 
   while (true) {
+    bool tirette_released = HAL_GPIO_ReadPin(TIRETTE_GPIO_Port, TIRETTE_Pin);
+    bool e_stop_pressed = HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin);
+    led_ring::e_stop_pressed = e_stop_pressed;
 
-    bool e_stop_released = HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin);
-    led_ring::is_BAU_pressed = e_stop_released;
+    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+    mod_reg::state->tirette_released = tirette_released;
+    mod_reg::state->e_stop_pressed = e_stop_pressed;
+    xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
     // Enable steppers if E-Stop is released
-    HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, (GPIO_PinState) e_stop_released);
+    HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, (GPIO_PinState) e_stop_pressed);
 
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
 
