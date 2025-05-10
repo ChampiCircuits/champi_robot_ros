@@ -6,18 +6,20 @@
 # v
 # x
 actions:
+  - action: move
+    target: { x: 0.18, y: 0.0, theta_deg: 0.0 } # aller devant les conserves
 
   - action: TAKE_LOWER_PLANK
 
   - action: move
-    target: { x: 0.3, y: 0.0, theta_deg: 0.0 } # décale sur les deux conserves de droite
+    target: { x: 0.18, y: 0.1, theta_deg: 0.0 } # décale sur les deux conserves de droite
 
   - action: TAKE_CANS_FRONT
 
   - action: move
-    target: { x: 0.0, y: 0.4, theta_deg: 0.0 } # recule
+    target: { x: 0.3, y: 0.1, theta_deg: 0.0 } # recule
 
   - action: move
-    target: { x: -0.3, y: 0.0, theta_deg: 60.0 } # re-avance mais avec le côté de l'actionneur en face
+    target: { x: 0.18, y: -0.1, theta_deg: -60.0 } # re-avance mais avec le côté de l'actionneur en face
 
   - action: TAKE_CANS_SIDE

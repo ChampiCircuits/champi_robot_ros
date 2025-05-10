@@ -6,19 +6,41 @@
 # v
 # x
 actions:
+####################
+  - action: move
+    target: { x: 0.1, y: -0.1, theta_deg: 60.0 } # pour poser les deux conserves SIDE
+  - action: PUT_CANS_SIDE_LAYER_1
+  - action: move
+    target: { x: 0.0, y: 0.0, theta_deg: 0.0 } # retour
+####################
+
   - action: PUT_CANS_FRONT_LAYER_1
+
+  - action: move
+    target: { x: 0.02, y: 0.0, theta_deg: 0.0 } # juste ptit recul à cause des conserves trop proches
+
   - action: PUT_LOWER_PLANK_LAYER_1
 
+# LA ON PEUT PAS PRENDRE CELLE D'AU DESSUS CAR LES CONSERVES SIDE GENENT, d'ou les poser plus tot
   - action: move
-    target: { x: 0.4, y: 0.0, theta_deg: 0.0 } # recule
+    target: { x: 0.03, y: 0.0, theta_deg: 0.0 } # juste ptit recul à cause des rebords de l'impression3D
+  # TODO pourquoi la c'est 0.04 ??
+  - action: TAKE_UPPER_PLANK
+
+
+#  ####################
+  - action: move
+    target: { x: 0.1, y: -0.1, theta_deg: 60.0 } # pour REprendre les deux conserves SIDE
+  - action: TAKE_CANS_SIDE
+#  ####################
 
   - action: move
-    target: { x: 0.0, y: 0.0, theta_deg: 60.0 } # re-avance mais avec le côté de l'actionneur en face
+    target: { x: 0.0, y: 0.0, theta_deg: -60.0 } # re-avance mais avec le côté de l'actionneur en face
 
   - action: PUT_CANS_SIDE_LAYER_2
 
   - action: move
-    target: { x: 0.4, y: 0.0, theta_deg: 0.0 } # recule
+    target: { x: 0.15, y: 0.0, theta_deg: -60.0 } # recule
 
   - action: move
     target: { x: 0.0, y: 0.0, theta_deg: 0.0 } # re-avance

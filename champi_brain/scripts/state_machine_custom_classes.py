@@ -43,7 +43,7 @@ class CustomHierarchicalGraphMachine(HierarchicalGraphMachine):
                         trigger_method = trigger
 
                         if hasattr(self.parent, trigger_method):
-                            time.sleep(1)
+                            time.sleep(1) # TODO c'est qui lui deja
                             trigger_action = getattr(self.parent, trigger_method)
                             trigger_action()
             

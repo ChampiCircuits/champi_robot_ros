@@ -32,13 +32,12 @@ class ChampiStateMachineITF(Node):
 
         # Parameters
         strategy_file_param = self.declare_parameter('strategy_file', rclpy.Parameter.Type.STRING).value
-        team_color_param = self.declare_parameter('team_color', rclpy.Parameter.Type.STRING).value
-            # TODO prendre en compte
+        self.sim_param = self.declare_parameter('sim', rclpy.Parameter.Type.BOOL).value
 
         # Print parameters
         self.get_logger().info('SM interface started with the following parameters:')
         self.get_logger().info(f'strategy: {strategy_file_param}')
-        self.get_logger().info(f'team_color: {team_color_param}')
+        self.get_logger().info(f'sim: {self.sim_param}')
 
 
         self.champi_sm = ChampiStateMachine()
@@ -86,13 +85,13 @@ class ChampiStateMachineITF(Node):
     def sim(self):
         elapsed_time = (self.clock.now() - self.init_time).nanoseconds / 1e9
 
-        if elapsed_time > 2.0 and not self.champi_sm.stm_initialized:
+        if elapsed_time > 0.0 and not self.champi_sm.stm_initialized:
             self.stm_initialized_callback()
-        if elapsed_time > 3.0 and not self.champi_sm.user_has_choosed_config:
+        if elapsed_time > 0.5 and not self.champi_sm.user_has_choosed_config:
             self.init_robot_pose()
             self.get_logger().info('Pose has been init')
             self.user_has_choosed_config_callback()
-        if elapsed_time > 3.5 and not self.champi_sm.tirette_pulled:
+        if elapsed_time > 1.0 and not self.champi_sm.tirette_pulled:
             self.tirette_pulled_callback()
 
     def callback_timer(self):
@@ -195,9 +194,9 @@ class ChampiStateMachineITF(Node):
         goal.end_speed = 0.
 
         goal.max_linear_speed = 0.4
-        goal.max_angular_speed = 2.5
+        goal.max_angular_speed = 2.0
         
-        goal.linear_tolerance = 0.01
+        goal.linear_tolerance = 0.005
         goal.angular_tolerance = 0.1
 
         goal.do_look_at_point = False
@@ -209,7 +208,7 @@ class ChampiStateMachineITF(Node):
 
         goal.robot_angle_when_looking_at_point = 0.
 
-        goal.timeout = 10000. # seconds
+        goal.timeout = 15. # seconds
 
         return goal
 

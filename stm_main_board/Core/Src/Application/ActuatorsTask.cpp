@@ -58,6 +58,7 @@ void InitYServos()
 void InitEverything()
 {
     devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 500);
+    devices::stepper_opt0.set_zero();
     devices::stepper_opt0.set_goal_sync(-0.2); // TODO not useful?
     devices::stepper_opt0.set_zero();
     InitBanner();
@@ -145,7 +146,9 @@ void TakeCanSide()
     devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_IN_POS,500);
 
     // juste pour lever au-dessus du sol
-    devices::stepper_opt0.set_goal_sync(1.0);
+    // devices::stepper_opt0.set_goal_sync(1.0); // finalement non, on monte plus haut qu'une planche
+
+    devices::stepper_opt0.set_goal_sync(3.6);
 }
 
 void PutCanSide(int layer)

@@ -5,9 +5,10 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /TF1/Frames1
-        - /Plan (viz only)1
+        - /Odom1
+        - /Odom1/Shape1
         - /Enemy Pose1/Shape1
-      Splitter Ratio: 0.3418940603733063
+      Splitter Ratio: 0.49466949701309204
     Tree Height: 625
   - Class: rviz_common/Selection
     Name: Selection
@@ -111,15 +112,15 @@ Visualization Manager:
           Color: 204; 51; 204
           Scale: 1
           Value: true
-        Value: true
+        Value: false
       Enabled: true
-      Keep: 100
+      Keep: 10
       Name: Odom
       Position Tolerance: 0.10000000149011612
       Shape:
         Alpha: 1
-        Axes Length: 0.10000000149011612
-        Axes Radius: 0.019999999552965164
+        Axes Length: 0.03999999910593033
+        Axes Radius: 0.004999999888241291
         Color: 255; 25; 0
         Head Length: 0.30000001192092896
         Head Radius: 0.10000000149011612
@@ -335,6 +336,45 @@ Visualization Manager:
       Value: true
       X Offset (m): 0
       Y Offset (m): 2
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: false
+      Keep: 100
+      Name: Odometry
+      Position Tolerance: 0.10000000149011612
+      Shape:
+        Alpha: 1
+        Axes Length: 1
+        Axes Radius: 0.10000000149011612
+        Color: 255; 25; 0
+        Head Length: 0.30000001192092896
+        Head Radius: 0.10000000149011612
+        Shaft Length: 1
+        Shaft Radius: 0.05000000074505806
+        Value: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /odom_otos
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -380,7 +420,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 1.5549988746643066
+      Angle: 1.5649988651275635
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -390,11 +430,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 354.2530212402344
+      Scale: 401.8498840332031
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 0.9414126873016357
-      Y: 1.913995623588562
+      X: 1.1258293390274048
+      Y: 1.8065959215164185
     Saved: ~
 Window Geometry:
   Displays:

@@ -11,11 +11,8 @@ actions:
   - action: move
     target: { x: 1.5, y: 1.25, theta_deg: 180.0 }
 
-  - action: move
-    target: { x: 1.5, y: 1.1, theta_deg: 180.0 }
-
-  - action: move
-    target: { x: 1.2, y: 1.1, theta_deg: 180.0 } # devant les conserves
+#  - action: move
+#    target: { x: 1.5, y: 1.1, theta_deg: 180.0 }
 
   - action: include_sub_file
     file: 'take_elements.yaml'
@@ -25,16 +22,16 @@ actions:
   ######################### MOVE TO A ZONE ###############################################
 
   - action: move
-    target: { x: 1.7, y: 1.25, theta_deg: 0.0 } # retour dans la zone du bas
+    target: { x: 1.4, y: 1.25, theta_deg: 0.0 } # retour dans la zone du bas
 
   ######################### PUT FIRST ELEMENT GROUP ######################################
 
   - action: include_sub_file
     file: 'put_elements.yaml'
     parameters:
-      target: { x: 1.8, y: 1.225, theta_deg: 180.0 }
+      target: { x: 1.4, y: 1.225, theta_deg: 0.0 }
 
   ######################### MOVE ELSEWHERE ###############################################
 
-  - action: move
-    target: { x: 1.5, y: 0.8, theta_deg: 180.0 } # autre mouv
+#  - action: move
+#    target: { x: 1.0, y: 1.2, theta_deg: 0.0 } # recul

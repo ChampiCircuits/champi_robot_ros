@@ -44,8 +44,11 @@ void HoloDriveTask(void *argument) {
 
   // We wait for the config to be set by the master
   while (!mod_reg::config->is_set) {
-    osDelay(100);
     LOG_WARN_THROTTLE("holo", 100, "Waiting for config...");
+    led_holo::setBlue();
+    osDelay(50);
+    led_holo::clear();
+    osDelay(50);
   }
 
   holoDrive.set_config(mod_reg::config->holo_drive_config);
