@@ -7,3 +7,4 @@ graphviz
 graphviz-dev
 ros-jazzy-librealsense2
 ros-jazzy-realsense2-*
+dos2unix
