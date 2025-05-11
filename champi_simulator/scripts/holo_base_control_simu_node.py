@@ -12,7 +12,6 @@ from tf2_ros import TransformBroadcaster
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped, Twist
 from geometry_msgs.msg import PoseWithCovarianceStamped
-from sensor_msgs.msg import Imu
 
 
 from rclpy.executors import ExternalShutdownException
@@ -33,7 +32,6 @@ class HoloBaseControlDummy(Node):
         self.declare_parameter('max_deceleration_linear', rclpy.Parameter.Type.DOUBLE)
         self.declare_parameter('max_deceleration_angular', rclpy.Parameter.Type.DOUBLE)
         self.declare_parameter('max_acceleration_wheel', rclpy.Parameter.Type.DOUBLE)
-        self.declare_parameter('imu_vel_yaw_cov', rclpy.Parameter.Type.DOUBLE)
         # Get parameters
         self.enable_accel_limits_ = self.get_parameter('enable_accel_limits').value
         self.max_acceleration_linear_ = self.get_parameter('max_acceleration_linear').value
@@ -41,7 +39,6 @@ class HoloBaseControlDummy(Node):
         self.max_deceleration_linear_ = self.get_parameter('max_deceleration_linear').value
         self.max_deceleration_angular_ = self.get_parameter('max_deceleration_angular').value
         self.max_acceleration_wheel = self.get_parameter('max_acceleration_wheel').value
-        self.imu_vel_yaw_cov_ = self.get_parameter('imu_vel_yaw_cov').value
         # Print parameters
         get_logger('rclpy').info(f"enable_accel_limits: {self.enable_accel_limits_}")
         get_logger('rclpy').info(f"max_acceleration_linear: {self.max_acceleration_linear_}")
@@ -49,7 +46,6 @@ class HoloBaseControlDummy(Node):
         get_logger('rclpy').info(f"max_deceleration_linear: {self.max_deceleration_linear_}")
         get_logger('rclpy').info(f"max_deceleration_angular: {self.max_deceleration_angular_}")
         get_logger('rclpy').info(f"max_acceleration_wheel: {self.max_acceleration_wheel}")
-        get_logger('rclpy').info(f"imu_vel_yaw_cov: {self.imu_vel_yaw_cov_}")
 
         self.subscription = self.create_subscription(
             Twist,
@@ -58,19 +54,7 @@ class HoloBaseControlDummy(Node):
             10)
         self.subscription  # prevent unused variable warning
 
-        self.pub = self.create_publisher(Odometry, '/odom', 10)
-        self.pub_imu = self.create_publisher(Imu, '/imu', 10)
-        # self.pub_cmd_vel_limited = self.create_publisher(Twist, '/hardware_interface/cmd_vel_limited', 10)
-
-        self.subscription_initial_pose = self.create_subscription(
-            PoseWithCovarianceStamped,
-            '/set_pose',
-            self.initial_pose_callback,
-            10)
-
-
-        # Initialize the transform broadcaster
-        self.tf_broadcaster = TransformBroadcaster(self)
+        self.pub = self.create_publisher(Odometry, '/odom_otos', 10)
 
         self.timer_period = 0.02  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
@@ -98,11 +82,6 @@ class HoloBaseControlDummy(Node):
     def listener_callback(self, msg):
         self.latest_cmd_vel = [msg.linear.x, msg.linear.y, msg.angular.z]
         self.t_last_cmd_vel_ = time.time()
-
-    def initial_pose_callback(self, msg):
-        self.current_pose[0] = msg.pose.pose.position.x
-        self.current_pose[1] = msg.pose.pose.position.y
-        self.current_pose[2] = get_yaw(msg.pose.pose)
 
     # Returns the velocity with limited acceleration applied
     def limit_accel(self, current_speed, goal_speed, max_acceleration, dt):
@@ -205,13 +184,6 @@ class HoloBaseControlDummy(Node):
         self.cmd_vel_to_wheels(cmd_vx_limited, cmd_vy_limited, cmd_wz_limited)
         self.wheels_to_current_vel()
 
-        # Publish the limited cmd_vel
-        # cmd_vel_limited = Twist()
-        # cmd_vel_limited.linear.x = cmd_vx_limited
-        # cmd_vel_limited.linear.y = cmd_vy_limited
-        # cmd_vel_limited.angular.z = cmd_wz_limited
-        # self.pub_cmd_vel_limited.publish(cmd_vel_limited)
-
         self.update_pose()
 
         # Publish the odometry # TODO rotation and rotation vel are not taken in account by ukf
@@ -231,14 +203,6 @@ class HoloBaseControlDummy(Node):
         odom.pose.pose.orientation.w = cos(self.current_pose[2] / 2)
         self.pub.publish(odom)
 
-        # Publish the imu (yaw vel only)
-        imu = Imu()
-        imu.header.stamp = self.get_clock().now().to_msg()
-        imu.header.frame_id = "imu_link"
-        imu.angular_velocity.z = self.current_vel[2]
-        # Put diagonal covariance
-        imu.angular_velocity_covariance = [self.imu_vel_yaw_cov_, 0., 0., 0., self.imu_vel_yaw_cov_, 0., 0., 0., self.imu_vel_yaw_cov_]
-        self.pub_imu.publish(imu)
 
 
     def wheels_to_current_vel(self):
