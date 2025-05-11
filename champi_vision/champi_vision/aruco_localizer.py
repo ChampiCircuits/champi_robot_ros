@@ -2,6 +2,8 @@ from sensor_msgs.msg import CameraInfo
 
 import cv2
 import math
+import time
+import numpy as np
 
 class ArucoDetector:
     """
@@ -43,3 +45,55 @@ class ArucoDetector:
 
         return poses, ids
 
+
+
+class Visualizer:
+    def __init__(self):
+        self.time_last_call = time.time()
+    
+
+    def make_viz(self, image_source, detect_success: bool, detected_pose: list[float, float, float] = None): 
+
+        if image_source is None:
+            return None
+        
+        image = image_source.copy()
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        
+        self.draw_fps(image)
+
+        if not detect_success:
+            return image
+        
+        self.draw_2D_axis(image, detected_pose[:2], detected_pose[2])
+
+        return image
+
+
+    def draw_fps(self, image):
+        # compute fps
+        fps = 1 / (time.time() - self.time_last_call)
+        self.time_last_call = time.time()
+        # draw fps
+        cv2.putText(image, f"FPS: {fps:.2f}", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+    
+
+    def draw_2D_axis(self, image, pos_pxls, angle):
+        
+        cv2.circle(image, pos_pxls, 10, (255,0,0), -1)
+
+        # axis
+        axis_len = 100
+        x_axis = np.array([axis_len, 0])
+        y_axis = np.array([0, axis_len])
+        x_axis_rot = np.matmul(np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]), x_axis)
+        y_axis_rot = np.matmul(np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]), y_axis)
+        x_axis_rot = x_axis_rot.astype(int)
+        y_axis_rot = y_axis_rot.astype(int)
+        x_axis_rot = x_axis_rot + pos_pxls
+        y_axis_rot = y_axis_rot + pos_pxls
+        cv2.line(image, tuple(pos_pxls), tuple(x_axis_rot), (0,255,0), 2)
+        cv2.line(image, tuple(pos_pxls), tuple(y_axis_rot), (0,0,255), 2)
+        
+        return image
+        

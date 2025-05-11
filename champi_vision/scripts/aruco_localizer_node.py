@@ -4,41 +4,38 @@ import rclpy
 from rclpy.node import Node
 import tf2_ros
 import tf2_geometry_msgs
+from rclpy.executors import ExternalShutdownException
 
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from nav_msgs.msg import Odometry
 from robot_localization.srv import SetPose
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseStamped
 
 from cv_bridge import CvBridge
-from ament_index_python.packages import get_package_share_directory
 
-import cv2, math
+
+import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-import time
 import os
 
 from scipy.spatial.transform import Rotation as R
 
 import champi_vision.bird_view as bv
-from champi_vision.aruco_localizer import ArucoDetector
+from champi_vision.aruco_localizer import ArucoDetector, Visualizer
 
 from icecream import ic
 
 
 
-
-class VisualLocalizationNode(Node):
+class ArucoLocalizerNode(Node):
 
     def __init__(self):
-        super().__init__('visual_loc')
+        super().__init__('aruco_localizer')
 
         # Parameters
-        self.enable_cv2_viz = True
-        self.enable_viz = False
-        self.img_viz = None
+        self.enable_cv2_viz = False
+        self.enable_topic_viz = False
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
@@ -51,7 +48,6 @@ class VisualLocalizationNode(Node):
         self.cv_bridge = CvBridge()
         self.curent_image = None
         self.latest_img = None
-        self.time_last_image = time.time()  # for FPS
         self.bird_view = None
 
 
@@ -77,11 +73,42 @@ class VisualLocalizationNode(Node):
         self.image_subscriber  # prevent unused variable warning
 
         # Publisher for the visual localization and the image visualization
-        self.pub_odom = self.create_publisher(PoseWithCovarianceStamped, '/pose/visual_loc', 10)
-        self.bird_view_RGB_publisher = self.create_publisher(Image, '/champi_bird_view_RGB', 10)
-        self.pub_image = self.create_publisher(Image, '/image_viz', 10)
+        self.pub_pose = self.create_publisher(PoseStamped, '/aruco_loc/pose', 10)
+        self.publisher_viz = self.create_publisher(Image, '/viz/image_detection', 10)
 
         self.aruco_detector = ArucoDetector()
+        self.visualizer = Visualizer()
+
+
+    def init_bird_view(self):
+        transform = None
+        try:
+            # get transform, which is what we need to wait for
+            transform = self.tf_buffer.lookup_transform('base_link', 'camera_color_optical_frame',rclpy.time.Time().to_msg())
+            print('transform received')
+            # # unsubscribe from camera info (can't do that in the callback otherwise the nodes crashes) TODO IT MAKES THE NODE CRASH
+            # self.subscription_cam_info.destroy()
+
+            # compute transform between the 2 frames as 1 matrix
+            rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
+            rot = rot.as_matrix()
+            trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
+
+            transform_mtx = np.concatenate([rot, trans.reshape(3,1)], axis=1)
+            transform_mtx = np.concatenate([transform_mtx, np.array([[0,0,0,1]])], axis=0)
+
+            # initialize bird view
+            K = np.array(self.camera_info.k).reshape(3,3)
+            self.bird_view = bv.BirdView(K, transform_mtx, (0.2, -0.4), (0.9, 0.4), resolution=378)
+
+            # compute undistortion map
+            self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (self.camera_info.width,self.camera_info.height), cv2.CV_32FC1)
+
+            self.get_logger().info("Node Initialized", once=True)
+
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            self.get_logger().info("waiting for tf2 transform...", once=True)
+            return
 
 
     def timer_callback(self):
@@ -117,17 +144,11 @@ class VisualLocalizationNode(Node):
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
 
-        if self.enable_cv2_viz:
-            img_viz = bird_view_img.copy()
-            cv2.imshow('Bird view', bird_view_img)
-            cv2.waitKey(1)
-
-        
         # ================================== DETECTION =========================================
 
         poses_markers, ids_markers = self.aruco_detector.detect_arucos(bird_view_img, ids_to_find=[20, 21, 22, 23])
         if len(poses_markers) == 0:
-            self.get_logger().info("No markers detected")
+            self.do_viz(bird_view_img, False)
             return
         
         # get the first marker
@@ -137,10 +158,7 @@ class VisualLocalizationNode(Node):
         # ========================= ARUCO -> ROBOT POSE ESTIMATION =====================================
 
         pos_aruco_in_bv = np.array([pose_aruco_in_bv[0], pose_aruco_in_bv[1], 1])
-
         pos_aruco_in_bv_m = np.linalg.inv(self.bird_view.M_workplane_real_to_img_) @ pos_aruco_in_bv
-
-        ic(pos_aruco_in_bv_m)
 
         # ========================= ROBOT -> WORLD POSE ESTIMATION =====================================
 
@@ -169,128 +187,64 @@ class VisualLocalizationNode(Node):
 
         # ic(pos_robot_in_world)
 
-        pose_robot = pos_robot_in_world
+        pose_robot = [pos_robot_in_world[0], pos_robot_in_world[1], pose_aruco_in_bv[2]]
+        self.publish_pose(pose_robot)
 
+        self.do_viz(bird_view_img, True, pose_aruco_in_bv)
 
-        # ic(pose_robot, markerIds[i])
+    
+    def publish_pose(self, pose: PoseStamped):
+        msg = PoseStamped()
+        msg.header.frame_id = 'odom'
+        msg.pose.position.x = pose[0]
+        msg.pose.position.y = pose[1]
+        msg.pose.position.z = 0.
+        msg.pose.orientation.x = 0.
+        msg.pose.orientation.y = 0.
+        msg.pose.orientation.z = np.sin(pose[2]/2)
+        msg.pose.orientation.w = np.cos(pose[2]/2)
+        self.pub_pose.publish(msg)
 
-        pose_msg = PoseWithCovarianceStamped()
-        pose_msg.header.stamp = self.get_clock().now().to_msg()
-        pose_msg.header.frame_id = 'odom'
-        pose_msg.pose.pose.position.x = pose_robot[0]
-        pose_msg.pose.pose.position.y = pose_robot[1]
-        pose_msg.pose.pose.position.z = 0.
-        pose_msg.pose.pose.orientation.x = 0.
-        pose_msg.pose.pose.orientation.y = 0.
-        pose_msg.pose.pose.orientation.z = np.sin(pose_aruco_in_bv[2]/2)
-        pose_msg.pose.pose.orientation.w = np.cos(pose_aruco_in_bv[2]/2)
-
-
-        self.pub_odom.publish(pose_msg)
-
-        if self.enable_cv2_viz:
-            # draw 2D axis
-            img_viz = self.draw_2D_axis(img_viz, pos_aruco_in_bv[:2], pose_aruco_in_bv[2])
-            cv2.imshow('Detections', img_viz)
-            cv2.waitKey(1)
-
-
-        if self.enable_viz:
-
-            # publish image
-            self.publish_imageMono(img_viz)
-
-    def init_bird_view(self):
-        transform = None
-        try:
-            # get transform, which is what we need to wait for
-            transform = self.tf_buffer.lookup_transform('base_link', 'camera_color_optical_frame',rclpy.time.Time().to_msg())
-            print('transform received')
-            # # unsubscribe from camera info (can't do that in the callback otherwise the nodes crashes) TODO IT MAKES THE NODE CRASH
-            # self.subscription_cam_info.destroy()
-
-            # compute transform between the 2 frames as 1 matrix
-            rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
-            rot = rot.as_matrix()
-            trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
-
-            ic(trans)
-
-            transform_mtx = np.concatenate([rot, trans.reshape(3,1)], axis=1)
-            transform_mtx = np.concatenate([transform_mtx, np.array([[0,0,0,1]])], axis=0)
-
-            # initialize bird view
-            K = np.array(self.camera_info.k).reshape(3,3)
-            self.bird_view = bv.BirdView(K, transform_mtx, (0., -0.4), (1., 0.4), resolution=378)
-
-            # compute undistortion map
-            self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (self.camera_info.width,self.camera_info.height), cv2.CV_32FC1)
-
-            self.get_logger().info("Node Initialized", once=True)
-
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            self.get_logger().info("waiting for tf2 transform...", once=True)
-            return
 
     def callback_cam_info(self, msg):
         if self.camera_info is None:
             self.camera_info = msg
 
+
     def image_callback(self, msg):
         self.latest_img = msg
 
-    def publish_imageRGB(self, image):
-        image_msg = self.cv_bridge.cv2_to_imgmsg(image, encoding='rgb8')
-        self.bird_view_RGB_publisher.publish(image_msg)
 
-    def publish_imageMono(self, image):
-        image_msg = self.cv_bridge.cv2_to_imgmsg(image, encoding='mono8')
-        self.pub_image.publish(image_msg)
+    def do_viz(self, image_source, detect_success: bool, detected_pose: list[float, float, float] = None): 
 
-    def draw_2D_axis(self, image, pos_pxls, angle):
-        img = image.copy()
-        pos_pxls = (int(pos_pxls[0]), int(pos_pxls[1]))
-        cv2.circle(img, pos_pxls, 10, (255,0,0), -1)
+        if not self.enable_cv2_viz and self.curent_image is None:
+            return
+        
+        img_viz = self.visualizer.make_viz(image_source, detect_success, detected_pose)
 
-        # axis
-        axis_len = 100
-        x_axis = np.array([axis_len, 0])
-        y_axis = np.array([0, axis_len])
-        x_axis_rot = np.matmul(np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]), x_axis)
-        y_axis_rot = np.matmul(np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]), y_axis)
-        x_axis_rot = x_axis_rot.astype(int)
-        y_axis_rot = y_axis_rot.astype(int)
-        x_axis_rot = x_axis_rot + pos_pxls
-        y_axis_rot = y_axis_rot + pos_pxls
-        cv2.line(img, tuple(pos_pxls), tuple(x_axis_rot), (0,255,0), 2)
-        cv2.line(img, tuple(pos_pxls), tuple(y_axis_rot), (0,0,255), 2)
-        return img
+        if self.enable_cv2_viz:
+            cv2.imshow('Detections', img_viz)
+            cv2.waitKey(1)
+
+        if self.enable_topic_viz:
+            image_msg = self.cv_bridge.cv2_to_imgmsg(img_viz, encoding='rgb8')
+            self.publisher_viz.publish(image_msg)
 
 
-    def draw_fps(self, image):
-        # compute fps
-        fps = 1 / (time.time() - self.time_last_image)
-        self.time_last_image = time.time()
-
-        # draw fps
-        cv2.putText(image, f"FPS: {fps:.2f}", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
-
-
-    def load_ref_image(self, path):
-        image = cv2.imread(path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        return image
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    visual_localization = VisualLocalizationNode()
+    node = ArucoLocalizerNode()
 
-    rclpy.spin(visual_localization)
-
-    visual_localization.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':
