@@ -3,6 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped, PoseStamped, Pose
 import tf_transformations
 from tf2_ros import TransformBroadcaster
@@ -38,11 +39,17 @@ class LocNode(Node):
             self.odom_callback,
             10
         )
+
+        # Qos 'reliable' because when communicating from another computer, sometimes this set_pose msg is lost
+        qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            depth=10  # Taille du buffer pour les messages
+        )
         self.set_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
             '/set_pose',
             self.set_pose_callback,
-            10
+            qos_profile
         )
 
         # Publishers

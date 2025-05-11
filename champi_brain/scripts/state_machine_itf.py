@@ -3,6 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.clock import Clock
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 from ament_index_python.packages import get_package_share_directory
 
 from champi_interfaces.action import Navigate
@@ -66,7 +67,12 @@ class ChampiStateMachineITF(Node):
         self.get_logger().info('<< Action client /navigate is ready!')
 
         # publisher topic /set_pose
-        self.set_pose_pub = self.create_publisher(PoseWithCovarianceStamped, '/set_pose', 10)
+        # Qos 'reliable' because when communicating from another computer, sometimes this msg set_pose is lost
+        qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            depth=10  # Taille du buffer pour les messages
+        )
+        self.set_pose_pub = self.create_publisher(PoseWithCovarianceStamped, '/set_pose', qos_profile)
 
         # publisher topic /ctrl/actuators
         self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
@@ -116,8 +122,6 @@ class ChampiStateMachineITF(Node):
                 self.get_logger().info(f'No time left. Triggering end of match. Was in state {self.champi_sm.state}.')
 
     def init_robot_pose(self):
-        init_pose = [1.0, 1.0, 0.0] # TODO BETTER
-
         msg = PoseWithCovarianceStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = 'odom'
