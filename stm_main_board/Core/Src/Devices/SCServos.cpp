@@ -3,19 +3,33 @@
 #include <Devices/SCServos.h>
 #include <cstdio>
 
-SCServos::SCServos (UART_HandleTypeDef *huart) : huart_(huart)
-{
+SCServos::SCServos (UART_HandleTypeDef *huart) : huart_(huart) {
+    mutex_serial = xSemaphoreCreateMutex();
 }
 
-void SCServos::Printf(uint8_t reg)
-{
+void SCServos::write_byte(uint8_t reg) const {
     HAL_UART_Transmit(huart_, &reg, 1, 10);
     uint8_t data;
     HAL_UART_Receive(huart_, &data, 1, 10); // Cause we receive sent bytes (single wire)
 }
 
-void SCServos::fflushRevBuf()
-{
+void SCServos::write_bytes(uint8_t *reg, uint16_t len) const {
+    xSemaphoreTake((QueueHandle_t)mutex_serial, portMAX_DELAY);
+    for (uint16_t i = 0; i < len; i++) {
+        write_byte(reg[i]);
+    }
+    xSemaphoreGive((QueueHandle_t)mutex_serial);
+}
+
+int SCServos::ReadBuf(uint16_t len, uint8_t *buf) const {
+    int ret = HAL_UART_Receive(huart_, buf, len, 1000);
+    if(ret==HAL_OK) {
+        return len;
+    }
+    return -1;
+}
+
+void SCServos::fflushRevBuf() const {
 	uint8_t data;
 	while(HAL_UART_Receive(huart_, &data, 1, 0)==HAL_OK);
 }
@@ -25,14 +39,16 @@ int SCServos::EnableTorque(uint8_t ID, uint8_t Enable, uint8_t ReturnLevel)
     int messageLength = 4;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_TORQUE_ENABLE);
-    Printf(Enable);
-    Printf((~(ID + messageLength + INST_WRITE + Enable + P_TORQUE_ENABLE))&0xFF);
+
+    buffer[0] = startByte;
+    buffer[1] = startByte;
+    buffer[2] = ID;
+    buffer[3] = messageLength;
+    buffer[4] = INST_WRITE;
+    buffer[5] = P_TORQUE_ENABLE;
+    buffer[6] = Enable;
+    buffer[7] = (~(ID + messageLength + INST_WRITE + Enable + P_TORQUE_ENABLE))&0xFF;
+    write_bytes(buffer, 8);
     if(ID !=  0xfe && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -47,17 +63,18 @@ int SCServos::WritePos(uint8_t ID, int position, int velocity, uint8_t ReturnLev
     uint8_t velH = velocity&0xff;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_GOAL_POSITION_L);
-    Printf(posL);
-    Printf(posH);
-    Printf(velL);
-    Printf(velH);
-    Printf((~(ID + messageLength + INST_WRITE + P_GOAL_POSITION_L + posL + posH + velL + velH))&0xFF);
+    buffer[0] = startByte;
+    buffer[1] = startByte;
+    buffer[2] = ID;
+    buffer[3] = messageLength;
+    buffer[4] = INST_WRITE;
+    buffer[5] = P_GOAL_POSITION_L;
+    buffer[6] = posL;
+    buffer[7] = posH;
+    buffer[8] = velL;
+    buffer[9] = velH;
+    buffer[10] = (~(ID + messageLength + INST_WRITE + P_GOAL_POSITION_L + posL + posH + velL + velH)) & 0xFF;
+    write_bytes(buffer, 11);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -72,17 +89,17 @@ int SCServos::RegWritePos(uint8_t ID, int position, int velocity, uint8_t Return
     uint8_t velH = velocity&0xff;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_REG_WRITE);
-    Printf(P_GOAL_POSITION_L);
-    Printf(posL);
-    Printf(posH);
-    Printf(velL);
-    Printf(velH);
-    Printf((~(ID + messageLength + INST_REG_WRITE + P_GOAL_POSITION_L + posL + posH + velL + velH))&0xFF);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_REG_WRITE);
+    write_byte(P_GOAL_POSITION_L);
+    write_byte(posL);
+    write_byte(posH);
+    write_byte(velL);
+    write_byte(velH);
+    write_byte((~(ID + messageLength + INST_REG_WRITE + P_GOAL_POSITION_L + posL + posH + velL + velH))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -92,22 +109,13 @@ void SCServos::RegWriteAction()
 {
     int messageLength = 2;
     uint8_t ID = 16;
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_ACTION);
-    Printf((~(ID + messageLength + INST_ACTION))&0xFF);
-}
-
-int SCServos::ReadBuf(uint16_t len, uint8_t *buf)
-{
-	int ret = HAL_UART_Receive(huart_, buf, len, 1000);
-    if(ret==HAL_OK) {
-    	return len;
-    }
-    return -1;
-
+    buffer[0] = startByte;
+    buffer[1] = startByte;
+    buffer[2] = ID;
+    buffer[3] = messageLength;
+    buffer[4] = INST_ACTION;
+    buffer[5] = (~(ID + messageLength + INST_ACTION)) & 0xFF;
+    write_bytes(buffer, 6);
 }
 
 int SCServos::ReadPos(uint8_t ID)
@@ -117,14 +125,15 @@ int SCServos::ReadPos(uint8_t ID)
     int pos=0;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(4);
-    Printf(INST_READ);
-    Printf(P_PRESENT_POSITION_L);
-    Printf(2);
-    Printf((~(ID + 4 + INST_READ + P_PRESENT_POSITION_L + 2))&0xFF);
+    buffer[0] = startByte;
+    buffer[1] = startByte;
+    buffer[2] = ID;
+    buffer[3] = 4;
+    buffer[4] = INST_READ;
+    buffer[5] = P_PRESENT_POSITION_L;
+    buffer[6] = 2;
+    buffer[7] = (~(ID + 4 + INST_READ + P_PRESENT_POSITION_L + 2)) & 0xFF;
+    write_bytes(buffer, 8);
     size = ReadBuf(8, buf);
     if(size<8)
         return -1;
@@ -144,25 +153,25 @@ void SCServos::SyncWritePos(uint8_t ID[], uint8_t IDN, int position, int velocit
     uint8_t velL = velocity>>8;
     uint8_t velH = velocity&0xff;
 
-    Printf(startByte);
-    Printf(startByte);
-    Printf(16);
-    Printf(messageLength);
-    Printf(INST_SYNC_WRITE);
-    Printf(P_GOAL_POSITION_L);
-    Printf(4);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(16);
+    write_byte(messageLength);
+    write_byte(INST_SYNC_WRITE);
+    write_byte(P_GOAL_POSITION_L);
+    write_byte(4);
 
     Sum = 16 + messageLength + INST_SYNC_WRITE + P_GOAL_POSITION_L + 4;
     int i;
     for(i=0; i<IDN; i++){
-        Printf(ID[i]);
-        Printf(posL);
-        Printf(posH);
-        Printf(velL);
-        Printf(velH);
+        write_byte(ID[i]);
+        write_byte(posL);
+        write_byte(posH);
+        write_byte(velL);
+        write_byte(velH);
         Sum += ID[i] + posL + posH + velL + velH;
     }
-    Printf((~Sum)&0xFF);
+    write_byte((~Sum)&0xFF);
 }
 
 int SCServos::WriteID(uint8_t oldID, uint8_t newID, uint8_t ReturnLevel)
@@ -170,14 +179,14 @@ int SCServos::WriteID(uint8_t oldID, uint8_t newID, uint8_t ReturnLevel)
     int messageLength = 4;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(oldID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_ID);
-    Printf(newID);
-    Printf((~(oldID + messageLength + INST_WRITE + newID + P_ID))&0xFF);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(oldID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_ID);
+    write_byte(newID);
+    write_byte((~(oldID + messageLength + INST_WRITE + newID + P_ID))&0xFF);
     if(oldID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -192,17 +201,17 @@ int SCServos::WriteLimitAngle(uint8_t ID, int MinAngel, int MaxAngle, uint8_t Re
     uint8_t MaxAH = MaxAngle&0xff;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_MIN_ANGLE_LIMIT_L);
-    Printf(MinAL);
-    Printf(MinAH);
-    Printf(MaxAL);
-    Printf(MaxAH);
-    Printf((~(ID + messageLength + INST_WRITE + P_MIN_ANGLE_LIMIT_L + MinAL + MinAH + MaxAL + MaxAH))&0xFF);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_MIN_ANGLE_LIMIT_L);
+    write_byte(MinAL);
+    write_byte(MinAH);
+    write_byte(MaxAL);
+    write_byte(MaxAH);
+    write_byte((~(ID + messageLength + INST_WRITE + P_MIN_ANGLE_LIMIT_L + MinAL + MinAH + MaxAL + MaxAH))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -215,16 +224,17 @@ int SCServos::WriteLimitTroque(uint8_t ID, int MaxTroque, uint8_t ReturnLevel)
     uint8_t MaxTH = MaxTroque&0xff;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_MAX_TORQUE_L);
-    Printf(MaxTL);
-    Printf(MaxTH);
+    buffer[0] = startByte;
+    buffer[1] = startByte;
+    buffer[2] = ID;
+    buffer[3] = messageLength;
+    buffer[4] = INST_WRITE;
+    buffer[5] = P_MAX_TORQUE_L;
+    buffer[6] = MaxTL;
+    buffer[7] = MaxTH;
+    buffer[8] = (~(ID + messageLength + INST_WRITE + P_MAX_TORQUE_L + MaxTL + MaxTH)) & 0xFF;
+    write_bytes(buffer, 9);
 
-    Printf((~(ID + messageLength + INST_WRITE + P_MAX_TORQUE_L + MaxTL + MaxTH))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -237,16 +247,16 @@ int SCServos::WritePunch(uint8_t ID, int Punch, uint8_t ReturnLevel)
     uint8_t PunchH = Punch&0xff;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_PUNCH_L);
-    Printf(PunchL);
-    Printf(PunchH);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_PUNCH_L);
+    write_byte(PunchL);
+    write_byte(PunchH);
 
-    Printf((~(ID + messageLength + INST_WRITE + P_PUNCH_L + PunchL + PunchH))&0xFF);
+    write_byte((~(ID + messageLength + INST_WRITE + P_PUNCH_L + PunchL + PunchH))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -257,15 +267,15 @@ int SCServos::WriteBaund(uint8_t ID, uint8_t Baund, uint8_t ReturnLevel)
     int messageLength = 4;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_BAUD_RATE);
-    Printf(Baund);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_BAUD_RATE);
+    write_byte(Baund);
 
-    Printf((~(ID + messageLength + INST_WRITE + P_BAUD_RATE + Baund))&0xFF);
+    write_byte((~(ID + messageLength + INST_WRITE + P_BAUD_RATE + Baund))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -276,16 +286,16 @@ int SCServos::WriteDeadBand(uint8_t ID, uint8_t CWDB, uint8_t CCWDB, uint8_t Ret
     int messageLength = 5;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_CW_DEAD);
-    Printf(CWDB);
-    Printf(CCWDB);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_CW_DEAD);
+    write_byte(CWDB);
+    write_byte(CCWDB);
 
-    Printf((~(ID + messageLength + INST_WRITE + P_CW_DEAD + CWDB + CCWDB))&0xFF);
+    write_byte((~(ID + messageLength + INST_WRITE + P_CW_DEAD + CWDB + CCWDB))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -299,15 +309,15 @@ int SCServos::WriteIMax(uint8_t ID, int IMax, uint8_t ReturnLevel)
     uint8_t velH = IMax&0xff;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_IMAX_L);
-    Printf(velL);
-    Printf(velH);
-    Printf((~(ID + messageLength + INST_WRITE + P_IMAX_L + velL + velH))&0xFF);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_IMAX_L);
+    write_byte(velL);
+    write_byte(velH);
+    write_byte((~(ID + messageLength + INST_WRITE + P_IMAX_L + velL + velH))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -319,15 +329,15 @@ int SCServos::LockEprom(uint8_t ID, uint8_t Enable, uint8_t ReturnLevel)
     int messageLength = 4;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_LOCK);
-    Printf(Enable);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_LOCK);
+    write_byte(Enable);
 
-    Printf((~(ID + messageLength + INST_WRITE + P_LOCK + Enable))&0xFF);
+    write_byte((~(ID + messageLength + INST_WRITE + P_LOCK + Enable))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -338,17 +348,17 @@ int SCServos::WritePID(uint8_t ID, uint8_t P, uint8_t I, uint8_t D, uint8_t Retu
     int messageLength = 6;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_COMPLIANCE_P);
-    Printf(P);
-    Printf(D);
-    Printf(I);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_COMPLIANCE_P);
+    write_byte(P);
+    write_byte(D);
+    write_byte(I);
 
-    Printf((~(ID + messageLength + INST_WRITE + P_COMPLIANCE_P + P + D + I))&0xFF);
+    write_byte((~(ID + messageLength + INST_WRITE + P_COMPLIANCE_P + P + D + I))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -368,15 +378,15 @@ int SCServos::WriteSpe(uint8_t ID, int velocity, uint8_t ReturnLevel)
     uint8_t velH =  vel&0xff;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(messageLength);
-    Printf(INST_WRITE);
-    Printf(P_GOAL_SPEED_L);
-    Printf(velL);
-    Printf(velH);
-    Printf((~(ID + messageLength + INST_WRITE + P_GOAL_SPEED_L + velL + velH))&0xFF);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_GOAL_SPEED_L);
+    write_byte(velL);
+    write_byte(velH);
+    write_byte((~(ID + messageLength + INST_WRITE + P_GOAL_SPEED_L + velL + velH))&0xFF);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;
@@ -390,14 +400,14 @@ int SCServos::ReadVoltage(uint8_t ID)
     int vol;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(4);
-    Printf(INST_READ);
-    Printf(P_PRESENT_VOLTAGE);
-    Printf(1);
-    Printf((~(ID + 4 + INST_READ + P_PRESENT_VOLTAGE + 1))&0xFF);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(4);
+    write_byte(INST_READ);
+    write_byte(P_PRESENT_VOLTAGE);
+    write_byte(1);
+    write_byte((~(ID + 4 + INST_READ + P_PRESENT_VOLTAGE + 1))&0xFF);
     size = ReadBuf(7, buf);
     if(size<7)
         return -1;
@@ -412,14 +422,14 @@ int SCServos::ReadTemper(uint8_t ID)
     int temper;
 
     fflushRevBuf();
-    Printf(startByte);
-    Printf(startByte);
-    Printf(ID);
-    Printf(4);
-    Printf(INST_READ);
-    Printf(P_PRESENT_TEMPERATURE);
-    Printf(1);
-    Printf((~(ID + 4 + INST_READ + P_PRESENT_TEMPERATURE + 1))&0xFF);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(4);
+    write_byte(INST_READ);
+    write_byte(P_PRESENT_TEMPERATURE);
+    write_byte(1);
+    write_byte((~(ID + 4 + INST_READ + P_PRESENT_TEMPERATURE + 1))&0xFF);
     size = ReadBuf(7, buf);
     if(size<7)
         return -1;

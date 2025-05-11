@@ -1,8 +1,11 @@
 #ifndef INC_SCSERVOS_H_
 #define INC_SCSERVOS_H_
 
-
 #include "stm32h7xx_hal.h"
+
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
+#include "semphr.h"
 
 class SCServos {
 public:
@@ -30,10 +33,14 @@ public:
     void RotateCounterClockwise();
     void scan_ids(uint8_t id_start,  uint8_t id_stop);
 private:
-    int		ReadBuf(uint16_t len, uint8_t *buf=nullptr);
-    void	fflushRevBuf();
-    void	Printf(uint8_t reg);
+    int	ReadBuf(uint16_t len, uint8_t *buf=nullptr) const;
+    void fflushRevBuf() const;
+    void write_byte(uint8_t reg) const;
+    void write_bytes(uint8_t *reg, uint16_t len) const;
     UART_HandleTypeDef *huart_;
+
+    uint8_t buffer[30]{};
+    osSemaphoreId_t mutex_serial;
 
 
 #define		startByte	0xFF

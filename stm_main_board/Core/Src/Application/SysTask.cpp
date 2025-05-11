@@ -45,10 +45,9 @@ void SysTask(void *argument) {
     }
     xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
-    // TODO create semaophore for this
-    /*if (devices::scs_servos::init_successful) {
-      devices::scs_servos::set_enable(e_stop_released);
-    }*/
+    if (devices::scs_servos::init_successful) {
+      devices::scs_servos::set_enable(!e_stop_pressed);
+    }
 
     int time_to_wait = SYS_TASK_LOOP_PERIOD_MS - (int)osKernelGetTickCount() + (int)start;
     if (time_to_wait > 0) {

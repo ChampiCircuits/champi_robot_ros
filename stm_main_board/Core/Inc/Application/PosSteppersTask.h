@@ -1,7 +1,7 @@
 #ifndef POSSTEPPERS_H
 #define POSSTEPPERS_H
 
-#include "PosStepper.h"
+#include "Devices/PosStepper.h"
 
 namespace devices
 {
