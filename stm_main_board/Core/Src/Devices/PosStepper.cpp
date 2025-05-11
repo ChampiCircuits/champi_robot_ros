@@ -7,9 +7,10 @@ PosStepper::PosStepper() = default;
 
 PosStepper::PosStepper(const TIM_HandleTypeDef &tim_handle_step,
                        const uint32_t tim_channel_step,
-                       GPIO_TypeDef *gpio_port_dir, const uint16_t gpio_pin_dir)
+                       GPIO_TypeDef *gpio_port_dir, const uint16_t gpio_pin_dir,
+                       int inverse_dir=1)
     : _speed_stepper(tim_handle_step, tim_channel_step, gpio_port_dir,
-                     gpio_pin_dir) {
+                     gpio_pin_dir, inverse_dir) {
 
   _max_speed = STEPPER_MAX_SPEED_DEFAULT;
   _max_accel = STEPPER_MAX_ACCEL_DEFAULT;

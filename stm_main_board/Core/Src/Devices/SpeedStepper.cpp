@@ -5,7 +5,8 @@ SpeedStepper::SpeedStepper() = default;
 
 SpeedStepper::SpeedStepper(TIM_HandleTypeDef tim_handle_step,
                            uint32_t tim_channel_step,
-                           GPIO_TypeDef *gpio_port_dir, uint16_t gpio_pin_dir) {
+                           GPIO_TypeDef *gpio_port_dir, uint16_t gpio_pin_dir,
+                           int inverse_dir) {
 
   this->tim_handle = tim_handle_step;
   this->gpio_port_dir = gpio_port_dir;
@@ -14,7 +15,7 @@ SpeedStepper::SpeedStepper(TIM_HandleTypeDef tim_handle_step,
   HAL_GPIO_WritePin(this->gpio_port_dir, this->gpio_pin_dir, GPIO_PIN_SET);
   HAL_TIM_PWM_Start(&this->tim_handle, this->tim_channel);
 
-  this->current_dir = 0;
+  this->inverse_dir = inverse_dir;
   this->stopped = true;
 
   this->timer_input_hz = STEPPER_TIMERS_INPUT_FREQ_HZ;
@@ -58,7 +59,7 @@ void SpeedStepper::set_speed_step_freq(int hz, int dir) {
   }
   PWM_set_freq(this->tim_handle.Instance, hz);
 
-  if (dir == 1) {
+  if (dir * this->inverse_dir == 1) {
     HAL_GPIO_WritePin(this->gpio_port_dir, this->gpio_pin_dir, GPIO_PIN_SET);
   } else {
     HAL_GPIO_WritePin(this->gpio_port_dir, this->gpio_pin_dir, GPIO_PIN_RESET);
@@ -71,7 +72,7 @@ void SpeedStepper::set_speed_rps(float rps) {
   if (hz >= 0) {
     this->set_speed_step_freq(hz, 1);
   } else {
-    this->set_speed_step_freq(-hz, 0);
+    this->set_speed_step_freq(-hz, -1);
   }
   stopped ? current_speed_rps = 0 : current_speed_rps = rps;
 }

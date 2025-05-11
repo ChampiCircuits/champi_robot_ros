@@ -26,13 +26,13 @@ const osThreadAttr_t actuatorsTask_attributes = {
 #define SERVO_END_CLOSE_POSITION 0
 
 #define SERVO_ARM_UP_POSITION 90
-#define SERVO_ARM_DOWN_POSITION 215
+#define SERVO_ARM_DOWN_POSITION 205
 
 #define STEPPER_UPPER_POSITION 3.3
-#define STEPPER_LOWER_POSITION 0. //0.3
+#define STEPPER_LOWER_POSITION 0.1
 
 #define SERVO_Y_OUT_POS 225
-#define SERVO_Y_IN_POS 155
+#define SERVO_Y_IN_POS 150
 
 #define LOWER_PLANK 0
 #define UPPER_PLANK 1
@@ -41,7 +41,6 @@ void InitArm()
 {
     // OPEN THE ARM and END_ARM
     devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_UP_POSITION, 1000);
-    devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 1000);
 }
 
 void InitBanner()
@@ -57,10 +56,11 @@ void InitYServos()
 }
 void InitEverything()
 {
+    devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 1000);
     devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 500);
-    devices::stepper_opt0.set_zero();
-    devices::stepper_opt0.set_goal_sync(-0.2); // TODO not useful?
-    devices::stepper_opt0.set_zero();
+    devices::stepper_opt0.set_goal_sync(0.0); // TODO not useful?
+    // devices::stepper_opt0.set_zero();
+    // devices::stepper_opt0.set_zero();
     InitBanner();
     InitArm();
     InitYServos();
@@ -75,8 +75,11 @@ void TakePlank(int plank) { // !!! lift should be down
         plank_height = STEPPER_LOWER_POSITION;
     }
     else if (plank == UPPER_PLANK) {
-        plank_height = STEPPER_LOWER_POSITION + 0.5;
+        plank_height = STEPPER_LOWER_POSITION + 0.45;
     }
+
+    // HALF CLOSED PLANK
+    devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_DOWN_POSITION+SERVO_ARM_UP_POSITION)/2.0, 300);
 
     devices::stepper_opt0.set_goal_sync(plank_height);
     osDelay(1000);
@@ -87,20 +90,19 @@ void TakePlank(int plank) { // !!! lift should be down
     devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_CLOSE_POSITION, 1000);
     osDelay(1000);
 
-    devices::stepper_opt0.set_goal_sync(plank_height + 1.0);
+    devices::stepper_opt0.set_goal_sync(plank_height + 3.6);
 }
 
 void PutPlanks(int layer)
 {
     float layer_height;
     if (layer == 1)
-        layer_height = STEPPER_LOWER_POSITION + 0.15;
+        layer_height = STEPPER_LOWER_POSITION;
     else if (layer == 2)
-        layer_height = STEPPER_LOWER_POSITION + 3.3; // TODO + ONE_LAYER_HEIGHT
+        layer_height = STEPPER_LOWER_POSITION + 3.4; // TODO + ONE_LAYER_HEIGHT
 
     // CLOSED TO PUT PLANK
     devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300);
-
     devices::stepper_opt0.set_goal_sync(layer_height);
 
     devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 100);
@@ -111,18 +113,18 @@ void PutPlanks(int layer)
     }
 }
 
-void TakeCanLeft()
+void TakeCan(int id_servo_which_side)
 {
     devices::stepper_opt0.set_goal_sync(1.0);
-    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_OUT_POS,500);
+    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_OUT_POS,500);
     devices::stepper_opt0.set_goal_sync(0.37);
-    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_IN_POS,500);
+    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_IN_POS,500);
 
     // juste pour lever au-dessus du sol
-    devices::stepper_opt0.set_goal_sync(1.0);
+    devices::stepper_opt0.set_goal_sync(3.6); // TODO pour les deux ?
 }
 
-void PutCanLeft(int layer) // TODO refactor pour pas avoir deux fonctions pour left et right
+void PutCan(int layer, int id_servo_which_side)
 {
     float layer_base_height;
     if (layer==1)
@@ -131,41 +133,13 @@ void PutCanLeft(int layer) // TODO refactor pour pas avoir deux fonctions pour l
         layer_base_height = 3.6;
 
     devices::stepper_opt0.set_goal_sync(layer_base_height);
-    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_OUT_POS,500);
+    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_OUT_POS,500);
 
     // little movement to get the Y inside
-    devices::stepper_opt0.set_goal_sync(layer_base_height + 0.5);
-    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_IN_POS,500);
-    // devices::stepper_opt0.set_goal_sync(layer_base_height);
-}
-void TakeCanRight()
-{
-    devices::stepper_opt0.set_goal_sync(1.0);
-    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_OUT_POS,500);
-    devices::stepper_opt0.set_goal_sync(0.37);
-    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_IN_POS,500);
-
-    // juste pour lever au-dessus du sol
-    // devices::stepper_opt0.set_goal_sync(1.0); // finalement non, on monte plus haut qu'une planche
-
-    devices::stepper_opt0.set_goal_sync(3.6);
+    devices::stepper_opt0.set_goal_sync(layer_base_height + 0.6);
+    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_IN_POS,500);
 }
 
-void PutCanRight(int layer)
-{
-    float layer_base_height;
-    if (layer==1)
-        layer_base_height = 0.4;
-    else if (layer==2)
-        layer_base_height = 3.6;
-    devices::stepper_opt0.set_goal_sync(layer_base_height);
-    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_OUT_POS,500);
-
-    // little movement to get the Y inside
-    devices::stepper_opt0.set_goal_sync(layer_base_height + 0.4);
-    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_IN_POS,500);
-    // devices::stepper_opt0.set_goal_sync(layer_base_height);
-}
 void PutBanner()
 {
     devices::scs_servos::set_angle(ID_SERVO_BANNER, 250, 1000);
@@ -189,16 +163,16 @@ void HandleRequest(ActuatorCommand cmd) {
         PutPlanks(2);
         break;
     case ActuatorCommand::TAKE_CANS_LEFT:
-        TakeCanLeft();
+        TakeCan(ID_SERVO_Y_LEFT);
         break;
     case ActuatorCommand::TAKE_CANS_RIGHT:
-        TakeCanRight();
+        TakeCan(ID_SERVO_Y_RIGHT);
         break;
     case ActuatorCommand::PUT_CANS_LEFT_LAYER_1:
-        PutCanLeft(1);
+        PutCan(1, ID_SERVO_Y_LEFT);
         break;
     case ActuatorCommand::PUT_CANS_RIGHT_LAYER_2:
-        PutCanRight(2);
+        PutCan(2, ID_SERVO_Y_RIGHT);
         break;
     case ActuatorCommand::RESET_ACTUATORS:
         InitEverything();

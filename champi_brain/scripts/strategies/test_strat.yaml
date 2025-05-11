@@ -3,13 +3,12 @@
 # v
 # x
 
-init_pose: { x: 0.3, y: 1.25, theta_deg: 0.0 } # dans la zone de départ jaune en bas
+init_pose: { x: 1.25, y: 0.3, theta_deg: 90.0 } # dans la zone de départ jaune en bas
+# +90° to align with the coordinate system (already applied for moves)
 
 actions:
 
 ######################### TAKE FIRST ELEMENT GROUP ######################################
-  - action: move
-    target: { x: 1.1, y: 0.7, theta_deg: 0.0 }
 
   - action: include_sub_file
     file: 'take_elements.yaml'
@@ -21,9 +20,10 @@ actions:
   - action: include_sub_file
     file: 'put_elements.yaml'
     parameters:
-      target: { x: 1.225, y: 0.2, theta_deg: 180.0 }
+      target: { x: 1.225, y: 0.3, theta_deg: 180.0 }
 
   ######################### MOVE ELSEWHERE ###############################################
 
-#  - action: move
-#    target: { x: 1.0, y: 1.2, theta_deg: 0.0 } # recul
+# retour maison
+  - action: move
+    target: { x: 1.25, y: 0.3, theta_deg: 0.0 }

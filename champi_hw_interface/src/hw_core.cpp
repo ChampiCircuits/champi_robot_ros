@@ -60,7 +60,10 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
 
     pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom_otos", 10);
 
-    subscriber_set_pose_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/set_pose", 10, std::bind(
+    // Qos 'reliable' because when communicating from another computer, sometimes this msg set_pose is lost
+    rclcpp::QoS qos_profile(10);
+    qos_profile.reliable();
+    subscriber_set_pose_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/set_pose", qos_profile, std::bind(
         &HardwareInterfaceNode::initial_pose_callback, this, std::placeholders::_1));
 
     // ACTUATORS
