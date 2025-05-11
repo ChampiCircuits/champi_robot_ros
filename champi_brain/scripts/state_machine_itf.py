@@ -104,7 +104,7 @@ class ChampiStateMachineITF(Node):
         self.user_has_chosen_config_callback()
 
     def callback_timer(self):
-        if self.tirette_released and not self.champi_sm.tirette_pulled:
+        if self.tirette_released and not self.champi_sm.tirette_pulled or self.sim_param: # in sim, no tirette
             self.tirette_pulled_callback()
 
         in_match = self.champi_sm.tirette_pulled and self.champi_sm.state != 'end_of_match'
