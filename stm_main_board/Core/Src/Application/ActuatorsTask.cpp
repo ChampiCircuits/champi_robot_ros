@@ -122,13 +122,13 @@ void TakeCanLeft()
     devices::stepper_opt0.set_goal_sync(1.0);
 }
 
-void PutCanLeft(int layer)
+void PutCanLeft(int layer) // TODO refactor pour pas avoir deux fonctions pour left et right
 {
     float layer_base_height;
     if (layer==1)
         layer_base_height = 0.4;
     else if (layer==2)
-        layer_base_height = 3.0; // TODO neverused
+        layer_base_height = 3.6;
 
     devices::stepper_opt0.set_goal_sync(layer_base_height);
     devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_OUT_POS,500);
@@ -202,9 +202,6 @@ void HandleRequest(ActuatorCommand cmd) {
         break;
     case ActuatorCommand::RESET_ACTUATORS:
         InitEverything();
-        break;
-    case ActuatorCommand::PUT_CANS_RIGHT_LAYER_1:
-        PutCanRight(1);
         break;
     }
 }
