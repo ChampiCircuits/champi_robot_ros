@@ -82,7 +82,7 @@ class ChampiStateMachine(object):
                             'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
                             'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
                             'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
-                            'PUT_CANS_RIGHT_LAYER_1', 'PUT_CANS_LEFT_LAYER_2', 'PUT_CANS_LEFT_LAYER_1']
+                            'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2']
 
         path = get_package_share_directory('champi_brain') + '/SM_diagram.png'
         get_logger(self.name).warn(f'PATH: {path}')
@@ -164,7 +164,7 @@ class ChampiStateMachine(object):
             if action_name == 'move':
                 x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
                 self.can_start_moving = True
-                self.start_move(x=x, y=y, theta_deg=theta_deg)
+                self.start_move(x=x, y=y, theta_deg=theta_deg+90.0)  # +90° to align with the coordinate system
 
             elif action_name in self.action_list:
                 self.can_start_action = True
@@ -188,7 +188,7 @@ class ChampiStateMachine(object):
         theta_sub = sub_action['target']['theta_deg']
 
         # Convert angles to radians
-        theta_rad = math.radians(theta_deg_action+180.0)
+        theta_rad = math.radians(theta_deg_action)
 
         # Apply rotation and translation
         x_transformed = (x_sub * math.cos(theta_rad) - y_sub * math.sin(theta_rad)) + x_action
