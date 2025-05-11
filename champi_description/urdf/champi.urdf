@@ -19,7 +19,7 @@
   </link>
 
   <!-- Camera Link -->
-  <link name="camera">
+  <link name="camera_link">
     <inertial>
       <mass value="1"/>
       <origin xyz="0 0 0"/>
@@ -40,8 +40,8 @@
   <!-- Joint between base_link and camera -->
   <joint name="base_to_camera" type="fixed">
     <parent link="base_link"/>
-    <child link="camera"/>
-    <origin xyz="0.15 0 0.3" rpy="0.78539816339 3.14159265359 1.57079632679"/>
+    <child link="camera_link"/>
+    <origin xyz="0.095087 0.038579 0.302585" rpy="0 0.785398163398 0"/>
     <!-- xyz = roll pitch yaw -->
   </joint>
 
