@@ -2,7 +2,7 @@
 
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
-#include "Application/Leds.h"
+#include "Application/Leds/Leds.h"
 #include "Config/Config.h"
 #include "Devices/QwiicOTOS.h"
 #include "Util/logging.h"
@@ -25,11 +25,11 @@ void OtosTask(void *argument) {
 
   while (!myOtos.isConnected()) {
     LOG_WARN("otos", "Connecting failed. Retrying...");
-    led_otos::setOrange();
-    osDelay(1000);
-    led_otos::clear(); // TODO does not work ? setbrightness instead ?
+
     osDelay(1000);
   }
+
+  led_otos::setOrange();
 
   if (!myOtos.selfTest()) {
     // ERROR WITH OTOS
@@ -38,20 +38,16 @@ void OtosTask(void *argument) {
     while (1) {
       led_otos::setRed();
       osDelay(1000);
-      led_otos::clear(); // TODO does not work ? setbrightness instead ?
-      osDelay(1000);
     }
   }
 
-  led_otos::setRed();
+  led_otos::setBlue();
 
   // We wait for the config to be set by the master
   while (!mod_reg::config->is_set) {
     LOG_WARN_THROTTLE("otos", 100, "Waiting for config...");
-    led_otos::setBlue();
-    osDelay(50);
-    led_otos::clear(); // TODO does not work ? setbrightness instead ?
-    osDelay(50);
+
+    osDelay(100);
   }
 
   myOtos.setAngularScalar(mod_reg::config->otos_config.angular_scalar);

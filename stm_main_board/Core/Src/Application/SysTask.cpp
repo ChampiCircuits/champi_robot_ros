@@ -9,7 +9,7 @@
 #include "cmsis_os2.h"
 #include "semphr.h"
 
-#include <Application/Leds.h>
+#include <Application/Leds/Leds.h>
 
 osThreadId_t SysTaskHandle;
 const osThreadAttr_t sysTask_attributes = {

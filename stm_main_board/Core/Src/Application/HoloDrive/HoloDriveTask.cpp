@@ -4,7 +4,7 @@
 #include "Application/HoloDrive/HoloDrive.h"
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
-#include "Application/Leds.h"
+#include "Application/Leds/Leds.h"
 #include "Config/Config.h"
 #include "Util/logging.h"
 
@@ -42,13 +42,12 @@ void HoloDriveTask(void *argument) {
 
   HoloDrive holoDrive(stepper_left, stepper_right, stepper_back);
 
+  led_holo::setBlue();
+
   // We wait for the config to be set by the master
   while (!mod_reg::config->is_set) {
     LOG_WARN_THROTTLE("holo", 100, "Waiting for config...");
-    led_holo::setBlue();
-    osDelay(50);
-    led_holo::clear();
-    osDelay(50);
+    osDelay(100);
   }
 
   holoDrive.set_config(mod_reg::config->holo_drive_config);

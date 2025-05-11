@@ -102,8 +102,8 @@ inline void setBlue(int ledIndex, float brightness) {
 
 namespace led_holo
 {
-inline float brightness = 5;
-inline int color;
+extern float brightness;
+extern int color;
 
 inline void clear()   { color = CLEAR; }
 inline void setGreen(){ color = GREEN; }
@@ -116,8 +116,8 @@ inline void SetBrightness(float b) { brightness = b; }
 
 namespace led_otos
 {
-inline float brightness = 5;
-inline int color;
+extern float brightness;
+extern int color;
 
 inline void clear()   { color = CLEAR; }
 inline void setGreen(){ color = GREEN; }

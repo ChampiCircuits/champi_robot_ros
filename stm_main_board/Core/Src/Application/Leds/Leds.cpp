@@ -1,4 +1,16 @@
-#include "Application/Leds.h"
+#include "Application/Leds/Leds.h"
+
+namespace led_holo
+{
+float brightness = 5;
+int color;
+}
+
+namespace led_otos
+{
+float brightness = 5;
+int color;
+}
 
 uint8_t LED_Data[MAX_LED][4];
 uint8_t LED_Mod[MAX_LED][4];  // for brightness
