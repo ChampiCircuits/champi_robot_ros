@@ -9,8 +9,8 @@
 
 #define ID_SERVO_ARM_END 7
 #define ID_SERVO_ARM 15
-#define ID_SERVO_Y_FRONT 13
-#define ID_SERVO_Y_SIDE 8
+#define ID_SERVO_Y_RIGHT 8
+#define ID_SERVO_Y_LEFT 13
 #define ID_SERVO_BANNER 14
 
 #include "cmsis_os2.h"

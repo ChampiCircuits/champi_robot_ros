@@ -57,15 +57,15 @@ class ActuatorState(ChampiState):
             msg.data = 3
         elif action == 'PUT_UPPER_PLANK_LAYER_2':
             msg.data = 4
-        elif action == 'TAKE_CANS_FRONT':
+        elif action == 'TAKE_CANS_RIGHT':
             msg.data = 5
-        elif action == 'TAKE_CANS_SIDE':
+        elif action == 'TAKE_CANS_LEFT':
             msg.data = 6
-        elif action == 'PUT_CANS_FRONT_LAYER_1':
+        elif action == 'PUT_CANS_RIGHT_LAYER_1':
             msg.data = 7
-        elif action == 'PUT_CANS_SIDE_LAYER_2':
+        elif action == 'PUT_CANS_LEFT_LAYER_2':
             msg.data = 8
-        elif action == 'PUT_CANS_SIDE_LAYER_1':
+        elif action == 'PUT_CANS_LEFT_LAYER_1':
             msg.data = 10
 
 

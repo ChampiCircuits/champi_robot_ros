@@ -17,8 +17,8 @@ INDICE_AXIS_R = 2
 
 class XboxButton(IntEnum):
     A = 0
-    B = 1 # CANS_FRONT
-    X = 3 # CANS_SIDE
+    B = 1 # CANS_RIGHT
+    X = 3 # CANS_LEFT
     Y = 4
     R2 = 9
     R1 = 7
@@ -36,10 +36,10 @@ class DPadAxis(IntEnum):
   TAKE_UPPER_PLANK = 2, = haut + Y
   PUT_LOWER_PLANK_LAYER_1 = 3, = bas + A
   PUT_UPPER_PLANK_LAYER_2 = 4, = bas + Y
-  TAKE_CANS_FRONT = 5, = haut + B
-  TAKE_CANS_SIDE = 6, = haut + X
-  PUT_CANS_FRONT_LAYER_1 = 7, = bas + B 
-  PUT_CANS_SIDE_LAYER_2 = 8 = bas + X
+  TAKE_CANS_RIGHT = 5, = haut + B
+  TAKE_CANS_LEFT = 6, = haut + X
+  PUT_CANS_RIGHT_LAYER_1 = 7, = bas + B 
+  PUT_CANS_LEFT_LAYER_2 = 8 = bas + X
   RESET_ACTUATORS = 9, = SELECT
 """
 
@@ -111,20 +111,20 @@ class HoloTeleopJoy(Node):
                 # B button combinations
                 elif i == XboxButton.B:
                     if up:
-                        msg.data = 5  # TAKE_CANS_FRONT
-                        action = 'TAKE_CANS_FRONT'
+                        msg.data = 5  # TAKE_CANS_RIGHT
+                        action = 'TAKE_CANS_RIGHT'
                     elif down:
-                        msg.data = 7  # PUT_CANS_FRONT_LAYER_1
-                        action = 'PUT_CANS_FRONT_LAYER_1'
+                        msg.data = 7  # PUT_CANS_RIGHT_LAYER_1
+                        action = 'PUT_CANS_RIGHT_LAYER_1'
 
                 # X button combinations
                 elif i == XboxButton.X:
                     if up:
-                        msg.data = 6  # TAKE_CANS_SIDE
-                        action = 'TAKE_CANS_SIDE'
+                        msg.data = 6  # TAKE_CANS_LEFT
+                        action = 'TAKE_CANS_LEFT'
                     elif down:
-                        msg.data = 8  # PUT_CANS_SIDE_LAYER_2
-                        action = 'PUT_CANS_SIDE_LAYER_2'
+                        msg.data = 8  # PUT_CANS_LEFT_LAYER_2
+                        action = 'PUT_CANS_LEFT_LAYER_2'
 
                 # SELECT button for RESET_ACTUATORS
                 elif i == XboxButton.SELECT:
