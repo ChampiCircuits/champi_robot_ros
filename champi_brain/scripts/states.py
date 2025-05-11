@@ -61,12 +61,10 @@ class ActuatorState(ChampiState):
             msg.data = 5
         elif action == 'TAKE_CANS_LEFT':
             msg.data = 6
-        elif action == 'PUT_CANS_RIGHT_LAYER_1':
+        elif action == 'PUT_CANS_RIGHT_LAYER_2':
             msg.data = 7
-        elif action == 'PUT_CANS_LEFT_LAYER_2':
-            msg.data = 8
         elif action == 'PUT_CANS_LEFT_LAYER_1':
-            msg.data = 10
+            msg.data = 8
 
 
         self.sm.itf.actuators_ctrl_pub.publish(msg)

@@ -38,8 +38,8 @@ class DPadAxis(IntEnum):
   PUT_UPPER_PLANK_LAYER_2 = 4, = bas + Y
   TAKE_CANS_RIGHT = 5, = haut + B
   TAKE_CANS_LEFT = 6, = haut + X
-  PUT_CANS_RIGHT_LAYER_1 = 7, = bas + B 
-  PUT_CANS_LEFT_LAYER_2 = 8 = bas + X
+  PUT_CANS_RIGHT_LAYER_2 = 7, = bas + B 
+  PUT_CANS_LEFT_LAYER_1 = 8 = bas + X
   RESET_ACTUATORS = 9, = SELECT
 """
 
@@ -114,8 +114,8 @@ class HoloTeleopJoy(Node):
                         msg.data = 5  # TAKE_CANS_RIGHT
                         action = 'TAKE_CANS_RIGHT'
                     elif down:
-                        msg.data = 7  # PUT_CANS_RIGHT_LAYER_1
-                        action = 'PUT_CANS_RIGHT_LAYER_1'
+                        msg.data = 7  # PUT_CANS_RIGHT_LAYER_2
+                        action = 'PUT_CANS_RIGHT_LAYER_2'
 
                 # X button combinations
                 elif i == XboxButton.X:
@@ -123,8 +123,8 @@ class HoloTeleopJoy(Node):
                         msg.data = 6  # TAKE_CANS_LEFT
                         action = 'TAKE_CANS_LEFT'
                     elif down:
-                        msg.data = 8  # PUT_CANS_LEFT_LAYER_2
-                        action = 'PUT_CANS_LEFT_LAYER_2'
+                        msg.data = 8  # PUT_CANS_LEFT_LAYER_1
+                        action = 'PUT_CANS_LEFT_LAYER_1'
 
                 # SELECT button for RESET_ACTUATORS
                 elif i == XboxButton.SELECT:
