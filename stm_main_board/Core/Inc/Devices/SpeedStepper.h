@@ -9,7 +9,7 @@ public:
 
 	SpeedStepper(); // default constructor, do not use.
 
-	SpeedStepper(TIM_HandleTypeDef tim_handle_step, uint32_t tim_channel_step, GPIO_TypeDef *gpio_port_dir, uint16_t gpio_pin_dir);
+	SpeedStepper(TIM_HandleTypeDef tim_handle_step, uint32_t tim_channel_step, GPIO_TypeDef *gpio_port_dir, uint16_t gpio_pin_dir, int inverse_dir=1);
 
 	void set_speed_step_freq(int hz, int dir);
 
@@ -33,7 +33,7 @@ private:
 
 	bool stopped;
 	float current_speed_rps;
-	int current_dir;
+	int inverse_dir;
 
 	uint32_t timer_input_hz;
 };
