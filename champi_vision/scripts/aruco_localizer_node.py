@@ -23,18 +23,12 @@ import os
 from scipy.spatial.transform import Rotation as R
 
 import champi_vision.bird_view as bv
+from champi_vision.aruco_localizer import ArucoDetector
 
 from icecream import ic
 
 
-class Pose:
-    def __init__(self, x, y, theta):
-        self.x = x
-        self.y = y
-        self.theta = theta
 
-    def __str__(self):
-        return f"x: {self.x}, y: {self.y}, theta: {self.theta}"
 
 class VisualLocalizationNode(Node):
 
@@ -58,12 +52,7 @@ class VisualLocalizationNode(Node):
         self.curent_image = None
         self.latest_img = None
         self.time_last_image = time.time()  # for FPS
-        self.pos_cam_in_bird_view_pxls = None
         self.bird_view = None
-
-        self.aruco_dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-        self.aruco_parameters =  cv2.aruco.DetectorParameters()
-        self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dictionary, self.aruco_parameters)
 
 
         self.timer = self.create_timer(0.1, self.timer_callback)  # 5Hz
@@ -91,6 +80,8 @@ class VisualLocalizationNode(Node):
         self.pub_odom = self.create_publisher(PoseWithCovarianceStamped, '/pose/visual_loc', 10)
         self.bird_view_RGB_publisher = self.create_publisher(Image, '/champi_bird_view_RGB', 10)
         self.pub_image = self.create_publisher(Image, '/image_viz', 10)
+
+        self.aruco_detector = ArucoDetector()
 
 
     def timer_callback(self):
@@ -134,40 +125,18 @@ class VisualLocalizationNode(Node):
         
         # ================================== DETECTION =========================================
 
-        markerCorners, markerIds, _ = self.aruco_detector.detectMarkers(bird_view_img)
-
-        #  if markers empty return
-        if markerIds is None:
-            self.get_logger().info("No marker detected", once=True)
+        poses_markers, ids_markers = self.aruco_detector.detect_arucos(bird_view_img, ids_to_find=[20, 21, 22, 23])
+        if len(poses_markers) == 0:
+            self.get_logger().info("No markers detected")
             return
         
-        marker_corner = None
-        marker_id = None
-        for i, markerId in enumerate(markerIds):
-            if markerId >= 20 and markerId <= 23:
-                marker_corner = markerCorners[i]
-                marker_id = markerId
-                break
-        if marker_corner is None:
-            self.get_logger().info("No marker detected", once=True)
-            return
+        # get the first marker
+        pose_aruco_in_bv = poses_markers[0]
+        id_marker = ids_markers[0]
 
         # ========================= ARUCO -> ROBOT POSE ESTIMATION =====================================
 
-        # get the corners of the marker
-        corners = markerCorners[i]
-
-        # get the center of the marker
-        center_marker = np.mean(corners[0], axis=0)
-
-        # Marker angle relative to horizontal axis (first side angle)
-        dx = corners[0][1][0] - corners[0][0][0]
-        dy = corners[0][1][1] - corners[0][0][1]
-        angle_aruco_in_bv = np.arctan2(dy, dx)  # angle en radians
-
-        # self.get_logger().info(f"center_marker {center_marker}, angle {angle_rad*180/3.14}°")
-
-        pos_aruco_in_bv = np.array([center_marker[0], center_marker[1], 1])
+        pos_aruco_in_bv = np.array([pose_aruco_in_bv[0], pose_aruco_in_bv[1], 1])
 
         pos_aruco_in_bv_m = np.linalg.inv(self.bird_view.M_workplane_real_to_img_) @ pos_aruco_in_bv
 
@@ -175,17 +144,17 @@ class VisualLocalizationNode(Node):
 
         # ========================= ROBOT -> WORLD POSE ESTIMATION =====================================
 
-        if markerIds[i]==20:
+        if id_marker==20:
             x = 2.-0.45-0.12/2.
             y = 3.-0.7-0.12/2.
-        elif markerIds[i]==21:
+        elif id_marker==21:
             x = 2.-0.45-0.12/2.
             y = 0.7+0.12/2.
-        elif markerIds[i]==22:
-            x = 0.5+0.12/2
+        elif id_marker==22:
+            x = 0.5+0.12/2.
             y = 3.-0.7-0.12/2.
-        elif markerIds[i]==23:
-            x = 0.5+0.12/2
+        elif id_marker==23:
+            x = 0.5+0.12/2.
             y = 0.7+0.12/2.
 
         pos_aruco_in_world = np.array([x, y, 1])
@@ -196,7 +165,7 @@ class VisualLocalizationNode(Node):
         # ic(pos_aruco_in_bv_m, pos_aruco_in_world, angle_aruco_in_bv)
 
         # Compute the position of the robot in the world frame
-        pos_robot_in_world = pos_aruco_in_world - np.matmul(R.from_euler('z', angle_aruco_in_bv, degrees=False).as_matrix(), pos_aruco_in_bv_m)
+        pos_robot_in_world = pos_aruco_in_world - np.matmul(R.from_euler('z', pose_aruco_in_bv[2], degrees=False).as_matrix(), pos_aruco_in_bv_m)
 
         # ic(pos_robot_in_world)
 
@@ -213,15 +182,15 @@ class VisualLocalizationNode(Node):
         pose_msg.pose.pose.position.z = 0.
         pose_msg.pose.pose.orientation.x = 0.
         pose_msg.pose.pose.orientation.y = 0.
-        pose_msg.pose.pose.orientation.z = np.sin(angle_aruco_in_bv/2)
-        pose_msg.pose.pose.orientation.w = np.cos(angle_aruco_in_bv/2)
+        pose_msg.pose.pose.orientation.z = np.sin(pose_aruco_in_bv[2]/2)
+        pose_msg.pose.pose.orientation.w = np.cos(pose_aruco_in_bv[2]/2)
 
 
         self.pub_odom.publish(pose_msg)
 
         if self.enable_cv2_viz:
             # draw 2D axis
-            img_viz = self.draw_2D_axis(img_viz, pos_aruco_in_bv[:2], angle_aruco_in_bv)
+            img_viz = self.draw_2D_axis(img_viz, pos_aruco_in_bv[:2], pose_aruco_in_bv[2])
             cv2.imshow('Detections', img_viz)
             cv2.waitKey(1)
 
@@ -254,9 +223,6 @@ class VisualLocalizationNode(Node):
             K = np.array(self.camera_info.k).reshape(3,3)
             self.bird_view = bv.BirdView(K, transform_mtx, (0., -0.4), (1., 0.4), resolution=378)
 
-            self.pos_cam_in_bird_view_pxls = self.bird_view.get_work_plane_pt_in_bird_img(np.array([0, 0, 1]))
-            ic(self.pos_cam_in_bird_view_pxls)
-
             # compute undistortion map
             self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (self.camera_info.width,self.camera_info.height), cv2.CV_32FC1)
 
@@ -280,22 +246,6 @@ class VisualLocalizationNode(Node):
     def publish_imageMono(self, image):
         image_msg = self.cv_bridge.cv2_to_imgmsg(image, encoding='mono8')
         self.pub_image.publish(image_msg)
-
-    def call_set_pose(self, pose):
-
-        request = SetPose.Request()
-        # request.pose.header.stamp = self.get_clock().now().to_msg()
-        request.pose.header.frame_id = 'odom'
-        request.pose.pose.pose.position.x = pose.x
-        request.pose.pose.pose.position.y = pose.y
-        request.pose.pose.pose.position.z = 0.
-        request.pose.pose.pose.orientation.x = 0.
-        request.pose.pose.pose.orientation.y = 0.
-        request.pose.pose.pose.orientation.z = np.sin(pose.theta/2)
-        request.pose.pose.pose.orientation.w = np.cos(pose.theta/2)
-
-        self.get_logger().info('Calling /set_pose...')
-        self.future_set_pose_response = self.set_pose_client.call_async(request)
 
     def draw_2D_axis(self, image, pos_pxls, angle):
         img = image.copy()

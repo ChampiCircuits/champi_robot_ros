@@ -42,7 +42,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-        scripts/aruco_loc_node.py
+        scripts/aruco_localizer_node.py
         scripts/camera_info_publisher_node.py
         scripts/cv2_camera_publisher_node.py
         scripts/enemy_tracker_node.py
