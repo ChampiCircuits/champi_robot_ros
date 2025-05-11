@@ -10,7 +10,7 @@ namespace devices
 {
     namespace scs_servos {
 
-        uint8_t ids_servos[N_SERVOS] = {ID_SERVO_ARM_END, ID_SERVO_ARM, ID_SERVO_Y_FRONT, ID_SERVO_Y_SIDE, ID_SERVO_BANNER};
+        uint8_t ids_servos[N_SERVOS] = {ID_SERVO_ARM_END, ID_SERVO_ARM, ID_SERVO_Y_LEFT, ID_SERVO_Y_RIGHT, ID_SERVO_BANNER};
         SCServos servos;
         bool init_successful = false;
 

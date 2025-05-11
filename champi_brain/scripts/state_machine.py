@@ -81,8 +81,8 @@ class ChampiStateMachine(object):
         self.action_list = ['PUT_BANNER',
                             'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
                             'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
-                            'TAKE_CANS_FRONT', 'TAKE_CANS_SIDE',
-                            'PUT_CANS_FRONT_LAYER_1', 'PUT_CANS_SIDE_LAYER_2', 'PUT_CANS_SIDE_LAYER_1']
+                            'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
+                            'PUT_CANS_RIGHT_LAYER_1', 'PUT_CANS_LEFT_LAYER_2', 'PUT_CANS_LEFT_LAYER_1']
 
         path = get_package_share_directory('champi_brain') + '/SM_diagram.png'
         get_logger(self.name).warn(f'PATH: {path}')

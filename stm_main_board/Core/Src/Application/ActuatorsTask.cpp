@@ -50,10 +50,10 @@ void InitBanner()
 }
 void InitYServos()
 {
-//    devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_OUT_POS, 1000);
-//    devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_OUT_POS, 1000);
-    devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_IN_POS, 1000);
-    devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_IN_POS, 1000);
+//    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_OUT_POS, 1000);
+//    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_OUT_POS, 1000);
+    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_IN_POS, 1000);
+    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_IN_POS, 1000);
 }
 void InitEverything()
 {
@@ -111,39 +111,39 @@ void PutPlanks(int layer)
     }
 }
 
-void TakeCanFront()
+void TakeCanLeft()
 {
     devices::stepper_opt0.set_goal_sync(1.0);
-    devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_OUT_POS,500);
+    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_OUT_POS,500);
     devices::stepper_opt0.set_goal_sync(0.37);
-    devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_IN_POS,500);
+    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_IN_POS,500);
 
     // juste pour lever au-dessus du sol
     devices::stepper_opt0.set_goal_sync(1.0);
 }
 
-void PutCanFront(int layer)
+void PutCanLeft(int layer) // TODO refactor pour pas avoir deux fonctions pour left et right
 {
     float layer_base_height;
     if (layer==1)
         layer_base_height = 0.4;
     else if (layer==2)
-        layer_base_height = 3.0; // TODO neverused
+        layer_base_height = 3.6;
 
     devices::stepper_opt0.set_goal_sync(layer_base_height);
-    devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_OUT_POS,500);
+    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_OUT_POS,500);
 
     // little movement to get the Y inside
     devices::stepper_opt0.set_goal_sync(layer_base_height + 0.5);
-    devices::scs_servos::set_angle(ID_SERVO_Y_FRONT, SERVO_Y_IN_POS,500);
+    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_IN_POS,500);
     // devices::stepper_opt0.set_goal_sync(layer_base_height);
 }
-void TakeCanSide()
+void TakeCanRight()
 {
     devices::stepper_opt0.set_goal_sync(1.0);
-    devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_OUT_POS,500);
+    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_OUT_POS,500);
     devices::stepper_opt0.set_goal_sync(0.37);
-    devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_IN_POS,500);
+    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_IN_POS,500);
 
     // juste pour lever au-dessus du sol
     // devices::stepper_opt0.set_goal_sync(1.0); // finalement non, on monte plus haut qu'une planche
@@ -151,7 +151,7 @@ void TakeCanSide()
     devices::stepper_opt0.set_goal_sync(3.6);
 }
 
-void PutCanSide(int layer)
+void PutCanRight(int layer)
 {
     float layer_base_height;
     if (layer==1)
@@ -159,11 +159,11 @@ void PutCanSide(int layer)
     else if (layer==2)
         layer_base_height = 3.6;
     devices::stepper_opt0.set_goal_sync(layer_base_height);
-    devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_OUT_POS,500);
+    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_OUT_POS,500);
 
     // little movement to get the Y inside
     devices::stepper_opt0.set_goal_sync(layer_base_height + 0.4);
-    devices::scs_servos::set_angle(ID_SERVO_Y_SIDE, SERVO_Y_IN_POS,500);
+    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_IN_POS,500);
     // devices::stepper_opt0.set_goal_sync(layer_base_height);
 }
 void PutBanner()
@@ -188,23 +188,20 @@ void HandleRequest(ActuatorCommand cmd) {
     case ActuatorCommand::PUT_UPPER_PLANK_LAYER_2:
         PutPlanks(2);
         break;
-    case ActuatorCommand::TAKE_CANS_FRONT:
-        TakeCanFront();
+    case ActuatorCommand::TAKE_CANS_LEFT:
+        TakeCanLeft();
         break;
-    case ActuatorCommand::TAKE_CANS_SIDE:
-        TakeCanSide();
+    case ActuatorCommand::TAKE_CANS_RIGHT:
+        TakeCanRight();
         break;
-    case ActuatorCommand::PUT_CANS_FRONT_LAYER_1:
-        PutCanFront(1);
+    case ActuatorCommand::PUT_CANS_LEFT_LAYER_1:
+        PutCanLeft(1);
         break;
-    case ActuatorCommand::PUT_CANS_SIDE_LAYER_2:
-        PutCanSide(2);
+    case ActuatorCommand::PUT_CANS_RIGHT_LAYER_2:
+        PutCanRight(2);
         break;
     case ActuatorCommand::RESET_ACTUATORS:
         InitEverything();
-        break;
-    case ActuatorCommand::PUT_CANS_SIDE_LAYER_1:
-        PutCanSide(1);
         break;
     }
 }
