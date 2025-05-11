@@ -26,6 +26,7 @@ import champi_navigation.goal_checker as goal_checker
 from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
 from champi_libraries_py.data_types.geometry import Pose2D
+from champi_libraries_py.utils.angles import get_yaw
 
 import diagnostic_msgs
 import diagnostic_updater
@@ -137,9 +138,8 @@ class PlannerNode(Node):
     def navigate_callback(self, navigate_goal: Navigate.Goal):
         """ Called when a new Navigate goal is received
         """
-        self.get_logger().debug('New Navigate request received!')
         self.get_logger().info('New Navigate request received to pose: '
-                                f'({navigate_goal.pose.position.x}, {navigate_goal.pose.position.y})')
+                                f'({navigate_goal.pose.position.x}, {navigate_goal.pose.position.y}, {get_yaw(navigate_goal.pose)*180.0/3.14159})')
 
         # Store the goal
         self.current_navigate_goal = navigate_goal
@@ -256,7 +256,8 @@ class PlannerNode(Node):
             self.exec_time_measurer.stop()
 
             # Sleep to respect the loop period
-            time.sleep(self.loop_period - (time.time() - t_loop_start))
+            sleep_time = max(0, self.loop_period - (time.time() - t_loop_start))
+            time.sleep(sleep_time)
 
         self.planning = False
         self.timeout.reset()

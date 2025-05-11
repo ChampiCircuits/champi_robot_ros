@@ -134,6 +134,11 @@ class ChampiStateMachineITF(Node):
         msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]*3.14159/180/2)
 
         self.set_pose_pub.publish(msg)
+        time.sleep(1)
+        self.set_pose_pub.publish(msg)
+        time.sleep(1)
+        self.set_pose_pub.publish(msg)
+        time.sleep(1)
         self.get_logger().info(f'requested setpose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
 
 

@@ -60,21 +60,41 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz_default_plugins/TF
-      Enabled: false
+      Enabled: true
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        base_laser:
+          Value: false
+        base_link:
+          Value: true
+        camera_link:
+          Value: false
+        imu_link:
+          Value: false
+        map:
+          Value: false
+        odom:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        map:
+          odom:
+            base_link:
+              base_laser:
+                {}
+              camera_link:
+                {}
+              imu_link:
+                {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Angle Tolerance: 0.009999999776482582
       Class: rviz_default_plugins/Odometry
       Covariance:
@@ -399,7 +419,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0
+      Angle: -0.009999999776482582
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -409,11 +429,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 302.26531982421875
+      Scale: 304.3514709472656
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 1.6131519079208374
-      Y: 1.0489892959594727
+      X: 1.6978139877319336
+      Y: 1.2358977794647217
     Saved: ~
 Window Geometry:
   Displays:
