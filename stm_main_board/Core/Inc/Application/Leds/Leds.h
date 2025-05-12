@@ -67,9 +67,6 @@ void Set_Ring_Brightness (float brightness);  // [0-100] Must be done after Set_
 
 void clear_Ring();
 
-namespace led_ring {
-inline bool e_stop_pressed = false;
-}
 
 namespace led
 {

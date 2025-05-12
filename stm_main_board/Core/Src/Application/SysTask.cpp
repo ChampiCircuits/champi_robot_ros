@@ -27,7 +27,6 @@ void SysTask(void *argument) {
   while (true) {
     bool tirette_released = HAL_GPIO_ReadPin(TIRETTE_GPIO_Port, TIRETTE_Pin);
     bool e_stop_pressed = HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin);
-    led_ring::e_stop_pressed = e_stop_pressed;
 
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
     mod_reg::state->tirette_released = tirette_released;

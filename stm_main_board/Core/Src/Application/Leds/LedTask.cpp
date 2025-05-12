@@ -8,8 +8,9 @@
 #include "Application/Leds/Leds.h"
 #include "Config/Config.h"
 #include "Util/logging.h"
-#include "tim.h"
 
+#include "tim.h"
+#include "semphr.h"
 #include "cmsis_os2.h"
 
 
@@ -339,7 +340,11 @@ void LedTask(void *argument) {
     applyStatusLedState({led_holo::color, led_holo::brightness}, LED_HOLO);
     applyStatusLedState({led_otos::color, led_otos::brightness}, LED_OTOS);
 
-    if (led_ring::e_stop_pressed) {
+    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+    bool e_stop_pressed = mod_reg::state->e_stop_pressed;
+    xSemaphoreGive(ModbusH.ModBusSphrHandle);
+
+    if (e_stop_pressed) {
       BAU_pushed_animation();
     }
     else {
