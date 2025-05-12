@@ -1,4 +1,4 @@
-init_pose: { x: 1.7, y: 1.25, theta_deg: 180.0 } # dans la zone de départ jaune en bas
+init_pose: { x: 1.7, y: 1.25, theta_deg: 0.0 } # dans la zone de départ jaune en bas
 
 actions:
 

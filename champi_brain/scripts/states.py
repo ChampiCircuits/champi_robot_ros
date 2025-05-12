@@ -45,29 +45,7 @@ class ActuatorState(ChampiState):
             self.sm.end_of_actuator_state = True
             return
 
-        msg = Int8()
-
-        if action == 'PUT_BANNER':
-            msg.data = 0
-        elif action == 'TAKE_LOWER_PLANK':
-            msg.data = 1
-        elif action == 'TAKE_UPPER_PLANK':
-            msg.data = 2
-        elif action == 'PUT_LOWER_PLANK_LAYER_1':
-            msg.data = 3
-        elif action == 'PUT_UPPER_PLANK_LAYER_2':
-            msg.data = 4
-        elif action == 'TAKE_CANS_RIGHT':
-            msg.data = 5
-        elif action == 'TAKE_CANS_LEFT':
-            msg.data = 6
-        elif action == 'PUT_CANS_RIGHT_LAYER_2':
-            msg.data = 7
-        elif action == 'PUT_CANS_LEFT_LAYER_1':
-            msg.data = 8
-
-
-        self.sm.itf.actuators_ctrl_pub.publish(msg)
+        self.sm.itf.send_actuator_action(action)
 
     def exit(self, event_data):
         get_logger(self.name).info(f'Action {self.action} completed')

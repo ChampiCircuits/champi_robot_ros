@@ -76,6 +76,7 @@ class ChampiStateMachineITF(Node):
 
         # publisher topic /ctrl/actuators
         self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
+        self.send_actuator_action('RESET_ACTUATORS')
         # subscriber topic //actuators_finished
         self.actuators_finished_sub = self.create_subscription(Int8MultiArray, '/actuators_finished', self.actuators_finished_callback, 10)
         # subscriber e_stop+tirette state
@@ -134,11 +135,11 @@ class ChampiStateMachineITF(Node):
         msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]*3.14159/180/2)
 
         self.set_pose_pub.publish(msg)
-        time.sleep(1)
+        time.sleep(3)
         self.set_pose_pub.publish(msg)
         time.sleep(1)
-        self.set_pose_pub.publish(msg)
-        time.sleep(1)
+        # self.set_pose_pub.publish(msg)
+        # time.sleep(1)
         self.get_logger().info(f'requested setpose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
 
 
@@ -206,11 +207,11 @@ class ChampiStateMachineITF(Node):
         
         goal.end_speed = 0.
 
-        goal.max_linear_speed = 0.4
-        goal.max_angular_speed = 2.0
+        goal.max_linear_speed = 2.0
+        goal.max_angular_speed = 3.0
         
         goal.linear_tolerance = 0.005
-        goal.angular_tolerance = 0.1
+        goal.angular_tolerance = 0.05
 
         goal.do_look_at_point = False
 
@@ -243,7 +244,32 @@ class ChampiStateMachineITF(Node):
             return 'INTITIALIZING'
         else:
             return 'UNKNOWN (error)'
-        
+
+
+    def send_actuator_action(self, action):
+        msg = Int8()
+
+        if action == 'PUT_BANNER':
+            msg.data = 0
+        elif action == 'TAKE_LOWER_PLANK':
+            msg.data = 1
+        elif action == 'TAKE_UPPER_PLANK':
+            msg.data = 2
+        elif action == 'PUT_LOWER_PLANK_LAYER_1':
+            msg.data = 3
+        elif action == 'PUT_UPPER_PLANK_LAYER_2':
+            msg.data = 4
+        elif action == 'TAKE_CANS_RIGHT':
+            msg.data = 5
+        elif action == 'TAKE_CANS_LEFT':
+            msg.data = 6
+        elif action == 'PUT_CANS_RIGHT_LAYER_2':
+            msg.data = 7
+        elif action == 'PUT_CANS_LEFT_LAYER_1':
+            msg.data = 8
+        elif action == 'RESET_ACTUATORS':
+            msg.data = 9
+        self.actuators_ctrl_pub.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)

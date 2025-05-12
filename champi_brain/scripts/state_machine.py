@@ -115,7 +115,7 @@ class ChampiStateMachine(object):
     def load_strategy(self, file_path): # only one recursion level in files
         data = self.load_yaml(file_path)
 
-        self.init_pose = [data['init_pose']['x'], data['init_pose']['y'], data['init_pose']['theta_deg']]
+        self.init_pose = [data['init_pose']['x'], data['init_pose']['y'], data['init_pose']['theta_deg']+90.0]  # +90° to align with the coordinate system
         self.itf.get_logger().info(f'<< Init pose will be {self.init_pose[0]} {self.init_pose[1]} {self.init_pose[2]}°!')
 
         actions = []
