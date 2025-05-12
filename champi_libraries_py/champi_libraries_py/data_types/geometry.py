@@ -115,7 +115,7 @@ class Pose2D:
         x2, y2 = end.x, end.y
         return ((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1)) / sqrt((x2-x1)**2 + (y2-y1)**2)
     
-    def position_equals(self, other:Pose2D):
+    def position_strictly_equals(self, other:Pose2D):
         return self.x == other.x and self.y == other.y
     
 
