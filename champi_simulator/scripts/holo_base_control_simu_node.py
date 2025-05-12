@@ -2,6 +2,7 @@
 
 from math import sqrt, cos, sin, atan2
 import time
+import numpy
 
 import rclpy
 from rclpy.node import Node
@@ -82,6 +83,11 @@ class HoloBaseControlDummy(Node):
     def listener_callback(self, msg):
         self.latest_cmd_vel = [msg.linear.x, msg.linear.y, msg.angular.z]
         self.t_last_cmd_vel_ = time.time()
+
+        # add small noise to the cmd_vel to resemble the real world
+        self.latest_cmd_vel[0] += numpy.random.normal(0, 0.002)
+        self.latest_cmd_vel[1] += numpy.random.normal(0, 0.002)
+        self.latest_cmd_vel[2] += numpy.random.normal(0, 0.01)
 
     # Returns the velocity with limited acceleration applied
     def limit_accel(self, current_speed, goal_speed, max_acceleration, dt):
