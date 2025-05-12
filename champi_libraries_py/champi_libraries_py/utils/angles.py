@@ -4,9 +4,9 @@ from geometry_msgs.msg import Pose
 
 def normalize_angle(angle: float) -> float:
     """Normalize an angle between -pi and pi. Has the consequence to find the shortest angle difference."""
-    if angle > pi:
+    while angle > pi:
         angle -= 2 * pi
-    elif angle < -pi:
+    while angle < -pi:
         angle += 2 * pi
     
     return angle
