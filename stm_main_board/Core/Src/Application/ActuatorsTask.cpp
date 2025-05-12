@@ -37,39 +37,29 @@ const osThreadAttr_t actuatorsTask_attributes = {
 #define LOWER_PLANK 0
 #define UPPER_PLANK 1
 
-void InitArm()
-{
-    // OPEN THE ARM and END_ARM
-    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_UP_POSITION, 1000);
-}
 
-void InitBanner()
-{
-    devices::scs_servos::set_angle_async(ID_SERVO_BANNER, 90, 1000);
-}
 void InitYServos()
 {
-//    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_OUT_POS, 1000);
-//    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_OUT_POS, 1000);
-    devices::scs_servos::set_angle(ID_SERVO_Y_LEFT, SERVO_Y_IN_POS, 1000);
-    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_IN_POS, 1000);
+    devices::scs_servos::set_angle_async(ID_SERVO_Y_LEFT, SERVO_Y_OUT_POS, 100);
+    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_OUT_POS, 100);
+    devices::scs_servos::set_angle_async(ID_SERVO_Y_LEFT, SERVO_Y_IN_POS, 100);
+    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_IN_POS, 100);
 }
 void InitEverything()
 {
-    devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 1000);
-    devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 500);
-    devices::stepper_opt0.set_goal_sync(0.0); // TODO not useful?
-    // devices::stepper_opt0.set_zero();
-    // devices::stepper_opt0.set_zero();
-    InitBanner();
-    InitArm();
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 100);
+    devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 100);
+    devices::stepper_opt0.set_goal_sync(0.0);
+    devices::stepper_opt0.set_zero();
+    osDelay(1);
+    devices::scs_servos::set_angle_async(ID_SERVO_BANNER, 90, 100);
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_UP_POSITION, 1000);
     InitYServos();
 }
-void RetractArm()
-{
-    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_UP_POSITION, 300);
-}
+
 void TakePlank(int plank) { // !!! lift should be down
+    devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 500); // init au cas ou
+
     float plank_height;
     if (plank == LOWER_PLANK) {
         plank_height = STEPPER_LOWER_POSITION;
@@ -79,16 +69,14 @@ void TakePlank(int plank) { // !!! lift should be down
     }
 
     // HALF CLOSED PLANK
-    devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_DOWN_POSITION+SERVO_ARM_UP_POSITION)/2.0, 300);
+    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION-10.0, 100);
 
     devices::stepper_opt0.set_goal_sync(plank_height);
-    osDelay(1000);
 
     // CLOSED TO TAKE PLANK
-    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300);
+    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 100);
 
     devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_CLOSE_POSITION, 1000);
-    osDelay(1000);
 
     devices::stepper_opt0.set_goal_sync(plank_height + 3.6);
 }
@@ -115,13 +103,12 @@ void PutPlanks(int layer)
 
 void TakeCan(int id_servo_which_side)
 {
-    devices::stepper_opt0.set_goal_sync(1.0);
-    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_OUT_POS,500);
+    // devices::stepper_opt0.set_goal_sync(1.0);
+    devices::scs_servos::set_angle_async(id_servo_which_side, SERVO_Y_OUT_POS,100);
     devices::stepper_opt0.set_goal_sync(0.37);
     devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_IN_POS,500);
 
-    // juste pour lever au-dessus du sol
-    devices::stepper_opt0.set_goal_sync(3.6); // TODO pour les deux ?
+    devices::stepper_opt0.set_goal_sync(3.6); // TODO pas pour les deux ?
 }
 
 void PutCan(int layer, int id_servo_which_side)

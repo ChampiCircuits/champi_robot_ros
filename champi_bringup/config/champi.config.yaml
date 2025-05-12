@@ -114,4 +114,4 @@ path_planner:
 
 sm_ros_itf:
   ros__parameters:
-    strategy_file: 'turns_strat.yaml'
+    strategy_file: 'test_strat.yaml'
