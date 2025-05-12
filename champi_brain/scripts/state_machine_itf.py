@@ -5,6 +5,7 @@ from rclpy.node import Node
 from rclpy.clock import Clock
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 from ament_index_python.packages import get_package_share_directory
+from rclpy.executors import ExternalShutdownException
 
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import STMState
@@ -274,11 +275,14 @@ class ChampiStateMachineITF(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    ros_itf = ChampiStateMachineITF()
-    rclpy.spin(ros_itf)
-
-    ros_itf.destroy_node()
-    rclpy.shutdown()
+    node = ChampiStateMachineITF()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()
