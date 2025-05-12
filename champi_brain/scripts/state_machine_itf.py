@@ -77,7 +77,8 @@ class ChampiStateMachineITF(Node):
 
         # publisher topic /ctrl/actuators
         self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
-        self.send_actuator_action('RESET_ACTUATORS')
+        if not self.sim_param:
+            self.send_actuator_action('RESET_ACTUATORS')
         # subscriber topic //actuators_finished
         self.actuators_finished_sub = self.create_subscription(Int8MultiArray, '/actuators_finished', self.actuators_finished_callback, 10)
         # subscriber e_stop+tirette state
