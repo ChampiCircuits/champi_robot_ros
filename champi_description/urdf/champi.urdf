@@ -34,7 +34,7 @@
   <joint name="base_to_lidar" type="fixed">
     <parent link="base_link"/>
     <child link="base_laser"/>
-    <origin xyz="0 0 0.3" rpy="0 0 1.57"/>
+    <origin xyz="0 0 0.3" rpy="0 0 -1.57"/>
   </joint>
 
   <!-- Joint between base_link and camera -->
