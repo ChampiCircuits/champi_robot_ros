@@ -21,8 +21,6 @@ from rclpy.executors import ExternalShutdownException
 import diagnostic_msgs
 import diagnostic_updater
 
-from icecream import ic
-
 
 class PoseControllerNode(Node):
     def __init__(self):
@@ -98,9 +96,9 @@ class PoseControllerNode(Node):
         else:
             self.stop_requested_by_planner = False
         
-        if self.ctrl_goal is None or not self.are_ctrl_goals_equal(ctrl_goal, self.ctrl_goal):
+        if self.ctrl_goal is None or not self.ctrl_goals_are_strictly_equal(ctrl_goal, self.ctrl_goal):
             # Means that we need to update the control goal (first time or new goal)
-            # Why do we test this ? The path planner is not required to publish the twice the same goal (e.g periodically)
+            # Why do we test this ? The path planner is not required to publish twice the same goal (e.g periodically)
             # but for reliability, it can if it wants to.
             self.ctrl_goal = ctrl_goal
             self.path_follow_params.update_ctrl_goal(self.robot_current_state, ctrl_goal)  # See description of PathFollowParams class for more details
@@ -163,13 +161,11 @@ class PoseControllerNode(Node):
         self.exec_time_measurer.stop()
     
 
-    def are_ctrl_goals_equal(self, goal1: CtrlGoal, goal2: CtrlGoal):
+    def ctrl_goals_are_strictly_equal(self, goal1: CtrlGoal, goal2: CtrlGoal):
         """
-        Check if two control goals are equal, position-wise.
+        Check if two control goals are equal, position-wise and orientation-wise.
         """
-        return goal1.pose.position.x == goal2.pose.position.x and \
-                goal1.pose.position.y == goal2.pose.position.y
-
+        return goal1.pose == goal2.pose
 
     def stop_robot(self):
         """Stop the robot."""
