@@ -14,18 +14,18 @@ actions:
       target: { x: 1.25, y: 0.16, theta_deg: 0.0 }
 
 ######################### TAKE FIRST ELEMENT GROUP ######################################
-#
-#  - action: include_sub_file
-#    file: 'take_elements.yaml'
-#    parameters:
-#        target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
-#
+
+  - action: include_sub_file
+    file: 'take_elements.yaml'
+    parameters:
+        target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
+
 #  ######################### PUT FIRST ELEMENT GROUP ######################################
-#
-#  - action: include_sub_file
-#    file: 'put_elements.yaml'
-#    parameters:
-#      target: { x: 1.225, y: 0.3, theta_deg: 180.0 }
+
+  - action: include_sub_file
+    file: 'put_elements.yaml'
+    parameters:
+      target: { x: 1.225, y: 0.3, theta_deg: 180.0 }
 
   - action: move
     target: { x: 1.225, y: 0.3, theta_deg: 0.0 } # move back to start
