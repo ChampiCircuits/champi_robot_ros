@@ -5,7 +5,7 @@
 # |
 # v
 # x
-actions:
+actions: # TODO le -0.21 comme dans take
   - action: move
     target: { x: 0.0, y: 0.0, theta_deg: -60.0 } # pour aller en position
 
@@ -14,7 +14,7 @@ actions:
   - action: TAKE_UPPER_PLANK
 
   - action: move
-    target: { x: 0.0, y: -0.1, theta_deg: -60.0 } # recule
+    target: { x: 0.0, y: -0.01, theta_deg: -60.0 } # recule
 
   - action: move
     target: { x: 0.0, y: 0.0, theta_deg: 60.0 } # re-avance mais avec le côté RIGHT de l'actionneur en face
@@ -22,7 +22,7 @@ actions:
   - action: PUT_CANS_RIGHT_LAYER_2
 
   - action: move
-    target: { x: 0.0, y: -0.1, theta_deg: 60.0 } # recule
+    target: { x: 0.0, y: -0.01, theta_deg: 60.0 } # recule
 
   - action: move
     target: { x: 0.0, y: 0.0, theta_deg: -60.0 } # re-avance
