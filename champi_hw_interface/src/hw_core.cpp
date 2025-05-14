@@ -6,6 +6,13 @@
 
 #define THRESHOLD_REJECT_DIST 0.03
 
+// Normalize angle to be within [-pi, pi]
+double normalize_angle(double angle) {
+    while (angle > M_PI) angle -= 2.0 * M_PI;
+    while (angle < -M_PI) angle += 2.0 * M_PI;
+    return angle;
+}
+
 
 HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
 {
@@ -94,8 +101,9 @@ nav_msgs::msg::Odometry make_odom(const Vector3 &pose, const Vector3 &vel,
   msg.pose.pose.position.y = pose.y;
   msg.pose.pose.position.z = 0.0;
 
+  double pose_theta = normalize_angle(pose.theta);
   tf2::Quaternion q;
-  q.setRPY(0.0, 0.0, pose.theta);
+  q.setRPY(0.0, 0.0, pose_theta);
   msg.pose.pose.orientation.x = q.x();
   msg.pose.pose.orientation.y = q.y();
   msg.pose.pose.orientation.z = q.z();
@@ -113,12 +121,6 @@ nav_msgs::msg::Odometry make_odom(const Vector3 &pose, const Vector3 &vel,
   return msg;
 }
 
-// Normalize angle to be within [-pi, pi]
-double normalize_angle(double angle) {
-    while (angle > M_PI) angle -= 2.0 * M_PI;
-    while (angle < -M_PI) angle += 2.0 * M_PI;
-    return angle;
-}
 
 nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_otos(const Vector3 &pose, const double dt) const {
 
@@ -170,7 +172,6 @@ void HardwareInterfaceNode::loop() {
     // Read
     read(mod_reg::reg_state);
 
-    ////auto odom_wheels = make_odom_wheels(mod_reg::state->measured_vel, dt);
     auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
     pub_odom_otos_->publish(odom_otos);
 

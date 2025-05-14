@@ -75,7 +75,6 @@ private:
     void check_for_actuators_state() const;
     void read_stm_state();
 
-    nav_msgs::msg::Odometry make_odom_wheels(const Vector3 &vel, double dt);
     nav_msgs::msg::Odometry make_odom_otos(const Vector3 &pose, double dt) const;
 
     std::string device_ser_no_;
