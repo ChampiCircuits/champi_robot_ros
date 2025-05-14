@@ -209,7 +209,7 @@ class ChampiStateMachineITF(Node):
         
         goal.end_speed = 0.
 
-        goal.max_linear_speed = 2.0
+        goal.max_linear_speed = 0.5
         goal.max_angular_speed = 3.0
         
         goal.linear_tolerance = 0.005
