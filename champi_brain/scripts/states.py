@@ -6,6 +6,20 @@ from std_msgs.msg import Int8
 class InitState(ChampiState):
     pass
 
+class InitPoseState(ChampiState):
+    def enter(self, event_data):
+        super().enter(event_data)
+
+        # TODO attendre un scan OK
+
+        x = self.sm.init_pose[0]
+        y = self.sm.init_pose[1]
+        theta_deg = self.sm.init_pose[2]
+        theta_rad = theta_deg * 3.14159 / 180.0
+
+        get_logger(self.name+'_state').info(f"Start moving to init pose: x={x}, y={y}, theta={theta_deg}°")
+        self.sm.itf.send_goal(x, y, theta_rad)
+
 
 class MoveState(ChampiState):
     def enter(self, event_data):

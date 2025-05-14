@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-import rclpy, yaml, math
+import rclpy, math
 from rclpy.logging import get_logger
 from ament_index_python.packages import get_package_share_directory
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
-from states import ChampiState, InitState, MoveState, WaitState, ActuatorState
-
+from states import ChampiState, InitState, MoveState, WaitState, ActuatorState, InitPoseState
 
 class ChampiStateMachine(object):
     def set_itf(self, itf): self.itf = itf
@@ -42,6 +41,7 @@ class ChampiStateMachine(object):
         self.sm.add_state(ActuatorState(name='action', sm=self))
 
         self.sm.get_state('init').add_substate(state=ChampiState(name='waitForRosInit', sm=self))
+        self.sm.get_state('init').add_substate(state=InitPoseState(name='moveToInitPose', sm=self))
         self.sm.get_state('init').add_substate(ChampiState(name='waitForUserChooseConfig', sm=self))
         self.sm.get_state('init').add_substate(ChampiState(name='waitForTirette', sm=self))
 
@@ -49,7 +49,8 @@ class ChampiStateMachine(object):
         ## INIT
         self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
         self.sm.add_transition('init_next', 'init_waitForRosInit', 'init_waitForUserChooseConfig', conditions='ros_initialized')
-        self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_waitForTirette', conditions='user_has_choosed_config')
+        self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_moveToInitPose', conditions='user_has_choosed_config')
+        self.sm.add_transition('init_next', 'init_moveToInitPose', 'init_waitForTirette', conditions='goal_reached')
         self.sm.add_transition('init_end', 'init_waitForTirette', 'idle', conditions='tirette_pulled')
         ## BASIC ACTIONS
         self.sm.add_transition('start_move', 'idle', 'move', conditions='can_start_moving')
@@ -106,47 +107,6 @@ class ChampiStateMachine(object):
         # action flags
         self.can_start_action = False
 
-    @staticmethod
-    def load_yaml(file_path):
-        with open(file_path, 'r') as file:
-            data = yaml.safe_load(file)
-        return data
-
-    def load_strategy(self, file_path): # only one recursion level in files
-        data = self.load_yaml(file_path)
-
-        self.init_pose = [data['init_pose']['x'], data['init_pose']['y'], data['init_pose']['theta_deg']+90.0]  # +90° to align with the coordinate system
-        self.itf.get_logger().info(f'<< Init pose will be {self.init_pose[0]} {self.init_pose[1]} {self.init_pose[2]}°!')
-
-        actions = []
-
-        for (i, action) in enumerate(data['actions']):
-            get_logger(self.name).info(f'Action {i}: {action}')
-
-            if action['action'] == 'include_sub_file':
-                sub_file_name = action['file']
-                get_logger(self.name).info(f'SUB {i}: {sub_file_name}')
-                sub_strat = self.load_yaml(get_package_share_directory('champi_brain') + '/scripts/strategies/sub/' + sub_file_name)
-
-                # for transforming coordinates
-                action_coords = action['parameters']['target']
-                x_action, y_action, theta_deg_action = action_coords['x'], action_coords['y'], action_coords['theta_deg']
-
-                for (j, sub_action) in enumerate(sub_strat['actions']):
-                    get_logger(self.name).info(f'Action {i}.{j}: {sub_action}')
-
-                    if sub_action['action'] == 'move':
-                        sub_action = self.apply_transformation(sub_action, x_action, y_action, theta_deg_action)
-
-                    actions.append(sub_action)
-            else:
-                actions.append(action)
-
-        get_logger(self.name).info(f'\n\n')
-        for (i, action) in enumerate(actions):
-            get_logger(self.name).info(f'Action {i}: {action}')
-        return actions
-
     def draw_graph(self, *args, **kwargs): 
         self.sm.get_combined_graph().draw(get_package_share_directory('champi_brain')+'SM_diagram.png', prog='dot')
 
@@ -178,27 +138,3 @@ class ChampiStateMachine(object):
                 exit()
 
             self.strategy.pop(0)
-
-    @staticmethod
-    def apply_transformation(sub_action, x_action, y_action, theta_deg_action):
-
-        # Extract sub_action coordinates
-        x_sub = sub_action['target']['x']
-        y_sub = sub_action['target']['y']
-        theta_sub = sub_action['target']['theta_deg']
-
-        # Convert angles to radians
-        theta_rad = math.radians(theta_deg_action)
-
-        # Apply rotation and translation
-        x_transformed = (x_sub * math.cos(theta_rad) - y_sub * math.sin(theta_rad)) + x_action
-        y_transformed = (x_sub * math.sin(theta_rad) + y_sub * math.cos(theta_rad)) + y_action
-        theta_transformed = (theta_sub + theta_deg_action) % 360
-
-        # Update sub_action with transformed coordinates
-        sub_action['target']['x'] = x_transformed
-        sub_action['target']['y'] = y_transformed
-        sub_action['target']['theta_deg'] = theta_transformed
-
-        return sub_action
-

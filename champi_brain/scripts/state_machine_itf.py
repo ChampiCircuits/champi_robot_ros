@@ -15,6 +15,7 @@ from rclpy.action import ActionClient
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
 import time
+from strategies.strategy_loader import load_strategy
 
 TOTAL_AVAILABLE_TIME = 100
 
@@ -57,7 +58,7 @@ class ChampiStateMachineITF(Node):
 
         # # Strategy
         self.get_logger().info('>> Loading strategy...')
-        self.champi_sm.strategy = self.champi_sm.load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param)
+        self.champi_sm.strategy, self.champi_sm.init_pose = load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param, self.get_logger())
         self.get_logger().info(f'<< Strategy {strategy_file_param} loaded!')
 
         # Action client for /navigate
@@ -102,8 +103,8 @@ class ChampiStateMachineITF(Node):
         self.champi_sm.end_of_actuator_state = True
 
     def sim_user_choose_strat_and_pose(self):
-        self.init_robot_pose()
-        self.get_logger().info('Pose has been init')
+        # self.init_robot_pose()
+        # self.get_logger().info('Pose has been init')
         self.user_has_chosen_config_callback()
 
     def callback_timer(self):
