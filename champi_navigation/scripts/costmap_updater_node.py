@@ -6,7 +6,6 @@ from nav_msgs.msg import OccupancyGrid, Odometry
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
-from icecream import ic
 import time
 from rclpy.executors import ExternalShutdownException
 
@@ -30,15 +29,47 @@ class CostmapUpdaterNode(Node):
         self.enemy_prediction_time = self.declare_parameter('enemy_pos_prediction_time', rclpy.Parameter.Type.DOUBLE).value
 
         # Create a black image with the specified width and height
-        self.static_layer_img = np.zeros((int(self.grid_height / self.resolution), int(self.grid_width / self.resolution)), np.uint8)
+        self.static_layer_img = np.zeros((round(self.grid_height / self.resolution), round(self.grid_width / self.resolution)), np.uint8)
 
         # Draw borders (robot radius)
-        self.static_layer_img[0:int(self.robot_radius / self.resolution), :] = 100
-        self.static_layer_img[-int(self.robot_radius / self.resolution):, :] = 100
-        self.static_layer_img[:, 0:int(self.robot_radius / self.resolution)] = 100
-        self.static_layer_img[:, -int(self.robot_radius / self.resolution):] = 100
+        self.static_layer_img[0:round(self.robot_radius / self.resolution), :] = 100
+        self.static_layer_img[ -round(self.robot_radius / self.resolution):, :] = 100
+        self.static_layer_img[:, 0:round(self.robot_radius / self.resolution)] = 100
+        self.static_layer_img[:,  -round(self.robot_radius / self.resolution):] = 100
 
-        self.obstacle_layer_img = np.zeros((int(self.grid_height / self.resolution), int(self.grid_width / self.resolution)), np.uint8)
+        # we suppress a bit of the wall to allow certain movements
+        # yellow bottom zone
+        x_start = round(0.55 / self.resolution)
+        x_end = round(1.45 / self.resolution)
+        y_start = round((self.robot_radius / 2) / self.resolution)
+        y_end = round(self.robot_radius / self.resolution)
+        self.static_layer_img[y_start:y_end, x_start:x_end] = 0
+        # blue bottom zone
+        x_start = round((3.0-1.45) / self.resolution)
+        x_end = round((3.0-0.55) / self.resolution)
+        y_start = round((self.robot_radius / 2) / self.resolution)
+        y_end = round(self.robot_radius / self.resolution)
+        self.static_layer_img[y_start:y_end, x_start:x_end] = 0
+        # blue left zone
+        x_start = round((self.robot_radius / 2) / self.resolution)
+        x_end = round(self.robot_radius / self.resolution)
+        y_start = round((0.65) / self.resolution)
+        y_end = round((1.1) / self.resolution)
+        self.static_layer_img[y_start:y_end, x_start:x_end] = 0
+        # yellow right zone
+        x_start = round((3.0-self.robot_radius) / self.resolution)
+        x_end = round((3.0-self.robot_radius/2) / self.resolution)
+        y_start = round((0.65) / self.resolution)
+        y_end = round((1.1) / self.resolution)
+        self.static_layer_img[y_start:y_end, x_start:x_end] = 0
+        # yellow right zone
+        x_start = round((3.0-self.robot_radius) / self.resolution)
+        x_end = round((3.0-self.robot_radius/2) / self.resolution)
+        y_start = round((0.65) / self.resolution)
+        y_end = round((1.1) / self.resolution)
+        self.static_layer_img[y_start:y_end, x_start:x_end] = 0
+
+        self.obstacle_layer_img = np.zeros((round(self.grid_height / self.resolution), round(self.grid_width / self.resolution)), np.uint8)
 
 
         # Subscribe to the enemy position
@@ -74,7 +105,7 @@ class CostmapUpdaterNode(Node):
         self.publisher_.publish(occupancy_grid_msg)
 
     def clear_obstacle_layer(self):
-        self.obstacle_layer_img = np.zeros((int(self.grid_height / self.resolution), int(self.grid_width / self.resolution)), np.uint8)
+        self.obstacle_layer_img = np.zeros((round(self.grid_height / self.resolution), round(self.grid_width / self.resolution)), np.uint8)
 
     def combine_layers(self):
         # Sum the two layers and clip the values to 100
@@ -93,9 +124,9 @@ class CostmapUpdaterNode(Node):
 
 
     def draw_enemy_robot(self, img, x, y):
-        enemy_x = int(round(x / self.resolution))
-        enemy_y = int(round(y / self.resolution))
-        radius = int(np.ceil((self.enemy_robot_radius + self.robot_radius) / self.resolution))
+        enemy_x = round(x / self.resolution)
+        enemy_y = round(y / self.resolution)
+        radius = round(np.ceil((self.enemy_robot_radius + self.robot_radius) / self.resolution))
 
         # Draw enemy robot
         cv2.circle(img, (enemy_x, enemy_y), radius, 100, -1)
