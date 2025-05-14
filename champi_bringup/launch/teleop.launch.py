@@ -7,6 +7,7 @@ from launch.substitutions import LaunchConfiguration
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition, UnlessCondition
+from launch.actions import TimerAction
 
 
 def generate_launch_description():
@@ -20,12 +21,17 @@ def generate_launch_description():
         description='Launch joystick'
     )
 
-    joy_node = Node(
-        package='joy_linux',
-        executable='joy_linux_node',
-        name='game_controller_node',
-        output='screen',
-        condition=IfCondition(LaunchConfiguration('joy'))
+    joy_node = TimerAction(
+        period=30.0, # s. Wait for 5 seconds to allow the system to boot up and discover the dongle
+        actions=[
+            Node(
+                package='joy_linux',
+                executable='joy_linux_node',
+                name='game_controller_node',
+                output='screen',
+                condition=IfCondition(LaunchConfiguration('joy'))
+            )
+        ]
     )
 
     holo_teleop_joy_node = Node(
