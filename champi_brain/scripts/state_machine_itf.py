@@ -103,8 +103,8 @@ class ChampiStateMachineITF(Node):
         self.champi_sm.end_of_actuator_state = True
 
     def sim_user_choose_strat_and_pose(self):
-        # self.init_robot_pose()
-        # self.get_logger().info('Pose has been init')
+        self.init_robot_pose()
+        self.get_logger().info('Pose has been init')
         self.user_has_chosen_config_callback()
 
     def callback_timer(self):

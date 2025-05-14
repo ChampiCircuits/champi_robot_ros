@@ -49,8 +49,8 @@ class ChampiStateMachine(object):
         ## INIT
         self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
         self.sm.add_transition('init_next', 'init_waitForRosInit', 'init_waitForUserChooseConfig', conditions='ros_initialized')
-        self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_moveToInitPose', conditions='user_has_choosed_config')
-        self.sm.add_transition('init_next', 'init_moveToInitPose', 'init_waitForTirette', conditions='goal_reached')
+        self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_waitForTirette', conditions='user_has_choosed_config')
+        # self.sm.add_transition('init_next', 'init_moveToInitPose', 'init_waitForTirette', conditions='goal_reached') # TODO
         self.sm.add_transition('init_end', 'init_waitForTirette', 'idle', conditions='tirette_pulled')
         ## BASIC ACTIONS
         self.sm.add_transition('start_move', 'idle', 'move', conditions='can_start_moving')
@@ -116,6 +116,7 @@ class ChampiStateMachine(object):
 
         if len(self.strategy) == 0:
             get_logger(self.name).warn(f'End of actions ! Staying in [{self.state}].')
+            get_logger(self.name).info(f'All actions in {100-self.itf.time_left} seconds.')
         else:
             action = self.strategy[0]
             get_logger(self.name).info(f'{action}')
