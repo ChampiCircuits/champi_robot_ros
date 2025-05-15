@@ -3,9 +3,9 @@ __pycache__
 compile_commands.json
 .idea
 
-build/*
-install/*
-log/*
+build
+install
+log
 champi_isaac_simu/resource/.thumbs/256x256/robot_wheels.usd.png
 champi_isaac_simu/resource/new_flattened_robot.usd
 champi_isaac_simu/resource/robot_wheels.usd

@@ -23,7 +23,7 @@ class CmdVelUpdaterInterface:
         self.stat_error_theta = None
 
 
-    def compute_cmd_vel(self, p: PathFollowParams):
+    def compute_cmd_vel(self, dt, p: PathFollowParams):
         """See class description.
 
         Args:
@@ -58,7 +58,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         self.pid_correct_dir = PID(5, 0, 1)
 
 
-    def compute_cmd_vel(self, p: PathFollowParams):
+    def compute_cmd_vel(self, dt, p: PathFollowParams):
 
 
         # ====================== Heading of the robot ======================
@@ -71,9 +71,13 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
 
         # 2) Correction of the angle of the heading using PID (to follow the line better)
 
-        # 2.a) Commpute the error "dist".
+        # 2.a) Compute the error "dist".
         # If the robot is further from the line it's supposed to follow, the error is greater.
-        dist = p.robot_state.pose.dist_to_line_signed(p.segment_start, p.segment_end)
+        # But if the line is a point (i.e only a rotation is required), the error is 0.
+        if p.segment_start.x == p.segment_end.x and p.segment_start.y == p.segment_end.y:
+            dist = 0
+        else:
+            dist = p.robot_state.pose.dist_to_line_signed(p.segment_start, p.segment_end)
 
         # 2.b) PID correction
         correction = self.pid_correct_dir.update(dist, 0.1)
@@ -103,8 +107,8 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         constraints_mag = TrapezoidProfile.Constraints(p.max_speed_linear, p.max_acc_linear)
         current_state_mag = TrapezoidProfile.State(-dist_robot_to_goal, x_y_speed)
         goal_state_mag = TrapezoidProfile.State(0, p.end_speed)
-        profile_mag = TrapezoidProfile(constraints_mag, goal_state_mag, current_state_mag)
-        cmd_vel_x_y = profile_mag.calculate(0.1).velocity
+        profile_mag = TrapezoidProfile(constraints_mag)
+        cmd_vel_x_y = profile_mag.calculate(dt, current_state_mag, goal_state_mag).velocity
 
 
         # ========================= Angular velocity =========================
@@ -131,12 +135,12 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         constraints_theta = TrapezoidProfile.Constraints(p.max_speed_angular, p.max_acc_angular)
         current_state_theta = TrapezoidProfile.State(-theta_error, p.robot_state.vel.theta)
         goal_state_theta = TrapezoidProfile.State(0, 0)
-        profile_theta = TrapezoidProfile(constraints_theta, goal_state_theta, current_state_theta)
-        cmd_vel_theta = profile_theta.calculate(0.1).velocity  # TODO pass dt as argument
+        profile_theta = TrapezoidProfile(constraints_theta)
+        cmd_vel_theta = profile_theta.calculate(dt, current_state_theta, goal_state_theta).velocity
 
         # ========================= Final velocity command =========================
 
-        # All left to do is compute the the velocity command in the ros format (linear x, linear y, angular z).
+        # All left to do is compute the velocity command in the ros format (linear x, linear y, angular z).
         # The heading angle and the x_y_speed can be thought as the direction and the magnitude of a 2D velocity vector.
 
         cmd_vel = Vel2D()

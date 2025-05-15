@@ -16,10 +16,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 
-# add_executable(enemy_detection_node src/enemy_detection_node.cpp)
-# ament_target_dependencies(enemy_detection_node rclcpp sensor_msgs tf2_ros)
-
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -46,7 +42,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-        scripts/aruco_loc_node.py
+        scripts/aruco_localizer_node.py
         scripts/camera_info_publisher_node.py
         scripts/bird_view_publisher_node.py
         scripts/cv2_camera_publisher_node.py

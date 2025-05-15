@@ -2,6 +2,7 @@
 
 from math import sqrt, cos, sin, atan2
 import time
+import numpy
 
 import rclpy
 from rclpy.node import Node
@@ -12,7 +13,6 @@ from tf2_ros import TransformBroadcaster
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TwistStamped, Twist
 from geometry_msgs.msg import PoseWithCovarianceStamped
-from sensor_msgs.msg import Imu
 
 
 from rclpy.executors import ExternalShutdownException
@@ -27,26 +27,26 @@ class HoloBaseControlDummy(Node):
         super().__init__('holo_base_control_dummy_node')
 
         # Parameters
-        self.declare_parameter('enable_accel_limits', True)
-        self.declare_parameter('max_acceleration_linear', 0.2)  # Change these values in the config file, not here!
-        self.declare_parameter('max_acceleration_angular', 2.0)
-        self.declare_parameter('max_deceleration_linear', 1.0)
-        self.declare_parameter('max_deceleration_angular', 6.0)
-        self.declare_parameter('imu_vel_yaw_cov', 0.01)
+        self.declare_parameter('enable_accel_limits', rclpy.Parameter.Type.BOOL)
+        self.declare_parameter('max_acceleration_linear', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_acceleration_angular', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_deceleration_linear', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_deceleration_angular', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_acceleration_wheel', rclpy.Parameter.Type.DOUBLE)
         # Get parameters
         self.enable_accel_limits_ = self.get_parameter('enable_accel_limits').value
         self.max_acceleration_linear_ = self.get_parameter('max_acceleration_linear').value
         self.max_acceleration_angular_ = self.get_parameter('max_acceleration_angular').value
         self.max_deceleration_linear_ = self.get_parameter('max_deceleration_linear').value
         self.max_deceleration_angular_ = self.get_parameter('max_deceleration_angular').value
-        self.imu_vel_yaw_cov_ = self.get_parameter('imu_vel_yaw_cov').value
+        self.max_acceleration_wheel = self.get_parameter('max_acceleration_wheel').value
         # Print parameters
         get_logger('rclpy').info(f"enable_accel_limits: {self.enable_accel_limits_}")
         get_logger('rclpy').info(f"max_acceleration_linear: {self.max_acceleration_linear_}")
         get_logger('rclpy').info(f"max_acceleration_angular: {self.max_acceleration_angular_}")
         get_logger('rclpy').info(f"max_deceleration_linear: {self.max_deceleration_linear_}")
         get_logger('rclpy').info(f"max_deceleration_angular: {self.max_deceleration_angular_}")
-        get_logger('rclpy').info(f"imu_vel_yaw_cov: {self.imu_vel_yaw_cov_}")
+        get_logger('rclpy').info(f"max_acceleration_wheel: {self.max_acceleration_wheel}")
 
         self.subscription = self.create_subscription(
             Twist,
@@ -55,22 +55,10 @@ class HoloBaseControlDummy(Node):
             10)
         self.subscription  # prevent unused variable warning
 
-        self.pub = self.create_publisher(Odometry, '/odom', 10)
-        self.pub_imu = self.create_publisher(Imu, '/imu', 10)
-        self.pub_cmd_vel_limited = self.create_publisher(Twist, '/base_controller/cmd_vel_limited', 10)
+        self.pub = self.create_publisher(Odometry, '/odom_otos', 10)
 
-        self.subscription_initial_pose = self.create_subscription(
-            PoseWithCovarianceStamped,
-            '/initialpose',
-            self.initial_pose_callback,
-            10)
-
-
-        # Initialize the transform broadcaster
-        self.tf_broadcaster = TransformBroadcaster(self)
-
-        timer_period = 0.02  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.timer_period = 0.02  # seconds
+        self.timer = self.create_timer(self.timer_period, self.timer_callback)
 
         # Node variables
         self.latest_cmd_vel = [0., 0., 0.]
@@ -86,8 +74,6 @@ class HoloBaseControlDummy(Node):
 
         self.robot_radius = 0.175
 
-        self.cnt = 0
-
         self.dt_ = 0.02
         self.last_time_ = 0.0
 
@@ -98,10 +84,11 @@ class HoloBaseControlDummy(Node):
         self.latest_cmd_vel = [msg.linear.x, msg.linear.y, msg.angular.z]
         self.t_last_cmd_vel_ = time.time()
 
-    def initial_pose_callback(self, msg):
-        self.current_pose[0] = msg.pose.pose.position.x
-        self.current_pose[1] = msg.pose.pose.position.y
-        self.current_pose[2] = get_yaw(msg.pose.pose)
+        # add small noise to the cmd_vel to resemble the real world
+        if self.latest_cmd_vel[0] != 0 or self.latest_cmd_vel[1] != 0 or self.latest_cmd_vel[2] != 0:
+            self.latest_cmd_vel[0] += 0 #numpy.random.normal(0, 0.002)
+            self.latest_cmd_vel[1] += 0 # numpy.random.normal(0, 0.002)
+            self.latest_cmd_vel[2] += 0 # numpy.random.normal(0, 0.01)
 
     # Returns the velocity with limited acceleration applied
     def limit_accel(self, current_speed, goal_speed, max_acceleration, dt):
@@ -172,14 +159,6 @@ class HoloBaseControlDummy(Node):
         if time.time() - self.t_last_cmd_vel_ > 0.5:
             self.latest_cmd_vel = [0., 0., 0.]
 
-        # # comppute speed of the robot and print it
-        # speed = sqrt(self.current_vel[0]**2 + self.current_vel[1]**2)
-        # # print 1/20 times
-        # if self.cnt == 20:
-        #     # rclpy.logging.get_logger('rclpy').info(f"Speed: {speed}")
-        #     self.cnt = 0
-        # self.cnt += 1
-
         # Compute dt
         if self.last_time_ == 0.0:
             self.last_time_ = time.time()
@@ -212,16 +191,9 @@ class HoloBaseControlDummy(Node):
         self.cmd_vel_to_wheels(cmd_vx_limited, cmd_vy_limited, cmd_wz_limited)
         self.wheels_to_current_vel()
 
-        # Publish the limited cmd_vel
-        cmd_vel_limited = Twist()
-        cmd_vel_limited.linear.x = cmd_vx_limited
-        cmd_vel_limited.linear.y = cmd_vy_limited
-        cmd_vel_limited.angular.z = cmd_wz_limited
-        self.pub_cmd_vel_limited.publish(cmd_vel_limited)
-
         self.update_pose()
 
-        # Publish the odometry
+        # Publish the odometry # TODO rotation and rotation vel are not taken in account by ukf
         odom = Odometry()
         odom.header.stamp = self.get_clock().now().to_msg()
         odom.header.frame_id = "odom"
@@ -237,45 +209,6 @@ class HoloBaseControlDummy(Node):
         odom.pose.pose.orientation.z = sin(self.current_pose[2] / 2)
         odom.pose.pose.orientation.w = cos(self.current_pose[2] / 2)
         self.pub.publish(odom)
-
-        # Publish the imu (yaw vel only)
-        imu = Imu()
-        imu.header.stamp = self.get_clock().now().to_msg()
-        imu.header.frame_id = "imu_link"
-        imu.angular_velocity.z = self.current_vel[2]
-        # Put diagonal covariance
-        imu.angular_velocity_covariance = [self.imu_vel_yaw_cov_, 0., 0., 0., self.imu_vel_yaw_cov_, 0., 0., 0., self.imu_vel_yaw_cov_]
-        self.pub_imu.publish(imu)
-
-
-        # Broadcast the transform
-        # t = TransformStamped()
-        # t.header.stamp = self.get_clock().now().to_msg()
-        # t.header.frame_id = "odom"
-        # t.child_frame_id = "base_link"
-        # t.transform.translation.x = self.current_pose[0]
-        # t.transform.translation.y = self.current_pose[1]
-        # t.transform.translation.z = 0.
-        # t.transform.rotation.x = 0.
-        # t.transform.rotation.y = 0.
-        # t.transform.rotation.z = sin(self.current_pose[2] / 2)
-        # t.transform.rotation.w = cos(self.current_pose[2] / 2)
-        # self.tf_broadcaster.sendTransform(t)
-
-
-        # Broadcast zero transform between map and odom
-        # t = TransformStamped()
-        # t.header.stamp = self.get_clock().now().to_msg()
-        # t.header.frame_id = "map"
-        # t.child_frame_id = "odom"
-        # t.transform.translation.x = 0.
-        # t.transform.translation.y = 0.
-        # t.transform.translation.z = 0.
-        # t.transform.rotation.x = 0.
-        # t.transform.rotation.y = 0.
-        # t.transform.rotation.z = 0.
-        # t.transform.rotation.w = 1.
-        # self.tf_broadcaster.sendTransform(t)
 
 
 
@@ -303,15 +236,15 @@ class HoloBaseControlDummy(Node):
         abs_accel_roue_2 = abs(accel_roue_2)
         abs_accel_roues = [abs_accel_roue_0, abs_accel_roue_1, abs_accel_roue_2]
 
-        MAX_ACCEL_PER_CYCLE = 0.05 # TODO
+        max_accel_per_cycle = self.max_acceleration_wheel * self.timer_period
 
-        if abs_accel_roue_0 < MAX_ACCEL_PER_CYCLE and abs_accel_roue_1 < MAX_ACCEL_PER_CYCLE and abs_accel_roue_2 < MAX_ACCEL_PER_CYCLE:
+        if abs_accel_roue_0 < max_accel_per_cycle and abs_accel_roue_1 < max_accel_per_cycle and abs_accel_roue_2 < max_accel_per_cycle:
             # acceleration requested is ok, no need to accelerate gradually.
             self.speed_wheel0 = cmd_vitesse_roue0
             self.speed_wheel1 = cmd_vitesse_roue1
             self.speed_wheel2 = cmd_vitesse_roue2
         else:
-            speed_ratio = MAX_ACCEL_PER_CYCLE / max(abs_accel_roues)
+            speed_ratio = max_accel_per_cycle / max(abs_accel_roues)
             self.speed_wheel0 += speed_ratio * accel_roue_0
             self.speed_wheel1 += speed_ratio * accel_roue_1
             self.speed_wheel2 += speed_ratio * accel_roue_2

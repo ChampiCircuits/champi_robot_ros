@@ -20,7 +20,6 @@ def generate_launch_description():
                 # {"image_size": [1640, 1232]},
                 # {"time_per_frame": [1, 5]},
                 {"camera_info_url": calib_file}
-        ]
-        )
+            ]
+        ) # NOTE: Meilleure perf CPU avec gpu memoy + faible ! car cela limitait artificiellement les FPS
     ])
-# TODO meilleure perf CPU avec gpu memoy + faible ! car cela limitait artificiellement les FPS

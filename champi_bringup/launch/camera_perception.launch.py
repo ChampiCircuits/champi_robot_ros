@@ -12,22 +12,25 @@ def generate_launch_description():
     # Get configuration file
     config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
 
-    raspi_cam_launch = IncludeLaunchDescription(
-        launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('champi_vision'),
-            '/launch/raspi_cam.launch.py'
-        ])
+
+# https://github.com/IntelRealSense/realsense-ros/blob/ros2-master/README.md
+    realsense2_camera_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            get_package_share_directory('realsense2_camera'),
+            '/launch/rs_launch.py'
+        ]),
+        launch_arguments={'pointcloud.enable': 'true'}.items()
     )
 
     visual_loc = Node(
             package="champi_vision",
-            executable="aruco_loc_node.py",
+            executable="aruco_localizer_node.py",
             name='aruco_loc',
             output='screen'
     )
 
     return LaunchDescription([
-        raspi_cam_launch,
+        realsense2_camera_launch,
         visual_loc
     ])
 

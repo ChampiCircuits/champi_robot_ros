@@ -1,0 +1,1 @@
+../../../stm_main_board/Core/Inc/Application/Modbus/hw_actuators.h

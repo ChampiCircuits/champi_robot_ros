@@ -1,0 +1,6 @@
+#ifndef INC_APPLICATION_SYSTASK_H_
+#define INC_APPLICATION_SYSTASK_H_
+
+void SysTaskStart();
+
+#endif /* INC_APPLICATION_SYSTASK_H_ */

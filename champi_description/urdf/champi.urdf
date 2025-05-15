@@ -34,16 +34,14 @@
   <joint name="base_to_lidar" type="fixed">
     <parent link="base_link"/>
     <child link="base_laser"/>
-    <origin xyz="0 0 0.3" rpy="0 0 1.57"/>
+    <origin xyz="0 0 0.3" rpy="0 0 -1.57"/>
   </joint>
 
   <!-- Joint between base_link and camera -->
   <joint name="base_to_camera" type="fixed">
     <parent link="base_link"/>
     <child link="camera_link"/>
-    <origin xyz="0.15 0. 0.31" rpy="-2.20 0.0 -1.57079632679"/> <!--NEW TRANFORMATION ANGLE = 35deg -->
-    <!-- <origin xyz="0.15 0. 0.31" rpy="-2.35 0.0 -1.57079632679"/>  TRANFORMATION ANGLE = 40 deg -->
-    <!-- <origin xyz="0.15 0 0.3" rpy="0.78539816339 3.14159265359 1.57079632679"/>--> <!-- old TRANFORMATION -->
+    <origin xyz="0.095087 0.038579 0.302585" rpy="0 0.785398163398 0"/>
     <!-- xyz = roll pitch yaw -->
   </joint>
 

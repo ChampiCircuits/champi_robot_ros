@@ -44,8 +44,8 @@ class PathFollowParams:
         """This method should be called each time a new ctrl_goal is received.
         It will update all the attributs, according to this new ctrl_goal.
 
-        /!\ We also need to pass the current robot state, as the segment_start is the current pose of the robot.
-        Why do we do we update segment_start here and not in update_robot_state? Because we want to keep the segment_start
+        ! We also need to pass the current robot state, as the segment_start is the current pose of the robot.
+        Why do we update segment_start here and not in update_robot_state? Because we want to keep the segment_start
         until we get a new ctrl_goal. This way, we keep the same segment to follow during the whole existence of a ctrl_goal.
         This is needed to compute the error to the segment the robot is supposed to follow. Otherwise, the segment would be
         following the robot, thus the error would always be 0.

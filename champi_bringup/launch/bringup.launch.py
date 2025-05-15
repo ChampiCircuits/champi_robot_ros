@@ -43,10 +43,10 @@ def generate_launch_description():
         description='Launch lidar perception (true|false)',
     )
 
-    joy_arg = DeclareLaunchArgument(
-        'joy',
+    teleop_arg = DeclareLaunchArgument(
+        'teleop',
         default_value='False',
-        description='Launch joystick (true|false)',
+        description='Launch teleop (true|false)',
     )
 
     act_arg = DeclareLaunchArgument(
@@ -54,10 +54,6 @@ def generate_launch_description():
         default_value='False',
         description='Launch actuator controller (true|false)',
     )
-
-    # Get configuration file
-    config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
-
 
     base_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource([
@@ -98,17 +94,8 @@ def generate_launch_description():
             get_package_share_directory('champi_bringup'),
             '/launch/teleop.launch.py'
         ]),
-        condition=IfCondition(LaunchConfiguration('joy'))
+        condition=IfCondition(LaunchConfiguration('teleop'))
     )
-
-    act_controller_launch = IncludeLaunchDescription(
-        launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('champi_controllers'),
-            '/launch/act_controller.launch.py'
-        ]),
-        condition=IfCondition(LaunchConfiguration('act'))
-    )
-
 
 
     return LaunchDescription([
@@ -117,7 +104,7 @@ def generate_launch_description():
         nav_arg,
         camera_perception_arg,
         lidar_perception_arg,
-        joy_arg,
+        teleop_arg,
         act_arg,
 
         base_launch,
@@ -125,6 +112,5 @@ def generate_launch_description():
         camera_perception_launch,
         lidar_perception_launch,
         teleop_launch,
-        act_controller_launch
     ])
 

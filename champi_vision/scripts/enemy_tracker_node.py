@@ -176,6 +176,7 @@ class EnemyTracker(Node):
         point_stamped.point.z = 0.0
         # no need to fill the header because it is not used (see implementation of do_transform_point)
 
+        when = rclpy.time.Time().to_msg()  # équivalent à Time(0)
         try:
             transform = self.tf_buffer.lookup_transform(child_frame,
                                                         parent_frame,

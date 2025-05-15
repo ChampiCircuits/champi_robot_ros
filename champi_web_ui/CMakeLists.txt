@@ -15,6 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(champi_interfaces REQUIRED)
 
 # Include Cpp "include" directory
 include_directories(include)
@@ -34,7 +35,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  # scripts/web_interface.py
+   scripts/modularization/main.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
