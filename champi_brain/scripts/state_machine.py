@@ -86,7 +86,7 @@ class ChampiStateMachine(object):
                             'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
                             'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
                             'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
-                            'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2']
+                            'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2', 'RESET_ACTUATORS']
 
         path = get_package_share_directory('champi_brain') + '/SM_diagram.png'
         get_logger(self.name).warn(f'PATH: {path}')

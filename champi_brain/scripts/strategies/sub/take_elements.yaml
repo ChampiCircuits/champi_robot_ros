@@ -1,13 +1,15 @@
 ##########################################
 # IN SUB FILES, EVERY POSITION ARE OFFSETS
 ##########################################
+# we assume center robot to center of plank taker is 0.21
+# so target pose passed as argument is the position to put/take the planks
 # o -----> y
 # |
 # v
 # x
 actions:
-  - action: move
-    target: { x: 0.0, y: -0.21, theta_deg: -60.0 } # aller devant les conserves, en peu en recul
+  - action: move #-0.01 car l'actionneur est décentré
+    target: { x: -0.01, y: -0.21, theta_deg: -60.0 } # aller devant les conserves, en peu en recul
 
   - action: TAKE_LOWER_PLANK
 
@@ -17,7 +19,7 @@ actions:
   - action: TAKE_CANS_LEFT
 
   - action: move
-    target: { x: -0.1, y: -0.22, theta_deg: 60.0 } # recule
+    target: { x: -0.1, y: -0.24, theta_deg: 60.0 } # recule
 
   - action: move
     target: { x: 0.1, y: -0.21, theta_deg: 60.0 } # re-avance mais avec le côté de l'actionneur en face

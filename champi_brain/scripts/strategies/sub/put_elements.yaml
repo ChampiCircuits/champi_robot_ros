@@ -1,31 +1,27 @@
 ##########################################
 # IN SUB FILES, EVERY POSITION ARE OFFSETS
 ##########################################
+# we assume center robot to center of plank taker is 0.21
+# so target pose passed as argument is the position to put/take the planks
 # o -----> y
 # |
 # v
 # x
-actions: # TODO le -0.21 comme dans take
+actions:
   - action: move
-    target: { x: 0.0, y: 0.0, theta_deg: -60.0 } # pour aller en position
+    target: { x: 0.0, y: -0.21, theta_deg: -60.0 } # pour aller en position
 
   - action: PUT_CANS_LEFT_LAYER_1
   - action: PUT_LOWER_PLANK_LAYER_1
   - action: TAKE_UPPER_PLANK
 
   - action: move
-    target: { x: 0.0, y: -0.01, theta_deg: -60.0 } # recule
-
-  - action: move
-    target: { x: 0.0, y: 0.0, theta_deg: 60.0 } # re-avance mais avec le côté RIGHT de l'actionneur en face
+    target: { x: 0.0, y: -0.21, theta_deg: 60.0 } # tourne avec le côté RIGHT de l'actionneur en face
 
   - action: PUT_CANS_RIGHT_LAYER_2
 
   - action: move
-    target: { x: 0.0, y: -0.01, theta_deg: 60.0 } # recule
-
-  - action: move
-    target: { x: 0.0, y: 0.0, theta_deg: -60.0 } # re-avance
+    target: { x: 0.0, y: -0.21, theta_deg: -60.0 } # tourne avec le côté LEFT de l'actionneur en face
 
   - action: PUT_UPPER_PLANK_LAYER_2
 
