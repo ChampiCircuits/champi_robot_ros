@@ -70,6 +70,7 @@ class ChampiStateMachineITF(Node):
             self.get_logger().info('>> Loading DEFAULT strategy...')
             self.champi_sm.strategy, self.champi_sm.init_pose = load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param, self.get_logger())
             self.get_logger().info(f'<< DEFAULT Strategy {strategy_file_param} loaded!')
+            self.get_logger().info(f'<< Init pose {self.champi_sm.init_pose}')
             self.champi_sm.user_has_chosen_config = True
             self.sim_user_choose_strat_and_pose() # TODO remove
 
@@ -108,6 +109,7 @@ class ChampiStateMachineITF(Node):
         self.get_logger().info('>> Loading strategy...')
         self.champi_sm.strategy, self.champi_sm.init_pose = load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param, self.get_logger())
         self.get_logger().info(f'<< Strategy {strategy_file_param} loaded!')
+        self.get_logger().info(f'<< Init pose {self.champi_sm.init_pose}')
         self.champi_sm.user_has_chosen_config = True
         self.sim_user_choose_strat_and_pose() # TODO remove
 

@@ -46,9 +46,10 @@ void OtosTask(void *argument) {
   // We wait for the config to be set by the master
   while (!mod_reg::config->is_set) {
     LOG_WARN_THROTTLE("otos", 100, "Waiting for config...");
-
     osDelay(100);
   }
+
+  led_otos::setOrange();
 
   myOtos.setAngularScalar(mod_reg::config->otos_config.angular_scalar);
   myOtos.setLinearScalar(mod_reg::config->otos_config.linear_scalar);
@@ -56,10 +57,10 @@ void OtosTask(void *argument) {
   myOtos.setOffset({OTOS_OFFSET_X, OTOS_OFFSET_Y, OTOS_OFFSET_H});
 
   myOtos.calibrateImu();
-  osDelay(10);
+  osDelay(50);
 
   myOtos.resetTracking();
-  osDelay(10);
+  osDelay(50);
 
   uint32_t start = osKernelGetTickCount();
 
@@ -79,8 +80,8 @@ void OtosTask(void *argument) {
     Pose2D otosPose = myOtos.getPosition();
 
 
-    LOG_DEBUG_THROTTLE("otos", 100, "reading: \t%f, \t%f, \t%f", otosPose.x,
-                       otosPose.y, otosPose.h);
+    // LOG_DEBUG_THROTTLE("otos", 100, "reading: \t%f, \t%f, \t%f", otosPose.x,
+    //                    otosPose.y, otosPose.h);
 
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
     mod_reg::state->otos_pose = {otosPose.x, otosPose.y, otosPose.h};

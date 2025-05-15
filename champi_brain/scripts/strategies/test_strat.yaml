@@ -8,24 +8,55 @@ init_pose: { x: 1.25, y: 0.3, theta_deg: 0.0 } # dans la zone de départ jaune e
 actions:
 ######################### BANNER ###############################################
 
-  - action: include_sub_file
-    file: 'put_banner.yaml'
-    parameters:
-      target: { x: 1.25, y: 0.16, theta_deg: 0.0 }
+#  - action: include_sub_file
+#    file: 'put_banner.yaml'
+#    parameters:
+#      target: { x: 1.25, y: 0.16, theta_deg: 0.0 }
 
 ######################### TAKE FIRST ELEMENT GROUP ######################################
+
+#  - action: include_sub_file
+#    file: 'take_elements.yaml'
+#    parameters:
+#        target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
+#
+########################### PUT FIRST ELEMENT GROUP ######################################
+#
+#  - action: include_sub_file
+#    file: 'put_elements.yaml'
+#    parameters:
+#      target: { x: 1.225, y: 0.1, theta_deg: 180.0 }
+
+
+######################### TAKE SECOND ELEMENT GROUP ######################################
+  - action: move
+    target: { x: 1.2, y: 0.6, theta_deg: 60.0 } # move a bit to middle
 
   - action: include_sub_file
     file: 'take_elements.yaml'
     parameters:
-        target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
+      target: { x: 0.775, y: 0.21, theta_deg: 180.0 } # TODO normalement la pose c'est 0.25
 
-########################## PUT FIRST ELEMENT GROUP ######################################
+########################## PUT SECOND ELEMENT GROUP ######################################
 
   - action: include_sub_file
     file: 'put_elements.yaml'
     parameters:
       target: { x: 1.225, y: 0.3, theta_deg: 180.0 }
+
+######################### TAKE THIRD ELEMENT GROUP ######################################
+
+#  - action: include_sub_file
+#    file: 'take_elements.yaml'
+#    parameters:
+#      target: { x: 0.075, y: 0.4, theta_deg: 90.0 }
+#
+########################### PUT THIRD ELEMENT GROUP ######################################
+#
+#  - action: include_sub_file
+#    file: 'put_elements.yaml'
+#    parameters:
+#      target: { x: 0.775, y: 0.075, theta_deg: 180.0 }
 
 ################################# COME HOME #############################################
 
@@ -33,3 +64,5 @@ actions:
     file: 'come_home.yaml'
     parameters:
       target: { x: 1.225, y: 0.3, theta_deg: 0.0 } # move back to start
+
+  - action: RESET_ACTUATORS

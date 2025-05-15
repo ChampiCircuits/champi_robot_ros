@@ -47,8 +47,6 @@ class PagesNode(Node):
             )
 
 
-            ui.timer(0.5, self.check_tirette)
-
             self.c = 0
             print("Node created !")
 
@@ -58,10 +56,8 @@ class PagesNode(Node):
     def odom_otos_callback(self, msg):
         self.last_odom_otos_time = time.time()
     def stm_state_callback(self, msg):
-        self.last_stm_state = msg.data
-    def check_tirette(self):
-        if self.last_stm_state and self.last_stm_state.tirette_released:
-            ui.open('/in_match')  # redirige vers la page
+        self.last_stm_state = msg
+
     def pub_strategy(self, strategy):
         print(f"Strategy set to {strategy}")
 
