@@ -51,6 +51,12 @@ class LocNode(Node):
             self.set_pose_callback,
             qos_profile
         )
+        self.aruco_pose_sub = self.create_subscription(
+            PoseWithCovarianceStamped,
+            '/aruco_loc/pose',
+            self.aruco_pose_callback,
+            10
+        )
 
         # Publishers
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
@@ -69,6 +75,11 @@ class LocNode(Node):
         self.latest_set_pose = msg
         self.robot_pose_when_set_pose = self.latest_robot_pose
         self.get_logger().info("Set pose received")
+
+    def aruco_pose_callback(self, msg: PoseWithCovarianceStamped):
+        self.latest_set_pose = msg
+        self.robot_pose_when_set_pose = self.latest_robot_pose
+        self.get_logger().info("Aruco pose received")
 
     def odom_callback(self, msg: Odometry):
         self.latest_robot_pose = msg

@@ -10,7 +10,7 @@ from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from nav_msgs.msg import Odometry
 from robot_localization.srv import SetPose
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 
 from cv_bridge import CvBridge
 
@@ -19,7 +19,7 @@ import cv2
 import numpy as np
 import os
 
-from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation
 
 import champi_vision.bird_view as bv
 from champi_vision.aruco_localizer import ArucoDetector, Visualizer
@@ -73,7 +73,7 @@ class ArucoLocalizerNode(Node):
         self.image_subscriber  # prevent unused variable warning
 
         # Publisher for the visual localization and the image visualization
-        self.pub_pose = self.create_publisher(PoseStamped, '/aruco_loc/pose', 10)
+        self.pub_pose = self.create_publisher(PoseWithCovarianceStamped, '/aruco_loc/pose', 10)
         self.publisher_viz = self.create_publisher(Image, '/viz/image_detection', 10)
 
         self.aruco_detector = ArucoDetector()
@@ -154,6 +154,7 @@ class ArucoLocalizerNode(Node):
         # get the first marker
         pose_aruco_in_bv = poses_markers[0]
         id_marker = ids_markers[0]
+        self.get_logger().debug(f"tag detected: {id_marker}")
 
         # ========================= ARUCO -> ROBOT POSE ESTIMATION =====================================
 
@@ -168,41 +169,36 @@ class ArucoLocalizerNode(Node):
         elif id_marker==21:
             x = 2.-0.45-0.12/2.
             y = 0.7+0.12/2.
-        elif id_marker==22:
-            x = 0.5+0.12/2.
-            y = 3.-0.7-0.12/2.
+        elif id_marker==22: # todo x and y are inversed
+            x = 0.5+0.12/2. # TODO the other tags
+            y = 0.7-0.12/2.
         elif id_marker==23:
             x = 0.5+0.12/2.
             y = 0.7+0.12/2.
-
         pos_aruco_in_world = np.array([x, y, 1])
 
         # Now we have the position of the aruco tag relative to the robot, and we know the position of the tag in the world.
         # We can compute the position of the robot in the world frame. We do this computation using pos_aruco_in_bv_m, pos_aruco_in_world and angle_aruco_in_bv
 
-        # ic(pos_aruco_in_bv_m, pos_aruco_in_world, angle_aruco_in_bv)
+        angle_robot = pose_aruco_in_bv[2] + np.pi/2
+        rot_mat_robot = Rotation.from_euler('z', angle_robot, degrees=False).as_matrix()
+        pos_robot_in_world = pos_aruco_in_world[:2] - rot_mat_robot[:2, :2] @ pos_aruco_in_bv_m[:2]
+        pose_robot = [pos_robot_in_world[0], pos_robot_in_world[1], angle_robot]
 
-        # Compute the position of the robot in the world frame
-        pos_robot_in_world = pos_aruco_in_world - np.matmul(R.from_euler('z', pose_aruco_in_bv[2], degrees=False).as_matrix(), pos_aruco_in_bv_m)
-
-        # ic(pos_robot_in_world)
-
-        pose_robot = [pos_robot_in_world[0], pos_robot_in_world[1], pose_aruco_in_bv[2]]
         self.publish_pose(pose_robot)
-
         self.do_viz(bird_view_img, True, pose_aruco_in_bv)
 
     
-    def publish_pose(self, pose: PoseStamped):
-        msg = PoseStamped()
+    def publish_pose(self, pose: list):
+        msg = PoseWithCovarianceStamped()
         msg.header.frame_id = 'odom'
-        msg.pose.position.x = pose[0]
-        msg.pose.position.y = pose[1]
-        msg.pose.position.z = 0.
-        msg.pose.orientation.x = 0.
-        msg.pose.orientation.y = 0.
-        msg.pose.orientation.z = np.sin(pose[2]/2)
-        msg.pose.orientation.w = np.cos(pose[2]/2)
+        msg.pose.pose.position.x = pose[0]
+        msg.pose.pose.position.y = pose[1]
+        msg.pose.pose.position.z = 0.
+        msg.pose.pose.orientation.x = 0.
+        msg.pose.pose.orientation.y = 0.
+        msg.pose.pose.orientation.z = np.sin(pose[2]/2)
+        msg.pose.pose.orientation.w = np.cos(pose[2]/2)
         self.pub_pose.publish(msg)
 
 
