@@ -17,7 +17,7 @@ interactive_image_table = None
 last_odom_time_label, tirette_label, e_stop_label = None, None, None
 radio_strategy_selection = None
 
-src = 'champi_web_ui/scripts/modularization/resources/table_2024.png'
+src = 'champi_web_ui/scripts/modularization/resources/table_2025.png'
 
 def ready_to_launch_match():
     container.clear()
@@ -101,7 +101,6 @@ def create() -> None:
                             ui.button('Retour', on_click=stepper.previous).props('flat')
 
                     with ui.step('Check rapide des nodes'):
-
                         global last_odom_time_label
                         last_odom_time_label = ui.label('Dernier msg otos: ??')
                         ui.timer(1.0, update_label_odom)
@@ -141,10 +140,10 @@ def update_label_tirette_bau():
         # Tirette
         if ros_node.last_stm_state.tirette_released:
             tirette_status = 'Relâchée'
-            tirette_emoji = '✅'
+            tirette_emoji = '🛑'
         else:
             tirette_status = 'Enfoncée'
-            tirette_emoji = '🛑'
+            tirette_emoji = '✅'
 
         # Arrêt d'urgence
         if ros_node.last_stm_state.e_stop_pressed:

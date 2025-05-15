@@ -4,7 +4,7 @@ source /opt/ros/jazzy/setup.bash
 source /home/champi/champi_ws/install/setup.bash
 
 echo "Attente avant le démarrage complet du pc..."
-sleep 20
+sleep 15
 
 echo "Lancement du serveur web sur le port 8080 !"
 python3 ~/champi_ws/src/champi_robot_ros/champi_web_ui/scripts/modularization/main.py &
