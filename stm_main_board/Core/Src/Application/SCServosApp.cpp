@@ -40,6 +40,7 @@ namespace devices
         void set_enable(bool enable) {
             for (const auto id : ids_servos) {
                 servos.EnableTorque(id, enable);
+                osDelay(1);
             }
         }
 
@@ -61,6 +62,7 @@ namespace devices
                 position = 1023;
             }
             servos.WritePos(id, position, ms);
+            osDelay(1);
         }
 
         void test_angle(uint8_t id, float angle) {
