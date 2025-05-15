@@ -27,5 +27,9 @@ actions:
     parameters:
       target: { x: 1.225, y: 0.3, theta_deg: 180.0 }
 
-  - action: move
-    target: { x: 1.225, y: 0.3, theta_deg: 0.0 } # move back to start
+################################# COME HOME #############################################
+
+  - action: include_sub_file
+    file: 'come_home.yaml'
+    parameters:
+      target: { x: 1.225, y: 0.3, theta_deg: 0.0 } # move back to start

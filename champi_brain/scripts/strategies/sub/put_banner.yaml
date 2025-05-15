@@ -13,3 +13,8 @@ actions:
 
   - action: move
     target: { x: 0.0, y: 0.1, theta_deg: -60.0 }
+
+##### ADD THE POINTS
+  - action: add_points
+    points: 20
+    reason: "put_banner finished. 20 points for putting the banner"

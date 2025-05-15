@@ -49,7 +49,7 @@ class ChampiStateMachine(object):
         ## INIT
         self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
         self.sm.add_transition('init_next', 'init_waitForRosInit', 'init_waitForUserChooseConfig', conditions='ros_initialized')
-        self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_waitForTirette', conditions='user_has_choosed_config')
+        self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_waitForTirette', conditions='user_has_chosen_config')
         # self.sm.add_transition('init_next', 'init_moveToInitPose', 'init_waitForTirette', conditions='goal_reached') # TODO
         self.sm.add_transition('init_end', 'init_waitForTirette', 'idle', conditions='tirette_pulled')
         ## BASIC ACTIONS
@@ -61,13 +61,16 @@ class ChampiStateMachine(object):
         self.sm.add_transition('end_of_match', '*', 'endOfMatch', conditions=['match_has_ended'])
         ## ACTIONS
         self.sm.add_transition('start_action', 'idle', 'action', conditions='can_start_action')
+        ## POINTS
+        self.sm.add_transition('add_points_done', 'idle', 'idle', conditions='add_points_is_done')
+
 
         # ADDITIONALS CALLBACKS
         self.sm.get_state('idle').add_callback('enter', 'find_next_state')
 
         # FLAGS (TO BE UPDATED BY ROS MSG CALLBACKS)
         self.ros_initialized = False
-        self.user_has_choosed_config = False
+        self.user_has_chosen_config = False
         self.tirette_pulled = False
         self.match_ended = False
         self.reset_flags()
@@ -103,6 +106,7 @@ class ChampiStateMachine(object):
         self.goal_reached = False
         self.end_of_wait = False
         self.end_of_actuator_state = False
+        self.add_points_is_done = False
 
         # action flags
         self.can_start_action = False
@@ -116,7 +120,7 @@ class ChampiStateMachine(object):
 
         if len(self.strategy) == 0:
             get_logger(self.name).warn(f'End of actions ! Staying in [{self.state}].')
-            get_logger(self.name).info(f'All actions in {100-self.itf.time_left} seconds.')
+            get_logger(self.name).info(f'All actions in {(100.-self.itf.time_left):.1f} seconds.')
         else:
             action = self.strategy[0]
             get_logger(self.name).info(f'{action}')
@@ -134,6 +138,12 @@ class ChampiStateMachine(object):
             elif action_name == 'wait':
                 self.can_start_waiting = True
                 self.start_wait(duration=action['duration'])
+
+            elif action_name == 'add_points':
+                self.itf.add_points(int(action['points']))
+                self.add_points_is_done = True
+                self.add_points_done()
+
             else:
                 get_logger(self.name).error('UNKNOWN ACTION')
                 exit()

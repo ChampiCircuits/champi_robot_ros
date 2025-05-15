@@ -1,0 +1,15 @@
+##########################################
+# IN SUB FILES, EVERY POSITION ARE OFFSETS
+##########################################
+# o -----> y
+# |
+# v
+# x
+actions:
+  - action: move
+    target: { x: 0.0, y: 0.0, theta_deg: 0.0 }
+
+##### ADD THE POINTS
+  - action: add_points
+    points: 10
+    reason: "come_home finished. 10 points for coming home"
