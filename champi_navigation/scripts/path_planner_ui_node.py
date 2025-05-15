@@ -107,11 +107,11 @@ class PathPlannerUINode(Node):
         
         goal.end_speed = 0.
 
-        goal.max_linear_speed = 0.2
+        goal.max_linear_speed = 1.0
         goal.max_angular_speed = 1.5
-        
-        goal.linear_tolerance = 0.01
-        goal.angular_tolerance = 0.1
+
+        goal.linear_tolerance = 0.005
+        goal.angular_tolerance = 0.05
 
         goal.do_look_at_point = False
 

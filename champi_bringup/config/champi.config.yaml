@@ -114,3 +114,4 @@ path_planner:
 sm_ros_itf:
   ros__parameters:
     strategy_file: 'test_strat.yaml'
+    use_above_default_strategy: true

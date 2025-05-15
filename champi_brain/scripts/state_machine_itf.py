@@ -10,7 +10,7 @@ from rclpy.executors import ExternalShutdownException
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import STMState
 from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
-from std_msgs.msg import Int8, Int8MultiArray
+from std_msgs.msg import Int8, Int8MultiArray, String
 from rclpy.action import ActionClient
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
@@ -23,12 +23,12 @@ TOTAL_AVAILABLE_TIME = 100
 class ChampiStateMachineITF(Node):
 
     def stm_initialized_callback(self): self.champi_sm.stm_initialized = True
-    def user_has_chosen_config_callback(self): self.champi_sm.user_has_choosed_config = True
     def goal_reached_callback(self): self.champi_sm.goal_reached = True
 
     def tirette_pulled_callback(self): 
         self.champi_sm.tirette_pulled = True
         self.start_time = self.clock.now()
+        self.get_logger().warn('>> Tirette pulled! Starting match...')
 
     def __init__(self):
         super().__init__('sm_ros_itf')
@@ -36,11 +36,13 @@ class ChampiStateMachineITF(Node):
 
         # Parameters
         strategy_file_param = self.declare_parameter('strategy_file', rclpy.Parameter.Type.STRING).value
+        use_above_default_strategy_param = self.declare_parameter('use_above_default_strategy', rclpy.Parameter.Type.BOOL).value
         self.sim_param = self.declare_parameter('sim', rclpy.Parameter.Type.BOOL).value
 
         # Print parameters
         self.get_logger().info('SM interface started with the following parameters:')
         self.get_logger().info(f'strategy: {strategy_file_param}')
+        self.get_logger().info(f'use_above_default_strategy_param: {use_above_default_strategy_param}')
         self.get_logger().info(f'sim: {self.sim_param}')
 
 
@@ -53,20 +55,6 @@ class ChampiStateMachineITF(Node):
         self.time_left = TOTAL_AVAILABLE_TIME
 
         self.timer = self.create_timer(timer_period_sec=0.2, callback=self.callback_timer)
-        
-       
-
-        # # Strategy
-        self.get_logger().info('>> Loading strategy...')
-        self.champi_sm.strategy, self.champi_sm.init_pose = load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param, self.get_logger())
-        self.get_logger().info(f'<< Strategy {strategy_file_param} loaded!')
-
-        # Action client for /navigate
-        self.get_logger().info('>> Waiting for action client /navigate...')
-        self.goal_handle_navigate = None
-        self.action_client_navigate = ActionClient(self, Navigate, '/navigate')
-        self.action_client_navigate.wait_for_server()
-        self.get_logger().info('<< Action client /navigate is ready!')
 
         # publisher topic /set_pose
         # Qos 'reliable' because when communicating from another computer, sometimes this msg set_pose is lost
@@ -75,6 +63,22 @@ class ChampiStateMachineITF(Node):
             depth=10  # Taille du buffer pour les messages
         )
         self.set_pose_pub = self.create_publisher(PoseWithCovarianceStamped, '/set_pose', qos_profile)
+
+
+        # # Strategy
+        if use_above_default_strategy_param:
+            self.get_logger().info('>> Loading DEFAULT strategy...')
+            self.champi_sm.strategy, self.champi_sm.init_pose = load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param, self.get_logger())
+            self.get_logger().info(f'<< DEFAULT Strategy {strategy_file_param} loaded!')
+            self.champi_sm.user_has_chosen_config = True
+            self.sim_user_choose_strat_and_pose() # TODO remove
+
+        # Action client for /navigate
+        self.get_logger().info('>> Waiting for action client /navigate...')
+        self.goal_handle_navigate = None
+        self.action_client_navigate = ActionClient(self, Navigate, '/navigate')
+        self.action_client_navigate.wait_for_server()
+        self.get_logger().info('<< Action client /navigate is ready!')
 
         # publisher topic /ctrl/actuators
         self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
@@ -87,10 +91,32 @@ class ChampiStateMachineITF(Node):
         self.e_stop_pressed = None
         self.tirette_released = None
 
+        # publisher topic /points
+        self.points_pub = self.create_publisher(Int8, '/final_score', 10)
+        self.current_points = 0
+
+        # subscriber topic /chosen_strategy
+        self.chosen_strategy_sub = self.create_subscription(String, '/chosen_strategy', self.chosen_strategy_callback, 10)
+
         self.champi_sm.ros_initialized = True # TODO more things ?
         self.get_logger().warn('Launched ChampiSMRosInterface !')
 
-        self.sim_user_choose_strat_and_pose() # TODO remove in real robot
+    def chosen_strategy_callback(self, msg):
+        strategy_file_param = msg.data
+        self.get_logger().info(f'Chosen strategy: {strategy_file_param}')
+
+        self.get_logger().info('>> Loading strategy...')
+        self.champi_sm.strategy, self.champi_sm.init_pose = load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param, self.get_logger())
+        self.get_logger().info(f'<< Strategy {strategy_file_param} loaded!')
+        self.champi_sm.user_has_chosen_config = True
+        self.sim_user_choose_strat_and_pose() # TODO remove
+
+    def add_points(self, points):
+        self.current_points += points
+
+        msg = Int8()
+        msg.data = self.current_points
+        self.points_pub.publish(msg)
 
     def stm_state_callback(self, msg):
         self.e_stop_pressed = msg.e_stop_pressed
@@ -105,15 +131,14 @@ class ChampiStateMachineITF(Node):
     def sim_user_choose_strat_and_pose(self):
         self.init_robot_pose()
         self.get_logger().info('Pose has been init')
-        self.user_has_chosen_config_callback()
 
     def callback_timer(self):
-        if self.tirette_released and not self.champi_sm.tirette_pulled or self.sim_param: # in sim, no tirette
-            self.tirette_pulled_callback()
+        if not self.champi_sm.tirette_pulled:
+            if self.tirette_released or self.sim_param: # in sim, no tirette
+                self.tirette_pulled_callback()
 
         in_match = self.champi_sm.tirette_pulled and self.champi_sm.state != 'end_of_match'
         if in_match:
-            
             # CHECK TIME LEFT
             elapsed_time = (self.clock.now() - self.start_time).nanoseconds / 1e9
             self.time_left = TOTAL_AVAILABLE_TIME - elapsed_time
@@ -139,11 +164,7 @@ class ChampiStateMachineITF(Node):
 
         self.set_pose_pub.publish(msg)
         time.sleep(3)
-        self.set_pose_pub.publish(msg)
-        time.sleep(1)
-        # self.set_pose_pub.publish(msg)
-        # time.sleep(1)
-        self.get_logger().info(f'requested setpose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
+        self.get_logger().info(f'requested set_pose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
 
 
     # ==================================== Feedback Callbacks =====================================

@@ -3,7 +3,7 @@ import theme
 from nicegui import ui, app
 
 from node import init_ros_node
-from std_msgs.msg import Int32
+from std_msgs.msg import Int8
 import time
 
 ros_node = init_ros_node()
@@ -33,7 +33,7 @@ def create() -> None:
 
                 ui.separator()
 
-                ui.label('Time left :').classes('text-h4 text-grey-8')
+                ui.label('Temps restant :').classes('text-h4 text-grey-8')
                 time_left_label = ui.label(str(time_left) + ' secondes').classes('text-h4 text-black-8')            
 
 
@@ -41,26 +41,27 @@ def create() -> None:
 #################### UTILS ######################
 #################################################
 
-def update_time():
+def update():
     global score, match_started, time_left_label, start_time, score_label
 
-    if score == -1 and not match_started: # TODO faire mieux en publiant un Empty msg pour dire start
-        print("\n\nRECEIVED MATCH STARTED\n\n")
-        # match just started
-        match_started = True
-        start_time = time.time()
-        if score_label is not None:    
-            score_label.set_text("0 points")
+    if not match_started:
+        if ros_node.last_stm_state is not None and ros_node.last_stm_state.tirette_released:
+            print("\n\n!! MATCH STARTED !!\n\n")
+
+            match_started = True
+            start_time = time.time()
+            if score_label is not None:
+                score_label.set_text("0 points")
 
     if match_started:
         if time_left_label is not None:
             if 100 - int(time.time() - start_time) > 0:
-                time_left_label.set_text(f"Temps restant: {100 - int(time.time() - start_time)} secondes")
+                time_left_label.set_text(f"{100 - int(time.time() - start_time)} secondes")
             else:
-                time_left_label.set_text(f"Temps restant: {0} seconds")
+                time_left_label.set_text(f"{0} seconds")
 
 
-def update_score(received_score: Int32):
+def update_score(received_score: Int8):
     global score_label, score
     score = received_score.data
     if score_label is not None:
@@ -68,5 +69,5 @@ def update_score(received_score: Int32):
     print("received score= ",received_score)
 
 
-score_subscriber = ros_node.create_subscription(Int32, '/final_score', update_score, 10)
-ui.timer(1.0, update_time)
+score_subscriber = ros_node.create_subscription(Int8, '/final_score', update_score, 10)
+ui.timer(1.0, update)

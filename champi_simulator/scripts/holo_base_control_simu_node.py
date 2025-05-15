@@ -85,9 +85,10 @@ class HoloBaseControlDummy(Node):
         self.t_last_cmd_vel_ = time.time()
 
         # add small noise to the cmd_vel to resemble the real world
-        self.latest_cmd_vel[0] += numpy.random.normal(0, 0.002)
-        self.latest_cmd_vel[1] += numpy.random.normal(0, 0.002)
-        self.latest_cmd_vel[2] += numpy.random.normal(0, 0.01)
+        if self.latest_cmd_vel[0] != 0 or self.latest_cmd_vel[1] != 0 or self.latest_cmd_vel[2] != 0:
+            self.latest_cmd_vel[0] += 0 #numpy.random.normal(0, 0.002)
+            self.latest_cmd_vel[1] += 0 # numpy.random.normal(0, 0.002)
+            self.latest_cmd_vel[2] += 0 # numpy.random.normal(0, 0.01)
 
     # Returns the velocity with limited acceleration applied
     def limit_accel(self, current_speed, goal_speed, max_acceleration, dt):
