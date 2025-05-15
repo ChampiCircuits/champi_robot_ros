@@ -57,6 +57,9 @@ class LocNode(Node):
             self.aruco_pose_callback,
             10
         )
+        # cooldown timer for aruco : 1s
+        self.cooldown_value = 1.0 #s
+        self.last_time_aruco_pose_taken_in_account = self.get_clock().now()
 
         # Publishers
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
@@ -77,9 +80,16 @@ class LocNode(Node):
         self.get_logger().info("Set pose received")
 
     def aruco_pose_callback(self, msg: PoseWithCovarianceStamped):
+        # We receive an aruco pose at 5Hz.
+        # To avoid the pose oscillating, we update only every second
+        if self.get_clock().now() - self.last_time_aruco_pose_taken_in_account < Duration(seconds=self.cooldown_value):
+            return
+
+        # We take the aruco pose into account
+        self.last_time_aruco_pose_taken_in_account = self.get_clock().now()
         self.latest_set_pose = msg
         self.robot_pose_when_set_pose = self.latest_robot_pose
-        self.get_logger().info("Aruco pose received")
+        self.get_logger().info(f"New aruco pose received (now waiting cooldown={self.cooldown_value})")
 
     def odom_callback(self, msg: Odometry):
         self.latest_robot_pose = msg

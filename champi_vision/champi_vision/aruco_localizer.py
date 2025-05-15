@@ -35,9 +35,17 @@ class ArucoDetector:
 
             # Get the corners of the marker
             corners = markerCorners[i][0]
+
             # Calculate the center of the marker
-            center_x = int((corners[0][0] + corners[2][0]) / 2)
-            center_y = int((corners[0][1] + corners[2][1]) / 2)
+            center_x_1 = (corners[0][0] + corners[2][0]) / 2
+            center_y_1 = (corners[0][1] + corners[2][1]) / 2
+
+            center_x_2 = (corners[1][0] + corners[3][0]) / 2
+            center_y_2 = (corners[1][1] + corners[3][1]) / 2
+
+            center_x = int((center_x_1 + center_x_2)/2.)
+            center_y = int((center_y_1 + center_y_2)/2.)
+
             # Calculate the angle of the marker
             angle = math.atan2(corners[1][1] - corners[0][1], corners[1][0] - corners[0][0])
             poses.append([center_x, center_y, angle])
