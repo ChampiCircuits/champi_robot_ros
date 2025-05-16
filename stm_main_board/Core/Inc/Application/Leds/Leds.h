@@ -4,7 +4,7 @@
 #include "tim.h"
 
 
-#define MAX_LED (24+2)
+#define MAX_LED (2+24)
 #define USE_BRIGHTNESS 1
 #define LED_RING_BRIGHTNESS 10
 

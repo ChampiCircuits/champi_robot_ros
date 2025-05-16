@@ -37,20 +37,22 @@ void WS2812_Send (void)
     color = ((LED_Data[i][1]<<16) | (LED_Data[i][2]<<8) | (LED_Data[i][3]));
 #endif
 
-    for (int i=23; i>=0; i--)
+    for (int bit=23; bit>=0; bit--)
     {
-      if (color&(1<<i))
+      // 344 is the ARR value
+      if (color&(1<<bit))
       {
-        pwmData[indx] = 142;  // 2/3 of 215
+        pwmData[indx] = 240;  // 2/3 of 344
       }
-      else pwmData[indx] = 71;  // 1/3 of 215
+      else pwmData[indx] = 103;  // 1/3 of 344
 
       indx++;
     }
 
   }
 
-  for (int i=0; i<200; i++)
+  //reset signal
+  for (int i=0; i<200; i++) // mmm i tried once to set it to 400, and the others task were not happy at all x)
   {
     pwmData[indx] = 0;
     indx++;
