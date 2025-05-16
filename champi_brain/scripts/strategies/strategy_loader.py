@@ -23,6 +23,7 @@ def load_strategy(file_path, logger): # only one recursion level in files
             sub_file_name = action['file']
             logger.info(f'SUB {i}: {sub_file_name}')
             sub_strat = load_yaml(get_package_share_directory('champi_brain') + '/scripts/strategies/sub/' + sub_file_name)
+            tag = action['parameters']['tag']
 
             # for transforming coordinates
             action_coords = action['parameters']['target']
@@ -34,6 +35,7 @@ def load_strategy(file_path, logger): # only one recursion level in files
                 if sub_action['action'] == 'move':
                     sub_action = apply_transformation(sub_action, x_action, y_action, theta_deg_action)
 
+                sub_action['tag'] = tag
                 actions.append(sub_action)
         else:
             actions.append(action)

@@ -12,6 +12,7 @@ actions:
 #    file: 'put_banner.yaml'
 #    parameters:
 #      target: { x: 1.25, y: 0.16, theta_deg: 0.0 }
+#      tag: 'banner'
 
 ######################### TAKE FIRST ELEMENT GROUP ######################################
 
@@ -19,6 +20,7 @@ actions:
 #    file: 'take_elements.yaml'
 #    parameters:
 #        target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
+#        tag: 'elements_1'
 #
 ########################### PUT FIRST ELEMENT GROUP ######################################
 #
@@ -26,6 +28,7 @@ actions:
 #    file: 'put_elements.yaml'
 #    parameters:
 #      target: { x: 1.225, y: 0.1, theta_deg: 180.0 }
+#      tag: 'elements_1'
 
 
 ######################### TAKE SECOND ELEMENT GROUP ######################################
@@ -36,6 +39,7 @@ actions:
     file: 'take_elements.yaml'
     parameters:
       target: { x: 0.775, y: 0.21, theta_deg: 180.0 } # TODO normalement la pose c'est 0.25
+      tag: 'elements_2'
 
 ########################## PUT SECOND ELEMENT GROUP ######################################
 
@@ -43,6 +47,7 @@ actions:
     file: 'put_elements.yaml'
     parameters:
       target: { x: 1.225, y: 0.3, theta_deg: 180.0 }
+      tag: 'elements_2'
 
 ######################### TAKE THIRD ELEMENT GROUP ######################################
 
@@ -50,6 +55,7 @@ actions:
 #    file: 'take_elements.yaml'
 #    parameters:
 #      target: { x: 0.075, y: 0.4, theta_deg: 90.0 }
+#      tag: 'elements_3'
 #
 ########################### PUT THIRD ELEMENT GROUP ######################################
 #
@@ -57,6 +63,7 @@ actions:
 #    file: 'put_elements.yaml'
 #    parameters:
 #      target: { x: 0.775, y: 0.075, theta_deg: 180.0 }
+#      tag: 'elements_3'
 
 ################################# COME HOME #############################################
 
@@ -64,5 +71,6 @@ actions:
     file: 'come_home.yaml'
     parameters:
       target: { x: 1.225, y: 0.3, theta_deg: 0.0 } # move back to start
+      tag: 'come_home'
 
   - action: RESET_ACTUATORS

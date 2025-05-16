@@ -33,6 +33,7 @@ class ChampiStateMachineITF(Node):
     def __init__(self):
         super().__init__('sm_ros_itf')
         self.get_logger().info('Launching ChampiSMRosInterface...')
+        self.itf_initialized = False
 
         # Parameters
         strategy_file_param = self.declare_parameter('strategy_file', rclpy.Parameter.Type.STRING).value
@@ -100,6 +101,7 @@ class ChampiStateMachineITF(Node):
         self.chosen_strategy_sub = self.create_subscription(String, '/chosen_strategy', self.chosen_strategy_callback, 10)
 
         self.champi_sm.ros_initialized = True # TODO more things ?
+        self.itf_initialized = True
         self.get_logger().warn('Launched ChampiSMRosInterface !')
 
     def chosen_strategy_callback(self, msg):
@@ -126,7 +128,7 @@ class ChampiStateMachineITF(Node):
 
     def actuators_finished_callback(self, msg):
         array = msg.data # 9 elements
-        self.get_logger().info(f'Actuators finished: {array}') # TODO check for which one
+        self.get_logger().debug(f'Actuators finished: {array}') # TODO check for which one but should be ok without
 
         self.champi_sm.end_of_actuator_state = True
 
@@ -195,8 +197,11 @@ class ChampiStateMachineITF(Node):
     def get_result_callback(self, future): # TODO
         result = future.result().result
         self.get_logger().info(f'Action result: {result.success}, {result.message}')
-        if result.success == True:
+        if result.success:
             self.goal_reached_callback()
+        else:
+            self.get_logger().error(f'Move failed: {result.message}')
+            self.champi_sm.cancel_current_tag()
 
 
 
@@ -248,7 +253,7 @@ class ChampiStateMachineITF(Node):
 
         goal.robot_angle_when_looking_at_point = 0.
 
-        goal.timeout = 15. # seconds
+        goal.timeout = 20. # seconds
 
         return goal
 

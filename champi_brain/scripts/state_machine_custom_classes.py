@@ -11,11 +11,11 @@ class ChampiState(NestedState):
         self.sm = sm
 
     def enter(self, event_data):
-        get_logger('sm').info(f'\033[92m>> Entering state [{self.name}]\033[0m')
+        get_logger('state').info(f'\033[92m>> Entering state [{self.name}]\033[0m')
         super().enter(event_data)
 
     def exit(self, event_data):
-        get_logger('sm').info(f'\033[91m<< Exiting state [{self.name}]\033[0m')
+        get_logger('state').info(f'\033[91m<< Exiting state [{self.name}]\033[0m')
         super().exit(event_data)
 
 
