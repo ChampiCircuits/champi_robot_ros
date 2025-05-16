@@ -35,7 +35,7 @@ class ArucoLocalizerNode(Node):
 
         # Parameters
         self.enable_cv2_viz = False
-        self.enable_topic_viz = False
+        self.enable_topic_viz = True
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
@@ -51,7 +51,7 @@ class ArucoLocalizerNode(Node):
         self.bird_view = None
 
 
-        self.timer = self.create_timer(0.1, self.timer_callback)  # 5Hz
+        self.timer = self.create_timer(0.1, self.timer_callback)
 
         # Subscribe to /camera_info and /image_raw---------------------------------------------------
 
@@ -90,7 +90,7 @@ class ArucoLocalizerNode(Node):
             # self.subscription_cam_info.destroy()
 
             # compute transform between the 2 frames as 1 matrix
-            rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
+            rot = Rotation.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
             rot = rot.as_matrix()
             trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
 

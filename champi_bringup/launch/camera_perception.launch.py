@@ -31,6 +31,6 @@ def generate_launch_description():
 
     return LaunchDescription([
         realsense2_camera_launch,
-        visual_loc
+        # visual_loc
     ])
 
