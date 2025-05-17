@@ -33,6 +33,7 @@ namespace devices
                 } else {
                     LOG_INFO("scs", "Servo number %d read successful", ids_servos[i]);
                 }
+                osDelay(1);
             }
             return result;
         }
@@ -101,6 +102,7 @@ int SCServosApp_Init() {
 
     for (const auto id : ids_servos) {
         servos.WriteLimitTroque(id, SCSERVOS_TORQUE_LIMIT);
+        osDelay(1);
     }
     init_successful = true;
 

@@ -198,7 +198,7 @@ void HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
     }
     while (result == -1 && nb_attempts++ < MODBUS_MAX_RETRIES);
 
-    if (nb_attempts > 1) {
+    if (nb_attempts > 3) {
         RCLCPP_ERROR(this->get_logger(), "Write data after %d attempts", nb_attempts);
     }
 
@@ -218,7 +218,7 @@ void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
     }
     while (result == -1 && nb_attempts++ < MODBUS_MAX_RETRIES);
 
-    if (nb_attempts > 1) {
+    if (nb_attempts > 3) {
         RCLCPP_ERROR(this->get_logger(), "Read data after %d attempts", nb_attempts);
     }
 

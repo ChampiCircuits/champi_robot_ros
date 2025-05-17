@@ -2,6 +2,7 @@
 
 import rclpy, math
 from rclpy.logging import get_logger
+import logging
 from ament_index_python.packages import get_package_share_directory
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
@@ -14,8 +15,8 @@ class ChampiStateMachine(object):
     def __init__(self):
         self.name = 'SM'
         get_logger(self.name).info('Launching SM...')
-        # logging.basicConfig(level=logging.INFO)
-
+        get_logger(self.name).set_level(rclpy.logging.LoggingSeverity.DEBUG)
+        # logging.basicConfig(level=logging.DEBUG)
 
         self.sm = CustomHierarchicalGraphMachine(parent = self,
                                                  name = 'Champi State Machine',
@@ -57,14 +58,15 @@ class ChampiStateMachine(object):
         self.sm.add_transition('back_to_idle', 'move', 'idle', conditions='goal_reached')
         self.sm.add_transition('back_to_idle', 'action', 'idle', conditions='end_of_actuator_state')
         self.sm.add_transition('back_to_idle', 'wait', 'idle', conditions='end_of_wait')
-        self.sm.add_transition('end_of_match', '*', 'endOfMatch', conditions=['match_has_ended'])
+        self.sm.add_transition('end_of_match', '*', 'endOfMatch', conditions='match_has_ended')
+        self.sm.add_transition('cancel_current_action', '*', 'idle', conditions='can_cancel_current_action')
+
         ## ACTIONS
         self.sm.add_transition('start_action', 'idle', 'action', conditions='can_start_action')
         ## POINTS
         self.sm.add_transition('add_points_done', 'idle', 'idle', conditions='add_points_is_done')
 
-
-        # ADDITIONALS CALLBACKS
+        # ADDITIONALS CALLBACKS (declared after ros_initialized so that they are not called before)
         self.sm.get_state('idle').add_callback('enter', 'find_next_state')
 
         # FLAGS (TO BE UPDATED BY ROS MSG CALLBACKS)
@@ -83,6 +85,8 @@ class ChampiStateMachine(object):
                             'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
                             'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
                             'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2', 'RESET_ACTUATORS']
+        self.latest_canceled_tag = None # contains all the tags of the actions that have been canceled
+        self.current_tag = None
 
         path = get_package_share_directory('champi_brain') + '/SM_diagram.png'
         get_logger(self.name).warn(f'PATH: {path}')
@@ -109,6 +113,7 @@ class ChampiStateMachine(object):
         self.end_of_wait = False
         self.end_of_actuator_state = False
         self.add_points_is_done = False
+        self.can_cancel_current_action = False
 
         # action flags
         self.can_start_action = False
@@ -120,21 +125,45 @@ class ChampiStateMachine(object):
         self.match_ended = False
         self.in_match = False
 
-    def draw_graph(self, *args, **kwargs): 
-        self.sm.get_combined_graph().draw(get_package_share_directory('champi_brain')+'SM_diagram.png', prog='dot')
+    def draw_graph(self, *args, **kwargs):
+        #self.sm.get_combined_graph().draw(get_package_share_directory('champi_brain')+'SM_diagram.png', prog='dot')
+        pass
+
+    def cancel_current_tag(self):
+        get_logger(self.name).warn(f'Canceling current action...')
+        if self.current_tag is not None:
+            self.latest_canceled_tag = self.current_tag
+            get_logger(self.name).warn(f'All actions with tag {self.current_tag} has been canceled.')
+        self.reset_flags()
+        self.can_cancel_current_action = True
+        self.cancel_current_action() # trigger the transition to idle state
 
     def find_next_state(self):
         get_logger(self.name).info(f'SM in [{self.state}], searching next action...')
         self.reset_flags()
+        self.current_tag = None
 
         if len(self.strategy) == 0:
             get_logger(self.name).warn(f'End of actions ! Staying in [{self.state}].')
             get_logger(self.name).info(f'All actions in {(100.-self.itf.time_left):.1f} seconds.')
         else:
             action = self.strategy[0]
-            get_logger(self.name).info(f'{action}')
+            get_logger(self.name).info(f'Next action is {action}')
 
             action_name = action['action']
+            get_logger(self.name).info(f'Action tag: {action.get('tag')}')
+            if action.get('tag') is not None:
+                self.current_tag = action['tag']
+                if self.current_tag == self.latest_canceled_tag:
+                    get_logger(self.name).warn(f'Action {action_name} with tag {self.current_tag} was previously canceled.')
+                    self.strategy.pop(0)
+                    self.reset_flags()
+                    self.can_cancel_current_action = True
+                    self.cancel_current_action() # trigger the transition to idle state
+                    return
+                else:
+                    get_logger(self.name).debug(f'Action {action_name} with tag {self.current_tag} is valid.')
+
             if action_name == 'move':
                 x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
                 self.can_start_moving = True
