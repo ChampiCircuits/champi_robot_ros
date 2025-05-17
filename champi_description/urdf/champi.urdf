@@ -27,9 +27,6 @@
     </inertial>
   </link>
 
-  <!-- IMU link -->
-  <link name="imu_link"/>
-
   <!-- Joint between base_link and lidar -->
   <joint name="base_to_lidar" type="fixed">
     <parent link="base_link"/>
@@ -41,16 +38,10 @@
   <joint name="base_to_camera" type="fixed">
     <parent link="base_link"/>
     <child link="camera_link"/>
-    <origin xyz="0.095087 0.038579 0.302585" rpy="0 0.785398163398 0"/>
+    <origin xyz="0.089, 0.023, 0.314" rpy="-0.020, 0.795, -0.017"/>
     <!-- xyz = roll pitch yaw -->
   </joint>
 
-  <!-- Joint between base_link and imu -->
-  <joint name="base_to_imu" type="fixed">
-    <parent link="base_link"/>
-    <child link="imu_link"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
 </robot>
 
 </robot>
