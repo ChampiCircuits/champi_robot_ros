@@ -5,7 +5,7 @@ from rclpy.logging import get_logger
 from ament_index_python.packages import get_package_share_directory
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
-from states import ChampiState, InitState, MoveState, WaitState, ActuatorState, InitPoseState
+from states import *
 
 class ChampiStateMachine(object):
     def set_itf(self, itf): self.itf = itf
@@ -19,7 +19,7 @@ class ChampiStateMachine(object):
 
         self.sm = CustomHierarchicalGraphMachine(parent = self,
                                                  name = 'Champi State Machine',
-                                                 initial = ChampiState(name = 'stop', sm = self),
+                                                 initial = StopState(name = 'stop', sm = self),
                                                  model = self,
                                                  graph_engine = 'graphviz',
                                                  queued = True,
@@ -33,25 +33,24 @@ class ChampiStateMachine(object):
         self.sm.add_state(ChampiState(name='idle', sm=self))
         self.sm.add_state(WaitState(name='wait', sm=self))
         self.sm.add_state(MoveState(name='move', sm=self))
-        self.sm.add_state(ChampiState(name='grab', sm=self))
-        self.sm.add_state(ChampiState(name='put', sm=self))
         self.sm.add_state(ChampiState(name='endOfMatch', sm=self))
-        # self.sm.add_state(ChampiState(name='stop', sm=self))
+        # self.sm.add_state(ChampiState(name='stop', sm=self)) # automatically created, bc it's the initial state
 
         self.sm.add_state(ActuatorState(name='action', sm=self))
 
         self.sm.get_state('init').add_substate(state=ChampiState(name='waitForRosInit', sm=self))
-        self.sm.get_state('init').add_substate(state=InitPoseState(name='moveToInitPose', sm=self))
+        # self.sm.get_state('init').add_substate(state=InitPoseState(name='moveToInitPose', sm=self))
         self.sm.get_state('init').add_substate(ChampiState(name='waitForUserChooseConfig', sm=self))
         self.sm.get_state('init').add_substate(ChampiState(name='waitForTirette', sm=self))
 
         # TRANSITIONS
+        self.sm.add_transition('please_stop', ['init','idle','wait','move','endOfMatch','action'], 'stop', conditions='stop_requested')
         ## INIT
         self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
         self.sm.add_transition('init_next', 'init_waitForRosInit', 'init_waitForUserChooseConfig', conditions='ros_initialized')
         self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_waitForTirette', conditions='user_has_chosen_config')
         # self.sm.add_transition('init_next', 'init_moveToInitPose', 'init_waitForTirette', conditions='goal_reached') # TODO
-        self.sm.add_transition('init_end', 'init_waitForTirette', 'idle', conditions='tirette_pulled')
+        self.sm.add_transition('init_end', 'init_waitForTirette', 'idle', conditions='tirette_released')
         ## BASIC ACTIONS
         self.sm.add_transition('start_move', 'idle', 'move', conditions='can_start_moving')
         self.sm.add_transition('start_wait', 'idle', 'wait', conditions='can_start_waiting')
@@ -69,11 +68,8 @@ class ChampiStateMachine(object):
         self.sm.get_state('idle').add_callback('enter', 'find_next_state')
 
         # FLAGS (TO BE UPDATED BY ROS MSG CALLBACKS)
-        self.ros_initialized = False
-        self.user_has_chosen_config = False
-        self.tirette_pulled = False
-        self.match_ended = False
         self.reset_flags()
+        self.ros_initialized = False # this one is never reset
 
         # STRATEGY (TO BE INIT BY THE NODE)
         self.strategy = None
@@ -98,9 +94,15 @@ class ChampiStateMachine(object):
         get_logger(self.name).warn('Launched SM !')
         get_logger(self.name).warn(f'Starting in state [{self.state}].')
 
+    def reset(self):
+        self.reset_flags()
+        self.stop_requested = True
+        self.please_stop() # trigger stop state
 
     def reset_flags(self):
+        get_logger(self.name).debug('reset flags')
         # basic flags
+        self.stop_requested = False
         self.can_start_moving = False
         self.can_start_waiting = False
         self.goal_reached = False
@@ -110,6 +112,13 @@ class ChampiStateMachine(object):
 
         # action flags
         self.can_start_action = False
+
+        # msg callbacks
+        # self.ros_initialized = False # in fact we don't reset it, bc once it's done it's gonna be ok
+        self.user_has_chosen_config = False
+        self.tirette_released = False
+        self.match_ended = False
+        self.in_match = False
 
     def draw_graph(self, *args, **kwargs): 
         self.sm.get_combined_graph().draw(get_package_share_directory('champi_brain')+'SM_diagram.png', prog='dot')

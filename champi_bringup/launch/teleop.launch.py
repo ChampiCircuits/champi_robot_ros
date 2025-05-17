@@ -22,8 +22,8 @@ def generate_launch_description():
     )
 
     joy_node = TimerAction(
-        period=30.0, # s. Wait for 5 seconds to allow the system to boot up and discover the dongle
-        actions=[
+        period=1.0, # s. Wait for 5 seconds to allow the system to boot up and discover the dongle
+        actions=[ # en fait ca marche paaaaaaas, donc j'ai mis à 1s
             Node(
                 package='joy_linux',
                 executable='joy_linux_node',
