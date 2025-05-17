@@ -57,7 +57,7 @@ class LaunchButton(ui.button):
 
 
 def create() -> None:
-    @ui.page('/')
+    @ui.page('/launchs')
     def page_launchs():
         with theme.frame('Launch Page'):
             with ui.grid(columns=3).style('width: 90%'):

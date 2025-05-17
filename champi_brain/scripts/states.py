@@ -7,6 +7,10 @@ import math
 class InitState(ChampiState):
     pass
 
+class StopState(ChampiState):
+    def enter(self, event_data):
+        self.sm.stop_requested = False # request satisfied
+
 class InitPoseState(ChampiState):
     def enter(self, event_data):
         super().enter(event_data)

@@ -20,6 +20,8 @@ radio_strategy_selection = None
 src = 'champi_web_ui/scripts/modularization/resources/table_2025.png'
 
 def ready_to_launch_match():
+    ros_node.ready_to_start_match = True
+    on_strategy_selected()
     container.clear()
     with container:
         ui.image(src).style('width:75%')
@@ -59,66 +61,70 @@ def get_available_strategies():
 
 
 def create() -> None:
-    @ui.page('/match')
+    @ui.page('/')
     def page_a():
         with theme.frame('Match Page'):
             global interactive_image_table
             global container
             global stepper
 
-            container = ui.column().classes('w-full; items-center').style('padding-top:50px')
-            with container:        
-                ui.label('Match').classes('text-h4 text-grey-8')
-                stepper = ui.stepper().props('vertical').classes('')
-                with stepper:
-                    with ui.step('Positionner le robot sur la table'):
-                        with ui.stepper_navigation():
-                            ui.button('Robot placé ✓', on_click=stepper.next)
+            with ui.grid(columns=2).style('width: 100%;padding-top:50px'):
+                with ui.column():
+                    ui.button("Reset", on_click=reset_all)
+                with ui.column():
+                    container = ui.column().classes('w-full; items-center')
+                    with container:
+                        ui.label('Match').classes('text-h4 text-grey-8')
+                        stepper = ui.stepper().props('vertical').classes('')
+                        with stepper:
+                            with ui.step('Positionner le robot sur la table'):
+                                with ui.stepper_navigation():
+                                    ui.button('Robot placé ✓', on_click=stepper.next)
 
-                    # with ui.step('Choisir la position de départ'):
-                    #     interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay).on('svg:pointerdown', zone_chosen).style('width:50%')
-                    #     def next_if_zone_chosen():
-                    #         if zone_has_been_chosen:
-                    #             msg = String()
-                    #             msg.data = chosen_zone
-                    #             ros_node.zone_pub.publish(msg)
-                    #             print("pub ID")
-                    #             stepper.next()
-                    #         else:
-                    #             ui.notify('Choisir une zone...')
+                            # with ui.step('Choisir la position de départ'):
+                            #     interactive_image_table = ui.interactive_image(src, content=svg_zones_overlay).on('svg:pointerdown', zone_chosen).style('width:50%')
+                            #     def next_if_zone_chosen():
+                            #         if zone_has_been_chosen:
+                            #             msg = String()
+                            #             msg.data = chosen_zone
+                            #             ros_node.zone_pub.publish(msg)
+                            #             print("pub ID")
+                            #             stepper.next()
+                            #         else:
+                            #             ui.notify('Choisir une zone...')
 
-                        # with ui.stepper_navigation():
-                        #     ui.button('Suivant', on_click=next_if_zone_chosen)
-                        #     ui.button('Retour', on_click=stepper.previous).props('flat')
-
-                    with ui.step('Choisir la strategie'):
-                        available_strategies = get_available_strategies()
-                        global radio_strategy_selection
-                        radio_strategy_selection = ui.radio(available_strategies, value='test_strat.yaml')
-                        with ui.stepper_navigation():
-                            btn_next = ui.button('Suivant', on_click=on_strategy_selected)
-                            btn_next.bind_enabled_from(radio_strategy_selection, 'value')
-                            ui.button('Retour', on_click=stepper.previous).props('flat')
-
-                    with ui.step('Check rapide des nodes'):
-                        global last_odom_time_label
-                        last_odom_time_label = ui.label('Dernier msg otos: ??')
-                        ui.timer(1.0, update_label_odom)
-
-                        with ui.stepper_navigation():
-                            ui.button('Suivant', on_click=stepper.next)
-                            ui.button('Retour', on_click=stepper.previous).props('flat')
-
-                    with ui.step('Vérification tirette/BAU'):
-                        global tirette_label, e_stop_label
-                        tirette_label = ui.label('La tirette est: ??')
-                        e_stop_label = ui.label('Le BAU est: ??')
-                        ui.timer(1.0, update_label_tirette_bau)
+                                # with ui.stepper_navigation():
+                                #     ui.button('Suivant', on_click=next_if_zone_chosen)
+                                #     ui.button('Retour', on_click=stepper.previous).props('flat')
 
 
-                        with ui.stepper_navigation():
-                            ui.button('Prêt !! 😬', on_click=ready_to_launch_match)
-                            ui.button('Retour', on_click=stepper.previous).props('flat')
+                            with ui.step('Check rapide des nodes'):
+                                global last_odom_time_label
+                                last_odom_time_label = ui.label('Dernier msg otos: ??')
+                                ui.timer(1.0, update_label_odom)
+
+                                with ui.stepper_navigation():
+                                    ui.button('Suivant', on_click=stepper.next)
+                                    ui.button('Retour', on_click=stepper.previous).props('flat')
+
+                            with ui.step('Vérification tirette/BAU'):
+                                global tirette_label, e_stop_label
+                                tirette_label = ui.label('La tirette est: ??')
+                                e_stop_label = ui.label('Le BAU est: ??')
+                                ui.timer(1.0, update_label_tirette_bau)
+                                with ui.stepper_navigation():
+                                    ui.button('Suivant', on_click=stepper.next)
+                                    ui.button('Retour', on_click=stepper.previous).props('flat')
+
+                            with ui.step('Choisir la strategie'):
+                                available_strategies = get_available_strategies()
+                                global radio_strategy_selection
+                                radio_strategy_selection = ui.radio(available_strategies, value='test_strat.yaml')
+                                with ui.stepper_navigation():
+                                    btn_next = ui.button('Prêt !! 😬', on_click=ready_to_launch_match)
+                                    btn_next.bind_enabled_from(radio_strategy_selection, 'value')
+                                    ui.button('Retour', on_click=stepper.previous).props('flat')
+
 
 def update_label_odom():
     if ros_node.last_odom_otos_time is None:
@@ -161,6 +167,8 @@ def on_strategy_selected():
     ros_node.pub_strategy(radio_strategy_selection.value)
     stepper.next()
 
+def reset_all():
+    ros_node.reset_all()
 
 ros_node = init_ros_node()
-ros_node.zone_pub = ros_node.create_publisher(String, '/start_zone', 10)
+# ros_node.zone_pub = ros_node.create_publisher(String, '/start_zone', 10)

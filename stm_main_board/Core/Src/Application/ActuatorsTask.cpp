@@ -29,7 +29,7 @@ const osThreadAttr_t actuatorsTask_attributes = {
 #define SERVO_ARM_DOWN_POSITION 205
 
 #define STEPPER_UPPER_POSITION 3.3
-#define STEPPER_LOWER_POSITION 0.1
+#define STEPPER_LOWER_POSITION 0.05
 
 #define SERVO_Y_OUT_POS 225
 #define SERVO_Y_TAKE_POS 160

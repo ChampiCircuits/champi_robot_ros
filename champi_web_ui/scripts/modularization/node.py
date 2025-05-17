@@ -5,7 +5,7 @@ from rclpy.node import Node
 from std_msgs.msg import Int64, Int64MultiArray
 from nav_msgs.msg import Odometry
 from champi_interfaces.msg import STMState
-from nicegui import ui
+from std_msgs.msg import Int8, Empty
 
 from enum import Enum
 from diagnostic_msgs.msg import DiagnosticArray
@@ -46,27 +46,65 @@ class PagesNode(Node):
                 10
             )
 
+            self.score_subscriber = self.create_subscription(Int8, '/final_score', self.update_score, 10)
+
+            # Variables used during match
+            self.score = 0
+            self.time_left = 100
+            self.start_time = None
+            self.match_started = False
+            self.ready_to_start_match = False
+
+            self.timer = self.create_timer(0.1, self.update)
+
+            self.reset_state_machine_pub =  self.create_publisher(
+                Empty,
+                '/reset_state_machine',
+                10
+            )
 
             self.c = 0
-            print("Node created !")
+            self.get_logger().info("Node created !")
 
         self.c += 1
-        print(f"{self.c} inits of the singleton node")
+        self.get_logger().info(f"{self.c} inits of the singleton node")
 
+    def update(self):
+        if not self.match_started:
+            if self.last_stm_state is not None and self.last_stm_state.tirette_released and self.ready_to_start_match:
+                self.get_logger().info("\n\n!! MATCH STARTED !!\n\n")
+
+                self.score = 0
+                self.time_left = 100
+                self.match_started = True
+                self.start_time = time.time()
+
+
+    def reset_all(self):
+        self.get_logger().warn('Node has been reset !')
+        self.score = 0
+        self.time_left = 100
+        self.start_time = None
+        self.match_started = False
+        self.ready_to_start_match = False
+
+        self.get_logger().warn('Resetting the state machine !')
+        self.reset_state_machine_pub.publish(Empty())
+
+    def update_score(self, received_score: Int8):
+        self.score = received_score.data
+        self.get_logger().info(f'received score : {received_score}')
     def odom_otos_callback(self, msg):
         self.last_odom_otos_time = time.time()
     def stm_state_callback(self, msg):
         self.last_stm_state = msg
 
     def pub_strategy(self, strategy):
-        print(f"Strategy set to {strategy}")
+        self.get_logger().info(f'Strategy set to {strategy}')
 
         msg = String()
         msg.data = strategy
         self.strategy_pub.publish(msg)
-
-
-
 
 
 

@@ -329,9 +329,7 @@ void applyStatusLedState(const LedState& state, int ledIndex) {
 
 
 void LedTask(void *argument) {
-
   clear_Ring();
-  WS2812_Send();
 
   LOG_INFO("led", "Starting loop.");
   osDelay(100);
@@ -350,9 +348,9 @@ void LedTask(void *argument) {
     else {
       turning_rainbow_animation();
     }
-    WS2812_Send();
 
-    osDelay(50);
+    WS2812_Send(); // TODO appelé plusieurs fois
+    osDelay(50); // less time than 50 seems to make it bug :=(
   }
 }
 

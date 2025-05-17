@@ -55,6 +55,12 @@ def generate_launch_description():
         description='Launch actuator controller (true|false)',
     )
 
+    brain_arg = DeclareLaunchArgument(
+        'brain',
+        default_value='False',
+        description='Launch state machine (true|false)',
+    )
+
     base_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource([
             get_package_share_directory('champi_bringup'),
@@ -97,6 +103,14 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('teleop'))
     )
 
+    brain_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource([
+            get_package_share_directory('champi_brain'),
+            '/launch/brain.launch.py'
+        ]),
+        condition=IfCondition(LaunchConfiguration('brain'))
+    )
+
 
     return LaunchDescription([
         sim_arg,
@@ -106,11 +120,13 @@ def generate_launch_description():
         lidar_perception_arg,
         teleop_arg,
         act_arg,
+        brain_arg,
 
         base_launch,
         nav_launch,
         camera_perception_launch,
         lidar_perception_launch,
         teleop_launch,
+        brain_launch,
     ])
 

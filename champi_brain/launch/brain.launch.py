@@ -28,7 +28,8 @@ def generate_launch_description():
         executable='state_machine_itf.py',
         name='sm_ros_itf',
         output='screen',
-        parameters=[config_file_path, {'sim': sim_config}]
+        respawn=True,
+        parameters=[config_file_path, {'sim': sim_config}],
     )
 
     return LaunchDescription([
