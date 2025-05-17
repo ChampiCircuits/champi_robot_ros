@@ -10,7 +10,7 @@ from rclpy.executors import ExternalShutdownException
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import STMState
 from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
-from std_msgs.msg import Int8, Int8MultiArray, String
+from std_msgs.msg import Int8, Int8MultiArray, String, Float32
 from rclpy.action import ActionClient
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
@@ -100,9 +100,16 @@ class ChampiStateMachineITF(Node):
         # subscriber topic /chosen_strategy
         self.chosen_strategy_sub = self.create_subscription(String, '/chosen_strategy', self.chosen_strategy_callback, 10)
 
+        # subscriber topic /platform_distance
+        self.platform_distance_sub = self.create_subscription(Float32, '/platform_distance', self.platform_distance_callback, 10)
+        self.latest_platform_dist = None
+
         self.champi_sm.ros_initialized = True # TODO more things ?
         self.itf_initialized = True
         self.get_logger().warn('Launched ChampiSMRosInterface !')
+
+    def platform_distance_callback(self, msg):
+        self.latest_platform_dist = msg.data
 
     def chosen_strategy_callback(self, msg):
         strategy_file_param = msg.data
@@ -167,15 +174,15 @@ class ChampiStateMachineITF(Node):
         msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]*3.14159/180/2)
 
         self.set_pose_pub.publish(msg)
-        time.sleep(3)
         self.get_logger().info(f'requested set_pose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
+        time.sleep(10)
 
 
     # ==================================== Feedback Callbacks =====================================
 
     def feedback_callback(self, feedback_msg):
         self.get_logger().info(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {round(feedback_msg.feedback.eta, 2)}s')
-        pass
+        # TODO prendre en compe
 
 
     # ==================================== Done Callbacks ==========================================

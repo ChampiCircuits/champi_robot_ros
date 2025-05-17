@@ -6,7 +6,7 @@ import logging
 from ament_index_python.packages import get_package_share_directory
 
 from state_machine_custom_classes import CustomHierarchicalGraphMachine
-from states import ChampiState, InitState, MoveState, WaitState, ActuatorState, InitPoseState
+from states import *
 
 class ChampiStateMachine(object):
     def set_itf(self, itf): self.itf = itf
@@ -34,6 +34,7 @@ class ChampiStateMachine(object):
         self.sm.add_state(ChampiState(name='idle', sm=self))
         self.sm.add_state(WaitState(name='wait', sm=self))
         self.sm.add_state(MoveState(name='move', sm=self))
+        self.sm.add_state(DetectAndMoveToPlatformState(name='moveInFrontOfPlatform', sm=self))
         self.sm.add_state(ChampiState(name='grab', sm=self))
         self.sm.add_state(ChampiState(name='put', sm=self))
         self.sm.add_state(ChampiState(name='endOfMatch', sm=self))
@@ -55,7 +56,9 @@ class ChampiStateMachine(object):
         self.sm.add_transition('init_end', 'init_waitForTirette', 'idle', conditions='tirette_pulled')
         ## BASIC ACTIONS
         self.sm.add_transition('start_move', 'idle', 'move', conditions='can_start_moving')
+        self.sm.add_transition('start_move_to_platform', 'idle', 'moveInFrontOfPlatform', conditions='can_start_moving_to_platform')
         self.sm.add_transition('start_wait', 'idle', 'wait', conditions='can_start_waiting')
+        self.sm.add_transition('back_to_idle', 'moveInFrontOfPlatform', 'idle', conditions='goal_reached')
         self.sm.add_transition('back_to_idle', 'move', 'idle', conditions='goal_reached')
         self.sm.add_transition('back_to_idle', 'action', 'idle', conditions='end_of_actuator_state')
         self.sm.add_transition('back_to_idle', 'wait', 'idle', conditions='end_of_wait')
@@ -106,6 +109,7 @@ class ChampiStateMachine(object):
     def reset_flags(self):
         # basic flags
         self.can_start_moving = False
+        self.can_start_moving_to_platform = False
         self.can_start_waiting = False
         self.goal_reached = False
         self.end_of_wait = False
@@ -159,6 +163,11 @@ class ChampiStateMachine(object):
                 x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
                 self.can_start_moving = True
                 self.start_move(x=x, y=y, theta_deg=theta_deg+90.0)  # +90° to align with the coordinate system
+
+            elif action_name == 'moveInFrontOfPlatform':
+                x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
+                self.can_start_moving_to_platform = True
+                self.start_move_to_platform(x=x, y=y, theta_deg=theta_deg)  # +90° to align with the coordinate system --> is done in the state after computations
 
             elif action_name in self.action_list:
                 self.can_start_action = True

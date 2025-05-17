@@ -32,7 +32,7 @@ def load_strategy(file_path, logger): # only one recursion level in files
             for (j, sub_action) in enumerate(sub_strat['actions']):
                 logger.info(f'Action {i}.{j}: {sub_action}')
 
-                if sub_action['action'] == 'move':
+                if 'move' in sub_action['action']:
                     sub_action = apply_transformation(sub_action, x_action, y_action, theta_deg_action)
 
                 sub_action['tag'] = tag
@@ -51,7 +51,7 @@ def apply_transformation(sub_action, x_action, y_action, theta_deg_action):
     # Extract sub_action coordinates
     x_sub = sub_action['target']['x']
     y_sub = sub_action['target']['y']
-    theta_sub = sub_action['target']['theta_deg']
+    theta_deg_sub = sub_action['target']['theta_deg']
 
     # Convert angles to radians
     theta_rad = math.radians(theta_deg_action)
@@ -59,7 +59,7 @@ def apply_transformation(sub_action, x_action, y_action, theta_deg_action):
     # Apply rotation and translation
     x_transformed = (x_sub * math.cos(theta_rad) - y_sub * math.sin(theta_rad)) + x_action
     y_transformed = (x_sub * math.sin(theta_rad) + y_sub * math.cos(theta_rad)) + y_action
-    theta_transformed = (theta_sub + theta_deg_action) % 360
+    theta_transformed = (theta_deg_sub + theta_deg_action) % 360
 
     # Update sub_action with transformed coordinates
     sub_action['target']['x'] = x_transformed

@@ -7,7 +7,7 @@ import tf2_ros
 
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py.point_cloud2 import read_points, create_cloud_xyz32
-from std_msgs.msg import Header
+from std_msgs.msg import Header, Float32
 
 from scipy.spatial.transform import Rotation as R
 import numpy as np
@@ -87,10 +87,12 @@ class PlatformDetectionNode(Node):
         self.transform_matrix_base_link_to_odom = None
 
         # platforms
-        margin = 0.01 # m
-        platform_height = 0.12 # m
+        margin = 0.02 # m
+        platform_height = 0.125 # m
         self.interval_platform_height = [platform_height - margin, platform_height + margin] # m
 
+        # distance publisher
+        self.distance_pub = self.create_publisher(Float32, '/platform_distance', 10)
 
         self.timer = self.create_timer(0.5, self.timer_callback)
 
@@ -134,7 +136,7 @@ class PlatformDetectionNode(Node):
         stop_time = self.get_clock().now()
         elapsed_time = (stop_time - start_time).nanoseconds / 1e6  # Convert to milliseconds
         filtered_points_count = filtered_point_cloud_array_in_base_link.shape[0]
-        self.get_logger().info(f"Filtered point cloud size: {filtered_points_count}")
+        self.get_logger().debug(f"Filtered point cloud size: {filtered_points_count}")
         self.get_logger().debug(f"Point cloud filtering time: {elapsed_time:.2f} ms \n")
 
         if filtered_points_count == 0:
@@ -147,7 +149,11 @@ class PlatformDetectionNode(Node):
 
         # Find the shortest from the robot to the platform
         dist_to_platform = find_distance_to_platform(filtered_point_cloud_array_in_base_link)
-        self.get_logger().info(f"Distance to platform: {dist_to_platform:.2f} m")
+        self.get_logger().debug(f"Distance to platform: {dist_to_platform:.2f} m")
+
+        msg = Float32()
+        msg.data = dist_to_platform
+        self.distance_pub.publish(msg)
 
     def publish_filtered_point_cloud(self, filtered_point_cloud_array, frame):
         # Create a PointCloud2 message

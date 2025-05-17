@@ -8,8 +8,11 @@
 # v
 # x
 actions:
-  - action: move #-0.01 car l'actionneur est décentré
-    target: { x: -0.01, y: -0.21, theta_deg: -60.0 } # aller devant les conserves, en peu en recul
+  - action: move
+    target: { x: 0.0, y: -0.4, theta_deg: 0.0 } # move to the front
+
+  - action: moveInFrontOfPlatform # TODO -0.01 car l'actionneur est décentré
+    target: { x: 0.0, y: 0.0, theta_deg: 0.0 } # aller devant les conserves
 
   - action: TAKE_LOWER_PLANK
 
