@@ -1,0 +1,26 @@
+image_width: 1280
+image_height: 720
+camera_name: mmal_service_16.1
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [373.021697, 0.000000, 640.563638,
+          0.000000, 370.365462, 359.849084,
+          0.000000, 0.000000, 1.000000]
+distortion_model: plumb_bob 
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [0.000540, 0.000396, -0.000485, -0.000062, 0.000000]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1., 0., 0.,
+         0., 1., 0.,
+         0., 0., 1.]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [376.286441, 0.000000, 640.327266, 0.000000,
+          0.000000, 373.357180, 358.840185, 0.000000,
+          0.000000, 0.000000, 1.000000, 0.000000]
