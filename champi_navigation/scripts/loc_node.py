@@ -3,7 +3,6 @@
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped, PoseStamped, Pose
 import tf_transformations
 from tf2_ros import TransformBroadcaster
@@ -11,6 +10,7 @@ import numpy as np
 import tf2_ros
 import tf2_geometry_msgs
 from rclpy.duration import Duration
+from champi_interfaces.srv import SetPose
 
 def pose_to_transform(pose: Pose):
     """Convert a Pose to a tf_transformations Transform."""
@@ -39,17 +39,11 @@ class LocNode(Node):
             self.odom_callback,
             10
         )
-
-        # Qos 'reliable' because when communicating from another computer, sometimes this set_pose msg is lost
-        qos_profile = QoSProfile(
-            reliability=QoSReliabilityPolicy.RELIABLE,
-            depth=10  # Taille du buffer pour les messages
-        )
         self.set_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
-            '/set_pose',
-            self.set_pose_callback,
-            qos_profile
+            '/set_pose_rviz',
+            self.set_pose_rviz_callback,
+            10
         )
         self.aruco_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
@@ -57,6 +51,14 @@ class LocNode(Node):
             self.aruco_pose_callback,
             10
         )
+
+        # Service Server
+        self.set_pose_service = self.create_service(
+            SetPose,
+            '/set_pose',
+            self.handle_set_pose_srv,
+        )
+
         # cooldown timer for aruco : 1s
         self.cooldown_value = 1.0 #s
         self.last_time_aruco_pose_taken_in_account = self.get_clock().now()
@@ -74,7 +76,10 @@ class LocNode(Node):
         self.robot_pose_when_set_pose = PoseWithCovarianceStamped()
         self.odom_callback(Odometry())
 
-    def set_pose_callback(self, msg: PoseWithCovarianceStamped):
+    def handle_set_pose_srv(self, request, response):
+        self.set_pose_callback(request.pose)
+
+    def set_pose_rviz_callback(self, msg: PoseWithCovarianceStamped):
         self.latest_set_pose = msg
         self.robot_pose_when_set_pose = self.latest_robot_pose
         self.get_logger().info("Set pose received")
@@ -123,18 +128,6 @@ class LocNode(Node):
         transform.transform.rotation = new_odom.pose.pose.orientation
 
         self.tf_broadcaster.sendTransform(transform)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def main(args=None):
