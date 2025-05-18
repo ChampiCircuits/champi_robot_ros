@@ -19,12 +19,18 @@ const osThreadAttr_t otosTask_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
+bool otos_calibrate_requested;
+
 void OtosTask(void *argument) {
-  QwiicOTOS myOtos(&hi2c4, 0x17);
+
   led_otos::setRed();
 
+  osDelay(500); // Let the Otos get powered up.
+
+  QwiicOTOS myOtos(&hi2c4, 0x17);
+
   while (!myOtos.isConnected()) {
-    LOG_WARN("otos", "Connecting failed. Retrying...");
+    LOG_WARN("otos", "Connecting failed. Retrying");
 
     osDelay(1000);
   }
@@ -33,12 +39,8 @@ void OtosTask(void *argument) {
 
   if (!myOtos.selfTest()) {
     // ERROR WITH OTOS
-    LOG_WARN("otos", "Self-test failed.");
-    // osDelay(1000000000); // TODO reset STM ?
-    while (1) {
-      led_otos::setRed();
-      osDelay(1000);
-    }
+    LOG_WARN("otos", "Self-test failed. Resetting");
+    HAL_NVIC_SystemReset(); // Reset STM
   }
 
   led_otos::setBlue();
@@ -69,12 +71,14 @@ void OtosTask(void *argument) {
 
   while (true) {
 
-    if (mod_reg::requests->request_reset_otos) {
+    if (otos_calibrate_requested) {
+      led_otos::setOrange();
       LOG_INFO("otos", "Resetting OTOS.");
-      mod_reg::requests->request_reset_otos = false;
+      otos_calibrate_requested = false;
+      osDelay(2000); // To avoid vibrations following pressing the button.
       myOtos.calibrateImu();
-      // myOtos.resetTracking(); // We don't reset because jumps are bad for UKF. Still it's a good time to calibrate the IMU
-      osDelay(10);
+      osDelay(500);
+      led_otos::setGreen();
     }
 
     Pose2D otosPose = myOtos.getPosition();

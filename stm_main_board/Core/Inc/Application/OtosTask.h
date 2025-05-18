@@ -8,6 +8,7 @@
 #ifndef INC_APPLICATION_OTOSTASK_H_
 #define INC_APPLICATION_OTOSTASK_H_
 
+extern bool otos_calibrate_requested;
 
 void OtosTaskStart();
 
