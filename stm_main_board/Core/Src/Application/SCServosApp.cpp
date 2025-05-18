@@ -33,7 +33,7 @@ namespace devices
                 } else {
                     LOG_INFO("scs", "Servo number %d read successful", ids_servos[i]);
                 }
-                osDelay(1);
+                osDelay(10);
             }
             return result;
         }
@@ -41,7 +41,7 @@ namespace devices
         void set_enable(bool enable) {
             for (const auto id : ids_servos) {
                 servos.EnableTorque(id, enable);
-                osDelay(1);
+                osDelay(10);
             }
         }
 
@@ -63,7 +63,7 @@ namespace devices
                 position = 1023;
             }
             servos.WritePos(id, position, ms);
-            osDelay(1);
+            osDelay(10);
         }
 
         void test_angle(uint8_t id, float angle) {
@@ -102,7 +102,7 @@ int SCServosApp_Init() {
 
     for (const auto id : ids_servos) {
         servos.WriteLimitTroque(id, SCSERVOS_TORQUE_LIMIT);
-        osDelay(1);
+        osDelay(10);
     }
     init_successful = true;
 

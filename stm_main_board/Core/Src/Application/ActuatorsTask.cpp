@@ -110,9 +110,9 @@ void PutPlanks(int layer)
 void TakeCan(int id_servo_which_side)
 {
     // devices::stepper_opt0.set_goal_sync(1.2);
-    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_OUT_POS,200);
+    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_OUT_POS,300);
     devices::stepper_opt0.set_goal_sync(0.37);
-    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_TAKE_POS,200);
+    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_TAKE_POS,300);
 
     devices::stepper_opt0.set_goal_async(0.37+0.6); // async pour partir en move plus tôt
 }

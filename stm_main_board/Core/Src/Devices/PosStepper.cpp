@@ -29,7 +29,7 @@ void PosStepper::set_goal_async(float goal_pos) {
   }
   _goal_pos = goal_pos;
   _pos_reached = false;
-  osDelay(1); // just in case
+  osDelay(10); // just in case
 }
 
 void PosStepper::set_goal_sync(float goal_pos) {
