@@ -35,6 +35,8 @@ actions:
   - action: move
     target: { x: 1.2, y: 0.6, theta_deg: 180.0 } # move a bit to middle
 
+  - action: RESET_ACTUATORS # needed to put the lift down
+
   - action: include_sub_file
     file: 'take_elements.yaml'
     parameters:
@@ -50,9 +52,11 @@ actions:
       tag: 'elements_2'
 
 ######################### TAKE THIRD ELEMENT GROUP ######################################
-#  - action: move
-#    target: { x: 0.6, y: 0.6, theta_deg: 90.0 } # move a bit to middle
-#
+  - action: move
+    target: { x: 0.6, y: 0.6, theta_deg: 90.0 } # move a bit to middle
+
+  - action: RESET_ACTUATORS # needed to put the lift down
+
 #  - action: include_sub_file
 #    file: 'take_elements.yaml'
 #    parameters:
