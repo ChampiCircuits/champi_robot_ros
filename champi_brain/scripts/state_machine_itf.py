@@ -107,6 +107,14 @@ class ChampiStateMachineITF(Node):
         self.current_points = 0
         self.start_time = None
         self.time_left = TOTAL_AVAILABLE_TIME
+
+        # Cancel current goal if self.future_navigate_result not None
+        if self.goal_handle_navigate is not None:
+            self.get_logger().info('Cancelling current goal...')
+
+            future = self.goal_handle_navigate.cancel_goal_async()
+            future.add_done_callback(self.cancel_done_callback)
+
         if not self.sim_param:
             self.send_actuator_action('RESET_ACTUATORS')
         self.get_logger().warn('\nChampiSM has been reset!\n')
@@ -193,7 +201,7 @@ class ChampiStateMachineITF(Node):
 
     def feedback_callback(self, feedback_msg):
         self.get_logger().info(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {round(feedback_msg.feedback.eta, 2)}s')
-        # TODO prendre en compe
+        # TODO prendre en compte
 
 
     # ==================================== Done Callbacks ==========================================
@@ -219,13 +227,13 @@ class ChampiStateMachineITF(Node):
             self.goal_reached_callback()
         else:
             self.get_logger().error(f'Move failed: {result.message}')
-            self.champi_sm.cancel_current_tag()
+            if 'move' in self.champi_sm.state:
+                self.champi_sm.cancel_current_tag()
 
 
 
     def cancel_done_callback(self, future):
-        self.get_logger().info('Goal cancelled succesfully!') # TODO
-        # self.send_goal(self.goal_pose)
+        self.get_logger().info('Goal cancelled succesfully!')
 
 
 # ============================================ Utils ==============================================

@@ -104,6 +104,7 @@ class ChampiStateMachine(object):
     def reset(self):
         self.reset_flags()
         self.stop_requested = True
+        self.latest_canceled_tag = None
         self.please_stop() # trigger stop state
 
     def reset_flags(self):
@@ -155,7 +156,7 @@ class ChampiStateMachine(object):
             get_logger(self.name).info(f'Next action is {action}')
 
             action_name = action['action']
-            get_logger(self.name).info(f'Action tag: {action.get('tag')}')
+            get_logger(self.name).info(f' name: {action_name} & tag: {action.get('tag')}')
             if action.get('tag') is not None:
                 self.current_tag = action['tag']
                 if self.current_tag == self.latest_canceled_tag:
