@@ -42,7 +42,7 @@ class LocNode(Node):
         self.set_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
             '/set_pose_rviz',
-            self.set_pose_rviz_callback,
+            self.set_pose_callback,
             10
         )
         self.aruco_pose_sub = self.create_subscription(
@@ -78,8 +78,9 @@ class LocNode(Node):
 
     def handle_set_pose_srv(self, request, response):
         self.set_pose_callback(request.pose)
+        return response
 
-    def set_pose_rviz_callback(self, msg: PoseWithCovarianceStamped):
+    def set_pose_callback(self, msg: PoseWithCovarianceStamped):
         self.latest_set_pose = msg
         self.robot_pose_when_set_pose = self.latest_robot_pose
         self.get_logger().info("Set pose received")

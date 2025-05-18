@@ -140,12 +140,15 @@ class PlatformDetectionNode(Node):
         self.get_logger().debug(f"Point cloud filtering time: {elapsed_time:.2f} ms \n")
 
         if filtered_points_count == 0:
+            msg = Float32()
+            msg.data = -1.0
+            self.distance_pub.publish(msg) # we always publish, even when nothing is detected so that state machine still get updated values
             return
 
         # transform filtered point cloud to odom frame
         filtered_point_cloud_in_odom = self.transform_points_to_odom(filtered_point_cloud_array_in_base_link)
         # for viz only :
-        self.publish_filtered_point_cloud(filtered_point_cloud_in_odom, 'odom')
+        self.publish_filtered_point_cloud(filtered_point_cloud_in_odom, 'base_link')
 
         # Find the shortest from the robot to the platform
         dist_to_platform = find_distance_to_platform(filtered_point_cloud_array_in_base_link)

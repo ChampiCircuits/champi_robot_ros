@@ -60,10 +60,11 @@ class DetectPlatformState(ChampiState):
 
         get_logger(self.name).info('Starting platform detection')
         time.sleep(1)
-        # TODO if is None
         half_platform_width = 0.05
 
-        center_platform_dist = self.sm.itf.latest_platform_dist - half_platform_width
+        if self.sm.itf.latest_platform_dist < 0.0: # (pub -1.0, but just to be sure)
+            # No plank detected !! --> cancel action
+            self.sm.cancel_current_tag()
 
         center_platform_dist = self.sm.itf.latest_platform_dist + half_platform_width # TODO - ??
         get_logger(self.name).info(f'Distance to platform width middle is {center_platform_dist}m')

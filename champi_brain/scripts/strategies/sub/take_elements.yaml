@@ -7,24 +7,30 @@
 # |
 # v
 # x
+
+# move are directly transformed (=action target @ subaction target offset)
+# moveForPlatform are later transformed after having computed the platform pose
 actions:
-  - action: move
+  - action: move #!!! attention pour l'instant il faut donner la même position que juste en-dessous
     target: { x: 0.0, y: -0.4, theta_deg: 0.0 } # move to the front
 
-  - action: moveInFrontOfPlatform # TODO -0.01 car l'actionneur est décentré
-    target: { x: 0.0, y: 0.0, theta_deg: 0.0 } # aller devant les conserves
+  - action: detectPlatform
+    target: { x: 0.0, y: -0.4, theta_deg: 0.0 } # !!! attention pour l'instant il faut donner la même position que juste au-dessus
+
+  - action: moveForPlatform # -0.01 car l'actionneur est décentré
+    target: { x: -0.01, y: -0.21, theta_deg: -60.0 }
 
   - action: TAKE_LOWER_PLANK
 
-  - action: move
+  - action: moveForPlatform
     target: { x: -0.1, y: -0.21, theta_deg: -60.0 } # décale sur les deux conserves de gauche
 
   - action: TAKE_CANS_LEFT
 
-  - action: move
+  - action: moveForPlatform
     target: { x: -0.1, y: -0.24, theta_deg: 60.0 } # recule
 
-  - action: move
+  - action: moveForPlatform
     target: { x: 0.1, y: -0.21, theta_deg: 60.0 } # re-avance mais avec le côté de l'actionneur en face
 
   - action: TAKE_CANS_RIGHT
