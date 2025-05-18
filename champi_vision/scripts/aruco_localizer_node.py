@@ -164,17 +164,17 @@ class ArucoLocalizerNode(Node):
         # ========================= ROBOT -> WORLD POSE ESTIMATION =====================================
 
         if id_marker==20:
-            x = 2.-0.45-0.12/2.
-            y = 3.-0.7-0.12/2.
+            x = 0.6
+            y = 1.4
         elif id_marker==21:
-            x = 2.-0.45-0.12/2.
-            y = 0.7+0.12/2.
+            x = 2.4
+            y = 1.4
         elif id_marker==22: # todo x and y are inversed
-            x = 0.5+0.12/2. # TODO the other tags
-            y = 0.7-0.12/2.
+            x = 0.6         #  TODO the other tags
+            y = 0.6
         elif id_marker==23:
-            x = 0.5+0.12/2.
-            y = 0.7+0.12/2.
+            x = 2.4
+            y = 0.6
         pos_aruco_in_world = np.array([x, y, 1])
 
         # Now we have the position of the aruco tag relative to the robot, and we know the position of the tag in the world.
