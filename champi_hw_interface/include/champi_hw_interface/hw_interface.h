@@ -67,9 +67,6 @@ private:
     void publish_transform();
 
     void twist_callback(geometry_msgs::msg::Twist::SharedPtr msg);
-    void initial_pose_callback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
-
-    void set_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
     void actuators_control_callback(const std_msgs::msg::Int8 msg) const;
     void check_for_actuators_state() const;
@@ -91,8 +88,6 @@ private:
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_otos_;
     std::vector<double> cov_pose_odom_otos_;
     std::vector<double> cov_vel_odom_otos_;
-
-    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscriber_set_pose_;
 
     rclcpp::Subscription<std_msgs::msg::Int8>::SharedPtr subscriber_ctrl_actuators_;
     rclcpp::Publisher<std_msgs::msg::Int8MultiArray>::SharedPtr pub_ctrl_actuators_;

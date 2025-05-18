@@ -7,12 +7,6 @@ void HardwareInterfaceNode::twist_callback(const geometry_msgs::msg::Twist::Shar
     latest_twist_ = *msg;
 }
 
-void HardwareInterfaceNode::initial_pose_callback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-    mod_reg::requests->request_reset_otos = true; // this request calibrates only.
-    this->write(mod_reg::reg_requests);
-    RCLCPP_WARN(this->get_logger(), "Initial pose updated. Re-calibrating OTOS.");
-}
-
 void HardwareInterfaceNode::actuators_control_callback(const std_msgs::msg::Int8 msg) const
 {
     int actuator_number = msg.data;
