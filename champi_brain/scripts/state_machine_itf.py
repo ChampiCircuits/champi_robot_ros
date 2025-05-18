@@ -12,6 +12,8 @@ from champi_interfaces.msg import STMState
 from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
 from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32
 from rclpy.action import ActionClient
+from robot_localization.srv import SetPose
+
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
 import time
@@ -51,13 +53,8 @@ class ChampiStateMachineITF(Node):
 
         self.timer = self.create_timer(timer_period_sec=0.2, callback=self.callback_timer)
 
-        # publisher topic /set_pose
-        # Qos 'reliable' because when communicating from another computer, sometimes this msg set_pose is lost
-        qos_profile = QoSProfile(
-            reliability=QoSReliabilityPolicy.RELIABLE,
-            depth=10  # Taille du buffer pour les messages
-        )
-        self.set_pose_pub = self.create_publisher(PoseWithCovarianceStamped, '/set_pose', qos_profile)
+        # service /set_pose
+        self.client = self.create_client(SetPose, '/set_pose')
 
 
         # # Strategy
@@ -181,9 +178,15 @@ class ChampiStateMachineITF(Node):
         msg.pose.pose.orientation.z = sin(self.champi_sm.init_pose[2]*3.14159/180/2)
         msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]*3.14159/180/2)
 
-        self.set_pose_pub.publish(msg)
+        # Call service /set_pose
+        request = SetPose.Request()
+        request.pose.pose = msg.pose
+        request.pose.header.stamp = self.get_clock().now().to_msg()
+        request.pose.header.frame_id = 'odom'
+        future = self.client.call_async(request)
+
         self.get_logger().info(f'requested set_pose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
-        time.sleep(10)
+        time.sleep(1)
 
 
     # ==================================== Feedback Callbacks =====================================
