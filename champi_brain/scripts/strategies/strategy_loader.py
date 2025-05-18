@@ -32,7 +32,7 @@ def load_strategy(file_path, logger): # only one recursion level in files
             for (j, sub_action) in enumerate(sub_strat['actions']):
                 logger.info(f'Action {i}.{j}: {sub_action}')
 
-                if 'move' in sub_action['action']:
+                if sub_action['action'] in ['move', 'detectPlatform']: # moveForPlatform are not yet transformed
                     sub_action = apply_transformation(sub_action, x_action, y_action, theta_deg_action)
 
                 sub_action['tag'] = tag
