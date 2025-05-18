@@ -12,7 +12,7 @@ from champi_interfaces.msg import STMState
 from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
 from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32
 from rclpy.action import ActionClient
-from robot_localization.srv import SetPose
+from champi_interfaces.srv import SetPose
 
 from math import sin, cos, pi
 from state_machine import ChampiStateMachine
@@ -188,9 +188,7 @@ class ChampiStateMachineITF(Node):
 
         # Call service /set_pose
         request = SetPose.Request()
-        request.pose.pose = msg.pose
-        request.pose.header.stamp = self.get_clock().now().to_msg()
-        request.pose.header.frame_id = 'odom'
+        request.pose = msg
         future = self.client.call_async(request)
 
         self.get_logger().info(f'requested set_pose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
@@ -200,7 +198,7 @@ class ChampiStateMachineITF(Node):
     # ==================================== Feedback Callbacks =====================================
 
     def feedback_callback(self, feedback_msg):
-        self.get_logger().info(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {round(feedback_msg.feedback.eta, 2)}s')
+        self.get_logger().debug(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {round(feedback_msg.feedback.eta, 2)}s')
         # TODO prendre en compte
 
 
