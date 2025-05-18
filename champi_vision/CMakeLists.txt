@@ -46,6 +46,7 @@ install(PROGRAMS
         scripts/camera_info_publisher_node.py
         scripts/cv2_camera_publisher_node.py
         scripts/enemy_tracker_node.py
+        scripts/platform_detection_node.py
         DESTINATION lib/${PROJECT_NAME}
 )
 

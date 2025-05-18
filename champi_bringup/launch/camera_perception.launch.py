@@ -29,8 +29,16 @@ def generate_launch_description():
             output='screen'
     )
 
+    platform_detection = Node(
+        package="champi_vision",
+        executable="platform_detection_node.py",
+        name='platform_detection',
+        output='screen'
+    )
+
     return LaunchDescription([
         realsense2_camera_launch,
-        # visual_loc
+        # visual_loc,
+        platform_detection
     ])
 
