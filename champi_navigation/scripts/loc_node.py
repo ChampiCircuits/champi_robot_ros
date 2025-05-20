@@ -11,6 +11,7 @@ import tf2_ros
 import tf2_geometry_msgs
 from rclpy.duration import Duration
 from champi_interfaces.srv import SetPose
+from math import atan2
 
 def pose_to_transform(pose: Pose):
     """Convert a Pose to a tf_transformations Transform."""
@@ -91,11 +92,22 @@ class LocNode(Node):
         if self.get_clock().now() - self.last_time_aruco_pose_taken_in_account < Duration(seconds=self.cooldown_value):
             return
 
+        # We take the aruco pose into account only if we are almost not moving
+        if abs(self.latest_robot_pose.twist.twist.linear.x) > 0.05 \
+            or abs(self.latest_robot_pose.twist.twist.linear.y) > 0.05 \
+                or abs(self.latest_robot_pose.twist.twist.angular.z) > 0.05:
+            self.get_logger().info("Seen Aruco but robot is moving, not taking aruco pose into account")
+            self.get_logger().debug(f"Robot speed: {self.latest_robot_pose.twist.twist.linear.x} m/s, {self.latest_robot_pose.twist.twist.linear.y} m/s, {self.latest_robot_pose.twist.twist.angular.z} rad/s")
+            return
+
         # We take the aruco pose into account
         self.last_time_aruco_pose_taken_in_account = self.get_clock().now()
         self.latest_set_pose = msg
         self.robot_pose_when_set_pose = self.latest_robot_pose
-        self.get_logger().info(f"New aruco pose received (now waiting cooldown={self.cooldown_value})")
+
+        position = msg.pose.pose.position
+        rotation_deg = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w) * 180.0 / np.pi
+        self.get_logger().info(f"New aruco pose received (pose={position.x} {position.y} {rotation_deg}°) (now waiting cooldown={self.cooldown_value}s)")
 
     def odom_callback(self, msg: Odometry):
         self.latest_robot_pose = msg
