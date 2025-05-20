@@ -7,6 +7,8 @@ from pages import launch_page, match_page, debug_page, diagnostics_page, ip_page
 from nicegui import ui
 from node import init_ros_node
 
+print("web ui main launched")
+
 node = init_ros_node()
 
 def ros_spin():
@@ -32,6 +34,9 @@ usages_page.create()
 
 # project_dir = os.path.dirname(os.path.abspath(__file__))
 # print("✅ Limiting reload to:", project_dir)
+
+print('pages created')
+print('launching ui')
 
 ui.run(
     title='Champi Web UI',

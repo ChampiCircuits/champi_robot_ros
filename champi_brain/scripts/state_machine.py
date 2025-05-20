@@ -47,7 +47,7 @@ class ChampiStateMachine(object):
         self.sm.get_state('init').add_substate(ChampiState(name='waitForTirette', sm=self))
 
         # TRANSITIONS
-        self.sm.add_transition('please_stop', ['init','idle','wait','move','endOfMatch','action'], 'stop', conditions='stop_requested')
+        self.sm.add_transition('please_stop', ['init','idle','wait','move', 'moveForPlatform', 'detectPlatform','endOfMatch','action'], 'stop', conditions='stop_requested')
         ## INIT
         self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
         self.sm.add_transition('init_next', 'init_waitForRosInit', 'init_waitForUserChooseConfig', conditions='ros_initialized')
@@ -77,6 +77,8 @@ class ChampiStateMachine(object):
         # FLAGS (TO BE UPDATED BY ROS MSG CALLBACKS)
         self.reset_flags()
         self.ros_initialized = False # this one is never reset
+        self.match_ended = False
+        self.in_match = False
 
         # STRATEGY (TO BE INIT BY THE NODE)
         self.strategy = None
@@ -106,6 +108,10 @@ class ChampiStateMachine(object):
     def reset(self):
         self.reset_flags()
         self.stop_requested = True
+
+        self.match_ended = False
+        self.in_match = False
+
         self.latest_canceled_tag = None
         self.please_stop() # trigger stop state
 
@@ -131,8 +137,6 @@ class ChampiStateMachine(object):
         # self.ros_initialized = False # in fact we don't reset it, bc once it's done it's gonna be ok
         self.user_has_chosen_config = False
         self.tirette_released = False
-        self.match_ended = False
-        self.in_match = False
 
     def draw_graph(self, *args, **kwargs):
         #self.sm.get_combined_graph().draw(get_package_share_directory('champi_brain')+'SM_diagram.png', prog='dot')
