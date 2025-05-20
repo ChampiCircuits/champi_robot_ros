@@ -3,6 +3,7 @@ from nicegui import ui
 
 def menu() -> None:
     ui.link('Start Match', '/').classes(replace='text-white')
+    ui.link('In Match', '/in_match').classes(replace='text-white')
     ui.link('Launchs', '/launchs').classes(replace='text-white')
     ui.link('Strategies', '/strategies').classes(replace='text-white')
     ui.link('Debug Actions', '/debug').classes(replace='text-white')
