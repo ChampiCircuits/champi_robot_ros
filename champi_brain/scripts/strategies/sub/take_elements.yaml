@@ -2,7 +2,7 @@
 # IN SUB FILES, EVERY POSITION ARE OFFSETS
 ##########################################
 # we assume center robot to center of plank taker is 0.21
-# so target pose passed as argument is the position to put/take the planks
+# so target pose passed as argument is the position of the center of the planks
 # o -----> y
 # |
 # v
@@ -12,13 +12,13 @@
 # moveForPlatform are later transformed after having computed the platform pose
 actions:
   - action: move #!!! attention pour l'instant il faut donner la même position que juste en-dessous
-    target: { x: 0.0, y: -0.4, theta_deg: 0.0 } # move to the front
+    target: { x: 0.0, y: -0.35, theta_deg: 0.0 } # move to the front
 
   - action: detectPlatform
-    target: { x: 0.0, y: -0.4, theta_deg: 0.0 } # !!! attention pour l'instant il faut donner la même position que juste au-dessus
+    target: { x: 0.0, y: -0.35, theta_deg: 0.0 } # !!! attention pour l'instant il faut donner la même position que juste au-dessus
 
-  - action: moveForPlatform # -0.01 car l'actionneur est décentré
-    target: { x: -0.01, y: -0.21, theta_deg: -60.0 }
+  - action: moveForPlatform
+    target: { x: 0.0, y: -0.21, theta_deg: -60.0 }
 
   - action: TAKE_LOWER_PLANK
 
@@ -27,8 +27,8 @@ actions:
 
   - action: TAKE_CANS_LEFT
 
-  - action: moveForPlatform
-    target: { x: -0.1, y: -0.24, theta_deg: 60.0 } # recule
+#  - action: moveForPlatform
+#    target: { x: -0.1, y: -0.24, theta_deg: 60.0 } # recule
 
   - action: moveForPlatform
     target: { x: 0.1, y: -0.21, theta_deg: 60.0 } # re-avance mais avec le côté de l'actionneur en face
