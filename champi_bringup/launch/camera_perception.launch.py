@@ -25,7 +25,7 @@ def generate_launch_description():
     visual_loc = Node(
             package="champi_vision",
             executable="aruco_localizer_node.py",
-            name='aruco_loc',
+            name='aruco_localizer_node',
             output='screen'
     )
 
@@ -38,7 +38,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         realsense2_camera_launch,
-        # visual_loc,
+        visual_loc,
         platform_detection
     ])
 
