@@ -29,6 +29,8 @@ class ChampiStateMachineITF(Node):
 
     def __init__(self):
         super().__init__('sm_ros_itf')
+        # self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
+
         self.get_logger().info('Launching ChampiSMRosInterface...')
         self.itf_initialized = False
 
@@ -168,11 +170,18 @@ class ChampiStateMachineITF(Node):
             self.time_left = TOTAL_AVAILABLE_TIME - elapsed_time
 
             if self.time_left > 0.0:
-                pass
-                # self.get_logger().info(f'time left= {self.time_left}, state={self.champi_sm.state}')
+                self.get_logger().debug(f'time left= {self.time_left}, state={self.champi_sm.state}')
+
             elif not self.champi_sm.match_ended:
                 self.champi_sm.match_ended = True
-                self.get_logger().info(f'No time left. Triggering end of match. Was in state {self.champi_sm.state}.')
+                self.get_logger().error(f'No time left. Triggering end of match. Was in state {self.champi_sm.state}.')
+                # Cancel current goal if self.future_navigate_result not None
+                if self.goal_handle_navigate is not None:
+                    self.get_logger().info('Cancelling current goal...')
+
+                    future = self.goal_handle_navigate.cancel_goal_async()
+                    future.add_done_callback(self.cancel_done_callback)
+
 
     def init_robot_pose(self):
         msg = PoseWithCovarianceStamped()
