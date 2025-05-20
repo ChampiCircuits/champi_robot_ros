@@ -15,7 +15,7 @@ class InitPoseState(ChampiState):
     def enter(self, event_data):
         super().enter(event_data)
 
-        # TODO attendre un scan OK
+        # TODO attendre un tag aruco OK
 
         x = self.sm.init_pose[0]
         y = self.sm.init_pose[1]
@@ -33,12 +33,13 @@ class MoveState(ChampiState):
         x = event_data.kwargs.get('x', None)
         y = event_data.kwargs.get('y', None)
         theta_deg = event_data.kwargs.get('theta_deg', None)
-        self.move_to(x, y, theta_deg)
+        use_dynamic_layer = event_data.kwargs.get('use_dynamic_layer', None)
+        self.move_to(x, y, theta_deg, use_dynamic_layer)
 
-    def move_to(self, x, y, theta_deg):
+    def move_to(self, x, y, theta_deg, use_dynamic_layer):
         theta_rad = theta_deg * math.pi / 180.0
         get_logger(self.name+'_state').info(f"Start moving to x={x}, y={y}, theta={theta_deg}°")
-        self.sm.itf.send_goal(x, y, theta_rad)
+        self.sm.itf.send_goal(x, y, theta_rad, use_dynamic_layer)
 
 class DetectPlatformState(ChampiState):
     def enter(self, event_data):
@@ -101,7 +102,7 @@ class MoveForPlatformState(MoveState):
 
         get_logger(self.name).info(f'computed pose is {x_front_platform} {y_front_platform} {theta_deg_front_platform}°')
 
-        self.move_to(x_front_platform, y_front_platform, theta_deg_front_platform+90.) # +90° to align with the coordinate system
+        self.move_to(x_front_platform, y_front_platform, theta_deg_front_platform+90., use_dynamic_layer=False) # +90° to align with the coordinate system
 
 class WaitState(ChampiState):
     def enter(self, event_data):

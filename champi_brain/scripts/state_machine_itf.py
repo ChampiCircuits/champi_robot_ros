@@ -10,7 +10,7 @@ from rclpy.executors import ExternalShutdownException
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import STMState
 from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
-from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32
+from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32, Bool
 from rclpy.action import ActionClient
 from champi_interfaces.srv import SetPose
 
@@ -74,6 +74,8 @@ class ChampiStateMachineITF(Node):
         self.action_client_navigate = ActionClient(self, Navigate, '/navigate')
         self.action_client_navigate.wait_for_server()
         self.get_logger().info('<< Action client /navigate is ready!')
+
+        self.use_dynamic_layer_pub = self.create_publisher(Bool, '/use_dynamic_layer', 10)
 
         # publisher topic /ctrl/actuators
         self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
@@ -248,8 +250,14 @@ class ChampiStateMachineITF(Node):
 
 
 # ============================================ Utils ==============================================
-    def send_goal(self, x, y, theta_rad):
+    def send_goal(self, x, y, theta_rad, use_dynamic_layer):
         self.get_logger().info(f' Call action to move to {x} {y}')
+
+        msg = Bool()
+        msg.data = use_dynamic_layer
+        self.use_dynamic_layer_pub.publish(msg)
+
+
         goal_pose = Pose()
         goal_pose.position.x = x
         goal_pose.position.y = y  
