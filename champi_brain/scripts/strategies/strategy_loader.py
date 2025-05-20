@@ -8,16 +8,29 @@ def load_yaml(file_path):
         data = yaml.safe_load(file)
     return data
 
-def load_strategy(file_path, logger): # only one recursion level in files
+def load_strategy(file_path, color, logger): # only one recursion level in files
     data = load_yaml(file_path)
 
-    init_pose = [data['init_pose']['x'], data['init_pose']['y'], data['init_pose']['theta_deg']+90.0]  # +90° to align with the coordinate system
+    init_pose = [data['init_pose']['x'], data['init_pose']['y'], data['init_pose']['theta_deg']]
+    if color == 'BLUE': # transform x if blue through vertical axis
+        init_pose[0] = 3.0 - init_pose[0] # inverse the
+        init_pose[2] = (360 - init_pose[2]) % 360 # inverse the angle
+
+    init_pose[2] = init_pose[2] +90.0  # +90° to align with the coordinate system
     logger.info(f'<< Init pose will be {init_pose[0]} {init_pose[1]} {init_pose[2]}°!')
 
     actions = []
 
     for (i, action) in enumerate(data['actions']):
         logger.info(f'Action {i}: {action}')
+
+        if color == 'BLUE': # transform x if blue through vertical axis
+            if 'target' in action:
+                action['target']['x'] = 3.0 - action['target']['x']
+                action['target']['theta_deg'] = (360 - action['target']['theta_deg']) % 360
+            if 'parameters' in action and 'target' in action['parameters']:
+                action['parameters']['target']['x'] = 3.0 - action['parameters']['target']['x']
+                action['parameters']['target']['theta_deg'] = (360 - action['parameters']['target']['theta_deg']) % 360
 
         if action['action'] == 'include_sub_file':
             sub_file_name = action['file']

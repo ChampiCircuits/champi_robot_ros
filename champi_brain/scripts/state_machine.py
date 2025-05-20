@@ -82,6 +82,7 @@ class ChampiStateMachine(object):
 
         # STRATEGY (TO BE INIT BY THE NODE)
         self.strategy = None
+        self.color = None
         self.init_pose = None
 
         # OTHERS
