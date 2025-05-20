@@ -69,6 +69,29 @@ class CostmapUpdaterNode(Node):
         y_end = round((1.1) / self.resolution)
         self.static_layer_img[y_start:y_end, x_start:x_end] = 0
 
+        ##### add the ramp and the scene
+        # left ramp
+        x_start = round((0.65-self.robot_radius) / self.resolution)
+        x_end = round((1.05+self.robot_radius) / self.resolution)
+        y_start = round((1.8-self.robot_radius) / self.resolution)
+        y_end = round((2.0+self.robot_radius) / self.resolution)
+        self.static_layer_img[y_start:y_end, x_start:x_end] = 100
+
+        # right ramp
+        x_start = round((1.95-self.robot_radius) / self.resolution)
+        x_end = round((2.35+self.robot_radius) / self.resolution)
+        y_start = round((1.8-self.robot_radius) / self.resolution)
+        y_end = round((2.0+self.robot_radius) / self.resolution)
+        self.static_layer_img[y_start:y_end, x_start:x_end] = 100
+
+        # scence
+        x_start = round((1.05-self.robot_radius) / self.resolution)
+        x_end = round((1.95+self.robot_radius) / self.resolution)
+        y_start = round((1.55-self.robot_radius) / self.resolution)
+        y_end = round((2.0+self.robot_radius) / self.resolution)
+        self.static_layer_img[y_start:y_end, x_start:x_end] = 100
+
+
         self.obstacle_layer_img = np.zeros((round(self.grid_height / self.resolution), round(self.grid_width / self.resolution)), np.uint8)
 
 
