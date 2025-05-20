@@ -3,6 +3,8 @@
 # v
 # x
 #    use_dynamic_layer: true # default is false
+# strategy is for default color: 'YELLOW'
+# if color 'BLUE' is chosen by the user, then all x positions will become 3-x when loading strategy !
 
 init_pose: { x: 1.25, y: 0.3, theta_deg: 0.0 } # dans la zone de départ jaune en bas
 

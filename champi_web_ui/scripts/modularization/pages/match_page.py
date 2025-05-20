@@ -14,8 +14,10 @@ container = None
 stepper = None
 interactive_image_table = None
 
+color = None
+
 last_odom_time_label, tirette_label, e_stop_label = None, None, None
-radio_strategy_selection = None
+radio_strategy_selection, radio_color_selection = None, None
 
 src = 'champi_web_ui/scripts/modularization/resources/table_2025.png'
 
@@ -116,6 +118,15 @@ def create() -> None:
                                     ui.button('Suivant', on_click=stepper.next)
                                     ui.button('Retour', on_click=stepper.previous).props('flat')
 
+                            with ui.step('Choisir la couleur'):
+                                global radio_color_selection, color
+                                radio_color_selection = ui.radio(['YELLOW', 'BLUE'])
+                                with ui.stepper_navigation():
+                                    btn_next = ui.button('Suivant', on_click=on_color_chosen)
+                                    btn_next.bind_enabled_from(radio_color_selection, 'value')
+                                    ui.button('Retour', on_click=stepper.previous).props('flat')
+
+
                             with ui.step('Choisir la strategie'):
                                 available_strategies = get_available_strategies()
                                 global radio_strategy_selection
@@ -162,9 +173,14 @@ def update_label_tirette_bau():
     tirette_label.text = f'{tirette_emoji} Tirette: {tirette_status}'
     e_stop_label.text = f'{e_stop_emoji} Arrêt d\'urgence: {e_stop_status}'
 
+def on_color_chosen():
+    global color
+    color = radio_color_selection.value
+    stepper.next()
+
 def on_strategy_selected():
     # send the chosen strategy to the node
-    ros_node.pub_strategy(radio_strategy_selection.value)
+    ros_node.pub_strategy(radio_strategy_selection.value+"#"+color)
     stepper.next()
 
 def reset_all():

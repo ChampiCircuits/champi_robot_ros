@@ -169,8 +169,8 @@ class ArucoLocalizerNode(Node):
         elif id_marker==21:
             x = 2.4
             y = 1.4
-        elif id_marker==22: # todo x and y are inversed
-            x = 0.6         #  TODO the other tags
+        elif id_marker==22:
+            x = 0.6
             y = 0.6
         elif id_marker==23:
             x = 2.4
