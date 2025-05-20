@@ -10,7 +10,7 @@ namespace devices
 {
     namespace scs_servos {
 
-        uint8_t ids_servos[N_SERVOS] = {ID_SERVO_ARM_END, ID_SERVO_ARM, ID_SERVO_Y_LEFT, ID_SERVO_Y_RIGHT, ID_SERVO_BANNER};
+        uint8_t ids_servos[N_SERVOS] = {ID_SERVO_ARM_END_LEFT, ID_SERVO_ARM_END_RIGHT, ID_SERVO_ARM, ID_SERVO_Y_LEFT, ID_SERVO_Y_RIGHT, ID_SERVO_BANNER};
         SCServos servos;
         bool init_successful = false;
 
@@ -62,6 +62,8 @@ namespace devices
             } else if (position > 1023) {
                 position = 1023;
             }
+            servos.WritePos(id, position, ms); // TODO test, des fois ca bouge pas !
+            osDelay(10);
             servos.WritePos(id, position, ms);
             osDelay(10);
         }
@@ -90,7 +92,6 @@ int SCServosApp_Init() {
     servos = SCServos(&huart10);
     //find_ids(0, 16);
     //test_angle(ID_SERVO_Y_FRONT, 270);
-    //while (1);
 
     init_successful = false;
     while (test() == -1) {

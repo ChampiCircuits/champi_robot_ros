@@ -21,19 +21,35 @@ const osThreadAttr_t actuatorsTask_attributes = {
     .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
+#define MAX_SERVO_END_ANGLE 155
+// max is 270°
+#define SERVO_END_LEFT_OPEN_POSITION 0 // TODO regler
+#define SERVO_END_LEFT_CLOSE_POSITION MAX_SERVO_END_ANGLE+8
+#define SERVO_END_RIGHT_OPEN_POSITION 270
+#define SERVO_END_RIGHT_CLOSE_POSITION 270-MAX_SERVO_END_ANGLE
 
-#define SERVO_END_OPEN_POSITION 270
-#define SERVO_END_CLOSE_POSITION 0
+#define SERVO_ARM_UP_POSITION 100
+#define SERVO_ARM_DOWN_POSITION 210
 
-#define SERVO_ARM_UP_POSITION 90
-#define SERVO_ARM_DOWN_POSITION 205
+#define STEPPER_LOWER_POSITION 0.1
 
-#define STEPPER_UPPER_POSITION 3.3
-#define STEPPER_LOWER_POSITION 0.05
+#define SERVO_Y_RIGHT_OUT_POS 270
+#define SERVO_Y_RIGHT_TAKE_POS 150
+#define SERVO_Y_RIGHT_IN_POS 140
+#define SERVO_Y_LEFT_OUT_POS 255
+#define SERVO_Y_LEFT_TAKE_POS 140
+#define SERVO_Y_LEFT_IN_POS 130
 
-#define SERVO_Y_OUT_POS 225
-#define SERVO_Y_TAKE_POS 160
-#define SERVO_Y_IN_POS 140
+struct ServoY
+{
+    uint8_t id;
+    float angle_out;
+    float angle_in;
+    float angle_take;
+};
+
+ServoY SERVO_Y_LEFT = {ID_SERVO_Y_LEFT, SERVO_Y_LEFT_OUT_POS, SERVO_Y_LEFT_IN_POS, SERVO_Y_LEFT_TAKE_POS};
+ServoY SERVO_Y_RIGHT = {ID_SERVO_Y_RIGHT, SERVO_Y_RIGHT_OUT_POS, SERVO_Y_RIGHT_IN_POS, SERVO_Y_RIGHT_TAKE_POS};
 
 #define LOWER_PLANK 0
 #define UPPER_PLANK 1
@@ -41,49 +57,71 @@ const osThreadAttr_t actuatorsTask_attributes = {
 
 void InitYServos()
 {
-    devices::scs_servos::set_angle_async(ID_SERVO_Y_LEFT, SERVO_Y_OUT_POS, 100);
-    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_OUT_POS, 100);
-    devices::scs_servos::set_angle_async(ID_SERVO_Y_LEFT, SERVO_Y_IN_POS, 100);
-    devices::scs_servos::set_angle(ID_SERVO_Y_RIGHT, SERVO_Y_IN_POS, 100);
+    devices::scs_servos::set_angle_async(SERVO_Y_LEFT.id, SERVO_Y_LEFT.angle_out, 300);
+    devices::scs_servos::set_angle(SERVO_Y_RIGHT.id, SERVO_Y_RIGHT.angle_out, 300);
+    devices::scs_servos::set_angle_async(SERVO_Y_LEFT.id, SERVO_Y_LEFT.angle_in, 300);
+    devices::scs_servos::set_angle(SERVO_Y_RIGHT.id, SERVO_Y_RIGHT.angle_in, 300);
 }
+
 void InitEverything()
 {
-    devices::scs_servos::set_angle_async(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 100);
-    devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 100);
-    devices::stepper_opt0.set_goal_sync(0.0);
-    devices::stepper_opt0.set_zero();
-    osDelay(1);
-    devices::scs_servos::set_angle_async(ID_SERVO_BANNER, 90, 100);
-    devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_UP_POSITION, 1000);
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_OPEN_POSITION, 300);
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_OPEN_POSITION, 300);
+
+    devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 300);
+
+
+	devices::stepper_opt0.set_zero();
+	devices::stepper_opt0.set_goal_sync(0.3);
+    bool lift_end_switch_released = HAL_GPIO_ReadPin(D6_GPIO_Port, D6_Pin);
+
+	if (lift_end_switch_released)
+	{
+        LOG_INFO("act", "IF switch : %d", lift_end_switch_released);
+        devices::stepper_opt0.set_goal_async(-5.0);
+		while (lift_end_switch_released)
+		{
+	        LOG_INFO("act", "switch : %d", lift_end_switch_released);
+			osDelay(10);
+			lift_end_switch_released = HAL_GPIO_ReadPin(D6_GPIO_Port, D6_Pin);
+		}
+		devices::stepper_opt0.set_zero();
+		devices::stepper_opt0.set_goal_sync(0.0);
+	}
+
+    osDelay(10);
+    devices::scs_servos::set_angle_async(ID_SERVO_BANNER, 90, 300);
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_UP_POSITION, 300);
     InitYServos();
 }
 
 void TakePlank(int plank) { // !!! lift should be down
-    devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 500); // init au cas ou
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_OPEN_POSITION, 300); // init au cas ou
+    devices::scs_servos::set_angle(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_OPEN_POSITION, 300); // init au cas ou
 
     float plank_height;
     if (plank == LOWER_PLANK) {
         plank_height = STEPPER_LOWER_POSITION;
     }
     else if (plank == UPPER_PLANK) {
-        plank_height = STEPPER_LOWER_POSITION + 0.48;
+        plank_height = STEPPER_LOWER_POSITION + 0.4; // TODO 0.48 avant
     }
 
     // HALF CLOSED PLANK
-    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION-10.0, 100);
+    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300); // avant y'avait un -10.0
 
     devices::stepper_opt0.set_goal_sync(plank_height);
-
     // CLOSED TO TAKE PLANK
-    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 100);
+    //devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300);
 
-    devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_CLOSE_POSITION, 1000);
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_CLOSE_POSITION, 300);
+    devices::scs_servos::set_angle(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_CLOSE_POSITION, 300);
 
     if (plank == LOWER_PLANK) { // dans ce cas, pas besoin de remonter haut vu qu'on va prendre les conserves
         devices::stepper_opt0.set_goal_async(1.2); // async pour passer dans l'état move plus tôt
     }
     else {
-        devices::stepper_opt0.set_goal_sync(3.6);
+        devices::stepper_opt0.set_goal_async(3.6);
     }
 }
 
@@ -93,31 +131,31 @@ void PutPlanks(int layer)
     if (layer == 1)
         layer_height = STEPPER_LOWER_POSITION;
     else if (layer == 2)
-        layer_height = STEPPER_LOWER_POSITION + 3.4; // TODO + ONE_LAYER_HEIGHT
+        layer_height = STEPPER_LOWER_POSITION + 3.4;
 
     // CLOSED TO PUT PLANK
     devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300);
     devices::stepper_opt0.set_goal_sync(layer_height);
 
-    devices::scs_servos::set_angle(ID_SERVO_ARM_END, SERVO_END_OPEN_POSITION, 100);
-    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION-10.0, 300);
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_OPEN_POSITION, 300);
+    devices::scs_servos::set_angle(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_OPEN_POSITION, 300);
+
+    //devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION-10.0, 300);
 
     if (layer == 2) { // in this case we open a bit the arm to not destroy the tower
-        devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 300);
+        devices::scs_servos::set_angle_async(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 300);
     }
 }
 
-void TakeCan(int id_servo_which_side)
+void TakeCan(struct ServoY servo)
 {
-    // devices::stepper_opt0.set_goal_sync(1.2);
-    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_OUT_POS,300);
+    devices::scs_servos::set_angle(servo.id, servo.angle_out, 300);
     devices::stepper_opt0.set_goal_sync(0.37);
-    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_TAKE_POS,300);
-
+    devices::scs_servos::set_angle(servo.id, servo.angle_take, 300);
     devices::stepper_opt0.set_goal_async(0.37+0.6); // async pour partir en move plus tôt
 }
 
-void PutCan(int layer, int id_servo_which_side)
+void PutCan(int layer, struct ServoY servo)
 {
     float layer_base_height;
     if (layer==1)
@@ -126,23 +164,22 @@ void PutCan(int layer, int id_servo_which_side)
         layer_base_height = 3.6;
 
     devices::stepper_opt0.set_goal_sync(layer_base_height);
-    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_OUT_POS,200);
-
+    devices::scs_servos::set_angle(servo.id, servo.angle_out, 300);
     // little movement to get the Y inside
-    devices::stepper_opt0.set_goal_sync(layer_base_height + 0.6);
-    devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_IN_POS,200);
+    devices::stepper_opt0.set_goal_sync(layer_base_height + 0.55);
+    devices::scs_servos::set_angle(servo.id, servo.angle_in, 500);
 
     devices::stepper_opt0.set_goal_sync(layer_base_height);
-    devices::scs_servos::set_angle(id_servo_which_side, 180,200);
+    devices::scs_servos::set_angle(servo.id, servo.angle_take+50., 300); // PUSH
 
     // little movement to get the Y inside
     // les deux async pour partir à l'état suivant plus tôt
     if (layer==2) {
         // devices::stepper_opt0.set_goal_async(layer_base_height + 0.6);
-        devices::scs_servos::set_angle_async(id_servo_which_side, SERVO_Y_IN_POS,200);
+        devices::scs_servos::set_angle_async(servo.id, servo.angle_in, 300);
     }
     else {
-        devices::scs_servos::set_angle(id_servo_which_side, SERVO_Y_IN_POS,200);
+        devices::scs_servos::set_angle(servo.id, servo.angle_in, 300);
         devices::stepper_opt0.set_goal_async(STEPPER_LOWER_POSITION); // pour préparer le put lower plank
     }
 }
@@ -170,16 +207,16 @@ void HandleRequest(ActuatorCommand cmd) {
         PutPlanks(2);
         break;
     case ActuatorCommand::TAKE_CANS_LEFT:
-        TakeCan(ID_SERVO_Y_LEFT);
+        TakeCan(SERVO_Y_LEFT);
         break;
     case ActuatorCommand::TAKE_CANS_RIGHT:
-        TakeCan(ID_SERVO_Y_RIGHT);
+        TakeCan(SERVO_Y_RIGHT);
         break;
     case ActuatorCommand::PUT_CANS_LEFT_LAYER_1:
-        PutCan(1, ID_SERVO_Y_LEFT);
+        PutCan(1, SERVO_Y_LEFT);
         break;
     case ActuatorCommand::PUT_CANS_RIGHT_LAYER_2:
-        PutCan(2, ID_SERVO_Y_RIGHT);
+        PutCan(2, SERVO_Y_RIGHT);
         break;
     case ActuatorCommand::RESET_ACTUATORS:
         InitEverything();

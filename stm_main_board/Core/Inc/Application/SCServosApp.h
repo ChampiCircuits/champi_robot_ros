@@ -5,12 +5,13 @@
 #ifndef SCSERVOSAPP_H
 #define SCSERVOSAPP_H
 
-#define N_SERVOS 5
+#define N_SERVOS 6
 
-#define ID_SERVO_ARM_END 7
+#define ID_SERVO_ARM_END_RIGHT 5
+#define ID_SERVO_ARM_END_LEFT 9
 #define ID_SERVO_ARM 15
 #define ID_SERVO_Y_RIGHT 8
-#define ID_SERVO_Y_LEFT 13
+#define ID_SERVO_Y_LEFT 18
 #define ID_SERVO_BANNER 14
 
 #include "cmsis_os2.h"
