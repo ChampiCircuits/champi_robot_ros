@@ -21,6 +21,9 @@ const osThreadAttr_t actuatorsTask_attributes = {
     .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
+
+bool stop_all_actuators_requested = false;
+
 #define MAX_SERVO_END_ANGLE 155
 // max is 270°
 #define SERVO_END_LEFT_OPEN_POSITION 0 // TODO regler
@@ -220,6 +223,12 @@ void HandleRequest(ActuatorCommand cmd) {
         break;
     case ActuatorCommand::RESET_ACTUATORS:
         InitEverything();
+        break;
+    case ActuatorCommand::STOP_ALL_MOTORS:
+        stop_all_actuators_requested = true;
+        break;
+    case ActuatorCommand::ENABLE_ALL_MOTORS:
+        stop_all_actuators_requested = false;
         break;
     }
 }

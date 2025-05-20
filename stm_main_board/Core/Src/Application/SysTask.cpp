@@ -2,6 +2,7 @@
 
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
+#include "Application/ActuatorsTask.h"
 #include "Application/SCServosApp.h"
 #include "Application/OtosTask.h"
 #include "Config/Config.h"
@@ -26,6 +27,7 @@ void SysTask(void *argument) {
   uint32_t start = osKernelGetTickCount();
 
   bool e_stop_pressed_prev = HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin);
+  stop_all_actuators_requested = false;
 
   while (true) {
 
@@ -40,8 +42,12 @@ void SysTask(void *argument) {
     mod_reg::state->e_stop_pressed = e_stop_pressed;
     xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
+
+
+    bool enableMotors = !(!e_stop_pressed && !stop_all_actuators_requested);
+
     // ================== Enable / Disable steppers ============================
-    HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, (GPIO_PinState) e_stop_pressed);
+    HAL_GPIO_WritePin(ENABLE_STEPPERS_GPIO_Port,ENABLE_STEPPERS_Pin, (GPIO_PinState) enableMotors);
 
     // =================== Handle reset STM requests ===========================
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
@@ -53,7 +59,7 @@ void SysTask(void *argument) {
 
     // ================== Enable / Disable servos ==============================
     if (devices::scs_servos::init_successful) {
-      devices::scs_servos::set_enable(!e_stop_pressed);
+      devices::scs_servos::set_enable(!enableMotors);
     }
 
     // ===================== Request otos calibration ==========================

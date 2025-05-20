@@ -118,6 +118,8 @@ class ChampiStateMachineITF(Node):
             future.add_done_callback(self.cancel_done_callback)
 
         if not self.sim_param:
+            self.send_actuator_action('ENABLE_ALL_MOTORS')
+            time.sleep(1)
             self.send_actuator_action('RESET_ACTUATORS')
         self.get_logger().warn('\nChampiSM has been reset!\n')
 
@@ -181,6 +183,8 @@ class ChampiStateMachineITF(Node):
 
                     future = self.goal_handle_navigate.cancel_goal_async()
                     future.add_done_callback(self.cancel_done_callback)
+
+                    self.send_actuator_action('STOP_ALL_MOTORS')
 
 
     def init_robot_pose(self):
@@ -333,6 +337,10 @@ class ChampiStateMachineITF(Node):
             msg.data = 8
         elif action == 'RESET_ACTUATORS':
             msg.data = 9
+        elif action == 'STOP_ALL_MOTORS':
+            msg.data = 10
+        elif action == 'ENABLE_ALL_MOTORS':
+            msg.data = 11
         self.actuators_ctrl_pub.publish(msg)
 
 def main(args=None):
