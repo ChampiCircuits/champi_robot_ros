@@ -95,8 +95,8 @@ class CostmapUpdaterNode(Node):
         self.static_layer_img[y_start:y_end, x_start:x_end] = 100
 
         self.dynamic_layer_img = np.zeros((round(self.grid_height / self.resolution), round(self.grid_width / self.resolution)), np.uint8)
-        self.use_dynamic_layer = True
-        robot_radius = 0 # TODO checker ?
+        self.use_dynamic_layer = False
+        robot_radius = self.robot_radius #
         #### all zones
         # yellow down
         x_start = round((1.0-robot_radius) / self.resolution)
