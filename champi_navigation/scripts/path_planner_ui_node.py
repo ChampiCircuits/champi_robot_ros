@@ -9,7 +9,7 @@ from champi_interfaces.action import Navigate
 from rclpy.logging import get_logger
 
 from rclpy.executors import ExternalShutdownException
-
+import math
 
 
 class PathPlannerUINode(Node):
@@ -108,7 +108,7 @@ class PathPlannerUINode(Node):
         goal.end_speed = 0.
 
         goal.max_linear_speed = 1.0
-        goal.max_angular_speed = 1.5
+        goal.max_angular_speed = math.pi
 
         goal.linear_tolerance = 0.005
         goal.angular_tolerance = 0.05

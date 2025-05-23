@@ -30,13 +30,17 @@ class PoseControllerNode(Node):
         control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
         max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
         max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
+        max_linear_deceleration = self.declare_parameter('max_linear_deceleration', rclpy.Parameter.Type.DOUBLE).value
+        max_angular_deceleration = self.declare_parameter('max_angular_deceleration', rclpy.Parameter.Type.DOUBLE).value
         self.timeout_wait_next_goal = self.declare_parameter('timeout_wait_next_goal', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Controller started with the following parameters:')
         self.get_logger().info(f'control_loop_period: {control_loop_period}')
         self.get_logger().info(f'max_linear_acceleration: {max_linear_acceleration}')
+        self.get_logger().info(f'max_linear_deceleration: {max_linear_deceleration}')
         self.get_logger().info(f'max_angular_acceleration: {max_angular_acceleration}')
+        self.get_logger().info(f'max_angular_deceleration: {max_angular_deceleration}')
 
         # ROS subscriptions, publishers and timers
         self.timer = self.create_timer(control_loop_period, self.control_loop_spin_once)
@@ -46,7 +50,7 @@ class PoseControllerNode(Node):
 
         # Other objects instantiation
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
-        self.path_follow_params = PathFollowParams(max_linear_acceleration, max_angular_acceleration)
+        self.path_follow_params = PathFollowParams(max_linear_acceleration, max_linear_deceleration, max_angular_acceleration, max_angular_deceleration)
         self.dt_measurer = DtMeasurer(control_loop_period)
         self.robot_current_state = None
         self.ctrl_goal: CtrlGoal = None

@@ -28,15 +28,15 @@ hardware_interface:
       cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
 
       holo_drive_config:
-        max_accel_wheel: 5.0 # rotation des roues en rotation/s²
+        max_accel_wheel: 10.0 # rotation des roues en rotation/s²
         wheel_radius: 0.0292 # en m # 0.029
-
         base_radius: 0.13 # en m
-        max_acceleration_linear: 0.45 # m/s^2 # TODO tuner ces vals ?
-        max_deceleration_linear: 3.0 # m/s^2
 
-        max_acceleration_angular: 2.5 # rad/s^2
-        max_deceleration_angular: 5.0 # rad/s^2
+        max_acceleration_linear: 10.0 # m/s^2 # TODO tuner ces vals ?
+        max_acceleration_angular: 20.0 # rad/s^2
+
+        max_deceleration_linear: 10.0 # m/s^2
+        max_deceleration_angular: 20.0 # rad/s^2
 
       otos_config: # You have to restart node AND STM to apply the otos config (feature, not bug :))
         linear_scalar: 0.99 # [0.872 - 1.127]
@@ -99,8 +99,11 @@ costmap_updater:
 pose_controller:
   ros__parameters:
     control_loop_period: 0.1 # s
-    max_linear_acceleration: 0.45 # m/s^2
-    max_angular_acceleration: 2.5 # rad/s^2
+    max_linear_acceleration: 1.5 # m/s^2
+    max_linear_deceleration: 4.0 # m/s^2
+
+    max_angular_acceleration: 15.0 # rad/s^2
+    max_angular_deceleration: 20.0 # rad/s^2
     # When the ctrl_goal is reached and end_speed!=0 (we expect a new goal to be sent right away),
     # the robot will emergency stop once the timeout is elapsed.
     timeout_wait_next_goal: 0.5 # s.

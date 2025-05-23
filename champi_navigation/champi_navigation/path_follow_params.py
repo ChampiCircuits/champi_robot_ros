@@ -11,11 +11,11 @@ class PathFollowParams:
     We need to pass this class each time we call compute_cmd_vel.
     """
 
-    def __init__(self, max_acc_linear:float, max_acc_angular:float):
+    def __init__(self, max_acc_linear:float, max_dec_linear: float, max_acc_angular:float, max_dec_angular: float):
         """Constructor. We pass the maximum accelerations of the robot, as these do not change during the execution.
 
         Args:
-            max_acc_linear (float): Linear acceleration limit in m/s^2.
+            max_acc_linear (float): Linear acceleration limit in m/s^2. # TODO DOC
             max_acc_angular (float): Angular acceleration limit in rad/s^2.
         """
         self.robot_state:RobotState = None
@@ -25,7 +25,9 @@ class PathFollowParams:
         self.max_speed_linear:float = None
         self.max_speed_angular:float = None
         self.max_acc_linear = max_acc_linear
+        self.max_dec_linear = max_dec_linear
         self.max_acc_angular = max_acc_angular
+        self.max_dec_angular = max_dec_angular
         self.look_at_point:Pose2D = None  # None means no look_at_point
         self.robot_angle_when_looking_at_point = None  # None if no look_at_point
     
@@ -71,7 +73,7 @@ class PathFollowParams:
         self.robot_angle_when_looking_at_point = ctrl_goal.robot_angle_when_looking_at_point
     
 
-    def __str__(self):
+    def __str__(self): # TODO decelerations
         return f"RobotState: {self.robot_state},\n \
                 Segment Start: {self.segment_start},\n \
                 Segment End: {self.segment_end},\n \
