@@ -92,7 +92,7 @@ class ChampiStateMachine(object):
                             'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
                             'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
                             'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
-                            'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2', 'RESET_ACTUATORS']
+                            'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2', 'RESET_ACTUATORS', 'GET_READY']
         self.latest_canceled_tag = None # contains all the tags of the actions that have been canceled
         self.current_tag = None
 

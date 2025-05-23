@@ -31,8 +31,8 @@ bool stop_all_actuators_requested = false;
 #define SERVO_END_RIGHT_OPEN_POSITION 270
 #define SERVO_END_RIGHT_CLOSE_POSITION 270-MAX_SERVO_END_ANGLE
 
-#define SERVO_ARM_UP_POSITION 100
-#define SERVO_ARM_DOWN_POSITION 210
+#define SERVO_ARM_UP_POSITION 195
+#define SERVO_ARM_DOWN_POSITION 90
 
 #define STEPPER_LOWER_POSITION 0.1
 
@@ -65,6 +65,24 @@ void InitYServos()
     devices::scs_servos::set_angle_async(SERVO_Y_LEFT.id, SERVO_Y_LEFT.angle_in, 300);
     devices::scs_servos::set_angle(SERVO_Y_RIGHT.id, SERVO_Y_RIGHT.angle_in, 300);
 }
+void InitLift()
+{
+    devices::stepper_opt0.set_zero();
+    devices::stepper_opt0.set_goal_sync(0.3);
+    bool lift_end_switch_released = HAL_GPIO_ReadPin(D6_GPIO_Port, D6_Pin);
+
+    if (lift_end_switch_released)
+    {
+        devices::stepper_opt0.set_goal_async(-5.0);
+        while (lift_end_switch_released)
+        {
+            osDelay(10);
+            lift_end_switch_released = HAL_GPIO_ReadPin(D6_GPIO_Port, D6_Pin);
+        }
+        devices::stepper_opt0.set_zero();
+        devices::stepper_opt0.set_goal_async(0.0);
+    }
+}
 
 void InitEverything()
 {
@@ -73,24 +91,7 @@ void InitEverything()
 
     devices::scs_servos::set_angle(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 300);
 
-
-	devices::stepper_opt0.set_zero();
-	devices::stepper_opt0.set_goal_sync(0.3);
-    bool lift_end_switch_released = HAL_GPIO_ReadPin(D6_GPIO_Port, D6_Pin);
-
-	if (lift_end_switch_released)
-	{
-        LOG_INFO("act", "IF switch : %d", lift_end_switch_released);
-        devices::stepper_opt0.set_goal_async(-5.0);
-		while (lift_end_switch_released)
-		{
-	        LOG_INFO("act", "switch : %d", lift_end_switch_released);
-			osDelay(10);
-			lift_end_switch_released = HAL_GPIO_ReadPin(D6_GPIO_Port, D6_Pin);
-		}
-		devices::stepper_opt0.set_zero();
-		devices::stepper_opt0.set_goal_sync(0.0);
-	}
+    InitLift();
 
     osDelay(10);
     devices::scs_servos::set_angle_async(ID_SERVO_BANNER, 90, 300);
@@ -143,7 +144,7 @@ void PutPlanks(int layer)
     devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_OPEN_POSITION, 300);
     devices::scs_servos::set_angle(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_OPEN_POSITION, 300);
 
-    //devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION-10.0, 300);
+    //devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION+10.0, 300);
 
     if (layer == 2) { // in this case we open a bit the arm to not destroy the tower
         devices::scs_servos::set_angle_async(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 300);
@@ -192,6 +193,15 @@ void PutBanner()
     devices::scs_servos::set_angle(ID_SERVO_BANNER, 250, 1000);
 }
 
+void getReady()
+{
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 300);
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_OPEN_POSITION, 300); // init au cas ou
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_OPEN_POSITION, 300); // init au cas ou
+    InitLift();
+    devices::stepper_opt0.set_goal_async(STEPPER_LOWER_POSITION);
+}
+
 void HandleRequest(ActuatorCommand cmd) {
     switch (cmd) {
     case ActuatorCommand::PUT_BANNER:
@@ -230,6 +240,9 @@ void HandleRequest(ActuatorCommand cmd) {
     case ActuatorCommand::ENABLE_ALL_MOTORS:
         stop_all_actuators_requested = false;
         break;
+    case ActuatorCommand::GET_READY:
+        getReady();
+        break;
     }
 }
 
@@ -242,8 +255,8 @@ void ActuatorsTask(void *argument) {
 
     LOG_INFO("act", "Starting loop.");
 
-    while (true) {
-
+    while (true)
+    {
         for (int i=0; i < ACTUATORS_COUNT; i++)
         {
             xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
@@ -265,7 +278,6 @@ void ActuatorsTask(void *argument) {
 
         osDelay(100);
     }
-
 }
 
 void ActuatorsTaskStart() {

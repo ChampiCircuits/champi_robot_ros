@@ -4,7 +4,7 @@
 #include <string>
 
 
-#define ACTUATORS_COUNT 12
+#define ACTUATORS_COUNT 13
 /*
   Enum for actuator commands.
 */
@@ -21,6 +21,7 @@ enum class ActuatorCommand {
   RESET_ACTUATORS = 9,
   STOP_ALL_MOTORS = 10,
   ENABLE_ALL_MOTORS = 11,
+  GET_READY = 12,
 };
 
 /*
@@ -58,6 +59,8 @@ inline std::string to_string(ActuatorCommand command) {
     return "STOP_ALL_MOTORS";
   case ActuatorCommand::ENABLE_ALL_MOTORS:
     return "ENABLE_ALL_MOTORS";
+  case ActuatorCommand::GET_READY:
+    return "GET_READY";
   default:
     return "UNKNOWN_COMMAND";
   }

@@ -349,6 +349,8 @@ class ChampiStateMachineITF(Node):
             msg.data = 10
         elif action == 'ENABLE_ALL_MOTORS':
             msg.data = 11
+        elif action == 'GET_READY':
+            msg.data = 12
         self.actuators_ctrl_pub.publish(msg)
 
 def main(args=None):

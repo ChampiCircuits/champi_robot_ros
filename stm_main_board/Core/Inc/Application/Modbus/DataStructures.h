@@ -57,6 +57,7 @@ struct Requests {
 struct Actuators
 {
   // list of actuators commands.
+  double dummy; // to not be multiple of 32
   uint8_t requests[ACTUATORS_COUNT];
 };
 
