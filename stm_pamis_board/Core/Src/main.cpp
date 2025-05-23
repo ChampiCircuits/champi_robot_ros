@@ -23,9 +23,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "Devices/SCServos.h"
-#include "Config/Config.h"
-#include "Util/logging.h"
+#include "pami.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -114,34 +113,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
 
-  devices::scs_servos::servos = SCServos(&huart1);
-
-   devices::scs_servos::init_successful = false;
-   while (devices::scs_servos::test() == -1) {
-       LOG_ERROR("scs", "Error initializing servos. Retrying.");
-       HAL_Delay(1000);
-   }
-
-   devices::scs_servos::set_enable(true); // TODO move to sysTask
-
-   for (const auto id : devices::scs_servos::ids_servos) {
-	   devices::scs_servos::servos.WriteLimitTroque(id, SCSERVOS_TORQUE_LIMIT);
-       HAL_Delay(1);
-   }
-   devices::scs_servos::init_successful = true;
-
-
+  PAMI_Init();
 
   while (1)
   {
 
     /* USER CODE END WHILE */
-	   devices::scs_servos::set_angle(ID_SERVO_TEST, 100, 100);
-
-	   HAL_Delay(1000);
-	   devices::scs_servos::set_angle(ID_SERVO_TEST, 0, 100);
-	   HAL_Delay(1000);
-
+    PAMI_Loop();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

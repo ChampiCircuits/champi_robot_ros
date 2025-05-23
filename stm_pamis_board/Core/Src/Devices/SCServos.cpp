@@ -531,7 +531,7 @@ void SCServos::RotateCounterClockwise(){
 void SCServos::scan_ids(uint8_t id_start,  uint8_t id_stop) {
     for(uint8_t id=id_start; id<id_stop; id++) {
         if(ReadPos(id)!=-1) {
-            printf("Found ID %d\n", id);
+            LOG_INFO("scs_servos","Found ID %d\n", id);
         }
     }
 }
