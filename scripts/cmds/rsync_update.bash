@@ -14,6 +14,7 @@ EXCLUDES=(
     ".vscode"
     "__pycache__"
     "stm_main_board"
+    "stm_pamis_board"
 )
 
 # Convert exclude list to rsync --exclude options
