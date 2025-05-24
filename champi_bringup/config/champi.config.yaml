@@ -110,7 +110,7 @@ pose_controller:
 
 path_planner:
   ros__parameters:
-    planner_loop_period: 0.2
+    planner_loop_period: 0.1
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
     debug: true
 
