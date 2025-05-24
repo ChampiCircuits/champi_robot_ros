@@ -60,6 +60,97 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
 
     def compute_cmd_vel(self, dt, p: PathFollowParams):
 
+        # ======================= XY Linear velocity =========================
+
+        # 1) Compute distance error to the goal (end of the segment)
+        dist_robot_to_goal_x = p.segment_end.x - p.robot_state.pose.x
+        dist_robot_to_goal_y = p.segment_end.y - p.robot_state.pose.y
+
+        # 2.a) Compute CURRENT robot speed along global x and y axes.
+        robot_speed_global = p.robot_state.vel #Vel2D.to_global_frame(p.robot_state.pose, p.robot_state.vel)
+
+        # 2.b) Compute end speed along each axis (projection of end speed on the segment).
+        angle_segment = atan2(dist_robot_to_goal_y, dist_robot_to_goal_x)
+        end_speed_x = p.end_speed * cos(angle_segment)
+        end_speed_y = p.end_speed * sin(angle_segment)
+
+        # 2.c) Compute max vel along each axis.
+        max_speed_x = abs(p.max_speed_linear * cos(angle_segment))
+        max_speed_y = abs(p.max_speed_linear * sin(angle_segment))
+
+        # 2.d) Compute max acceleration along each axis.
+        max_acc_x = abs(p.max_acc_linear * cos(angle_segment))
+        max_acc_y = abs(p.max_acc_linear * sin(angle_segment))
+
+        # 3) We use 2 trapezoidal profiles, one for x and one for y.
+
+        constraints_x = TrapezoidProfile.Constraints(max_speed_x, max_acc_x)
+        current_state_x = TrapezoidProfile.State(p.robot_state.pose.x, robot_speed_global.x)
+        goal_state_x = TrapezoidProfile.State(p.segment_end.x, end_speed_x)
+        profile_x = TrapezoidProfile(constraints_x)
+        cmd_vel_x = profile_x.calculate(dt, current_state_x, goal_state_x).velocity
+
+        constraints_y = TrapezoidProfile.Constraints(max_acc_y, max_speed_y)
+        current_state_y = TrapezoidProfile.State(p.robot_state.pose.y, robot_speed_global.y)
+        goal_state_y = TrapezoidProfile.State(p.segment_end.y, end_speed_y)
+        profile_y = TrapezoidProfile(constraints_y)
+        cmd_vel_y = profile_y.calculate(dt, current_state_y, goal_state_y).velocity
+
+
+
+
+        # ========================= Angular velocity =========================
+
+        # 1) Compute angular error between the robot and the targeted angle.
+        # All the following angles are expressed relative to the global frame.
+
+        # In the normal case, the targeted angle is the angle from the end pose.
+
+        # In the case of look_at_point enabled, the targeted angle is the angle of the segment [robot, look_at_point].
+        # We also substract to this error the angle "robot_angle_when_looking_at_point", for the robot to face the
+        # look_at_point with the desired angle.
+
+        if p.look_at_point is not None:  # Look at point mode
+            theta_error = p.robot_state.pose.get_angle_difference_to_look_at(p.look_at_point, p.robot_angle_when_looking_at_point)
+        else:  # Normal mode
+            theta_error = p.robot_state.pose.get_angle_difference(p.segment_end)
+
+        # 2) We use a trapezoidal profile that tracks the angle error to the targeted angle.
+        # We give current angle error as start, 0 as goal and current speed, and we get the angular speed for next time step.
+        constraints_theta = TrapezoidProfile.Constraints(p.max_speed_angular, p.max_acc_angular)
+        current_state_theta = TrapezoidProfile.State(-theta_error, p.robot_state.vel.theta)
+        goal_state_theta = TrapezoidProfile.State(0, 0)
+        profile_theta = TrapezoidProfile(constraints_theta)
+        cmd_vel_theta = profile_theta.calculate(dt, current_state_theta, goal_state_theta).velocity
+
+
+
+
+        # ========================= Final velocity command =========================
+
+        # All left to do is compute the velocity command in the ros format (linear x, linear y, angular z).
+        # The heading angle and the x_y_speed can be thought as the direction and the magnitude of a 2D velocity vector.
+
+        cmd_vel = Vel2D()
+        cmd_vel.x = cmd_vel_x
+        cmd_vel.y = cmd_vel_y
+        cmd_vel.theta = cmd_vel_theta
+
+
+        # ========================= Statistics =========================
+        self.stat_error_dist = -1
+        self.stat_error_theta = theta_error
+
+        return cmd_vel
+
+class CmdVelUpdaterWPILibMagnitude(CmdVelUpdaterInterface):
+    def __init__(self):
+        super().__init__()
+        self.pid_correct_dir = PID(5, 0, 1)
+
+
+    def compute_cmd_vel(self, dt, p: PathFollowParams):
+
 
         # ====================== Heading of the robot ======================
 
