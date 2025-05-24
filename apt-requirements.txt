@@ -1,0 +1,10 @@
+libprotobuf-dev
+libudev-dev
+protobuf-compiler
+libmodbus-dev
+gcc-arm-none-eabi
+graphviz
+graphviz-dev
+ros-jazzy-librealsense2
+ros-jazzy-realsense2-*
+dos2unix

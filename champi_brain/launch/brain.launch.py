@@ -10,54 +10,29 @@ from launch.conditions import IfCondition
 def generate_launch_description():
 
     # Declare the launch options
+
+    # Get configuration file
+    config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
+
     sim_arg = DeclareLaunchArgument(
         'sim',
         default_value='False',
-        description='Launch simulation (True|False)',
-    )
-    color_arg = DeclareLaunchArgument(
-        'color',
-        default_value='yellow',
-        description='Color of the robot (yellow|blue)',
-    )
-    
-    screen_manager = Node(
-            package='champi_brain',
-            executable='screen_manager.py',
-            name='champi_brain',
-            output='screen',
+        description='in simulation (True|False)',
     )
 
-    rviz_markers = Node(
-            package='champi_brain',
-            executable='rviz_markers.py',
-            name='rviz_markers',
-            output='screen',
-    )
+    # =========================== NODES NEEDED BOTH IN SIMULATION AND ON REAL ROBOT ===========================
+    sim_config = LaunchConfiguration('sim')
 
-    strat = Node(
-            package='champi_brain',
-            executable='strategy_engine_node.py',
-            name='strategy',
-            output='screen',
-            parameters=[{
-                'color': LaunchConfiguration('color'),
-                'sim':LaunchConfiguration('sim')}]
+    sm = Node(
+        package='champi_brain',
+        executable='state_machine_itf.py',
+        name='sm_ros_itf',
+        output='screen',
+        respawn=True,
+        parameters=[config_file_path, {'sim': sim_config}],
     )
-
-    # sim_act_launch = Node(
-    #         package='champi_brain',
-    #         executable='simu_act_node.py',
-    #         name='simu_act_node',
-    #         output='screen',
-    #         condition=IfCondition(LaunchConfiguration('sim'))
-    # )
 
     return LaunchDescription([
-        color_arg,
         sim_arg,
-        # sim_act_launch,
-        # screen_manager,
-        # rviz_markers,
-        strat
+        sm
     ])

@@ -1,325 +1,221 @@
 #!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image
-import cv2
-import sys
+from rclpy.executors import ExternalShutdownException
+import tf2_ros
+
+from sensor_msgs.msg import PointCloud2
+from sensor_msgs_py.point_cloud2 import read_points, create_cloud_xyz32
+from std_msgs.msg import Header, Float32
+
+from scipy.spatial.transform import Rotation as R
 import numpy as np
-import matplotlib.pyplot as plt
-from cv_bridge import CvBridge
+from icecream import ic
 
-class PlatformDetection(Node):
+def create_point_cloud2(points_array, frame_id):
+    """
+    Convertit un tableau Nx3 numpy array ou liste de points [x, y, z] en PointCloud2.
+    """
+    header = Header()
+    header.stamp = rclpy.clock.Clock().now().to_msg()
+    header.frame_id = frame_id
+
+    # Création de la liste de tuples (x, y, z)
+    points = [tuple(p) for p in points_array]
+
+    # Générer le message PointCloud2
+    cloud_msg = create_cloud_xyz32(header, points)
+    return cloud_msg
+
+def get_transfo_matrix(transform):
+    #get the rotation and translation matrix
+    rot = R.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
+    rot = rot.as_matrix()
+    trans = np.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
+
+    # create the transformation matrix
+    transform_mtx = np.concatenate([rot, trans.reshape(3,1)], axis=1)
+    transform_mtx = np.concatenate([transform_mtx, np.array([[0,0,0,1]])], axis=0)
+
+    return transform_mtx
+
+
+def transform_points_array_to_frame_with_transform_matrix(points, transform_matrix):
+    # Step 1: Convert to homogeneous coordinates (N,3) → (N,4)
+    ones = np.ones((points.shape[0], 1))  # Shape: (N,1)
+
+    points_homogeneous = np.concatenate([points, ones], axis=1)
+
+    # Step 2: Apply the transformation
+    transformed_points_homogeneous = points_homogeneous @ transform_matrix.T  # Matrix multiplication
+
+    # Step 3: Convert back to (N,3) by removing the homogeneous coordinate
+    transformed_points = transformed_points_homogeneous[:, :3]
+
+    return transformed_points
+
+
+def find_distance_to_platform(filtered_point_cloud_array_in_base_link):
+    """
+    Find the distance to the platform in the filtered point cloud.
+    """
+    # Calculate the distance to the platform
+    distances = np.linalg.norm(filtered_point_cloud_array_in_base_link, axis=1)
+
+    # Find the minimum distance
+    min_distance = np.min(distances)
+
+    return min_distance
+
+
+class PlatformDetectionNode(Node):
     def __init__(self):
-        super().__init__('platform_detection')
+        super().__init__('platform_detection_node')
 
-        self.timer = self.create_timer(0.1, self.timer_callback)  # 5Hz
+        # point cloud sub
+        self.point_cloud_sub = self.create_subscription(PointCloud2, '/camera/camera/depth/color/points', self.point_cloud_callback, 10)
+        self.latest_point_cloud = None
 
-        self.cv_bridge = CvBridge()
+        # rviz filtered point cloud pub
+        self.filtered_point_cloud_pub = self.create_publisher(PointCloud2, '/rviz/filtered_point_cloud', 10)
 
-        self.subscription_camera = self.create_subscription(
-            Image,
-            '/image_raw',
-            self.image_callback,
-            10)
-        
-        self.is_color_segmentation = True
-        self.latest_img = None
-        self.edge_detector = "Canny"
+        # tf
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+        self.transform_matrix_cam_to_base_link = None
+        self.transform_matrix_base_link_to_odom = None
 
-        # ==================================== CALLIBRATION ====================================
-        
-        # In calibration mode, the color segmentation is activated
-        self.is_calibration = False
+        # platforms
+        margin = 0.02 # m
+        platform_height = 0.125 # m
+        self.interval_platform_height = [platform_height - margin, platform_height + margin] # m
 
-        # Define the lower and upper bounds for the color segmentation
-        self.lower_bound = np.array([8, 140, 0])
-        self.upper_bound = np.array([15, 255, 255])
+        # distance publisher
+        self.distance_pub = self.create_publisher(Float32, '/platform_distance', 10)
 
+        self.timer = self.create_timer(0.5, self.timer_callback)
 
+        self.get_logger().info("Platform Detection Node started !")
 
     def timer_callback(self):
-        if self.latest_img is None:
+        if self.latest_point_cloud is None:
+            return
+        if self.transform_matrix_cam_to_base_link is None:
+            if not self.init_transforms():
+                return
+
+        self.get_logger().debug("Processing point cloud...")
+        start_time = self.get_clock().now()
+
+        # Read structured point cloud data
+        structured_points = np.array(read_points(self.latest_point_cloud, field_names=("x", "y", "z"), skip_nans=True))
+
+        if structured_points.size == 0:
+            self.get_logger().warn("Received empty point cloud.")
+            return
+        self.get_logger().debug(f"Point cloud size: {structured_points.shape[0]}")
+
+        # ====================================TRANSFORM POINT CLOUD TO BASE LINK ====================================
+
+        # Convert to numpy array
+        points = np.vstack([structured_points['x'], structured_points['y'], structured_points['z']]).T
+        points = points.astype(np.float32) # Ensure it's float32
+
+        transformed_points_array = self.transform_points_to_base_link(points)
+
+        end_time = self.get_clock().now()
+        elapsed_time = (end_time - start_time).nanoseconds / 1e6  # Convert to milliseconds
+        self.get_logger().debug(f"Point cloud processing time: {elapsed_time:.2f} ms")
+
+        # ==================================== FILTER POINT CLOUD ====================================
+        start_time = self.get_clock().now()
+
+        filtered_point_cloud_array_in_base_link = self.filter_point_cloud_array(transformed_points_array)
+
+        stop_time = self.get_clock().now()
+        elapsed_time = (stop_time - start_time).nanoseconds / 1e6  # Convert to milliseconds
+        filtered_points_count = filtered_point_cloud_array_in_base_link.shape[0]
+        self.get_logger().debug(f"Filtered point cloud size: {filtered_points_count}")
+        self.get_logger().debug(f"Point cloud filtering time: {elapsed_time:.2f} ms \n")
+
+        if filtered_points_count == 0:
+            msg = Float32()
+            msg.data = -1.0
+            self.distance_pub.publish(msg) # we always publish, even when nothing is detected so that state machine still get updated values
             return
 
-        #print('Image received')
+        # transform filtered point cloud to odom frame
+        filtered_point_cloud_in_odom = self.transform_points_to_odom(filtered_point_cloud_array_in_base_link)
+        # for viz only :
+        self.publish_filtered_point_cloud(filtered_point_cloud_in_odom, 'base_link')
 
-        # ==================================== PREPROCESSING ====================================
-        
-        # Convert the ROS image to OpenCV image
-        self.cv_image = self.cv_bridge.imgmsg_to_cv2(self.latest_img, 'bgr8')
+        # Find the shortest from the robot to the platform
+        dist_to_platform = find_distance_to_platform(filtered_point_cloud_array_in_base_link)
+        self.get_logger().debug(f"Distance to platform: {dist_to_platform:.2f} m")
 
-        if self.is_calibration and self.is_color_segmentation:
-            print("----------Calibration mode Plateforme detection----------")
-            print("put the robot in front of a plateforme and save the Hue Saturation range of the plateforme")
-            print("Change the Hue Saturation Value in the code or in the calibration.yaml file in the self.lower_bound and self.upper_bound")    
-            img_hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
-            plt.imshow(img_hsv)
-            plt.show()
-            sys.exit()
-            return
-        #Blur the image
-        # img_blured = cv2.GaussianBlur(self.cv_image, (7,7), 0)
-        # img_gray = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2GRAY)
-        #print('Image encoding: ', img_gray.shape)
-        # ================================== DETECTION =========================================
-        
-        img_edges = None
-        if self.is_color_segmentation:
-            # Perform color segmentation
-            img_edges = self.segmentation_color(self.cv_image)
+        msg = Float32()
+        msg.data = dist_to_platform
+        self.distance_pub.publish(msg)
 
+    def publish_filtered_point_cloud(self, filtered_point_cloud_array, frame):
+        # Create a PointCloud2 message
+        filtered_point_cloud_msg = create_point_cloud2(filtered_point_cloud_array, frame)
 
+        # Publish the filtered point cloud
+        self.filtered_point_cloud_pub.publish(filtered_point_cloud_msg)
+        self.get_logger().debug("Filtered point cloud published")
 
-        # Detect edges
-        #img_edges = self.detect_edges(img_gray, self.edge_detector)
+    def init_transforms(self):
+        try:
+            when = rclpy.time.Time().to_msg()  # équivalent à Time(0)
+            transform_cam_to_base_link = self.tf_buffer.lookup_transform('base_link', 'camera_depth_optical_frame', when)
+            transform_base_link_to_odom = self.tf_buffer.lookup_transform('odom','base_link', when)
 
-        # Detect lines
-        #img_lines = detect_lines(img, img_edges)
+            self.transform_matrix_cam_to_base_link = get_transfo_matrix(transform_cam_to_base_link)
+            self.transform_matrix_base_link_to_odom = get_transfo_matrix(transform_base_link_to_odom)
 
-        # Detect blobs
-        #img_blobs = detect_blobs(img, img_edges)
+            self.get_logger().info("Transforms initialized.")
 
-        # find the countours
-        contours, _ = cv2.findContours(img_edges, cv2.RETR_CCOMP , cv2.CHAIN_APPROX_SIMPLE )
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            self.get_logger().warn("Transforms not initialized.")
+            return False
 
-        # Detect rectangles
-        rectangles = []
-        rectangles = self.detect_rectangles(contours)
+        return True
 
-        # Draw the rectangles on the original image
-        img_contours = self.cv_image.copy()
-        if len(rectangles) > 0:
-            cv2.drawContours(img_contours, rectangles, -1, (0, 255, 0), thickness=cv2.FILLED)
-            print("Rectangles found")
-        else:
-            print("No rectangles found")
-            # Detect blobs
-            #img_contours = detect_blobs(img, img_edges)
-            # sharpened_canny = cv2.Canny(img_gray, 25, 175, apertureSize=3)
-            # transformed_image = cv2.morphologyEx(sharpened_canny, cv2.MORPH_CLOSE, np.ones((11,11),np.uint8))
-            # #dilation_img = cv2.dilate(transformed_image, np.ones((3,3),np.uint8), iterations=1)
-            # new_contours, _ = cv2.findContours(transformed_image, cv2.RETR_CCOMP , cv2.CHAIN_APPROX_SIMPLE)
-            # # rectangles = detect_rectangles(new_contours)
-            # # cv2.drawContours(img_contours, new_contours, -1, 255, thickness=cv2.FILLED)
-
-            # for cnt in new_contours:
-            #     area = cv2.contourArea(cnt)
-            #     x, y, w, h = cv2.boundingRect(cnt)
-            #     aspect_ratio = float(w) / h
-                
-            #     # Filter contours based on size and/or aspect ratio
-            #     # Adjust the conditions to match the shapes
-            #     if area > 4000 and aspect_ratio > 0.5:
-            #         cv2.drawContours(img_contours, [cnt], -1, (0, 255, 0), 2)  # Draw one shape in green
-
-        cv2.imshow('Image', img_contours)
-        cv2.waitKey(1)
-        #Solution : essayer un nouvequ edge detector
-        #Solution : essayer de changer les paramètres de detection des blobs
+    def point_cloud_callback(self, msg):
+        self.latest_point_cloud = msg
+        self.get_logger().debug("Received point cloud data")
 
 
-    def segmentation_color(self, img):
-        # Convert the image to the HSV color space
-        img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    def transform_points_to_base_link(self, points):
+        return transform_points_array_to_frame_with_transform_matrix(points, self.transform_matrix_cam_to_base_link)
+    def transform_points_to_odom(self, points):
+        return transform_points_array_to_frame_with_transform_matrix(points, self.transform_matrix_base_link_to_odom)
 
-        # Define the lower and upper bounds for the color segmentation
-        self.lower_bound = np.array([8, 140, 0])
-        self.upper_bound = np.array([15, 255, 255])
+    def filter_point_cloud_array(self, transformed_points):
+        filtered_point_cloud = []
+        for point in transformed_points:
+            x, y, z = point
+            if (self.interval_platform_height[0]) < z < self.interval_platform_height[1]:
+                filtered_point_cloud.append(point)
 
-        # Create a mask for the color segmentation
-        mask = cv2.inRange(img_hsv, self.lower_bound, self.upper_bound)
+        filtered_point_cloud = np.array(filtered_point_cloud)
+        return filtered_point_cloud
 
-        # Apply the mask to the original image
-        img_segmented = cv2.bitwise_and(img, img, mask=mask)
 
-        img_segmented_gray = cv2.cvtColor(img_segmented, cv2.COLOR_BGR2GRAY)
-
-        _, thresh_img_segmented_gray= cv2.threshold(img_segmented_gray, 254, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-
-        return thresh_img_segmented_gray
-
-    def image_callback(self, msg):
-
-        self.latest_img = msg
-
-        # Function to calculate slope
-    def calculate_slope(self, x1, y1, x2, y2):
-        if x2 - x1 == 0:  # To avoid division by zero for vertical lines
-            return float('inf')  # Infinite slope for vertical lines
-        return (y2 - y1) / (x2 - x1)
-
-    def is_point_on_line(self, x1, y1, x2, y2, x, y):
-        if x1 == x2:
-            return abs(x - x1) < 0.5
-        if y1 == y2:
-            return (y == y1) < 0.5
-        return abs((x - x1) / (x2 - x1) - (y - y1) / (y2 - y1)) < 0.5
-
-    def is_parallel_lines(self, x1, y1, x2, y2, x3, y3, x4, y4):
-        slope_line1 = self.calculate_slope(x1, y1, x2, y2)
-        slope_line2 = self.calculate_slope(x3, y3, x4, y4)
-        print("Parallel lines")
-        return abs(slope_line1-slope_line2) < 2
-
-    def detect_lines(self, img, edges):
-
-        # Use Hough Line Transform to detect lines
-        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=80, minLineLength=25, maxLineGap=15)
-
-        # Draw the detected lines on the original image
-        output = img.copy()
-        parallel_lines = None
-        
-        min_norm = 999
-        if lines is not None and len(lines) > 1:
-            print("Nbr lines", len(lines))
-            for i in range(len(lines)):
-                for j in range(i+1, len(lines)):
-                    x1, y1, x2, y2 = lines[i][0]
-                    if y1 > y2:
-                        x2, y2, x1, y1 = x1, y1, x2, y2
-                    x3, y3, x4, y4 = lines[j][0]
-                    if y3 > y4:
-                        x4, y4, x3, y3 = x3, y3, x4, y4
-
-                    # Check if the line are the same
-                    if self.is_point_on_line(x1, y1, x2, y2, x3, y3):
-                        print("Point on line")
-                        continue
-
-                    if not self.is_parallel_lines(x1, y1, x2, y2, x3, y3, x4, y4):
-                        print("Not parallel lines")
-                        continue
-                    
-                    norm_line1 = np.linalg.norm(np.array([x1, y1]) - np.array([x2, y2]))
-                    norm_line2 = np.linalg.norm(np.array([x3, y3]) - np.array([x4, y4]))
-
-                    # Check if the lines are the closest parallel lines
-                    norm = abs(norm_line1 - norm_line2)
-                    if norm < min_norm:
-                        parallel_lines = (lines[i][0], lines[j][0])
-                        min_norm = norm
-            
-            if parallel_lines is not None:
-                line1, line2 = parallel_lines
-                x1, y1, x2, y2 = line1
-                x3, y3, x4, y4 = line2
-                output = cv2.line(output, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                output = cv2.line(output, (x3, y3), (x4, y4), (0, 255, 0), 2)
-        
-
-        elif lines is not None and len(lines) == 1:
-            print("1 lines detected")
-            x1, y1, x2, y2 = lines[0][0]
-            output = cv2.line(output, (x1, y1), (x2, y2), (255, 0, 0), 2)
-
-        else:
-            print("No lines detected")
-            output = edges
-
-        return output
-
-    def detect_edges(self, img_gray, edge_detector):
-
-        transformed_image = None
-
-        if edge_detector == "Laplace":
-
-            # Use Laplace edge detection
-            sharpened_laplace = cv2.Laplacian(img_gray, cv2.CV_16U, ksize=5)
-
-            # Convert the image to 8-bit unsigned integer
-            sharpened_laplace_abs = cv2.convertScaleAbs(sharpened_laplace)
-
-            # Apply a binary threshold to the image
-            _, thresh_sharpened_laplace_abs= cv2.threshold(sharpened_laplace_abs, 254, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-
-            # Apply morphological operarions to the image
-            closing_laplace = cv2.morphologyEx(thresh_sharpened_laplace_abs, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9)))
-            transformed_image = cv2.morphologyEx(closing_laplace, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
-
-        elif edge_detector == "Sobel":
-
-            # Use Sobel edge detection
-            sobelx = cv2.Sobel(src=img_gray, ddepth=cv2.CV_64F, dx=1, dy=0, ksize=5) # Sobel Edge Detection on the X axis
-            sobely = cv2.Sobel(src=img_gray, ddepth=cv2.CV_64F, dx=0, dy=1, ksize=5) # Sobel Edge Detection on the Y axis
-            sobelxy = cv2.Sobel(src=img_gray, ddepth=cv2.CV_64F, dx=1, dy=1, ksize=5) # Combined X and Y Sobel Edge Detection
-
-            #assemble the edges
-            sharpened_sobel = cv2.addWeighted(sobelx, 0.5, sobely, 0.5, 0)
-            sharpened_sobel = cv2.addWeighted(sharpened_sobel, 0.5, sobelxy, 0.5, 0)
-            sharpened_sobel_abs = cv2.convertScaleAbs(sharpened_sobel)
-
-            _, thresh_sharpened_sobel_abs = cv2.threshold(sharpened_sobel_abs, 254, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-            transformed_image = cv2.morphologyEx(thresh_sharpened_sobel_abs, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)))
-        # transformed_image = cv2.morphologyEx(closing_sobel, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
-
-        elif edge_detector == "Canny":
-            sharpened_canny = cv2.Canny(img_gray, 50, 200, apertureSize=3)
-            transformed_image = cv2.morphologyEx(sharpened_canny, cv2.MORPH_CLOSE, np.ones((7,7),np.uint8))
-        
-        return transformed_image
-
-    def detect_rectangles(self, contours):
-        rectangles = []
-        for contour in contours:
-            # Approximate contour with accuracy proportional to contour perimeter
-            epsilon = 0.02 * cv2.arcLength(contour, True)
-            approx = cv2.approxPolyDP(contour, epsilon, True)
-
-            # Check if the approximated contour has 4 points (indicating a quadrilateral)
-            if len(approx) == 4:
-                # Optionally, check for convexity to ensure it's a proper shape
-                if cv2.isContourConvex(approx):
-                    rectangles.append(approx)
-        return rectangles
-
-    def detect_blobs(self, img, edges):
-
-        # Setup SimpleBlobDetector parameters.
-        params = cv2.SimpleBlobDetector_Params()
-        
-        # Change thresholds
-        params.minThreshold = 10
-        params.maxThreshold = 200
-        
-        # Filter by Area.
-        params.filterByArea = True
-        params.minArea = 1000
-        
-        # Filter by Circularity
-        params.filterByCircularity = True
-        params.minCircularity = 0.05
-        params.maxCircularity = 0.9
-        
-        # Filter by Convexity
-        params.filterByConvexity = True
-        params.minConvexity = 0.1
-        
-        # Filter by Inertia
-        params.filterByInertia = True
-        params.minInertiaRatio = 0.01
-
-        blob_detector = cv2.SimpleBlobDetector_create(params)
-
-        # Detect blobs.
-        keypoints_canny = blob_detector.detect(edges)
-
-        # Draw detected blobs as red circles.
-        img_with_keypoints_canny = cv2.drawKeypoints(img, keypoints_canny, np.array([]), (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-        return img_with_keypoints_canny
-
-        
 def main(args=None):
     rclpy.init(args=args)
 
-    platform_detection = PlatformDetection()
+    node = PlatformDetectionNode()
 
-    rclpy.spin(platform_detection)
-
-    platform_detection.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

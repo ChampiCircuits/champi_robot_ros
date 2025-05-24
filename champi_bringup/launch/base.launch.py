@@ -11,7 +11,6 @@ from launch.conditions import IfCondition, UnlessCondition
 
 """
 Ce launch file lance les nodes liés à la base et à la localisation du robot.
-TODO: il faudrait l'appeler depuis le bringup principal, pour ne pas répéter le code.
 """
 
 def generate_launch_description():
@@ -48,24 +47,14 @@ def generate_launch_description():
         name='twist_mux',
         output='screen', # TODO tester output='both'
         parameters=[config_file_path],
-        remappings=[('/cmd_vel_out', '/base_controller/cmd_vel')]
+        remappings=[('/cmd_vel_out', '/cmd_vel')]
     )
 
-    ukf_node = Node(
-        package='robot_localization',
-        executable='ukf_node',
-        name='ukf',
-        output='screen',
-        parameters=[os.path.join(get_package_share_directory("champi_bringup"), "config", "ukf.yaml")],
-        remappings=[('/cmd_vel', '/base_controller/cmd_vel_limited')]
-    )
-
-    # Calls the set_pose service of the UKF node
-    call_set_pose_node = Node(
-        package='dev_tools',
-        executable='call_set_pose.py',
-        name='call_set_pose',
-        output='screen',
+    loc_node = Node(
+        package='champi_navigation',
+        executable='loc_node.py',
+        name='loc_node',
+        output='screen'
     )
 
     # Static transform map -> odom
@@ -78,13 +67,12 @@ def generate_launch_description():
     )
 
 
-
     # =========================== BASE CONTROLLER ( SIMULATION OR REAL ROBOT ) ===========================
 
-    base_controller_launch = IncludeLaunchDescription(
+    hardware_interface_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('champi_controllers'),
-            '/launch/base_controller.launch.py'
+            get_package_share_directory('champi_hw_interface'),
+            '/launch/hardware_interface.launch.py'
         ]),
         condition=UnlessCondition(LaunchConfiguration('sim'))
     )
@@ -92,34 +80,19 @@ def generate_launch_description():
     base_control_simu_node = Node(
         package='champi_simulator',
         executable='holo_base_control_simu_node.py',
-        name='base_controller_simu',
+        name='hardware_interface_simu',
         output='screen',
         parameters=[config_file_path],
-        remappings=[('/cmd_vel', '/base_controller/cmd_vel')],
         condition=IfCondition(LaunchConfiguration('sim'))
     )
-
-
-    # =========================== IMU CONTROLLER ( SIMULATION OR REAL ROBOT ) ===========================
-
-    imu_controller_launch = IncludeLaunchDescription(
-        launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('champi_controllers'),
-            '/launch/imu_controller.launch.py'
-        ]),
-        condition=UnlessCondition(LaunchConfiguration('sim'))
-    )
-
 
     return LaunchDescription([
         sim_arg,
         static_tf_map_odom,
         description_broadcaster,
-        base_controller_launch,
+        hardware_interface_launch,
         base_control_simu_node,
+        loc_node,
         cmd_vel_mux_node,
-        imu_controller_launch,
-        ukf_node,
-        call_set_pose_node
     ])
 

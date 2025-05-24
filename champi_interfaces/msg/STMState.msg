@@ -1,0 +1,2 @@
+bool e_stop_pressed
+bool tirette_released

@@ -63,3 +63,4 @@ def get_wifi_name():
     subprocess_output = subprocess_result.communicate()[0],subprocess_result.returncode
     network_name = subprocess_output[0].decode('utf-8')
     return network_name.split(':')[1][1:-2] #1:-2 to remove the " character
+# TODO réparer

@@ -1,5 +1,5 @@
 
-base_controller_simu:
+hardware_interface_simu:
   ros__parameters:
     enable_accel_limits: true
 
@@ -8,74 +8,59 @@ base_controller_simu:
 
     max_acceleration_angular: 20.0 # rad/s^2
     max_deceleration_angular: 20.0 # rad/s^2
-
+    
+    max_acceleration_wheel: 10.0 # rad/s^2
     imu_vel_yaw_cov: 0.00001
 
 
-
-base_controller:
+hardware_interface:
   ros__parameters:
 
-    topic_twist_in: "/cmd_vel"
-    champi_can_verbose_mode: false
-    timeout_connexion_ros: 1000000000000.0
-    timeout_connexion_stm: 1.2
-
-    start_x: 1.825 # m
-    start_y: 0.175 # m
-    start_theta: 1.57 # rad
-
-    enable_accel_limits: false
-
-    max_acceleration_linear: 0.1 # m/s^2
-    max_deceleration_linear: 2.0 # m/s^2
-
-    max_acceleration_angular: 1.0 # rad/s^2
-    max_deceleration_angular: 20.0 # rad/s^2
-
-    max_linear_speed: 0.4
+    device_ser_no: 3952366C3233
 
     covariances:
-      pose: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
-      velocity: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      pose_wheels: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001] # x y z roll pitch yaw
+      vel_wheels: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      pose_otos: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      vel_otos: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
 
-    base_config:
-      max_accel_wheels: 10.0 # rotation des roues en rotation/s²
-      wheel_radius: 0.0276 # en m # 0.029
-      base_radius: 0.175 # en m
+    stm_config:
       cmd_vel_timeout: 1.0 # en seconde. Si aucune commande n'est reçue pendant ce temps, le robot s'arrête
 
+      holo_drive_config:
+        max_accel_wheel: 10.0 # rotation des roues en rotation/s²
+        wheel_radius: 0.0292 # en m # 0.029
+        base_radius: 0.13 # en m
 
+        max_acceleration_linear: 10.0 # m/s^2 # TODO tuner ces vals ?
+        max_acceleration_angular: 20.0 # rad/s^2
 
+        max_deceleration_linear: 10.0 # m/s^2
+        max_deceleration_angular: 20.0 # rad/s^2
 
-imu_controller:
+      otos_config: # You have to restart node AND STM to apply the otos config (feature, not bug :))
+        linear_scalar: 0.99 # [0.872 - 1.127]
+        angular_scalar: 0.993 # [0.872 - 1.127]
+
+holo_teleop_joy_node:
   ros__parameters:
-    champi_can_verbose_mode: false
-    timeout_connexion_stm: 1.0
-
-    imu_covariances:
-      angular_vel: [0.00001, 0.00001, 0.00001]
-      linear_acc: [1., 1., 1.]
-
-
-act_controller:
-  ros__parameters:
-    champi_can_verbose_mode: false
-
+    max_linear_speed: 0.5 # m/s
+    max_angular_speed: 1.0 # rad/s
 
 twist_mux:
   ros__parameters:
+    use_stamped: false
     topics:
-      navigation:
-        topic   : cmd_vel_stop
+      stop:
+        topic   : /ctrl/cmd_vel_stop
         timeout : 3.0
         priority: 102
       joystick:
-        topic   : cmd_vel_joy
+        topic   : /teleop/cmd_vel
         timeout : 0.5
         priority: 103
       behavior_server:
-        topic   : cmd_vel
+        topic   : /ctrl/cmd_vel
         timeout : 0.5
         priority: 101
 
@@ -94,7 +79,6 @@ ld_lidar:
     range_max: 5.0
     # units: 'M'
 
-
 enemy_tracker:
   ros__parameters:
     crop_box:
@@ -105,18 +89,21 @@ enemy_tracker:
 
 costmap_updater:
   ros__parameters:
-    grid_width: 2.0 # m
-    grid_height: 1.5 # m
+    grid_width: 3.0 # m
+    grid_height: 2.0 # m
     grid_resolution: 0.05 # m/cell
-    robot_radius: 0.05 # m # todo juste pour tester #0.2
+    robot_radius: 0.15
     enemy_robot_radius: 0.2 # m
     enemy_pos_prediction_time: 0.0 # s. 0.0 means disabled
 
 pose_controller:
   ros__parameters:
     control_loop_period: 0.1 # s
-    max_linear_acceleration: 0.3 # m/s^2
-    max_angular_acceleration: 1.0 # rad/s^2
+    max_linear_acceleration: 1.5 # m/s^2
+    max_linear_deceleration: 4.0 # m/s^2
+
+    max_angular_acceleration: 15.0 # rad/s^2
+    max_angular_deceleration: 20.0 # rad/s^2
     # When the ctrl_goal is reached and end_speed!=0 (we expect a new goal to be sent right away),
     # the robot will emergency stop once the timeout is elapsed.
     timeout_wait_next_goal: 0.5 # s.
@@ -125,4 +112,9 @@ path_planner:
   ros__parameters:
     planner_loop_period: 0.2
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
-    debug: false
+    debug: true
+
+sm_ros_itf:
+  ros__parameters:
+    strategy_file: 'test_strat.yaml'
+    use_above_default_strategy: true # works only in sim mode

@@ -21,10 +21,6 @@ find_package(ament_index_cpp REQUIRED)
 
 
 find_package(ament_cmake REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
-
-add_executable(example_bt src/example_bt.cpp)
-ament_target_dependencies(example_bt rclcpp behaviortree_cpp)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -40,7 +36,6 @@ endif()
 
 # Allow lauch files to be found when calling them with ros2 launch
 install(DIRECTORY
-  xml
   launch
   scripts
   # config
@@ -53,10 +48,8 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-        scripts/screen_manager.py
-        scripts/rviz_markers.py
-        scripts/strategy_engine_node.py
-        scripts/simu_act_node.py
+        scripts/state_machine_itf.py
+        scripts/strat_displayer_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

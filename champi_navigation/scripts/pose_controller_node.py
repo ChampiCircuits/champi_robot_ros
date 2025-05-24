@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import champi_navigation.goal_checker as goal_checker
-from champi_libraries_py.data_types.geometry import Pose2D, Vel2D
 from champi_libraries_py.utils.angles import get_yaw
 from champi_libraries_py.data_types.robot_state import RobotState
+from champi_libraries_py.data_types.geometry import Pose2D, Vel2D
 from champi_libraries_py.utils.diagnostics import create_topic_freq_diagnostic, ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
+from champi_libraries_py.utils.dt_measurer import DtMeasurer
 from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
 from champi_navigation.path_follow_params import PathFollowParams
 
@@ -29,23 +30,28 @@ class PoseControllerNode(Node):
         control_loop_period = self.declare_parameter('control_loop_period', rclpy.Parameter.Type.DOUBLE).value
         max_linear_acceleration = self.declare_parameter('max_linear_acceleration', rclpy.Parameter.Type.DOUBLE).value
         max_angular_acceleration = self.declare_parameter('max_angular_acceleration', rclpy.Parameter.Type.DOUBLE).value
+        max_linear_deceleration = self.declare_parameter('max_linear_deceleration', rclpy.Parameter.Type.DOUBLE).value
+        max_angular_deceleration = self.declare_parameter('max_angular_deceleration', rclpy.Parameter.Type.DOUBLE).value
         self.timeout_wait_next_goal = self.declare_parameter('timeout_wait_next_goal', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Controller started with the following parameters:')
         self.get_logger().info(f'control_loop_period: {control_loop_period}')
         self.get_logger().info(f'max_linear_acceleration: {max_linear_acceleration}')
+        self.get_logger().info(f'max_linear_deceleration: {max_linear_deceleration}')
         self.get_logger().info(f'max_angular_acceleration: {max_angular_acceleration}')
+        self.get_logger().info(f'max_angular_deceleration: {max_angular_deceleration}')
 
         # ROS subscriptions, publishers and timers
         self.timer = self.create_timer(control_loop_period, self.control_loop_spin_once)
-        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_vel_pub = self.create_publisher(Twist, '/ctrl/cmd_vel', 10)
         self.champi_path_sub = self.create_subscription(CtrlGoal, '/ctrl_goal', self.ctrl_goal_callback, 10)
-        self.current_pose_sub = self.create_subscription(Odometry, '/odometry/filtered', self.current_pose_callback, 10)
+        self.current_pose_sub = self.create_subscription(Odometry, '/odom', self.current_pose_callback, 10)
 
         # Other objects instantiation
         self.cmd_vel_updater = CmdVelUpdaterWPILib()
-        self.path_follow_params = PathFollowParams(max_linear_acceleration, max_angular_acceleration)
+        self.path_follow_params = PathFollowParams(max_linear_acceleration, max_linear_deceleration, max_angular_acceleration, max_angular_deceleration)
+        self.dt_measurer = DtMeasurer(control_loop_period)
         self.robot_current_state = None
         self.ctrl_goal: CtrlGoal = None
 
@@ -94,9 +100,9 @@ class PoseControllerNode(Node):
         else:
             self.stop_requested_by_planner = False
         
-        if self.ctrl_goal is None or not self.are_ctrl_goals_equal(ctrl_goal, self.ctrl_goal):
+        if self.ctrl_goal is None or not self.ctrl_goals_are_strictly_equal(ctrl_goal, self.ctrl_goal):
             # Means that we need to update the control goal (first time or new goal)
-            # Why do we test this ? The path planner is not required to publish the twice the same goal (e.g periodically)
+            # Why do we test this ? The path planner is not required to publish twice the same goal (e.g periodically)
             # but for reliability, it can if it wants to.
             self.ctrl_goal = ctrl_goal
             self.path_follow_params.update_ctrl_goal(self.robot_current_state, ctrl_goal)  # See description of PathFollowParams class for more details
@@ -111,6 +117,8 @@ class PoseControllerNode(Node):
 
         # # Exectution time measurement for diagnostics. Check class definition for details.
         self.exec_time_measurer.start()
+
+        self.dt_measurer.tick()
 
         # Initialization checks or stop requested by planner
         if self.robot_current_state is None or self.ctrl_goal is None or self.stop_requested_by_planner:
@@ -142,7 +150,8 @@ class PoseControllerNode(Node):
 
         # Compute the velocity command
         self.path_follow_params.update_robot_state(self.robot_current_state)
-        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(self.path_follow_params)
+        dt = self.dt_measurer.get_dt()
+        cmd_vel = self.cmd_vel_updater.compute_cmd_vel(dt, self.path_follow_params)
 
         # express cmd in the base_link frame (initially in the global fixed frame)
         cmd_vel = Vel2D.to_robot_frame(self.robot_current_state.pose, cmd_vel)
@@ -156,13 +165,11 @@ class PoseControllerNode(Node):
         self.exec_time_measurer.stop()
     
 
-    def are_ctrl_goals_equal(self, goal1: CtrlGoal, goal2: CtrlGoal):
+    def ctrl_goals_are_strictly_equal(self, goal1: CtrlGoal, goal2: CtrlGoal):
         """
-        Check if two control goals are equal, position-wise.
+        Check if two control goals are equal, position-wise and orientation-wise.
         """
-        return goal1.pose.position.x == goal2.pose.position.x and \
-                goal1.pose.position.y == goal2.pose.position.y
-
+        return goal1.pose == goal2.pose
 
     def stop_robot(self):
         """Stop the robot."""

@@ -9,14 +9,14 @@ from champi_interfaces.action import Navigate
 from rclpy.logging import get_logger
 
 from rclpy.executors import ExternalShutdownException
-
+import math
 
 
 class PathPlannerUINode(Node):
 
     def __init__(self):
         super().__init__('planner_ui')
-        get_logger('rclpy').info(f"\tLaunching Path planner UI...")
+        self.get_logger().info(f"\tLaunching Path planner UI...")
 
 
         # Subscriber for /goal_pose
@@ -30,7 +30,7 @@ class PathPlannerUINode(Node):
         self.goal_handle_navigate = None
 
         self.goal_pose = None
-        get_logger('rclpy').info(f"\tPath planner UI launched !")
+        self.get_logger().info(f"\tPath planner UI launched !")
     
 
     # ==================================== ROS2 Callbacks ==========================================
@@ -67,7 +67,7 @@ class PathPlannerUINode(Node):
         
         self.goal_handle_navigate = goal_handle
 
-        self.get_logger().info('Goal accepted :)')
+        self.get_logger().info('Goal accepted!')
 
         get_result_future = goal_handle.get_result_async()
         get_result_future.add_done_callback(self.get_result_callback)
@@ -75,7 +75,7 @@ class PathPlannerUINode(Node):
 
     def get_result_callback(self, future):
         result = future.result().result
-        self.get_logger().info(f'Result: {result.success}, {result.message}')
+        self.get_logger().info(f'Action result: {result.success}, {result.message}')
 
 
     def cancel_done_callback(self, future):
@@ -96,7 +96,7 @@ class PathPlannerUINode(Node):
         # Add done callback
         future_navigate_result.add_done_callback(self.goal_response_callback)
 
-        self.get_logger().info('Goal sent!')
+        self.get_logger().info('Goal sent...')
 
 
     def create_action_goal(self, goal_pose):
@@ -107,11 +107,11 @@ class PathPlannerUINode(Node):
         
         goal.end_speed = 0.
 
-        goal.max_linear_speed = 0.2
-        goal.max_angular_speed = 1.5
-        
-        goal.linear_tolerance = 0.01
-        goal.angular_tolerance = 0.1
+        goal.max_linear_speed = 1.0
+        goal.max_angular_speed = math.pi
+
+        goal.linear_tolerance = 0.005
+        goal.angular_tolerance = 0.05
 
         goal.do_look_at_point = False
 
@@ -122,7 +122,7 @@ class PathPlannerUINode(Node):
 
         goal.robot_angle_when_looking_at_point = 0.
 
-        goal.timeout = 7. # seconds
+        goal.timeout = 10. # seconds
 
         return goal
     
@@ -158,6 +158,7 @@ def main(args=None):
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
+        node.get_logger().warn("Path Planner UI terminated")
         node.destroy_node()
         rclpy.try_shutdown()
 

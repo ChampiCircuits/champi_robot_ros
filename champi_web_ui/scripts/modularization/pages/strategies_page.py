@@ -7,9 +7,10 @@ from enum import Enum
 
 from node import init_ros_node
 from utils import real_to_px, id_to_coords, action_type_to_color
+import os
 
-STRATEGIES_FILE_PATH = 'champi_web_ui/scripts/modularization/resources/strategies.json'
-TABLE_IMAGE_PATH = 'champi_web_ui/scripts/modularization/resources/table_2024.png'
+STRATEGIES_FILE_PATH = os.path.expanduser("~/champi_ws/src/champi_robot_ros/champi_web_ui/scripts/modularization/resources/strategies.json")
+TABLE_IMAGE_PATH = os.path.expanduser("~/champi_ws/src/champi_robot_ros/champi_web_ui/scripts/modularization/resources/table_2025.jpg")
 
 # strategies
 strategies_dics = []
@@ -33,23 +34,17 @@ open_json_strategies()
 interactive_image_table = None
 
 svg_zones_overlay = '''
-                <rect id="B1" x="0" y="0" width="1700" height="1700" stroke="#4E84A2" fill="#4E84A2" pointer-events="all" cursor="pointer" />
-                <rect id="Y1" x="0" y="2925" width="1700" height="1700" stroke="#E2BB4E" fill="#E2BB4E" pointer-events="all" cursor="pointer" />
-                <rect id="B2" x="0" y="5855" width="1700" height="1700" stroke="#4E84A2" fill="#4E84A2" pointer-events="all" cursor="pointer" />
-                
-                <rect id="Y2" x="9640" y="0" width="1700" height="1700" stroke="#E2BB4E" fill="#E2BB4E" pointer-events="all" cursor="pointer" />
-                <rect id="B3" x="9640" y="2925" width="1700" height="1700" stroke="#4E84A2" fill="#4E84A2" pointer-events="all" cursor="pointer" />
-                <rect id="Y3" x="9640" y="5855" width="1700" height="1700" stroke="#E2BB4E" fill="#E2BB4E" pointer-events="all" cursor="pointer" />
-            '''
-svg_plants_overlay = '''
-                <circle id="P1" cx="3785" cy="2645" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
-                <circle id="P2" cx="5675" cy="1895" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
-                <circle id="P3" cx="7560" cy="2645" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
+<rect id="B1" x="0" y="5845" width="1700" height="1700" stroke="#4E84A2" fill="#4E84A2" pointer-events="all" cursor="pointer" />
+<rect id="B2" x="14700" y="0" width="1700" height="1700" stroke="#4E84A2" fill="#4E84A2" pointer-events="all" cursor="pointer" />
+<rect id="B3" x="9600" y="10200" width="1700" height="1700" stroke="#4E84A2" fill="#4E84A2" pointer-events="all" cursor="pointer" />
+<rect id="Y1" x="1300" y="0" width="1700" height="1700" stroke="#E2BB4E" fill="#E2BB4E" pointer-events="all" cursor="pointer" />
+<rect id="Y2" x="16050" y="5845" width="1700" height="1700" stroke="#E2BB4E" fill="#E2BB4E" pointer-events="all" cursor="pointer" />
+<rect id="Y3" x="6400" y="10200" width="1700" height="1700" stroke="#E2BB4E" fill="#E2BB4E" pointer-events="all" cursor="pointer" />
+'''
 
-                <circle id="P4" cx="3785" cy="4910" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
-                <circle id="P5" cx="5675" cy="5660" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
-                <circle id="P6" cx="7560" cy="4910" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
-            '''
+svg_plants_overlay = '''
+<circle id="P1" cx="3785" cy="2645" r="470" fill="green" stroke="green" pointer-events="all" cursor="pointer" />
+'''
 
 svg_current_strat_overlay = ''''''
 

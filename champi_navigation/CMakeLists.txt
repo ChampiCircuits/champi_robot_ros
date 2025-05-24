@@ -40,7 +40,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
         scripts/path_planner_node.py
         scripts/pose_controller_node.py
-        scripts/robot_stopped_detector_node.py
+        scripts/loc_node.py
         scripts/costmap_updater_node.py
         scripts/path_planner_ui_node.py
  # scripts/gui_node.py

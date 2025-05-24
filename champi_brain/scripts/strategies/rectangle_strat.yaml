@@ -1,0 +1,15 @@
+init_pose: { x: 1.0, y: 1.0, theta_deg: 0.0 }
+
+actions:
+
+  - action: move
+    target: { x: 1.0, y: 1.5, theta_deg: 0.0 }
+
+  - action: move
+    target: { x: 1.5, y: 1.5, theta_deg: 0.0 }
+
+  - action: move
+    target: { x: 1.5, y: 1.0, theta_deg: 0.0 }
+
+  - action: move
+    target: { x: 1.0, y: 1.0, theta_deg: 0.0 }

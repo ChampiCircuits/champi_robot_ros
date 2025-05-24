@@ -19,7 +19,7 @@
   </link>
 
   <!-- Camera Link -->
-  <link name="camera">
+  <link name="camera_link">
     <inertial>
       <mass value="1"/>
       <origin xyz="0 0 0"/>
@@ -27,30 +27,21 @@
     </inertial>
   </link>
 
-  <!-- IMU link -->
-  <link name="imu_link"/>
-
   <!-- Joint between base_link and lidar -->
   <joint name="base_to_lidar" type="fixed">
     <parent link="base_link"/>
     <child link="base_laser"/>
-    <origin xyz="0 0 0.3" rpy="0 0 1.57"/>
+    <origin xyz="0 0 0.3" rpy="0 0 -1.57"/>
   </joint>
 
   <!-- Joint between base_link and camera -->
   <joint name="base_to_camera" type="fixed">
     <parent link="base_link"/>
-    <child link="camera"/>
-    <origin xyz="0.15 0 0.3" rpy="0.78539816339 3.14159265359 1.57079632679"/>
+    <child link="camera_link"/>
+    <origin xyz="0.089 0.023 0.314" rpy="-0.020 0.795 -0.017"/>
     <!-- xyz = roll pitch yaw -->
   </joint>
 
-  <!-- Joint between base_link and imu -->
-  <joint name="base_to_imu" type="fixed">
-    <parent link="base_link"/>
-    <child link="imu_link"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
 </robot>
 
 </robot>

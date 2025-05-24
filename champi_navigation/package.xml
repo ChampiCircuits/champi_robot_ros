@@ -12,6 +12,8 @@
 
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
+  <depend>tf_transformations</depend>
+  <depend>champi_interfaces</depend>
 
 
   <test_depend>ament_lint_auto</test_depend>

@@ -1,4 +1,4 @@
-from math import pi, sqrt, cos, sin, trunc
+from math import pi, sqrt, cos, sin, trunc, copysign, atan2
 
 from champi_libraries_py.data_types.geometry import Vel2D
 from champi_libraries_py.control.pid import PID
@@ -23,7 +23,7 @@ class CmdVelUpdaterInterface:
         self.stat_error_theta = None
 
 
-    def compute_cmd_vel(self, p: PathFollowParams):
+    def compute_cmd_vel(self, dt, p: PathFollowParams):
         """See class description.
 
         Args:
@@ -58,7 +58,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         self.pid_correct_dir = PID(5, 0, 1)
 
 
-    def compute_cmd_vel(self, p: PathFollowParams):
+    def compute_cmd_vel(self, dt, p: PathFollowParams):
 
 
         # ====================== Heading of the robot ======================
@@ -71,9 +71,13 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
 
         # 2) Correction of the angle of the heading using PID (to follow the line better)
 
-        # 2.a) Commpute the error "dist".
+        # 2.a) Compute the error "dist".
         # If the robot is further from the line it's supposed to follow, the error is greater.
-        dist = p.robot_state.pose.dist_to_line_signed(p.segment_start, p.segment_end)
+        # But if the line is a point (i.e only a rotation is required), the error is 0.
+        if p.segment_start.x == p.segment_end.x and p.segment_start.y == p.segment_end.y:
+            dist = 0
+        else:
+            dist = p.robot_state.pose.dist_to_line_signed(p.segment_start, p.segment_end)
 
         # 2.b) PID correction
         correction = self.pid_correct_dir.update(dist, 0.1)
@@ -87,7 +91,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
 
         # 2.d) We apply the correction to the angle of the heading vector. That means the robot
         # will move slightly more to the left or to the right, to get closer to the line.
-        angle_heading += correction
+        # angle_heading += correction
 
 
         # ======================= XY Linear velocity =========================
@@ -103,8 +107,11 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         constraints_mag = TrapezoidProfile.Constraints(p.max_speed_linear, p.max_acc_linear)
         current_state_mag = TrapezoidProfile.State(-dist_robot_to_goal, x_y_speed)
         goal_state_mag = TrapezoidProfile.State(0, p.end_speed)
-        profile_mag = TrapezoidProfile(constraints_mag, goal_state_mag, current_state_mag)
-        cmd_vel_x_y = profile_mag.calculate(0.1).velocity
+        profile_mag = TrapezoidProfile(constraints_mag)
+        cmd_vel_x_y = profile_mag.calculate(dt, current_state_mag, goal_state_mag).velocity
+
+        cmd_vel_x_y = compute_cmd_vel_x_y_custom(p, angle_heading, dt)
+
 
 
         # ========================= Angular velocity =========================
@@ -131,12 +138,15 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         constraints_theta = TrapezoidProfile.Constraints(p.max_speed_angular, p.max_acc_angular)
         current_state_theta = TrapezoidProfile.State(-theta_error, p.robot_state.vel.theta)
         goal_state_theta = TrapezoidProfile.State(0, 0)
-        profile_theta = TrapezoidProfile(constraints_theta, goal_state_theta, current_state_theta)
-        cmd_vel_theta = profile_theta.calculate(0.1).velocity  # TODO pass dt as argument
+        profile_theta = TrapezoidProfile(constraints_theta)
+        cmd_vel_theta = profile_theta.calculate(dt, current_state_theta, goal_state_theta).velocity
+
+        cmd_vel_theta = compute_cmd_vel_theta_custom(p, theta_error, dt)
+
 
         # ========================= Final velocity command =========================
 
-        # All left to do is compute the the velocity command in the ros format (linear x, linear y, angular z).
+        # All left to do is compute the velocity command in the ros format (linear x, linear y, angular z).
         # The heading angle and the x_y_speed can be thought as the direction and the magnitude of a 2D velocity vector.
 
         cmd_vel = Vel2D()
@@ -148,4 +158,103 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         self.stat_error_theta = theta_error
 
         return cmd_vel
-    
+
+
+
+def compute_cmd_vel_x_y_custom(p, angle_heading, dt):
+    dx = p.segment_end.x - p.robot_state.pose.x
+    dy = p.segment_end.y - p.robot_state.pose.y
+    dist_robot_to_goal = sqrt(dx**2 + dy**2)
+
+    angle_to_target = atan2(dy, dx)
+    angle_diff = normalize_angle(angle_to_target - angle_heading)
+
+    vel_init = (
+            p.robot_state.vel.x * cos(angle_heading) +
+            p.robot_state.vel.y * sin(angle_heading)
+    )
+
+    pos_init = dist_robot_to_goal
+
+    v_max = p.max_speed_linear
+    a_max = p.max_acc_linear
+    d_max = p.max_dec_linear
+
+    # Distance nécessaire pour arrêter
+    stopping_distance = (vel_init**2) / (2 * d_max) if d_max != 0 else 0
+
+    if stopping_distance >= pos_init:
+        # Freinage
+        vel_next = vel_init - copysign(d_max * dt, vel_init)
+        if vel_init * vel_next < 0:
+            vel_next = 0.0
+    else:
+        # Accélération
+        if abs(vel_init) < v_max:
+            vel_next = vel_init + copysign(a_max * dt, v_max - vel_init)
+            vel_next = max(min(vel_next, v_max), -v_max)
+        else:
+            vel_next = vel_init
+
+    # Limiter vitesse en fonction de la distance restante pour éviter overshoot
+    max_vel_based_on_error = min(v_max, pos_init * 5)  # coefficient à régler
+    vel_next = max(min(vel_next, max_vel_based_on_error), -max_vel_based_on_error)
+
+    # Appliquer le signe selon l’angle relatif
+    vel_next = copysign(vel_next, cos(angle_diff))
+
+    return vel_next
+
+
+
+
+def compute_cmd_vel_theta_custom(p, theta_error, dt):
+    vel_init = p.robot_state.vel.theta
+
+    v_max = p.max_speed_angular
+    a_max = p.max_acc_angular
+    d_max = p.max_dec_angular
+
+    pos_init = theta_error
+    pos_goal = 0.0
+
+    # Distance nécessaire pour s’arrêter (en angle)
+    stopping_distance = (vel_init**2) / (2 * d_max) if d_max != 0 else 0
+
+    # Freinage anticipé si nécessaire
+    if stopping_distance >= abs(pos_init):
+        # On freine dans le sens opposé à la vitesse actuelle
+        vel_next = vel_init - copysign(d_max * dt, vel_init)
+        # Ne pas inverser le sens de rotation (éviter oscillations)
+        if vel_init * vel_next < 0:
+            vel_next = 0.0
+    else:
+        # On accélère vers la cible dans le bon sens (sens donné par theta_error)
+        direction = copysign(1.0, pos_init)
+        if abs(vel_init) < v_max:
+            vel_next = vel_init + direction * a_max * dt
+            # Clamp dans les bornes max/min
+            vel_next = max(min(vel_next, v_max), -v_max)
+        else:
+            vel_next = vel_init
+
+    # Limiter la vitesse en fonction de la distance angulaire restante pour éviter overshoot
+    max_vel_based_on_error = min(v_max, abs(pos_init) * 4)  # coefficient à ajuster
+    vel_next = max(min(vel_next, max_vel_based_on_error), -max_vel_based_on_error)
+
+    # Si on est très proche de l’angle cible, on s’arrête
+    # angle_tolerance = 0.01  # ~0.5 degré
+    # speed_tolerance = 0.05  # rad/s
+    #
+    # if abs(pos_init) < angle_tolerance and abs(vel_init) < speed_tolerance:
+    #     vel_next = 0.0
+
+    return vel_next
+
+
+def normalize_angle(angle: float) -> float:
+    while angle > pi:
+        angle -= 2 * pi
+    while angle < -pi:
+        angle += 2 * pi
+    return angle

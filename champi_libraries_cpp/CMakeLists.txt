@@ -9,7 +9,10 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(Protobuf REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -20,22 +23,23 @@ find_package(Protobuf REQUIRED)
 # let the compiler search for headers in the include folder
 include_directories(include)
  
-# define a library target 
-file(GLOB champi_can_SRC CONFIGURE_DEPENDS "src/champi_can/*.cc" "src/champi_can/*.c")
-add_library(champi_can ${champi_can_SRC})
+# define a library target
+file(GLOB util_SRC CONFIGURE_DEPENDS "src/util/*.c" "src/util/*.cpp")
+add_library(util ${util_SRC})
+ament_target_dependencies(util tf2 geometry_msgs tf2_ros tf2_geometry_msgs)
  
 # this line to exports the library
-ament_export_targets(champi_can HAS_LIBRARY_TARGET)
+ament_export_targets(util HAS_LIBRARY_TARGET)
  
 # install the include/(library) directory to the install/include/my_cpp_library
 install(
-  DIRECTORY include/champi_can
+  DIRECTORY include/util
   DESTINATION include
 )
  
 install(
-  TARGETS champi_can
-  EXPORT champi_can
+  TARGETS util
+  EXPORT util
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
@@ -46,13 +50,13 @@ install(
 
 # ================ COMPILE EXECUTABLES ========================
 
-add_executable(test_can_node src/test_can_node.cpp)
-# ament_target_dependencies(test_can_node Protobuf champi_can)
-target_link_libraries(test_can_node ${Protobuf_LIBRARIES} champi_can)
+#add_executable(test_can_node src/test_can_node.cpp)
+## ament_target_dependencies(test_can_node Protobuf champi_can)
+#target_link_libraries(test_can_node ${Protobuf_LIBRARIES} champi_can)
 
-install(TARGETS
-test_can_node
-  DESTINATION lib/${PROJECT_NAME})
+#install(TARGETS
+#test_can_node
+#  DESTINATION lib/${PROJECT_NAME})
 
 # ================ END COMPILE EXECUTABLES ========================
 

@@ -1,0 +1,14 @@
+[Unit]
+Description=Service running Champi Stack
+After=basic.target
+
+[Service]
+User=champi
+Type=forking
+Environment=TMUX_TMPDIR=/tmp
+ExecStart=/bin/bash -c "/home/champi/champi_ws/src/champi_robot_ros/setup/robot/tmux/champi_launch_tmux.bash"
+ExecStop=/usr/bin/tmux kill-session -t champi_session
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

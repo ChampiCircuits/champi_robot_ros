@@ -1,0 +1,93 @@
+# o -----> y
+# |
+# v
+# x
+#    use_dynamic_layer: true # default is false
+# strategy is for default color: 'YELLOW'
+# if color 'BLUE' is chosen by the user, then all x positions will become 3-x when loading strategy !
+
+init_pose: { x: 1.25, y: 0.3, theta_deg: 0.0 } # dans la zone de départ jaune en bas
+
+actions:
+######################### BANNER ###############################################
+
+  - action: include_sub_file
+    file: 'put_banner.yaml'
+    parameters:
+      target: { x: 1.25, y: 0.16, theta_deg: 0.0 }
+      tag: 'banner'
+
+######################### TAKE FIRST ELEMENT GROUP ######################################
+
+  - action: include_sub_file
+    file: 'take_elements.yaml'
+    parameters:
+        target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
+        tag: 'elements_1'
+
+########################### PUT FIRST ELEMENT GROUP ######################################
+
+  - action: include_sub_file
+    file: 'put_elements.yaml'
+    parameters:
+      target: { x: 1.225, y: 0.1, theta_deg: 180.0 }
+      tag: 'elements_1'
+
+
+######################### TAKE SECOND ELEMENT GROUP ######################################
+  - action: move
+    target: { x: 0.9, y: 0.7, theta_deg: 90.0 } # take a look at aruco (pas 0.6 car IN_OCCUPIED_CELL)
+    use_dynamic_layer: true
+
+  - action: GET_READY # needed to put the lift down
+    tag: 'elements_1'
+
+  - action: include_sub_file
+    file: 'take_elements.yaml'
+    parameters:
+      target: { x: 0.775, y: 0.25, theta_deg: 180.0 }
+      tag: 'elements_2'
+
+########################## PUT SECOND ELEMENT GROUP ######################################
+
+  - action: include_sub_file
+    file: 'put_elements.yaml'
+    parameters:
+      target: { x: 1.225, y: 0.3, theta_deg: 180.0 }
+      tag: 'elements_2'
+
+######################## TAKE THIRD ELEMENT GROUP ######################################
+  - action: move
+    target: { x: 1.2, y: 0.7, theta_deg: 90.0 } # move a bit to middle
+
+  - action: GET_READY # needed to put the lift down
+    tag: 'elements_2'
+
+  - action: move
+    target: { x: 0.9, y: 0.7, theta_deg: 90.0 } # take a look at aruco
+    use_dynamic_layer: true
+
+  - action: include_sub_file
+    file: 'take_elements.yaml'
+    parameters:
+      target: { x: 0.075, y: 0.4, theta_deg: 90.0 }
+      tag: 'elements_3'
+
+########################### PUT THIRD ELEMENT GROUP ######################################
+
+  - action: include_sub_file
+    file: 'put_elements.yaml'
+    parameters:
+      target: { x: 0.775, y: 0.075, theta_deg: 180.0 }
+      tag: 'elements_3'
+
+################################# COME HOME #############################################
+
+  - action: include_sub_file
+    file: 'come_home.yaml'
+    parameters:
+      target: { x: 0.2, y: 0.8, theta_deg: 0.0 } # move home
+      tag: 'come_home'
+
+  - action: RESET_ACTUATORS
+    tag: 'elements_3'

@@ -26,6 +26,7 @@ import champi_navigation.goal_checker as goal_checker
 from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
 from champi_libraries_py.data_types.geometry import Pose2D
+from champi_libraries_py.utils.angles import get_yaw
 
 import diagnostic_msgs
 import diagnostic_updater
@@ -45,7 +46,8 @@ class PlannerNode(Node):
 
     def __init__(self):
         super().__init__('planner_node')
-        
+        #self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
+
         # Parameters
         self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
         self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
@@ -58,7 +60,7 @@ class PlannerNode(Node):
         self.get_logger().info(f'debug: {self.debug}')
 
         # Subscribers
-        self.odom_sub = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
+        self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.costmap_sub = self.create_subscription(OccupancyGrid, '/costmap', self.costmap_callback, 10)
 
         # Publisher
@@ -74,7 +76,8 @@ class PlannerNode(Node):
                                                    goal_callback=self.navigate_callback,
                                                    cancel_callback=self.cancel_callback,
                                                    callback_group=ReentrantCallbackGroup())
-        
+        self.get_logger().info('Path Planner started /navigate server')
+
 
         # Path planner object
         self.path_planner = PathPlanner()
@@ -135,7 +138,8 @@ class PlannerNode(Node):
     def navigate_callback(self, navigate_goal: Navigate.Goal):
         """ Called when a new Navigate goal is received
         """
-        self.get_logger().info('New Navigate request received!')
+        self.get_logger().info('New Navigate request received to pose: '
+                                f'({navigate_goal.pose.position.x}, {navigate_goal.pose.position.y}, {get_yaw(navigate_goal.pose)*180.0/3.14159})')
 
         # Store the goal
         self.current_navigate_goal = navigate_goal
@@ -154,7 +158,7 @@ class PlannerNode(Node):
     def cancel_callback(self, goal_handle):
         """ Called when the goal is cancelled by the client
         """
-        self.get_logger().info('Goal cancelled!')
+        self.get_logger().debug('Goal cancelled!')
         if self.planning:
             self.goal_handle_navigate.abort()
         else:
@@ -178,7 +182,7 @@ class PlannerNode(Node):
 
         # We're still waiting for first messages (init)
         while rclpy.ok() and (self.robot_pose is None or self.costmap is None) and goal_handle.is_active:
-            self.get_logger().info('Waiting for init messages', throttle_duration_sec=1.)
+            self.get_logger().info(f'Waiting for init messages, robot_pose={self.robot_pose is not None}, costmap={self.costmap is not None}', throttle_duration_sec=1.)
             
             # Feedback
             feedback_msg = get_feedback_msg(ComputePathResult.INITIALIZING, [], 0)
@@ -252,7 +256,8 @@ class PlannerNode(Node):
             self.exec_time_measurer.stop()
 
             # Sleep to respect the loop period
-            time.sleep(self.loop_period - (time.time() - t_loop_start))
+            sleep_time = max(0, self.loop_period - (time.time() - t_loop_start))
+            time.sleep(sleep_time)
 
         self.planning = False
         self.timeout.reset()
@@ -268,7 +273,7 @@ class PlannerNode(Node):
         
         # Check if the goal was aborted
         if not goal_handle.is_active:
-            self.get_logger().info('Action execution stopped because goal was aborted!!')
+            self.get_logger().debug('Action execution stopped because goal was aborted!!')
             result =  Navigate.Result(success=False, message='Goal aborted!')
 
         # Check if the node is shutting down
@@ -278,7 +283,7 @@ class PlannerNode(Node):
         # The goal was reached
         else:
             goal_handle.succeed()
-            self.get_logger().info('Navigate Goal reached!')
+            self.get_logger().debug('Navigate Goal reached!')
             result = Navigate.Result(success=True, message='Goal reached!')
         
         self.mutex_exec.release()

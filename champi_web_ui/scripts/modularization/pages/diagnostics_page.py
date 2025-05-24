@@ -36,8 +36,8 @@ def create() -> None:
                     # {'level': '', 'name': '', 'message': ''},
                     # {'level': '', 'name': '', 'message': ''},
                 ],
-            }).style('width: 100%; height:800px')
-            grid.options['rowHeight'] = 60
+            }).style('width: 100%; height:400px')
+            grid.options['rowHeight'] = 30
             
 
 #################################################

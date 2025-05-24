@@ -50,7 +50,13 @@ class PathPlanner:
 
     def __init__(self):
         self.is_initialized = False
-
+        # raw and optimized path stored for debug
+        self.raw_path = []
+        self.optimized_path = []
+        
+        # Latest result, for diagnostics
+        self.latest_result = None
+        
     def initialize(self, width: int, height: int, m_per_pixel: float):
         """Initializes the path planner.
 
@@ -65,13 +71,6 @@ class PathPlanner:
         self.m_per_pixel = m_per_pixel
         # A* path pathfinder
         self.costmap_path_finder = CostmapAStar(width, height)
-
-        # raw and optimized path stored for debug
-        self.raw_path = []
-        self.optimized_path = []
-        
-        # Latest result, for diagnostics
-        self.latest_result = None
 
 
     def compute_path(self, robot_pose: Pose, goal_pose: Pose, costmap) -> tuple[list[Pose], ComputePathResult]:
@@ -89,11 +88,7 @@ class PathPlanner:
             stopping at the first obstacle, is returned.
             So, the result is only for information. To know if a path could be computed, check if the returned path is not None.
         """
-
-        # ic(self.is_initialized)
-        # ic(self.m_per_pixel)
-        # ic(self.costmap_path_finder.width)
-
+        
         # Reset raw and optimized path, that are used for debug
         self.raw_path = []
         self.optimized_path = []
@@ -117,6 +112,9 @@ class PathPlanner:
             path_poses = self.compute_path_until_obstacle(robot_pose, goal_pose, costmap) # Note: returns None if no path found
             self.latest_result = ComputePathResult.GOAL_IN_OCCUPIED_CELL
             return path_poses, ComputePathResult.GOAL_IN_OCCUPIED_CELL
+        
+        # Call update_costmap() needed before costmap_path_finder.neighbors() or costmap_path_finder.astar()
+        self.costmap_path_finder.update_costmap(costmap)
 
         # Handle the case where start is an occupied cell.
         # Why do we want to handle this situayion? Because sometimes the displacement of the robot is not very accurate;
@@ -138,7 +136,7 @@ class PathPlanner:
             return path_poses, ComputePathResult.SUCCESS_STRAIGHT
 
         # Compute the path
-        path = self.costmap_path_finder.compute_path(start, goal, costmap)
+        path = self.costmap_path_finder.astar(start, goal)
 
         # No path found
         if path is None:
