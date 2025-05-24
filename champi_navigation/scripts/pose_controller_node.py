@@ -7,7 +7,7 @@ from champi_libraries_py.data_types.geometry import Pose2D, Vel2D
 from champi_libraries_py.utils.diagnostics import create_topic_freq_diagnostic, ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
 from champi_libraries_py.utils.dt_measurer import DtMeasurer
-from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib
+from champi_navigation.cmd_vel_updaters import CmdVelUpdaterWPILib, CmdVelUpdaterWPILibMagnitude
 from champi_navigation.path_follow_params import PathFollowParams
 
 import rclpy
@@ -49,7 +49,7 @@ class PoseControllerNode(Node):
         self.current_pose_sub = self.create_subscription(Odometry, '/odom', self.current_pose_callback, 10)
 
         # Other objects instantiation
-        self.cmd_vel_updater = CmdVelUpdaterWPILib()
+        self.cmd_vel_updater = CmdVelUpdaterWPILibMagnitude()
         self.path_follow_params = PathFollowParams(max_linear_acceleration, max_linear_deceleration, max_angular_acceleration, max_angular_deceleration)
         self.dt_measurer = DtMeasurer(control_loop_period)
         self.robot_current_state = None
