@@ -44,7 +44,7 @@ void PosSteppersTask(void *argument) {
 }
 
 void PosSteppersTaskStart() {
-    stepper_opt0 = PosStepper(htim17, TIM_CHANNEL_1, DIR_OPT0_GPIO_Port, DIR_OPT0_Pin, -1);
+    stepper_opt0 = PosStepper(htim17, TIM_CHANNEL_1, DIR_OPT0_GPIO_Port, DIR_OPT0_Pin, 1);
     // stepper_opt1 = PosStepper(htim16, TIM_CHANNEL_1, DIR_OPT1_GPIO_Port, DIR_OPT1_Pin);
     PosSteppersTaskHandle = osThreadNew(PosSteppersTask, NULL, &posSteppersTask_attributes);
 }

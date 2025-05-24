@@ -331,8 +331,35 @@ void applyStatusLedState(const LedState& state, int ledIndex) {
 void LedTask(void *argument) {
   clear_Ring();
 
+//  RCC_ClkInitTypeDef clkconfig;
+//  RCC_OscInitTypeDef oscconfig;
+//  uint32_t pFLatency;
+//
+//  HAL_RCC_GetClockConfig(&clkconfig, &pFLatency);
+//  HAL_RCC_GetOscConfig(&oscconfig);
+//
+//  uint32_t sysclk = HAL_RCC_GetSysClockFreq();
+//  uint32_t hclk   = HAL_RCC_GetHCLKFreq();
+//  uint32_t pclk1  = HAL_RCC_GetPCLK1Freq();
+//  uint32_t pclk2  = HAL_RCC_GetPCLK2Freq();
+
+//  osDelay(500);
+//  LOG_INFO("led", "SYSCLK  = %lu Hz\n", sysclk);
+//  LOG_INFO("led", "HCLK    = %lu Hz\n", hclk);
+//  LOG_INFO("led", "PCLK1   = %lu Hz\n", pclk1);
+//  LOG_INFO("led", "PCLK2   = %lu Hz\n", pclk2);
+
   LOG_INFO("led", "Starting loop.");
   osDelay(100);
+
+//  while (true) {
+//	  for (int i = 0; i < MAX_LED; i++) {
+//		  applyStatusLedState({COLOR::ORANGE, 50}, i);
+//	  }
+//	  WS2812_Send();
+//	  Set_Ring_Brightness(100);
+//	  osDelay(100);
+//  }
 
   while (true) {
     applyStatusLedState({led_holo::color, led_holo::brightness}, LED_HOLO);
@@ -348,6 +375,7 @@ void LedTask(void *argument) {
     else {
       turning_rainbow_animation();
     }
+    Set_Ring_Brightness(100);
 
     WS2812_Send(); // TODO appelé plusieurs fois
     osDelay(50); // less time than 50 seems to make it bug :=(

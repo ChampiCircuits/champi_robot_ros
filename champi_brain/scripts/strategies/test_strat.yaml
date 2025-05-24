@@ -36,7 +36,7 @@ actions:
 
 ######################### TAKE SECOND ELEMENT GROUP ######################################
   - action: move
-    target: { x: 0.9, y: 0.6, theta_deg: 90.0 } # take a look at aruco
+    target: { x: 0.9, y: 0.7, theta_deg: 90.0 } # take a look at aruco (pas 0.6 car IN_OCCUPIED_CELL)
     use_dynamic_layer: true
 
   - action: GET_READY # needed to put the lift down
@@ -64,7 +64,7 @@ actions:
     tag: 'elements_2'
 
   - action: move
-    target: { x: 0.9, y: 0.6, theta_deg: 90.0 } # take a look at aruco
+    target: { x: 0.9, y: 0.7, theta_deg: 90.0 } # take a look at aruco
     use_dynamic_layer: true
 
   - action: include_sub_file
