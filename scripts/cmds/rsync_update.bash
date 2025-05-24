@@ -15,6 +15,7 @@ EXCLUDES=(
     "__pycache__"
     "stm_main_board"
     "stm_pamis_board"
+    "champi_isaac_simu"
 )
 
 # Convert exclude list to rsync --exclude options
