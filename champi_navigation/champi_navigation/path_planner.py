@@ -16,7 +16,7 @@ import numpy as np
 
 
 def is_line_free(start:tuple[int,int], end:tuple[int,int], costmap, check_start:bool) -> bool:
-    for p in bresenham(int(start[0]), int(start[1]), int(end[0]), int(end[1])):
+    for p in bresenham(round(start[0]), round(start[1]), round(end[0]), round(end[1])):
         if check_start and p == start:
             continue
         elif costmap[p[1], p[0]] != 0:
@@ -230,7 +230,7 @@ class PathPlanner:
         """
 
         # 8-connected grid: we search in a circle of increasing radius
-        max_radius = int(0.5 / self.m_per_pixel)
+        max_radius = round(0.5 / self.m_per_pixel)
         radius = 1
         while radius < max_radius:
             for i in range(-radius, radius + 1):
@@ -244,7 +244,7 @@ class PathPlanner:
 
 
     def m_to_pixel(self, pose:Pose) -> tuple[int,int]:
-        return int(pose.position.x / self.m_per_pixel), int(pose.position.y / self.m_per_pixel)
+        return round(pose.position.x / self.m_per_pixel), round(pose.position.y / self.m_per_pixel)
 
 
     def pixel_to_m(self, pos:tuple[int,int]) -> tuple[float, float]:
