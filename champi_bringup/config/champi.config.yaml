@@ -92,8 +92,8 @@ costmap_updater:
     grid_width: 3.0 # m
     grid_height: 2.0 # m
     grid_resolution: 0.05 # m/cell
-    robot_radius: 0.15
-    enemy_robot_radius: 0.2 # m
+    robot_radius: 0.18 # m = 0.16 +0.02
+    enemy_robot_radius: 0.3 # m = 0.2 + margin
     enemy_pos_prediction_time: 0.0 # s. 0.0 means disabled
 
 pose_controller:

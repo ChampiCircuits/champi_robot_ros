@@ -12,6 +12,7 @@ from champi_navigation.costmap_astar import CostmapAStar
 from champi_navigation.planning_feedback import ComputePathResult
 
 from icecream import ic
+import numpy as np
 
 
 def is_line_free(start:tuple[int,int], end:tuple[int,int], costmap, check_start:bool) -> bool:
@@ -173,27 +174,46 @@ class PathPlanner:
         return path_poses, ComputePathResult.SUCCESS_AVOIDANCE
 
 
+    def find_closest_free_cell(self, start_row, start_col, costmap):
+        free_cells = np.argwhere(costmap == 0)
+        ic("free_cells", free_cells)
+
+        if len(free_cells) == 0:
+            return None
+
+        distances = np.linalg.norm(free_cells - np.array([start_row, start_col]), axis=1)
+        closest_idx = np.argmin(distances)
+        closest = tuple(free_cells[closest_idx])
+        ic("closest free cell", closest)
+        return closest
+
+
     def handle_start_in_occupied_cell_by_clearing(self, start, costmap):
         """
-        Clears a circle of radius 0.1m around the start cell, to allow pathfinding.
+        Trouve la cellule libre la plus proche, vide la cellule de départ, puis vide la ligne entre les deux.
 
-        This approach is less conservative than finding the closest free cell, but it works better
-        (smooth motion).
-
-        :param start: tuple (x, y)
-        :param costmap: np array
-        :return: None
+        :param start: tuple (x, y) en index pixel (col, row)
+        :param costmap: numpy 2D array (row, col)
+        :return: nouvelle position de départ (col, row)
         """
 
-        start_int = (int(start[0]), int(start[1]))
-        radius = int(0.1 / self.m_per_pixel)
-        for i in range(-radius, radius + 1):
-            for j in range(-radius, radius + 1):
-                if 0 <= start_int[0] + i < costmap.shape[1] and 0 <= start_int[1] + j < costmap.shape[0]:
-                    costmap[start_int[1] + j, start_int[0] + i] = 0
+        # ic("trigger handle start in occupied cell")
+        start_col, start_row = round(start[0]), round(start[1])
+        # ic("start_row", start_row, "start_col", start_col)
 
-        return start
+        target_row, target_col = self.find_closest_free_cell(start_row, start_col, costmap)
+        # ic("target_row", target_row, "target_col", target_col)
 
+        # Vider la cellule de départ
+        if 0 <= start_row < costmap.shape[0] and 0 <= start_col < costmap.shape[1]:
+            costmap[start_row, start_col] = 0
+
+        # Tracer et vider la ligne entre start et cible
+        for r, c in bresenham(start_row, start_col, target_row, target_col):
+            if 0 <= r < costmap.shape[0] and 0 <= c < costmap.shape[1]:
+                costmap[r, c] = 0
+
+        return (target_col, target_row)
 
     def handle_start_in_occupied_cell_by_finding_closest_free_cell(self, start, costmap):
         """
