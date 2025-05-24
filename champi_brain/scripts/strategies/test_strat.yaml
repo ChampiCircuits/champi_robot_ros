@@ -58,14 +58,11 @@ actions:
 
 ######################## TAKE THIRD ELEMENT GROUP ######################################
   - action: move
-    target: { x: 1.2, y: 0.7, theta_deg: 90.0 } # move a bit to middle
+    target: { x: 0.9, y: 0.7, theta_deg: 90.0 } # take a look at aruco
+    use_dynamic_layer: true
 
   - action: GET_READY # needed to put the lift down
     tag: 'elements_2'
-
-  - action: move
-    target: { x: 0.9, y: 0.7, theta_deg: 90.0 } # take a look at aruco
-    use_dynamic_layer: true
 
   - action: include_sub_file
     file: 'take_elements.yaml'
