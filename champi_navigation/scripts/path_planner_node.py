@@ -310,10 +310,10 @@ class PlannerNode(Node):
 
         path_msg = Path()
         path_msg.header.stamp = self.get_clock().now().to_msg()
-        path_msg.header.frame_id = 'map'
+        path_msg.header.frame_id = 'odom'
 
         for pose in path:
-            path_msg.poses.append(self.pose_to_pose_stamped(pose, 'map'))
+            path_msg.poses.append(self.pose_to_pose_stamped(pose, 'odom'))
 
         self.path_publisher_viz.publish(path_msg)
 
