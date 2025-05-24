@@ -7,7 +7,7 @@ from champi_navigation.path_follow_params import PathFollowParams
 from wpimath.trajectory import TrapezoidProfile
 
 import diagnostic_msgs
-
+from icecream import ic
 
 class CmdVelUpdaterInterface:
     """
@@ -126,6 +126,57 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
 
 
 
+        # ====================== Correction ======================
+
+        # Compute a vector that is perpendicular to the segment [segment_start, segment_end].
+        # The vector start is the robot.
+        # We call the vector 'correction_vector'.
+
+        # segment direction
+        dx = p.segment_end.x - p.segment_start.x
+        dy = p.segment_end.y - p.segment_start.y
+
+        # normalize segment direction
+        length = sqrt(dx**2 + dy**2)
+        if length == 0:
+            perp_x, perp_y = 0.0, 0.0  # Degenerate case: segment is a point
+        else:
+            # Perpendicular vector (to the left of the segment direction)
+            perp_x = -dy / length
+            perp_y = dx / length
+
+
+        # 2.a) Compute the error "dist".
+        # If the robot is further from the line it's supposed to follow, the error is greater.
+        # But if the line is a point (i.e only a rotation is required), the error is 0.
+        if p.segment_start.x == p.segment_end.x and p.segment_start.y == p.segment_end.y:
+            dist = 0
+        else:
+            dist = p.robot_state.pose.dist_to_line_signed(p.segment_start, p.segment_end)
+
+
+        # One PID per direction (x and y)
+
+        correction_scale = self.pid_correct_dir.update(dist, dt)
+
+        # Limit the correction to a maximum value.
+        correction_max = 0.1
+        if correction_scale > correction_max:
+            correction_scale = correction_max
+            ic('Correction scale limited to max:', correction_max)
+        elif correction_scale < -correction_max:
+            correction_scale = -correction_max
+            ic('Correction scale limited to min:', -correction_max)
+
+
+        # Apply the correction to the cmd_vel_x and cmd_vel_y.
+        cmd_vel_x += correction_scale * perp_x
+        cmd_vel_y += correction_scale * perp_y
+
+
+
+
+
         # ========================= Final velocity command =========================
 
         # All left to do is compute the velocity command in the ros format (linear x, linear y, angular z).
@@ -164,7 +215,7 @@ class CmdVelUpdaterWPILibMagnitude(CmdVelUpdaterInterface):
 
         # 2.a) Compute the error "dist".
         # If the robot is further from the line it's supposed to follow, the error is greater.
-        # But if the line is a point (i.e only a rotation is required), the error is 0.
+        # But if the line is a point (i.e only a rotation is required), the error is 0
         if p.segment_start.x == p.segment_end.x and p.segment_start.y == p.segment_end.y:
             dist = 0
         else:

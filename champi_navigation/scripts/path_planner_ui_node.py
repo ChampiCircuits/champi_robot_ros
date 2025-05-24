@@ -107,8 +107,8 @@ class PathPlannerUINode(Node):
         
         goal.end_speed = 0.
 
-        goal.max_linear_speed = 0.2
-        goal.max_angular_speed = math.pi/4
+        goal.max_linear_speed = 0.5
+        goal.max_angular_speed = math.pi/2
 
         goal.linear_tolerance = 0.005
         goal.angular_tolerance = 0.05
