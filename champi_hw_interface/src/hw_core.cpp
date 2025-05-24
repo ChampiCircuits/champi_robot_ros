@@ -168,18 +168,25 @@ void HardwareInterfaceNode::loop() {
     // Read
     read(mod_reg::reg_state);
 
-    auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
-    pub_odom_otos_->publish(odom_otos);
+    if (mod_reg::state->safe_check_counter != latest_safe_check_counter_value) {
+        latest_safe_check_counter_value = mod_reg::state->safe_check_counter;
+        auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
+        pub_odom_otos_->publish(odom_otos);
 
-    geometry_msgs::msg::TransformStamped transform_stamped;
+        geometry_msgs::msg::TransformStamped transform_stamped;
 
-    // Write
-    mod_reg::cmd->is_read = false;
-    mod_reg::cmd->cmd_vel.x = latest_twist_.linear.x;
-    mod_reg::cmd->cmd_vel.y = latest_twist_.linear.y;
-    mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
+        // Write
+        mod_reg::cmd->is_read = false;
+        mod_reg::cmd->cmd_vel.x = latest_twist_.linear.x;
+        mod_reg::cmd->cmd_vel.y = latest_twist_.linear.y;
+        mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
 
-    write(mod_reg::reg_cmd);
+        write(mod_reg::reg_cmd);
+    }
+    else {
+        RCLCPP_WARN(this->get_logger(), "Safe check counter is still the same: %d",
+                     static_cast<int>(mod_reg::state->safe_check_counter));
+    }
 
     check_for_actuators_state();
     read_stm_state();

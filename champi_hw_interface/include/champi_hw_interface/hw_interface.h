@@ -82,6 +82,8 @@ private:
 
     Config stm_config_{};
 
+    char latest_safe_check_counter_value{-1};
+
     geometry_msgs::msg::Twist latest_twist_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscriber_twist_;
 

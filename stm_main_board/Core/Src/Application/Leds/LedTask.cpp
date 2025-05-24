@@ -362,22 +362,22 @@ void LedTask(void *argument) {
 //  }
 
   while (true) {
-    applyStatusLedState({led_holo::color, led_holo::brightness}, LED_HOLO);
-    applyStatusLedState({led_otos::color, led_otos::brightness}, LED_OTOS);
-
-    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-    bool e_stop_pressed = mod_reg::state->e_stop_pressed;
-    xSemaphoreGive(ModbusH.ModBusSphrHandle);
-
-    if (e_stop_pressed) {
-      BAU_pushed_animation();
-    }
-    else {
-      turning_rainbow_animation();
-    }
-    Set_Ring_Brightness(100);
-
-    WS2812_Send(); // TODO appelé plusieurs fois
+//    applyStatusLedState({led_holo::color, led_holo::brightness}, LED_HOLO);
+//    applyStatusLedState({led_otos::color, led_otos::brightness}, LED_OTOS);
+//
+//    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+//    bool e_stop_pressed = mod_reg::state->e_stop_pressed;
+//    xSemaphoreGive(ModbusH.ModBusSphrHandle);
+//
+//    if (e_stop_pressed) {
+//      BAU_pushed_animation();
+//    }
+//    else {
+//      turning_rainbow_animation();
+//    }
+//    Set_Ring_Brightness(100);
+//
+//    WS2812_Send(); // TODO appelé plusieurs fois
     osDelay(50); // less time than 50 seems to make it bug :=(
   }
 }
