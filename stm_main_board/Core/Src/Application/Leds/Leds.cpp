@@ -42,9 +42,9 @@ void WS2812_Send (void)
       // 344 is the ARR value
       if (color&(1<<bit))
       {
-        pwmData[indx] = 240;  // 2/3 of 344
+        pwmData[indx] = 219;  // 2/3 of 344
       }
-      else pwmData[indx] = 103;  // 1/3 of 344
+      else pwmData[indx] = 110;  // 1/3 of 344
 
       indx++;
     }
@@ -52,7 +52,7 @@ void WS2812_Send (void)
   }
 
   //reset signal
-  for (int i=0; i<200; i++) // mmm i tried once to set it to 400, and the others task were not happy at all x)
+  for (int i=0; i<50; i++) // 50 x 1.2us
   {
     pwmData[indx] = 0;
     indx++;

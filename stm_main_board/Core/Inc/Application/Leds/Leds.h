@@ -6,7 +6,7 @@
 
 #define MAX_LED (2+24)
 #define USE_BRIGHTNESS 1
-#define LED_RING_BRIGHTNESS 10
+#define LED_RING_BRIGHTNESS 100
 
 #define PI 3.14159265
 
