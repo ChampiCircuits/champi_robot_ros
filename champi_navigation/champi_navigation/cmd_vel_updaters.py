@@ -202,9 +202,9 @@ class CmdVelUpdaterWPILibMagnitude(CmdVelUpdaterInterface):
 
     def compute_cmd_vel(self, dt, p: PathFollowParams):
 
+        # TODO: It might be better to reset the PID when we get a new goal, but the node architecture does not allow to do it easily.
 
-        dt += 0.060 # ms. Found by plotting cmd and state on Foxglove
-
+        dt += 0.060 # ms. Cmd to state delay, found by plotting cmd and state on Foxglove
 
         # ====================== Heading of the robot ======================
 
@@ -236,7 +236,7 @@ class CmdVelUpdaterWPILibMagnitude(CmdVelUpdaterInterface):
 
         # 2.d) We apply the correction to the angle of the heading vector. That means the robot
         # will move slightly more to the left or to the right, to get closer to the line.
-        # angle_heading += correction
+        angle_heading += correction
 
 
         # ======================= XY Linear velocity =========================
