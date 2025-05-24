@@ -16,7 +16,7 @@ class CostmapUpdaterNode(Node):
         super().__init__('costmap_updater_node')
         self.publisher_ = self.create_publisher(OccupancyGrid, '/costmap', 10)
         self.bridge = CvBridge()
-        self.timer_period = 0.2  # seconds
+        self.timer_period = 0.1  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
 
         # Parameter for grid width and height (meters) and resolution (m/pixel)
@@ -159,7 +159,7 @@ class CostmapUpdaterNode(Node):
         self.publisher_.publish(occupancy_grid_msg)
 
     def use_dynamic_layer_callback(self, msg):
-        self.get_logger().info(f"\n\n {msg.data}")
+        #self.get_logger().info(f"\n\n {msg.data}")
         self.use_dynamic_layer = msg.data
 
     def clear_obstacle_layer(self):

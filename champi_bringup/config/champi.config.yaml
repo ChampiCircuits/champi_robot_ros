@@ -92,8 +92,8 @@ costmap_updater:
     grid_width: 3.0 # m
     grid_height: 2.0 # m
     grid_resolution: 0.05 # m/cell
-    robot_radius: 0.15
-    enemy_robot_radius: 0.2 # m
+    robot_radius: 0.18 # m = 0.16 +0.02
+    enemy_robot_radius: 0.3 # m = 0.2 + margin
     enemy_pos_prediction_time: 0.0 # s. 0.0 means disabled
 
 pose_controller:
@@ -110,7 +110,7 @@ pose_controller:
 
 path_planner:
   ros__parameters:
-    planner_loop_period: 0.2
+    planner_loop_period: 0.1
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
     debug: true
 

@@ -50,7 +50,7 @@ class EnemyTracker(Node):
         self.last_measurement_time = self.get_clock().now()
         self.scan_msg = None
 
-        self.timer = self.create_timer(0.5, self.timer_callback)
+        self.timer = self.create_timer(0.1, self.timer_callback)
 
 
     def scan_callback(self, msg):

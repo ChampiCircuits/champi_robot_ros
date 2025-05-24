@@ -31,14 +31,14 @@ bool stop_all_actuators_requested = false;
 #define SERVO_END_RIGHT_OPEN_POSITION 270
 #define SERVO_END_RIGHT_CLOSE_POSITION 270-MAX_SERVO_END_ANGLE
 
-#define SERVO_ARM_UP_POSITION 195
-#define SERVO_ARM_DOWN_POSITION 90
+#define SERVO_ARM_UP_POSITION 200
+#define SERVO_ARM_DOWN_POSITION 85
 
-#define STEPPER_LOWER_POSITION 0.1
+#define STEPPER_LOWER_POSITION 0.0
 
 #define SERVO_Y_RIGHT_OUT_POS 270
 #define SERVO_Y_RIGHT_TAKE_POS 150
-#define SERVO_Y_RIGHT_IN_POS 140
+#define SERVO_Y_RIGHT_IN_POS 145
 #define SERVO_Y_LEFT_OUT_POS 255
 #define SERVO_Y_LEFT_TAKE_POS 140
 #define SERVO_Y_LEFT_IN_POS 130
@@ -67,6 +67,9 @@ void InitYServos()
 }
 void InitLift()
 {
+    devices::stepper_opt0.set_max_speed(5.0); //10
+    devices::stepper_opt0.set_max_accel(5.0); //5
+
     devices::stepper_opt0.set_zero();
     devices::stepper_opt0.set_goal_sync(0.3);
     bool lift_end_switch_released = HAL_GPIO_ReadPin(D6_GPIO_Port, D6_Pin);
@@ -82,6 +85,9 @@ void InitLift()
         devices::stepper_opt0.set_zero();
         devices::stepper_opt0.set_goal_async(0.0);
     }
+
+    devices::stepper_opt0.set_max_speed(15.0); //10
+    devices::stepper_opt0.set_max_accel(20.0); //5
 }
 
 void InitEverything()
@@ -101,14 +107,14 @@ void InitEverything()
 
 void TakePlank(int plank) { // !!! lift should be down
     devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_OPEN_POSITION, 300); // init au cas ou
-    devices::scs_servos::set_angle(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_OPEN_POSITION, 300); // init au cas ou
+    devices::scs_servos::set_angle(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_OPEN_POSITION, 500); // init au cas ou
 
     float plank_height;
     if (plank == LOWER_PLANK) {
         plank_height = STEPPER_LOWER_POSITION;
     }
     else if (plank == UPPER_PLANK) {
-        plank_height = STEPPER_LOWER_POSITION + 0.4; // TODO 0.48 avant
+        plank_height = STEPPER_LOWER_POSITION + 0.45;
     }
 
     // HALF CLOSED PLANK
@@ -125,7 +131,7 @@ void TakePlank(int plank) { // !!! lift should be down
         devices::stepper_opt0.set_goal_async(1.2); // async pour passer dans l'état move plus tôt
     }
     else {
-        devices::stepper_opt0.set_goal_async(3.6);
+        devices::stepper_opt0.set_goal_sync(3.6);
     }
 }
 
@@ -170,7 +176,7 @@ void PutCan(int layer, struct ServoY servo)
     devices::stepper_opt0.set_goal_sync(layer_base_height);
     devices::scs_servos::set_angle(servo.id, servo.angle_out, 300);
     // little movement to get the Y inside
-    devices::stepper_opt0.set_goal_sync(layer_base_height + 0.55);
+    devices::stepper_opt0.set_goal_sync(layer_base_height + 0.6);
     devices::scs_servos::set_angle(servo.id, servo.angle_in, 500);
 
     devices::stepper_opt0.set_goal_sync(layer_base_height);
@@ -184,7 +190,7 @@ void PutCan(int layer, struct ServoY servo)
     }
     else {
         devices::scs_servos::set_angle(servo.id, servo.angle_in, 300);
-        devices::stepper_opt0.set_goal_async(STEPPER_LOWER_POSITION); // pour préparer le put lower plank
+        devices::stepper_opt0.set_goal_sync(STEPPER_LOWER_POSITION+0.1); // pour préparer le put lower plank
     }
 }
 

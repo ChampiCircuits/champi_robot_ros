@@ -29,7 +29,7 @@ class ChampiStateMachineITF(Node):
 
     def __init__(self):
         super().__init__('sm_ros_itf')
-        # self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
+        self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
 
         self.get_logger().info('Launching ChampiSMRosInterface...')
         self.itf_initialized = False
