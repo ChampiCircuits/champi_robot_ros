@@ -1,3 +1,0 @@
-../Core/Src/main.cpp:69:5:int main()	4
-../Core/Src/main.cpp:154:6:void SystemClock_Config()	3
-../Core/Src/main.cpp:231:6:void Error_Handler()	1
