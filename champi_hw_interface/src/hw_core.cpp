@@ -128,7 +128,7 @@ nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_otos(const Vector3 &pos
     else {
         const double delta_x = pose.x - prev_pose.x;
         const double delta_y = pose.y - prev_pose.y;
-        const double delta_theta = pose.theta - prev_pose.theta;
+        const double delta_theta = normalize_angle(pose.theta - prev_pose.theta);
 
         // This is for when we call set_pose, the otos pose changes
         const double cos_theta = std::cos(prev_pose.theta);
@@ -137,9 +137,10 @@ nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_otos(const Vector3 &pos
         vel.x = (delta_x * cos_theta + delta_y * sin_theta) / dt;
         vel.y = (-delta_x * sin_theta + delta_y * cos_theta) / dt;
         vel.theta = delta_theta / dt;
-        //RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, "otos: delta_theta= %f, dt= %f", delta_theta, dt);
 
-        //RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, "pose otos: %f, %f, %f", pose.x, pose.y, pose.theta);
+        if (vel.theta > 50.0 || vel.theta < -50.0) {
+            RCLCPP_ERROR(this->get_logger(), "Velocity theta is too high: %f", vel.theta); // just in case if it reappears
+        }
     }
     prev_pose = pose;
 
