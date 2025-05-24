@@ -143,6 +143,18 @@ class ArucoLocalizerNode(Node):
 
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
+        
+        frame = cv2.resize(bird_view_img, (200, 140))
+
+        new_image = cv2.adaptiveThreshold(frame, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+                    cv2.THRESH_BINARY, 11, 2)
+
+        # Check if the frame is blurry
+        _, blurry, variance = self.is_blurry(new_image, threshold=1000.0)
+
+        if blurry:
+            self.get_logger().warn(f"Image is blurry, variance: {variance:.2f}")
+            return
 
         # ================================== DETECTION =========================================
 
@@ -210,7 +222,27 @@ class ArucoLocalizerNode(Node):
     def image_callback(self, msg):
         self.latest_img = msg
 
+    def is_blurry(self, image, threshold=1000.0):
+        """
+        Detect if an image is blurry using the Laplacian variance method.
 
+        Args:
+            image (numpy.ndarray): The input image.
+            threshold (float): Variance threshold below which the image is considered blurry.
+
+        Returns:
+            bool: True if the image is blurry, False otherwise.
+            float: The variance of the Laplacian.
+        """
+
+        # Compute the Laplacian of the image
+        laplacian = cv2.Laplacian(image, cv2.CV_64F)
+
+        # Compute the variance of the Laplacian
+        variance = laplacian.var()
+
+        # Determine if the image is blurry
+        return laplacian, variance < threshold, variance
     def do_viz(self, image_source, detect_success: bool, detected_pose: list[float, float, float] = None): 
 
         if not self.enable_cv2_viz and self.curent_image is None:
