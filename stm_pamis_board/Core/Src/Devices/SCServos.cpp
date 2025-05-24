@@ -1,91 +1,7 @@
 #include <Devices/SCServos.h>
 #include <cstdio>
-#include "Util/logging.h"
 
-#define UNIT_TO_DEG 0.26
-#define DEG_TO_UNIT 3.79
-
-namespace devices
-{
-    namespace scs_servos {
-
-        uint8_t ids_servos[N_SERVOS] = {ID_SERVO_TEST};
-        SCServos servos;
-        bool init_successful = false;
-
-        void find_ids(uint8_t from_id, uint8_t to_id) {
-            for (uint8_t id=from_id; id<=to_id; id++) {
-                if (servos.ReadPos(id) != -1) {
-                	HAL_Delay(100);
-                    LOG_INFO("scs", "Found servo: %d, pos = %d", id, servos.ReadPos(id));
-                    HAL_Delay(100);
-                }
-            }
-        }
-
-        int test() {
-            int result = 0;
-            for (int i = 0; i < N_SERVOS; i++) {
-                if (servos.ReadPos(ids_servos[i]) == -1) {
-                    LOG_ERROR("scs", "Error reading servo number %d", ids_servos[i]);
-                    result = -1;
-                } else {
-                    LOG_INFO("scs", "Servo number %d read successful", ids_servos[i]);
-                }
-                HAL_Delay(1);
-            }
-            return result;
-        }
-
-        void set_enable(bool enable) {
-            for (const auto id : ids_servos) {
-                servos.EnableTorque(id, enable);
-                HAL_Delay(1);
-            }
-        }
-
-        float read_angle(uint8_t id)
-        {
-            return static_cast<float>(servos.ReadPos(id)) * UNIT_TO_DEG;
-        }
-
-        void set_angle(uint8_t id, float angle, int ms) {
-            set_angle_async(id, angle, ms);
-            HAL_Delay(ms);
-        }
-
-        void set_angle_async(uint8_t id, float angle, int ms) {
-            int position = (int)(angle * DEG_TO_UNIT);
-            if (position < 0) {
-                position = 0;
-            } else if (position > 1023) {
-                position = 1023;
-            }
-            servos.WritePos(id, position, ms);
-            HAL_Delay(1);
-        }
-
-        void test_angle(uint8_t id, float angle) {
-            int pos = servos.ReadPos(id);
-            if (pos == -1) {
-                LOG_ERROR("scs", "Error reading servo number %d", id);
-                return;
-            }
-            set_angle(id, angle, 1000);
-            HAL_Delay(1500);
-            set_angle(id, pos * UNIT_TO_DEG, 1000);
-            HAL_Delay(1500);
-
-        }
-
-
-    }
-}
-
-
-SCServos::SCServos (UART_HandleTypeDef *huart) : huart_(huart) {
-
-}
+SCServos::SCServos (UART_HandleTypeDef *huart) : huart_(huart) {}
 
 void SCServos::write_byte(uint8_t reg) const {
     HAL_UART_Transmit(huart_, &reg, 1, 10);
@@ -295,26 +211,60 @@ int SCServos::WriteLimitAngle(uint8_t ID, int MinAngel, int MaxAngle, uint8_t Re
     return 0;
 }
 
-int SCServos::WriteLimitTroque(uint8_t ID, int MaxTroque, uint8_t ReturnLevel)
-{
-    int messageLength = 5;
-    uint8_t MaxTL = MaxTroque>>8;
-    uint8_t MaxTH = MaxTroque&0xff;
+int SCServos::WriteLimitTroque(uint8_t ID, int MaxTroque, uint8_t ReturnLevel) {
+  int messageLength = 5;
+  uint8_t MaxTL = MaxTroque >> 8;
+  uint8_t MaxTH = MaxTroque & 0xff;
 
+  fflushRevBuf();
+  buffer[0] = startByte;
+  buffer[1] = startByte;
+  buffer[2] = ID;
+  buffer[3] = messageLength;
+  buffer[4] = INST_WRITE;
+  buffer[5] = P_MAX_TORQUE_L;
+  buffer[6] = MaxTL;
+  buffer[7] = MaxTH;
+  buffer[8] =
+      (~(ID + messageLength + INST_WRITE + P_MAX_TORQUE_L + MaxTL + MaxTH)) &
+      0xFF;
+  write_bytes(buffer, 9);
+
+  if (ID != 16 && ReturnLevel == 2)
+    return ReadBuf(6);
+  return 0;
+}
+
+int SCServos::WriteLimitVoltageMin(uint8_t ID, uint8_t MinVoltage) {
+
+  int messageLength = 4;
+  fflushRevBuf();
+  write_byte(startByte);
+  write_byte(startByte);
+  write_byte(ID);
+  write_byte(messageLength);
+  write_byte(INST_WRITE);
+  write_byte(P_MIN_LIMIT_VOLTAGE);
+  write_byte(MinVoltage);
+  write_byte(
+      (~(ID + messageLength + INST_WRITE + P_MIN_LIMIT_VOLTAGE + MinVoltage)) &
+      0xFF);
+
+  return 0;
+}
+int SCServos::WriteLimitVoltageMax(uint8_t ID, uint8_t MaxVoltage) {
+
+    int messageLength = 4;
     fflushRevBuf();
-    buffer[0] = startByte;
-    buffer[1] = startByte;
-    buffer[2] = ID;
-    buffer[3] = messageLength;
-    buffer[4] = INST_WRITE;
-    buffer[5] = P_MAX_TORQUE_L;
-    buffer[6] = MaxTL;
-    buffer[7] = MaxTH;
-    buffer[8] = (~(ID + messageLength + INST_WRITE + P_MAX_TORQUE_L + MaxTL + MaxTH)) & 0xFF;
-    write_bytes(buffer, 9);
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_MAX_LIMIT_VOLTAGE);
+    write_byte(MaxVoltage);
+    write_byte((~(ID + messageLength + INST_WRITE + P_MAX_LIMIT_VOLTAGE + MaxVoltage))&0xFF);
 
-    if(ID != 16 && ReturnLevel==2)
-        return ReadBuf(6);
     return 0;
 }
 
@@ -531,7 +481,8 @@ void SCServos::RotateCounterClockwise(){
 void SCServos::scan_ids(uint8_t id_start,  uint8_t id_stop) {
     for(uint8_t id=id_start; id<id_stop; id++) {
         if(ReadPos(id)!=-1) {
-            LOG_INFO("scs_servos","Found ID %d\n", id);
+            printf("Found ID %d\n", id);
+
         }
     }
 }

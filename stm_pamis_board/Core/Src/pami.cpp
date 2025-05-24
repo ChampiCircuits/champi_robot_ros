@@ -5,35 +5,59 @@
 #include "Config/Config.h"
 #include "Util/logging.h"
 
+SCServos servos;
+
+#define ID_SERVO_DIR 18
+#define ID_SERVO_TRACTION 17
+
 void PAMI_Init() {
+  servos = SCServos(&huart1);
 
-  devices::scs_servos::servos = SCServos(&huart1);
+  // LOG_INFO("pami","before scanning");
+  // servos.scan_ids(0, 20);
+  // LOG_INFO("pami","afterscanning");
 
-  LOG_INFO("pami","before scanning");
-  devices::scs_servos::servos.scan_ids(0, 20);
-  LOG_INFO("pami","afterscanning");
 
-  devices::scs_servos::init_successful = false;
-  while (devices::scs_servos::test() == -1) {
-    LOG_ERROR("scs", "Error initializing servos. Retrying.");
-    HAL_Delay(1000);
+
+  // servos.EnableTorque(ID_SERVO_DIR, 1);
+  // HAL_Delay(100);
+  // servos.WriteLimitTroque(ID_SERVO_DIR, 600);
+  // HAL_Delay(100);
+  // servos.WriteLimitVoltageMax(ID_SERVO_DIR, 95);
+  // HAL_Delay(100);
+
+  servos.EnableTorque(ID_SERVO_TRACTION, 1);
+  HAL_Delay(100);
+  servos.WriteLimitTroque(ID_SERVO_TRACTION, 600);
+  HAL_Delay(100);
+  servos.WriteLimitVoltageMax(ID_SERVO_TRACTION, 95);
+  HAL_Delay(100);
+  servos.WriteLimitAngle(ID_SERVO_TRACTION, 0, 0);
+  HAL_Delay(100);
+
+  // read pose DIR servo
+  int pos = servos.ReadPos(ID_SERVO_DIR);
+  if (pos == -1) {
+    LOG_ERROR("pami", "Servo DIR not found");
+  } else {
+    LOG_INFO("pami", "Servo DIR position: %d", pos);
   }
+ 
+  // test turn back and forth
+  // while (1) {
+  //   servos.WritePos(ID_SERVO_DIR, 200, 1000);
+  //   HAL_Delay(1000);
+  //   servos.WritePos(ID_SERVO_DIR, 800, 1000);
+  //   HAL_Delay(1000);
+  // }
 
-  devices::scs_servos::set_enable(true); // TODO move to sysTask
-
-  for (const auto id : devices::scs_servos::ids_servos) {
-    devices::scs_servos::servos.WriteLimitTroque(id, SCSERVOS_TORQUE_LIMIT);
-    HAL_Delay(1);
-  }
-  devices::scs_servos::init_successful = true;
+  // test spin
+  servos.WriteSpe(ID_SERVO_TRACTION, 511);
 
 }
 
 void PAMI_Loop() {
-  devices::scs_servos::set_angle(ID_SERVO_TEST, 100, 100);
 
-  HAL_Delay(1000);
-  devices::scs_servos::set_angle(ID_SERVO_TEST, 0, 100);
   HAL_Delay(1000);
 
 }

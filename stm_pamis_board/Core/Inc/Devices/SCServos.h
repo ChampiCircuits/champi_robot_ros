@@ -2,12 +2,6 @@
 #define INC_SCSERVOS_H_
 
 #include "stm32g4xx_hal.h"
-#include "Devices/SCServos.h"
-
-#define N_SERVOS 1
-
-#define ID_SERVO_TEST 7
-
 
 class SCServos {
 public:
@@ -24,6 +18,8 @@ public:
     int WriteID(uint8_t oldID, uint8_t newID, uint8_t ReturnLevel=1);
     int WriteLimitAngle(uint8_t ID, int MinAngel, int MaxAngle, uint8_t ReturnLevel=1);
     int WriteLimitTroque(uint8_t ID, int MaxTroque, uint8_t ReturnLevel=1);
+    int WriteLimitVoltageMin(uint8_t ID, uint8_t MinVoltage);
+    int WriteLimitVoltageMax(uint8_t ID, uint8_t MaxVoltage);
     int WritePunch(uint8_t ID, int Punch, uint8_t ReturnLevel=1);
     int WriteBaund(uint8_t ID, uint8_t Baund, uint8_t ReturnLevel=1);
     int WriteDeadBand(uint8_t ID, uint8_t CWDB, uint8_t CCWDB, uint8_t ReturnLevel=1);
@@ -42,7 +38,6 @@ private:
     UART_HandleTypeDef *huart_;
 
     uint8_t buffer[30]{};
-
 
 #define		startByte	0xFF
 #define		TIMEOUT		500//TIMEOUT 500ms
@@ -125,26 +120,5 @@ private:
 #define INST_RESET 0x06
 #define INST_SYNC_WRITE 0x83
 };
-
-
-
-namespace devices
-{
-    namespace scs_servos {
-
-        extern uint8_t ids_servos[N_SERVOS];
-        extern SCServos servos;
-        extern bool init_successful;
-
-        int test();
-        void set_enable(bool enable);
-        float read_angle(uint8_t id);
-        void set_angle(uint8_t id, float angle, int ms);
-        void set_angle_async(uint8_t id, float angle, int ms);
-        void test_angle(uint8_t id, float angle); // Tests a given angle, then reverts it to original angle.
-    }
-}
-
-
 
 #endif /* INC_SCSERVOS_H_ */

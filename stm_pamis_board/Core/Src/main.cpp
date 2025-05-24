@@ -119,7 +119,7 @@ int main(void)
   {
 
     /* USER CODE END WHILE */
-    PAMI_Loop();
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
