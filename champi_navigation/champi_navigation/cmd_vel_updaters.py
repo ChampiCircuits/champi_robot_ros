@@ -91,7 +91,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
 
         # 2.d) We apply the correction to the angle of the heading vector. That means the robot
         # will move slightly more to the left or to the right, to get closer to the line.
-        # angle_heading += correction
+        angle_heading += correction
 
 
         # ======================= XY Linear velocity =========================
@@ -110,7 +110,7 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         profile_mag = TrapezoidProfile(constraints_mag)
         cmd_vel_x_y = profile_mag.calculate(dt, current_state_mag, goal_state_mag).velocity
 
-        cmd_vel_x_y = compute_cmd_vel_x_y_custom(p, angle_heading, dt)
+        # cmd_vel_x_y = compute_cmd_vel_x_y_custom(p, angle_heading, dt)
 
 
 
@@ -140,8 +140,8 @@ class CmdVelUpdaterWPILib(CmdVelUpdaterInterface):
         goal_state_theta = TrapezoidProfile.State(0, 0)
         profile_theta = TrapezoidProfile(constraints_theta)
         cmd_vel_theta = profile_theta.calculate(dt, current_state_theta, goal_state_theta).velocity
-
-        cmd_vel_theta = compute_cmd_vel_theta_custom(p, theta_error, dt)
+        #
+        # cmd_vel_theta = compute_cmd_vel_theta_custom(p, theta_error, dt)
 
 
         # ========================= Final velocity command =========================
@@ -197,13 +197,14 @@ def compute_cmd_vel_x_y_custom(p, angle_heading, dt):
             vel_next = vel_init
 
     # Limiter vitesse en fonction de la distance restante pour éviter overshoot
-    max_vel_based_on_error = min(v_max, pos_init * 5)  # coefficient à régler
+    max_vel_based_on_error = min(v_max, abs(pos_init) * 3)  # coefficient à régler (plus c'est bas plus c'est amorti)
     vel_next = max(min(vel_next, max_vel_based_on_error), -max_vel_based_on_error)
 
     # Appliquer le signe selon l’angle relatif
     vel_next = copysign(vel_next, cos(angle_diff))
 
     return vel_next
+
 
 
 
@@ -239,15 +240,8 @@ def compute_cmd_vel_theta_custom(p, theta_error, dt):
             vel_next = vel_init
 
     # Limiter la vitesse en fonction de la distance angulaire restante pour éviter overshoot
-    max_vel_based_on_error = min(v_max, abs(pos_init) * 4)  # coefficient à ajuster
+    max_vel_based_on_error = min(v_max, abs(pos_init) * 3)  # coefficient à ajuster
     vel_next = max(min(vel_next, max_vel_based_on_error), -max_vel_based_on_error)
-
-    # Si on est très proche de l’angle cible, on s’arrête
-    # angle_tolerance = 0.01  # ~0.5 degré
-    # speed_tolerance = 0.05  # rad/s
-    #
-    # if abs(pos_init) < angle_tolerance and abs(vel_init) < speed_tolerance:
-    #     vel_next = 0.0
 
     return vel_next
 

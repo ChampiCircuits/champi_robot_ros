@@ -1,7 +1,7 @@
 
 hardware_interface_simu:
   ros__parameters:
-    enable_accel_limits: true
+    enable_accel_limits: false
 
     max_acceleration_linear: 2.0 # m/s^2
     max_deceleration_linear: 2.0 # m/s^2
@@ -98,7 +98,7 @@ costmap_updater:
 
 pose_controller:
   ros__parameters:
-    control_loop_period: 0.1 # s
+    control_loop_period: 0.05 # s
     max_linear_acceleration: 1.5 # m/s^2
     max_linear_deceleration: 4.0 # m/s^2
 

@@ -73,14 +73,6 @@ Visualization Manager:
           Value: false
         base_link:
           Value: true
-        camera_color_frame:
-          Value: false
-        camera_color_optical_frame:
-          Value: false
-        camera_depth_frame:
-          Value: false
-        camera_depth_optical_frame:
-          Value: false
         camera_link:
           Value: false
         map:
@@ -94,18 +86,12 @@ Visualization Manager:
       Show Names: false
       Tree:
         map:
-          {}
-        odom:
-          base_link:
-            base_laser:
-              {}
-            camera_link:
-              camera_color_frame:
-                camera_color_optical_frame:
-                  {}
-              camera_depth_frame:
-                camera_depth_optical_frame:
-                  {}
+          odom:
+            base_link:
+              base_laser:
+                {}
+              camera_link:
+                {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0.009999999776482582
