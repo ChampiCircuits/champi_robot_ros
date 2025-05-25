@@ -1,0 +1,16 @@
+[Unit]
+Description=Service running Drivers, Foxglove and Web UI
+After=basic.target
+
+[Service]
+User=champi
+Type=forking
+Environment=TMUX_TMPDIR=/tmp
+ExecStart=/bin/bash -c "/home/champi/champi_ws/src/champi_robot_ros/setup/robot/tmux/champystem_launch_tmux.bash"
+ExecStop=/bin/bash -c "/usr/bin/tmux kill-session -t sensors_session; /usr/bin/tmux kill-session -t web_session; /usr/bin/tmux kill-session -t foxglove_session"
+RemainAfterExit=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

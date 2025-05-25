@@ -18,15 +18,6 @@ def generate_launch_description():
     # Get configuration file
     config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
 
-    ldlidar_node = Node(
-        package='ldlidar_stl_ros2',
-        executable='ldlidar_stl_ros2_node',
-        name='ld_lidar',
-        output='screen',
-        parameters=[config_file_path],
-        condition=UnlessCondition(LaunchConfiguration('sim'))
-    )
-
     lidar_simu_node = Node(
         package='champi_simulator',
         executable='simu_lidar_node.py',
@@ -45,7 +36,6 @@ def generate_launch_description():
 
     return LaunchDescription([
         sim_arg,
-        ldlidar_node,
         lidar_simu_node,
         enemy_tracker_node
     ])
