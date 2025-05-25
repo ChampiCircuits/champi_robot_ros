@@ -12,7 +12,7 @@ from rclpy.executors import ExternalShutdownException
 from nav_msgs.msg import OccupancyGrid, Odometry, Path
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import CtrlGoal
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import Pose, PoseStamped, Twist
 
 from math import hypot
 import numpy as np
@@ -53,6 +53,7 @@ class PlannerNode(Node):
         self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
         self.waypoint_speed_linear = self.declare_parameter('waypoint_speed_linear', rclpy.Parameter.Type.DOUBLE).value
         self.debug =self.declare_parameter('debug', rclpy.Parameter.Type.BOOL).value
+        self.stop_distance_to_enemy =self.declare_parameter('stop_distance_to_enemy', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Planner started with the following parameters:')
@@ -69,6 +70,8 @@ class PlannerNode(Node):
         self.champi_path_pub = self.create_publisher(CtrlGoal, '/ctrl_goal', 10)
         self.path_publisher_viz = self.create_publisher(Path, '/plan_viz', 10)
 
+        self.cmd_vel_stop_pub = self.create_publisher(Twist, '/emergency/cmd_vel_stop', 10)
+
         # Action Server /navigate
         self.action_server_navigate = ActionServer(self, Navigate, '/navigate',
                                                    self.execute_callback,
@@ -76,10 +79,6 @@ class PlannerNode(Node):
                                                    cancel_callback=self.cancel_callback,
                                                    callback_group=ReentrantCallbackGroup())
         self.get_logger().info('Path Planner started /navigate server')
-
-
-        # Path planner object
-        self.path_planner = PathPlanner()
 
         # Timeout object to abort the Navigate goal if it takes too long (robot stuck, goal occupied...)
         self.timeout = Timeout()
@@ -94,9 +93,6 @@ class PlannerNode(Node):
 
         # Diagnostic for timeout
         updater.add('Timeout', self.timeout.produce_diagnostics) 
-
-        # Diagnostic for PathPlanner
-        updater.add('PathPlanner', self.path_planner.produce_diagnostics)
 
         # Data retreived from topics
         self.robot_pose: Pose = None
@@ -124,6 +120,29 @@ class PlannerNode(Node):
 
     def enemy_odom_callback(self, msg):
         self.latest_enemy_odom = msg
+        self.get_logger().warn('print')
+
+        # si l'ennemi est trop proche
+        if self.planning and self.goal_handle_navigate is not None:
+            # Check if the enemy is too close to the robot
+            enemy_pose = Pose2D(pose=msg.pose.pose)
+            robot_pose = Pose2D(pose=self.robot_pose)
+
+            # If the enemy is too close, we cannot go to the goal
+            if hypot(enemy_pose.x - robot_pose.x, enemy_pose.y - robot_pose.y) < self.stop_distance_to_enemy:
+                self.get_logger().warn('Enemy too close, stopping the robot!')
+                self.publish_emergency_stop() # publish with timeout of 1s (in config)
+            else:
+                self.get_logger().warn('Enemy OK')
+            # append en seconde position une position de backoff
+
+
+    def publish_emergency_stop(self):
+        # Publish a Twist with zero linear and angular speeds
+        twist = Twist()
+        self.cmd_vel_stop_pub.publish(twist)
+
+
 
     # ==================================== Action Server Callbacks ==========================================
 
@@ -219,7 +238,6 @@ class PlannerNode(Node):
                 continue
 
             # Compute path
-            # path, result = self.path_planner.compute_path(self.robot_pose, self.current_navigate_goal.pose, self.costmap)
             result = ComputePathResult.SUCCESS_STRAIGHT
             segment_path = [robot_start_pose, self.current_navigate_goal.pose]
             

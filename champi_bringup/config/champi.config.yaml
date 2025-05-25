@@ -44,7 +44,7 @@ hardware_interface:
 
 holo_teleop_joy_node:
   ros__parameters:
-    max_linear_speed: 0.5 # m/s
+    max_linear_speed: 0.3 # m/s
     max_angular_speed: 1.0 # rad/s
 
 twist_mux:
@@ -52,8 +52,8 @@ twist_mux:
     use_stamped: false
     topics:
       stop:
-        topic   : /ctrl/cmd_vel_stop
-        timeout : 3.0
+        topic   : /emergency/cmd_vel_stop
+        timeout : 0.2
         priority: 102
       joystick:
         topic   : /teleop/cmd_vel
@@ -110,10 +110,12 @@ pose_controller:
 
 path_planner:
   ros__parameters:
-    planner_loop_period: 0.1
+    planner_loop_period: 0.05
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
     waypoint_speed_linear: 0.1 # m/s
     debug: true
+    stop_distance_to_enemy: 0.45 # 0.18+0.22= 0.4 m
+    backoff_distance: 0.1 # m. Distance to back off from the enemy robot when it is too close after the timeout
 
 sm_ros_itf:
   ros__parameters:

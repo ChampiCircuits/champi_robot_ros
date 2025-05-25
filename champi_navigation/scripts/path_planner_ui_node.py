@@ -107,7 +107,7 @@ class PathPlannerUINode(Node):
         
         goal.end_speed = 0.
 
-        goal.max_linear_speed = 1.3
+        goal.max_linear_speed = 0.5
         goal.max_angular_speed = 2*math.pi
 
         goal.linear_tolerance = 0.005
@@ -122,7 +122,7 @@ class PathPlannerUINode(Node):
 
         goal.robot_angle_when_looking_at_point = 0.
 
-        goal.timeout = 10. # seconds
+        goal.timeout = 100. # seconds
 
         return goal
     
