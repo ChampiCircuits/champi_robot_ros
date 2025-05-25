@@ -22,7 +22,7 @@ class InitPoseState(ChampiState):
         theta_deg = self.sm.init_pose[2]
         theta_rad = theta_deg * 3.14159 / 180.0
 
-        get_logger(self.name+'_state').info(f"Start moving to init pose: x={x}, y={y}, theta={theta_deg}°")
+        get_logger(self.name+'_state').info(f"Start moving to INIT pose: x={x}, y={y}, theta={theta_deg}°")
         self.sm.itf.send_goal(x, y, theta_rad)
 
 
@@ -63,6 +63,8 @@ class DetectPlatformState(ChampiState):
         time.sleep(1)
         half_platform_width = 0.05
 
+        # if self.sm.itf.latest_platform_dist == None and self.sm.itf.sim_param:
+        #     self.sm.itf.latest_platform_dist = 0.2
         if self.sm.itf.latest_platform_dist < 0.0: # (pub = -1.0, but just to be sure)
             # No plank detected !! --> cancel action
             self.sm.cancel_current_tag()
@@ -136,3 +138,24 @@ class ActuatorState(ChampiState):
 
     def exit(self, event_data):
         get_logger(self.name).info(f'Action {self.action} completed')
+
+class ComeHomeState(MoveState):
+    def enter(self, event_data):
+        x = self.sm.home_pose[0]
+        y = self.sm.home_pose[1]
+        theta_deg = self.sm.home_pose[2]
+
+        get_logger(self.name+'_state').info(f"Start moving to HOME pose: x={x}, y={y}, theta={theta_deg}°")
+        self.move_to(x, y, theta_deg, use_dynamic_layer=False)  # no dynamic_layer for home position
+
+        self.sm.itf.add_points(10) # add 10 points for coming home, we don't wait for move to finish but flemme, should be ok ;)
+
+class WaitToComeHomeState(MoveState):
+    def enter(self, event_data):
+        x = self.sm.home_pose[0]
+        y = self.sm.home_pose[1] - 0.4 # to be in front of the home position
+        theta_deg = self.sm.home_pose[2]
+
+        get_logger(self.name+'_state').info(f"Start moving to WAIT FOR HOME pose: x={x}, y={y}, theta={theta_deg}°")
+        self.move_to(x, y, theta_deg, use_dynamic_layer=False)  # no dynamic_layer for home position
+        self.sm.itf.send_actuator_action('RESET_ACTUATORS')
