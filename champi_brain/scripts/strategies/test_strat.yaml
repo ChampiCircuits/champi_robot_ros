@@ -6,7 +6,7 @@
 # strategy is for default color: 'YELLOW'
 # if color 'BLUE' is chosen by the user, then all x positions will become 3-x when loading strategy !
 
-init_pose: { x: 1.25, y: 0.3, theta_deg: 0.0 } # dans la zone de départ jaune en bas
+init_pose: { x: 1.18, y: 0.16, theta_deg: -60.0 } # dans la zone de départ jaune en bas, bannière contre mur, côté gauche contre bande intérieure jaune
 home_pose: { x: 0.3, y: 1.8, theta_deg: 0.0 } # dans la zone d'arrivée jaune en haut
 
 actions:
@@ -15,7 +15,7 @@ actions:
   - action: include_sub_file
     file: 'put_banner.yaml'
     parameters:
-      target: { x: 1.25, y: 0.16, theta_deg: 0.0 }
+      target: { x: 1.18, y: 0.16, theta_deg: 0.0 }
       tag: 'banner'
 
 ######################### TAKE FIRST ELEMENT GROUP ######################################
@@ -39,6 +39,7 @@ actions:
   - action: move
     target: { x: 0.9, y: 0.7, theta_deg: 90.0 } # take a look at aruco (pas 0.6 car IN_OCCUPIED_CELL)
     use_dynamic_layer: true
+    speed: 1.0
 
   - action: GET_READY # needed to put the lift down
     tag: 'elements_1'
@@ -61,6 +62,7 @@ actions:
   - action: move
     target: { x: 0.9, y: 0.7, theta_deg: 90.0 } # take a look at aruco
     use_dynamic_layer: true
+    speed: 1.0
 
   - action: GET_READY # needed to put the lift down
     tag: 'elements_2'
@@ -80,6 +82,10 @@ actions:
       tag: 'elements_3'
 
 ################################# COME HOME #############################################
+
+  - action: move
+    target: { x: 0.3, y: 0.6, theta_deg: -90.0 } # take a look at aruco
+    use_dynamic_layer: true
 
 #  - action: include_sub_file
 #    file: 'come_home.yaml'

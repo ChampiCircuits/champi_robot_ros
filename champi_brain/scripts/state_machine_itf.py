@@ -21,7 +21,8 @@ import time
 from strategies.strategy_loader import load_strategy
 
 TOTAL_AVAILABLE_TIME = 100
-MAX_LINEAR_SPEED = 1.0
+# also defined in states.py
+MAX_LINEAR_SPEED = 1.0 #default speed is defined in state_machine.py
 
 class ChampiStateMachineITF(Node):
 
@@ -193,7 +194,8 @@ class ChampiStateMachineITF(Node):
                 approx_time_to_home = dist_x_y / approx_mean_speed + 1.0 # safety margin
                 # self.get_logger().error(f'approx_time_to_home: {approx_time_to_home}s, dist={dist_x_y}')
 
-                if self.time_left <= 5.2:  # five last seconds, we trigger come home
+                last_action_done = (len(self.champi_sm.strategy) == 0 and self.champi_sm.state == 'idle')
+                if self.time_left <= 3.2:  # 3 last seconds, we trigger come home
                     if not self.champi_sm.state in ['comeHome', 'endOfMatch'] and not self.champi_sm.come_home_requested:
                         self.get_logger().error(f'GO HOOOOME, state={self.champi_sm.state}')
 
@@ -201,7 +203,7 @@ class ChampiStateMachineITF(Node):
                         self.champi_sm.come_home_requested = True
                         self.champi_sm.please_come_home() # trigger comeHome state
 
-                elif self.time_left <= approx_time_to_home+5.2:
+                elif self.time_left <= approx_time_to_home+3.2 or last_action_done:
                     if not self.champi_sm.state in ['waitToComeHome', 'comeHome', 'endOfMatch'] and not self.champi_sm.wait_to_come_home_requested:
                         self.get_logger().error(f'GO WAIT IN FRONT OF HOOOOME, state={self.champi_sm.state}, approx_time_to_home={approx_time_to_home}')
 
@@ -285,7 +287,7 @@ class ChampiStateMachineITF(Node):
 
 
 # ============================================ Utils ==============================================
-    def send_goal(self, x, y, theta_rad, use_dynamic_layer):
+    def send_goal(self, x, y, theta_rad, use_dynamic_layer, speed):
         self.get_logger().info(f' Call action to move to {x} {y}')
 
         msg = Bool()
@@ -303,14 +305,14 @@ class ChampiStateMachineITF(Node):
         goal_pose.orientation.w = cos(theta_rad / 2.0)
 
         # Create a Navigate request and send it
-        goal = self.create_action_goal(goal_pose)
+        goal = self.create_action_goal(goal_pose, speed)
         future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
         future_navigate_result.add_done_callback(self.goal_response_callback)
 
         self.get_logger().info('Goal sent...')
 
 
-    def create_action_goal(self, goal_pose):
+    def create_action_goal(self, goal_pose, speed):
 
         goal = Navigate.Goal()
         
@@ -318,7 +320,7 @@ class ChampiStateMachineITF(Node):
         
         goal.end_speed = 0.
 
-        goal.max_linear_speed = MAX_LINEAR_SPEED
+        goal.max_linear_speed = speed
         goal.max_angular_speed = 3.0
         
         goal.linear_tolerance = 0.005

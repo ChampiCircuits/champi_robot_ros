@@ -93,14 +93,14 @@ costmap_updater:
     grid_height: 2.0 # m
     grid_resolution: 0.05 # m/cell
     robot_radius: 0.18 # m = 0.16 +0.02
-    enemy_robot_radius: 0.3 # m = 0.2 + margin
+    enemy_robot_radius: 0.22 # m = 0.2 + margin
     enemy_pos_prediction_time: 0.0 # s. 0.0 means disabled
 
 pose_controller:
   ros__parameters:
     control_loop_period: 0.02 # s
-    max_linear_acceleration: 1.5 # m/s^2
-    max_angular_acceleration: 10.0 # rad/s^2
+    max_linear_acceleration: 0.8 # m/s^2
+    max_angular_acceleration: 6.0 # rad/s^2
 
     max_linear_deceleration: 4.0 # m/s^2 # TODO NOT USED
     max_angular_deceleration: 20.0 # rad/s^2 # TODO NOT USED

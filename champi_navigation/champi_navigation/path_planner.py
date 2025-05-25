@@ -176,7 +176,6 @@ class PathPlanner:
 
     def find_closest_free_cell(self, start_row, start_col, costmap):
         free_cells = np.argwhere(costmap == 0)
-        ic("free_cells", free_cells)
 
         if len(free_cells) == 0:
             return None
@@ -184,7 +183,6 @@ class PathPlanner:
         distances = np.linalg.norm(free_cells - np.array([start_row, start_col]), axis=1)
         closest_idx = np.argmin(distances)
         closest = tuple(free_cells[closest_idx])
-        ic("closest free cell", closest)
         return closest
 
 

@@ -23,14 +23,19 @@ actions:
   - action: TAKE_LOWER_PLANK
 
   - action: moveForPlatform
-    target: { x: -0.1, y: -0.22, theta_deg: -60.0 } # décale sur les deux conserves de gauche
+    target: { x: -0.1, y: -0.25, theta_deg: -60.0 } # décale sur les deux conserves de gauche, un peu en retrait
+
+  - action: moveForPlatform
+    target: { x: -0.1, y: -0.21, theta_deg: -60.0 } # décale sur les deux conserves de gauche
+    # -0.22 normalement
 
   - action: TAKE_CANS_LEFT
 
-#  - action: moveForPlatform
-#    target: { x: -0.1, y: -0.24, theta_deg: 60.0 } # recule = 0.21+0.03
+  - action: moveForPlatform
+    target: { x: 0.1, y: -0.25, theta_deg: 60.0 } # décale sur les deux conserves de droite, un peu en retrait
 
   - action: moveForPlatform
-    target: { x: 0.1, y: -0.22, theta_deg: 60.0 } # re-avance mais avec le côté de l'actionneur en face
+    target: { x: 0.1, y: -0.21, theta_deg: 60.0 } # re-avance mais avec le côté de l'actionneur en face
+    # -0.22 normalement
 
   - action: TAKE_CANS_RIGHT

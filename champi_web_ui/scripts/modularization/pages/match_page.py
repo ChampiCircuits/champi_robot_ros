@@ -70,7 +70,7 @@ def create() -> None:
             global container
             global stepper
 
-            with ui.grid(columns=2).style('width: 100%;padding-top:50px'):
+            with ui.grid(columns=2).style('width: 100%;padding-top:150px'):
                 with ui.column():
                     ui.button("Reset", on_click=reset_all)
                 with ui.column():
@@ -81,6 +81,8 @@ def create() -> None:
                         with stepper:
                             with ui.step('Positionner le robot sur la table'):
                                 with ui.stepper_navigation():
+                                    ui.label('bannière contre mur, côté gauche contre bande intérieure jaune')
+                                    ui.label('checker bannière bien libre de bouger')
                                     ui.button('Robot placé ✓', on_click=stepper.next)
 
                             # with ui.step('Choisir la position de départ'):
