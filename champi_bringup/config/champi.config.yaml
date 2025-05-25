@@ -1,15 +1,15 @@
 
 hardware_interface_simu:
   ros__parameters:
-    enable_accel_limits: false
+    enable_accel_limits: true
 
-    max_acceleration_linear: 2.0 # m/s^2
-    max_deceleration_linear: 2.0 # m/s^2
+    max_acceleration_linear: 1.5 # m/s^2
+    max_acceleration_angular: 10.1 # rad/s^2
 
-    max_acceleration_angular: 20.0 # rad/s^2
+    max_deceleration_linear: 10.0 # m/s^2
     max_deceleration_angular: 20.0 # rad/s^2
     
-    max_acceleration_wheel: 10.0 # rad/s^2
+    max_acceleration_wheel: 100.0 # rad/s^2
     imu_vel_yaw_cov: 0.00001
 
 
@@ -112,6 +112,7 @@ path_planner:
   ros__parameters:
     planner_loop_period: 0.1
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
+    waypoint_speed_linear: 0.1 # m/s
     debug: true
 
 sm_ros_itf:

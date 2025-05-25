@@ -5,6 +5,7 @@ from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped, PoseStamped, Pose
 import tf_transformations
+from rclpy.time import Time, Duration
 from tf2_ros import TransformBroadcaster
 import numpy as np
 import tf2_ros
@@ -60,6 +61,9 @@ class LocNode(Node):
             self.handle_set_pose_srv,
         )
 
+        self.tf_buffer = tf2_ros.Buffer(cache_time=Duration(seconds=10))  
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
         # cooldown timer for aruco : 1s
         self.cooldown_value = 1.0 #s
         self.last_time_aruco_pose_taken_in_account = self.get_clock().now()
@@ -91,6 +95,33 @@ class LocNode(Node):
         # To avoid the pose oscillating, we update only every second
         if self.get_clock().now() - self.last_time_aruco_pose_taken_in_account < Duration(seconds=self.cooldown_value):
             return
+        
+
+        # t_image = Time.from_msg(msg.header.stamp)
+        #
+        # # latency calculation
+        # t_image = Time.from_msg(msg.header.stamp)
+        # # t_recv  = self.get_clock().now()
+        # # latency_ms = (t_recv - t_image).nanoseconds / 1e6
+        # # print(t_recv)
+        #
+        # try:
+        #     tf = self.tf_buffer.lookup_transform(
+        #         'world',  # target frame
+        #         msg.header.frame_id,
+        #         t_image,
+        #         timeout=Duration(seconds=0.1)
+        #     )
+        #     corrected_pose = tf2_geometry_msgs.do_transform_pose(msg.pose, tf)
+        #     corrected_x = corrected_pose.pose.position.x
+        #     corrected_y = corrected_pose.pose.position.y
+        #     corrected_z = corrected_pose.pose.position.z
+        #
+        #
+        #     self.get_logger().info(f"Corrected position (x): {corrected_x:.3f}, (y): {corrected_y:.3f}, (z): {corrected_z:.3f}")
+        # except Exception as e:
+        #     self.get_logger().warn(f"TF lookup failed: {e}")
+
 
         # We take the aruco pose into account only if we are almost not moving
         if abs(self.latest_robot_pose.twist.twist.linear.x) > 0.05 \

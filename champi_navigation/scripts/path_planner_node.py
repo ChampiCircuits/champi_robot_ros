@@ -51,6 +51,7 @@ class PlannerNode(Node):
         # Parameters
         self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
         self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
+        self.waypoint_speed_linear = self.declare_parameter('waypoint_speed_linear', rclpy.Parameter.Type.DOUBLE).value
         self.debug =self.declare_parameter('debug', rclpy.Parameter.Type.BOOL).value
 
         # Print parameters
@@ -208,6 +209,7 @@ class PlannerNode(Node):
                 self.get_logger().warn('Timeout reached!')
                 goal_handle.abort()
                 self.timeout.reset()
+                self.exec_time_measurer.stop()
                 continue
 
             # Check if goal is reached
@@ -220,6 +222,7 @@ class PlannerNode(Node):
                                             self.current_navigate_goal.linear_tolerance,
                                             self.current_navigate_goal.angular_tolerance):
                 navigate_goal_reached = True
+                self.exec_time_measurer.stop()
                 continue
 
             # Compute path
@@ -229,7 +232,7 @@ class PlannerNode(Node):
             # We got a valid path, create a CtrlGoal and publish it (+ debug visualizations)
             if path is not None:
 
-                is_waypoint = (result == ComputePathResult.SUCCESS_AVOIDANCE)
+                is_waypoint = (len(path) > 2)
 
                 # Create a CtrlGoal
                 ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint)
@@ -339,7 +342,7 @@ class PlannerNode(Node):
         ctrl_goal.pose = navigate_goal.pose
 
         if is_waypoint:
-            ctrl_goal.end_speed = navigate_goal.max_linear_speed
+            ctrl_goal.end_speed = self.waypoint_speed_linear
             ctrl_goal.linear_tolerance = self.waypoint_tolerance
         else:
             ctrl_goal.end_speed = navigate_goal.end_speed
