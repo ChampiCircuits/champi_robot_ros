@@ -50,7 +50,7 @@ class ArucoLocalizerNode(Node):
         self.latest_img = None
         self.bird_view = None
 
-
+        self.timestamp = None
         self.timer = self.create_timer(0.1, self.timer_callback)
 
         # Subscribe to /camera_info and /image_raw---------------------------------------------------
@@ -211,6 +211,7 @@ class ArucoLocalizerNode(Node):
         msg.pose.pose.orientation.y = 0.
         msg.pose.pose.orientation.z = np.sin(pose[2]/2)
         msg.pose.pose.orientation.w = np.cos(pose[2]/2)
+        msg.header.stamp = self.timestamp
         self.pub_pose.publish(msg)
 
 
@@ -221,6 +222,7 @@ class ArucoLocalizerNode(Node):
 
     def image_callback(self, msg):
         self.latest_img = msg
+        self.timestamp = msg.header.stamp
 
     def is_blurry(self, image, threshold=1000.0):
         """
