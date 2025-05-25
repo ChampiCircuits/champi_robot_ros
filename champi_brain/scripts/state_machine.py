@@ -37,6 +37,8 @@ class ChampiStateMachine(object):
         self.sm.add_state(MoveForPlatformState(name='moveForPlatform', sm=self))
         self.sm.add_state(DetectPlatformState(name='detectPlatform', sm=self))
         self.sm.add_state(ChampiState(name='endOfMatch', sm=self))
+        self.sm.add_state(ComeHomeState(name='comeHome', sm=self))
+        self.sm.add_state(WaitToComeHomeState(name='waitToComeHome', sm=self))
         # self.sm.add_state(ChampiState(name='stop', sm=self)) # automatically created, bc it's the initial state
 
         self.sm.add_state(ActuatorState(name='action', sm=self))
@@ -47,7 +49,9 @@ class ChampiStateMachine(object):
         self.sm.get_state('init').add_substate(ChampiState(name='waitForTirette', sm=self))
 
         # TRANSITIONS
-        self.sm.add_transition('please_stop', ['init','idle','wait','move', 'moveForPlatform', 'detectPlatform','endOfMatch','action'], 'stop', conditions='stop_requested')
+        self.sm.add_transition('please_stop', ['init','idle','wait','move', 'moveForPlatform', 'detectPlatform','endOfMatch','action','comeHome','waitToComeHome'], 'stop', conditions='stop_requested')
+        self.sm.add_transition('please_wait_to_come_home', ['init','idle','wait','move', 'moveForPlatform', 'detectPlatform', 'action'], 'waitToComeHome', conditions='wait_to_come_home_requested')
+        self.sm.add_transition('please_come_home', 'waitToComeHome', 'comeHome', conditions='come_home_requested')
         ## INIT
         self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
         self.sm.add_transition('init_next', 'init_waitForRosInit', 'init_waitForUserChooseConfig', conditions='ros_initialized')
@@ -79,11 +83,14 @@ class ChampiStateMachine(object):
         self.ros_initialized = False # this one is never reset
         self.match_ended = False
         self.in_match = False
+        self.come_home_requested = False
+        self.wait_to_come_home_requested = False
 
         # STRATEGY (TO BE INIT BY THE NODE)
         self.strategy = None
         self.color = None
         self.init_pose = None
+        self.home_pose = None
 
         # OTHERS
         self.itf:ChampiStateMachineITF = None
@@ -108,7 +115,9 @@ class ChampiStateMachine(object):
 
     def reset(self):
         self.reset_flags()
-        self.stop_requested = True
+        self.stop_requested = True # TODO why true ???
+        self.come_home_requested = False
+        self.wait_to_come_home_requested = False
 
         self.match_ended = False
         self.in_match = False
@@ -158,7 +167,7 @@ class ChampiStateMachine(object):
         self.current_tag = None
 
         if len(self.strategy) == 0:
-            get_logger(self.name).warn(f'End of actions ! Staying in [{self.state}].')
+            get_logger(self.name).warn(f'End of actions ! Staying in [{self.state}] waiting to go home...')
             get_logger(self.name).info(f'All actions in {(100.-self.itf.time_left):.1f} seconds.')
         else:
             action = self.strategy[0]

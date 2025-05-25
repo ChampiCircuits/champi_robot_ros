@@ -8,16 +8,22 @@ def load_yaml(file_path):
         data = yaml.safe_load(file)
     return data
 
+def load_init_or_home_pose(name_str, data, color):
+    init_or_home_pose = [data[name_str]['x'], data[name_str]['y'], data[name_str]['theta_deg']]
+    if color == 'BLUE': # transform x if blue through vertical axis
+        init_or_home_pose[0] = 3.0 - init_or_home_pose[0] # inverse the
+        init_or_home_pose[2] = (360 - init_or_home_pose[2]) % 360 # inverse the angle
+
+    init_or_home_pose[2] = init_or_home_pose[2] +90.0  # +90° to align with the coordinate system
+    return init_or_home_pose
+
+
 def load_strategy(file_path, color, logger): # only one recursion level in files
     data = load_yaml(file_path)
-
-    init_pose = [data['init_pose']['x'], data['init_pose']['y'], data['init_pose']['theta_deg']]
-    if color == 'BLUE': # transform x if blue through vertical axis
-        init_pose[0] = 3.0 - init_pose[0] # inverse the
-        init_pose[2] = (360 - init_pose[2]) % 360 # inverse the angle
-
-    init_pose[2] = init_pose[2] +90.0  # +90° to align with the coordinate system
+    init_pose = load_init_or_home_pose('init_pose', data, color)
     logger.info(f'<< Init pose will be {init_pose[0]} {init_pose[1]} {init_pose[2]}°!')
+    home_pose = load_init_or_home_pose('home_pose', data, color)
+    logger.info(f'<< Home pose will be {home_pose[0]} {home_pose[1]} {home_pose[2]}°!')
 
     actions = []
 
@@ -57,7 +63,7 @@ def load_strategy(file_path, color, logger): # only one recursion level in files
     for (i, action) in enumerate(actions):
         logger.info(f'Action {i}: {action}')
 
-    return actions, init_pose
+    return actions, init_pose, home_pose
 
 def apply_transformation(sub_action, x_action, y_action, theta_deg_action):
 

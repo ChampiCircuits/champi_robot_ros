@@ -184,7 +184,7 @@ void HardwareInterfaceNode::loop() {
         write(mod_reg::reg_cmd);
     }
     else {
-        RCLCPP_WARN(this->get_logger(), "Safe check counter is still the same: %d",
+        RCLCPP_DEBUG(this->get_logger(), "Safe check counter is still the same: %d",
                      static_cast<int>(mod_reg::state->safe_check_counter));
     }
 
