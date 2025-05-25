@@ -97,31 +97,30 @@ class LocNode(Node):
             return
         
 
-        t_image = Time.from_msg(msg.header.stamp)
-
-        # latency calculation
-        t_image = Time.from_msg(msg.header.stamp)
-        # t_recv  = self.get_clock().now()
-        # latency_ms = (t_recv - t_image).nanoseconds / 1e6
-        # print(t_recv)
-
-        try:
-            tf = self.tf_buffer.lookup_transform(
-                'world',  # target frame                
-                msg.header.frame_id,   
-                t_image,      
-                timeout=Duration(seconds=0.1)
-            )
-            corrected_pose = tf2_geometry_msgs.do_transform_pose(msg.pose, tf)
-            corrected_x = corrected_pose.pose.position.x
-            corrected_y = corrected_pose.pose.position.y
-            corrected_z = corrected_pose.pose.position.z
-
-
-            self.get_logger().info(f"Corrected position (x): {corrected_x:.3f}, (y): {corrected_y:.3f}, (z): {corrected_z:.3f}")
-        except Exception as e:
-            self.get_logger().warn(f"TF lookup failed: {e}")
-
+        # t_image = Time.from_msg(msg.header.stamp)
+        #
+        # # latency calculation
+        # t_image = Time.from_msg(msg.header.stamp)
+        # # t_recv  = self.get_clock().now()
+        # # latency_ms = (t_recv - t_image).nanoseconds / 1e6
+        # # print(t_recv)
+        #
+        # try:
+        #     tf = self.tf_buffer.lookup_transform(
+        #         'world',  # target frame
+        #         msg.header.frame_id,
+        #         t_image,
+        #         timeout=Duration(seconds=0.1)
+        #     )
+        #     corrected_pose = tf2_geometry_msgs.do_transform_pose(msg.pose, tf)
+        #     corrected_x = corrected_pose.pose.position.x
+        #     corrected_y = corrected_pose.pose.position.y
+        #     corrected_z = corrected_pose.pose.position.z
+        #
+        #
+        #     self.get_logger().info(f"Corrected position (x): {corrected_x:.3f}, (y): {corrected_y:.3f}, (z): {corrected_z:.3f}")
+        # except Exception as e:
+        #     self.get_logger().warn(f"TF lookup failed: {e}")
 
 
         # We take the aruco pose into account only if we are almost not moving
