@@ -12,7 +12,7 @@ from rclpy.executors import ExternalShutdownException
 from nav_msgs.msg import OccupancyGrid, Odometry, Path
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import CtrlGoal
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import Pose, PoseStamped, Twist
 
 from math import hypot
 import numpy as np
@@ -53,6 +53,8 @@ class PlannerNode(Node):
         self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
         self.waypoint_speed_linear = self.declare_parameter('waypoint_speed_linear', rclpy.Parameter.Type.DOUBLE).value
         self.debug =self.declare_parameter('debug', rclpy.Parameter.Type.BOOL).value
+        self.stop_distance_to_enemy =self.declare_parameter('stop_distance_to_enemy', rclpy.Parameter.Type.DOUBLE).value
+        self.backoff_distance = self.declare_parameter('backoff_distance', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Planner started with the following parameters:')
@@ -68,6 +70,9 @@ class PlannerNode(Node):
         # Publisher
         self.champi_path_pub = self.create_publisher(CtrlGoal, '/ctrl_goal', 10)
         self.path_publisher_viz = self.create_publisher(Path, '/plan_viz', 10)
+
+        self.cmd_vel_stop_pub = self.create_publisher(Twist, '/emergency/cmd_vel_stop', 10)
+        self.timeout_wait_enemy_gone = Timeout()
 
         # Action Server /navigate
         self.action_server_navigate = ActionServer(self, Navigate, '/navigate',
@@ -222,17 +227,9 @@ class PlannerNode(Node):
             # path, result = self.path_planner.compute_path(self.robot_pose, self.current_navigate_goal.pose, self.costmap)
             result = ComputePathResult.SUCCESS_STRAIGHT
             segment_path = [robot_start_pose, self.current_navigate_goal.pose]
-            
-            # We got a valid path, create a CtrlGoal and publish it (+ debug visualizations)
-            # Create a CtrlGoal
-            ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=False)
-            ctrl_goal.pose = segment_path[1]
 
-            # Publish goal
-            self.champi_path_pub.publish(ctrl_goal)
-
-            # Publish path for visualization
-            self.publish_path(segment_path)
+            # CHECK IF ENEMY AROUND US
+            self.handle_enemy(segment_path)
 
             if self.debug:
                 pass
@@ -282,6 +279,94 @@ class PlannerNode(Node):
 
     # ====================================== Utils ==========================================
 
+    def handle_enemy(self, path):
+        rotation_only = (path[0].position.x == path[1].position.x and
+                        path[0].position.y == path[1].position.y)
+
+        enemy_pose = Pose2D(pose=self.latest_enemy_odom.pose.pose)
+        enemy_distance = hypot(enemy_pose.x - self.robot_pose.position.x, enemy_pose.y - self.robot_pose.position.y)
+
+        # If the enemy is too close, we cannot go to the goal
+        if enemy_distance < self.stop_distance_to_enemy and not rotation_only:
+            self.get_logger().warn(f'Enemy too close ({enemy_distance}m), cannot reach goal!')
+            self.handle_enemy_on_the_way(path)
+        else:
+            # We got a valid path, create a CtrlGoal and publish it (+ debug visualizations)
+            # Create a CtrlGoal
+            ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=False)
+            ctrl_goal.pose = path[1]
+
+            # Publish goal
+            self.champi_path_pub.publish(ctrl_goal)
+
+            # Publish path for visualization
+            self.publish_path(path)
+
+
+    def handle_enemy_on_the_way(self, path):
+        robot_start_pose = path[0]
+
+        # publish stop for 1s
+        start_time = time.time()
+        self.get_logger().info('Starting to wait for enemy to go away...')
+        while rclpy.ok() and time.time() - start_time < 1.0 and self.goal_handle_navigate.is_active:
+            self.publish_emergency_stop()
+            segment_path_no_move = [robot_start_pose, self.robot_pose]
+            self.publish_path(segment_path_no_move)
+            time.sleep(0.1)
+
+        # TODO check if the enemy is still there
+
+        # self.get_logger().warn('Going backward!')
+        # path[1] = self.compute_backward_position(robot_start_pose, path[1])
+
+        # Create a CtrlGoal
+        # ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=False)
+        # ctrl_goal.pose = path[1]
+        # ctrl_goal.pose.orientation = self.robot_pose.orientation  # Keep the same orientation
+
+        # Publish goal
+        # self.champi_path_pub.publish(ctrl_goal)
+        # time.sleep(1)
+
+
+
+    def compute_backward_position(self, start, end):
+        self.get_logger().info('Computing backward position...')
+        self.get_logger().info('Current pose: ({}, {})'.format(start.position.x, start.position.y))
+        dx = end.position.x - start.position.x
+        dy = end.position.y - start.position.y
+        vector = np.array([dx, dy])
+        distance = np.linalg.norm(vector)
+        vector /= distance # normalize
+        backward_vector = -vector * self.backoff_distance
+
+        new_x = end.position.x + backward_vector[0]
+        new_y = end.position.y + backward_vector[1]
+        self.get_logger().info('Backward pose: ({}, {})'.format(new_x, new_y))
+
+        # TODO on retourne soit a start_pose soit a backward_pose, a celui qui est le plus près de la pose actuelle
+
+        # create pose
+        backward_pose = Pose()
+        backward_pose.position.x = new_x
+        backward_pose.position.y = new_y
+
+        return backward_pose
+
+
+    def publish_emergency_stop(self):
+        """Publish an emergency stop command to the controller node. This is used when the robot is stuck or in an emergency situation.
+        """
+        # Publish a Twist with zero linear and angular speeds
+        twist = Twist()
+        self.cmd_vel_stop_pub.publish(twist)
+
+        # Also publish a CtrlGoal with max speed 0, to clear the path
+        ctrl_goal = CtrlGoal()
+        ctrl_goal.max_linear_speed = 0.0
+        ctrl_goal.max_angular_speed = 0.0
+        self.champi_path_pub.publish(ctrl_goal)
 
     def publish_stop(self):
         """Publish a stop command to the controller node. Made by publishing an empty CtrlGoal; as max speed is 0, the robot will stop.
