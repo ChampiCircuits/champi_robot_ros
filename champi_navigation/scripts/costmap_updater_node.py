@@ -135,15 +135,8 @@ class CostmapUpdaterNode(Node):
     def enemy_position_callback(self, msg):
         self.enemy_position = msg
         self.enemy_position_last_time = time.time()
-        
 
-    def timer_callback(self):
-
-        if self.enemy_position is not None and time.time() - self.enemy_position_last_time > 1.:
-           self.clear_obstacle_layer()
-           self.enemy_position = None 
-
-        if self.enemy_position is not None:        
+        if self.enemy_position is not None:
             self.clear_obstacle_layer()
 
             self.draw_enemy_robot(self.obstacle_layer_img, self.enemy_position.pose.pose.position.x, self.enemy_position.pose.pose.position.y)
@@ -157,6 +150,18 @@ class CostmapUpdaterNode(Node):
 
         occupancy_grid_msg = self.image_to_occupancy_grid(occupancy_img)
         self.publisher_.publish(occupancy_grid_msg)
+
+    def timer_callback(self):
+
+        # Clear obstacle layer if the enemy position is not updated for more than 1 second
+        if self.enemy_position is None or (self.enemy_position is not None and time.time() - self.enemy_position_last_time > 1.):
+            self.clear_obstacle_layer()
+            self.enemy_position = None
+
+            occupancy_img = self.combine_layers()
+            occupancy_grid_msg = self.image_to_occupancy_grid(occupancy_img)
+            self.publisher_.publish(occupancy_grid_msg)
+
 
     def use_dynamic_layer_callback(self, msg):
         #self.get_logger().info(f"\n\n {msg.data}")

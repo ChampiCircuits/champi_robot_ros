@@ -17,7 +17,7 @@ class LidarSimulator(Node):
         self.publisher = self.create_publisher(LaserScan, 'scan', 10)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.timer = self.create_timer(0.2, self.timer_callback)  # 5Hz
+        self.timer = self.create_timer(0.1, self.timer_callback)  # 10Hz
         self.obstacle_position = Point(x=1.0, y=2.0, z=0.0)
         self.target_position = self.obstacle_position
         self.speed = 0.5  # m/s

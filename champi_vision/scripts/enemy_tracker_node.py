@@ -50,17 +50,8 @@ class EnemyTracker(Node):
         self.last_measurement_time = self.get_clock().now()
         self.scan_msg = None
 
-        self.timer = self.create_timer(0.1, self.timer_callback)
-
-
     def scan_callback(self, msg):
         self.scan_msg = msg
-
-
-    def timer_callback(self):
-
-        if self.scan_msg is None:
-            return
 
         # 1) Compute dt (for speed computation)
         current_time = self.get_clock().now()
@@ -75,7 +66,7 @@ class EnemyTracker(Node):
             if transformed_point is not None:
                 transformed_box_points.append(transformed_point)
             # else: we ignore the point
-        
+
         # 3) Get points inside the bounding box
 
         points = []
@@ -90,7 +81,7 @@ class EnemyTracker(Node):
 
             if self.is_point_in_box([x, y], transformed_box_points):
                 points.append([x, y])
-           
+
 
         if len(points) > 0:
 
@@ -99,7 +90,7 @@ class EnemyTracker(Node):
             closest_point = min(points, key=lambda p: p[0]**2 + p[1]**2)
 
             # 5) Remove points that are too far from the closest point
-            
+
             points = [point for point in points if (point[0] - closest_point[0])**2 + (point[1] - closest_point[1])**2 < 0.1**2]
 
             # 6) Compute center of mass of the points
@@ -111,7 +102,7 @@ class EnemyTracker(Node):
             center_of_mass = self.transform_point(center_of_mass, 'base_laser', 'odom', self.scan_msg.header.stamp)
             if center_of_mass is None:
                 return
-            
+
             # Publish enemy position (and speed)
 
             enemy_odom_msg = Odometry()
@@ -144,6 +135,8 @@ class EnemyTracker(Node):
             self.prev_enemy_odom_msg = enemy_odom_msg
 
             self.enemy_pos_pub.publish(enemy_odom_msg)
+
+
             
 
     def is_point_in_box(self, point, poly_points):
