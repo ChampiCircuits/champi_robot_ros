@@ -7,10 +7,8 @@ Panels:
         - /Global Options1
         - /Status1
         - /Grid1/Offset1
-        - /TF1/Frames1
         - /Odom1/Shape1
         - /Enemy Pose1/Shape1
-        - /StaticImage1/Status1
         - /PoseWithCovariance1/Topic1
       Splitter Ratio: 0.5866336822509766
     Tree Height: 725
@@ -72,13 +70,29 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        base_laser:
+          Value: false
+        base_link:
+          Value: true
+        camera_link:
+          Value: false
+        map:
+          Value: true
+        odom:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        map:
+          odom:
+            base_link:
+              base_laser:
+                {}
+              camera_link:
+                {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0.009999999776482582
@@ -525,11 +539,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 394.6859130859375
+      Scale: 343.1318664550781
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 1.6537216901779175
-      Y: 1.002001166343689
+      X: 1.70769202709198
+      Y: 0.9638259410858154
     Saved: ~
 Window Geometry:
   Displays:
