@@ -83,6 +83,7 @@ class EnemyTracker(Node):
                 points.append([x, y])
 
 
+        center_of_mass = [-100.0, -100.0] # default value if no enemy is detected (outside of map)
         if len(points) > 0:
 
             # 4) Find the closest point to origin (base_laser frame)
@@ -100,41 +101,40 @@ class EnemyTracker(Node):
             # Transform center of mass to odom frame.
             # It is very important to use the same timestamp as the scan message, otherwise the obstacles will appear to move when the robot moves.
             center_of_mass = self.transform_point(center_of_mass, 'base_laser', 'odom', self.scan_msg.header.stamp)
-            if center_of_mass is None:
-                return
 
-            # Publish enemy position (and speed)
 
-            enemy_odom_msg = Odometry()
-            enemy_odom_msg.pose.pose.position.x = center_of_mass[0]
-            enemy_odom_msg.pose.pose.position.y = center_of_mass[1]
-            enemy_odom_msg.pose.pose.position.z = 0.
-            enemy_odom_msg.header.frame_id = 'odom'
-            enemy_odom_msg.header.stamp = self.get_clock().now().to_msg()
+        # Publish enemy position (and speed)
 
-            if self.prev_enemy_odom_msg is None:
-                enemy_odom_msg.pose.pose.orientation.x = 0.
-                enemy_odom_msg.pose.pose.orientation.y = 0.
-                enemy_odom_msg.pose.pose.orientation.z = 0.
-                enemy_odom_msg.pose.pose.orientation.w = 1.
+        enemy_odom_msg = Odometry()
+        enemy_odom_msg.pose.pose.position.x = center_of_mass[0]
+        enemy_odom_msg.pose.pose.position.y = center_of_mass[1]
+        enemy_odom_msg.pose.pose.position.z = 0.
+        enemy_odom_msg.header.frame_id = 'odom'
+        enemy_odom_msg.header.stamp = self.get_clock().now().to_msg()
 
-            elif self.is_steady(center_of_mass):
-                enemy_odom_msg.pose.pose.orientation = self.prev_enemy_odom_msg.pose.pose.orientation
+        if self.prev_enemy_odom_msg is None:
+            enemy_odom_msg.pose.pose.orientation.x = 0.
+            enemy_odom_msg.pose.pose.orientation.y = 0.
+            enemy_odom_msg.pose.pose.orientation.z = 0.
+            enemy_odom_msg.pose.pose.orientation.w = 1.
 
-            else:
-                enemy_yaw = atan2(center_of_mass[1] - self.prev_enemy_odom_msg.pose.pose.position.y, center_of_mass[0] - self.prev_enemy_odom_msg.pose.pose.position.x)
-                enemy_odom_msg.pose.pose.orientation.x = 0.
-                enemy_odom_msg.pose.pose.orientation.y = 0.
-                enemy_odom_msg.pose.pose.orientation.z = sin(enemy_yaw/2)
-                enemy_odom_msg.pose.pose.orientation.w = cos(enemy_yaw/2)
+        elif self.is_steady(center_of_mass):
+            enemy_odom_msg.pose.pose.orientation = self.prev_enemy_odom_msg.pose.pose.orientation
 
-                # Compute enemy velocity (in it's local frame)
-                dist = ((center_of_mass[0] - self.prev_enemy_odom_msg.pose.pose.position.x) ** 2 + (center_of_mass[1] - self.prev_enemy_odom_msg.pose.pose.position.y) ** 2) ** 0.5
-                enemy_odom_msg.twist.twist.linear.x = dist / dt
+        else:
+            enemy_yaw = atan2(center_of_mass[1] - self.prev_enemy_odom_msg.pose.pose.position.y, center_of_mass[0] - self.prev_enemy_odom_msg.pose.pose.position.x)
+            enemy_odom_msg.pose.pose.orientation.x = 0.
+            enemy_odom_msg.pose.pose.orientation.y = 0.
+            enemy_odom_msg.pose.pose.orientation.z = sin(enemy_yaw/2)
+            enemy_odom_msg.pose.pose.orientation.w = cos(enemy_yaw/2)
 
-            self.prev_enemy_odom_msg = enemy_odom_msg
+            # Compute enemy velocity (in it's local frame)
+            dist = ((center_of_mass[0] - self.prev_enemy_odom_msg.pose.pose.position.x) ** 2 + (center_of_mass[1] - self.prev_enemy_odom_msg.pose.pose.position.y) ** 2) ** 0.5
+            enemy_odom_msg.twist.twist.linear.x = dist / dt
 
-            self.enemy_pos_pub.publish(enemy_odom_msg)
+        self.prev_enemy_odom_msg = enemy_odom_msg
+
+        self.enemy_pos_pub.publish(enemy_odom_msg)
 
 
             

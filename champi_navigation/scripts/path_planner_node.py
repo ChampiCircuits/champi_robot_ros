@@ -62,14 +62,12 @@ class PlannerNode(Node):
 
         # Subscribers
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
-        self.costmap_sub = self.create_subscription(OccupancyGrid, '/costmap', self.costmap_callback, 10)
+        self.enemy_odom_sub = self.create_subscription(Odometry, '/enemy_pose', self.enemy_odom_callback, 10)
+        self.latest_enemy_odom = None
 
         # Publisher
         self.champi_path_pub = self.create_publisher(CtrlGoal, '/ctrl_goal', 10)
         self.path_publisher_viz = self.create_publisher(Path, '/plan_viz', 10)
-        if self.debug: #  debug occupancy grids publishers
-            self.debug_pub_raw_path = self.create_publisher(OccupancyGrid, '/raw_path_costmap_viz', 10)
-            self.debug_pub_optimized_path = self.create_publisher(OccupancyGrid, '/optimized_path_costmap_viz', 10)
 
         # Action Server /navigate
         self.action_server_navigate = ActionServer(self, Navigate, '/navigate',
@@ -102,7 +100,6 @@ class PlannerNode(Node):
 
         # Data retreived from topics
         self.robot_pose: Pose = None
-        self.costmap = None # Numpy 2D array
 
         # Current goal handle, that we get when a new goal is received by the action server
         self.goal_handle_navigate = None
@@ -125,13 +122,8 @@ class PlannerNode(Node):
         self.robot_pose.orientation = msg.pose.pose.orientation
     
 
-    def costmap_callback(self, msg):
-        # First time we receive the costmap: create the path planner using costmap metadata
-        if not self.path_planner.is_initialized:
-            self.path_planner.initialize(msg.info.width, msg.info.height, msg.info.resolution)
-
-        self.costmap = np.array(msg.data).reshape(msg.info.height, msg.info.width)
-    
+    def enemy_odom_callback(self, msg):
+        self.latest_enemy_odom = msg
 
     # ==================================== Action Server Callbacks ==========================================
 
@@ -182,8 +174,8 @@ class PlannerNode(Node):
         # =================================== INITIALIZATION ==========================================
 
         # We're still waiting for first messages (init)
-        while rclpy.ok() and (self.robot_pose is None or self.costmap is None) and goal_handle.is_active:
-            self.get_logger().info(f'Waiting for init messages, robot_pose={self.robot_pose is not None}, costmap={self.costmap is not None}', throttle_duration_sec=1.)
+        while rclpy.ok() and (self.robot_pose is None or self.latest_enemy_odom is None) and goal_handle.is_active:
+            self.get_logger().info(f'Waiting for init messages, robot_pose={self.robot_pose is not None}, latest_enemy_odom={self.latest_enemy_odom is not None}', throttle_duration_sec=1.)
             
             # Feedback
             feedback_msg = get_feedback_msg(ComputePathResult.INITIALIZING, [], 0)
@@ -196,6 +188,7 @@ class PlannerNode(Node):
 
         navigate_goal_reached = False
         self.timeout.start(self.current_navigate_goal.timeout)
+        robot_start_pose = self.robot_pose
 
         while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached:
 
@@ -226,34 +219,27 @@ class PlannerNode(Node):
                 continue
 
             # Compute path
-            path, result = self.path_planner.compute_path(self.robot_pose, self.current_navigate_goal.pose, self.costmap)
-            
+            # path, result = self.path_planner.compute_path(self.robot_pose, self.current_navigate_goal.pose, self.costmap)
+            result = ComputePathResult.SUCCESS_STRAIGHT
+            segment_path = [robot_start_pose, self.current_navigate_goal.pose]
             
             # We got a valid path, create a CtrlGoal and publish it (+ debug visualizations)
-            if path is not None:
+            # Create a CtrlGoal
+            ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=False)
+            ctrl_goal.pose = segment_path[1]
 
-                is_waypoint = (len(path) > 2)
+            # Publish goal
+            self.champi_path_pub.publish(ctrl_goal)
 
-                # Create a CtrlGoal
-                ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint)
-                ctrl_goal.pose = path[1]
+            # Publish path for visualization
+            self.publish_path(segment_path)
 
-                # Publish goal
-                self.champi_path_pub.publish(ctrl_goal)
-
-                # Publish path for visualization
-                self.publish_path(path)                    
-
-                if self.debug:
-                    costmap_raw_path = self.path_planner.get_raw_path_as_occupancy_grid()
-                    costmap_optimized_path = self.path_planner.get_optimized_path_as_occupancy_grid()
-
-                    self.debug_pub_raw_path.publish(costmap_raw_path)
-                    self.debug_pub_optimized_path.publish(costmap_optimized_path)
+            if self.debug:
+                pass
 
 
             # Publish action feedback
-            feedback_msg = get_feedback_msg(result, path, self.current_navigate_goal.max_linear_speed)
+            feedback_msg = get_feedback_msg(result, segment_path, self.current_navigate_goal.max_linear_speed)
             goal_handle.publish_feedback(feedback_msg)
 
             self.exec_time_measurer.stop()
@@ -344,11 +330,12 @@ class PlannerNode(Node):
         if is_waypoint:
             ctrl_goal.end_speed = self.waypoint_speed_linear
             ctrl_goal.linear_tolerance = self.waypoint_tolerance
+            ctrl_goal.max_linear_speed = self.waypoint_speed_linear
         else:
             ctrl_goal.end_speed = navigate_goal.end_speed
             ctrl_goal.linear_tolerance = navigate_goal.linear_tolerance
+            ctrl_goal.max_linear_speed = navigate_goal.max_linear_speed
 
-        ctrl_goal.max_linear_speed = navigate_goal.max_linear_speed
         ctrl_goal.max_angular_speed = navigate_goal.max_angular_speed
 
         ctrl_goal.angular_tolerance = navigate_goal.angular_tolerance
