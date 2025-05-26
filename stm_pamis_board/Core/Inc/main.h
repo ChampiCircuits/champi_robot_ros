@@ -66,6 +66,10 @@ void Error_Handler(void);
 #define T_SWCLK_GPIO_Port GPIOA
 #define T_SWO_Pin GPIO_PIN_3
 #define T_SWO_GPIO_Port GPIOB
+#define XSHUT_SENSOR_OBSTACLE_Pin GPIO_PIN_4
+#define XSHUT_SENSOR_OBSTACLE_GPIO_Port GPIOB
+#define XSHUT_SENSOR_VOID_Pin GPIO_PIN_5
+#define XSHUT_SENSOR_VOID_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

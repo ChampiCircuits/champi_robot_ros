@@ -37,7 +37,7 @@ const int path_length = sizeof(path) / sizeof(path[0]);
 #endif
 
 #ifdef PAMI_SUPERSTAR
-
+// TODO POUR LA SUPERSTAR, LE DERNIER SEGMENT POUR S'APPROCHER DU VIDE EST JUSTE UNE ROTATION, avancer est géré dans le code
 Segment path[] = {
   // TODO
 };
@@ -61,6 +61,9 @@ void check_path_duration() {
   }
 
   LOG_INFO("pami", "Total duration is %f", total_duration);
+#ifdef PAMI_SUPERSTAR
+  LOG_INFO("pami", "But there is also the last segment till the edge of the scene");
+#endif
 }
 
 
