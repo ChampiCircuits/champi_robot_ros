@@ -47,7 +47,7 @@ const int path_length = sizeof(path) / sizeof(path[0]);
 
 
 void check_path_duration() {
-  float total_duration = 0;
+  int total_duration = 0;
 
   for (int i=0; i < path_length; i++) {
     const Segment current_segment = path[i];
@@ -57,17 +57,17 @@ void check_path_duration() {
     total_duration += 200; // TODO ajuster
 
     // set TRACTION velocity
-    total_duration += current_segment.duration_s / 1000.0;
+    total_duration += static_cast<int>(current_segment.duration_s * 1000);
   }
 
-  LOG_INFO("pami", "Total duration is %f", total_duration);
+  LOG_INFO("init", "Total duration is %dms with %d segments", total_duration, path_length);
 #ifdef PAMI_SUPERSTAR
-  LOG_INFO("pami", "But there is also the last segment till the edge of the scene");
+  LOG_INFO("init", "But there is also the last segment till the edge of the scene");
 #endif
 }
 
 
-void change_path_according_to_color() {
+void change_directions_according_to_color() {
   for (int i=0; i < path_length; i++) {
 #ifdef COLOR_YELLOW
     #define DIR_ANGLE_STRAIGHT 135

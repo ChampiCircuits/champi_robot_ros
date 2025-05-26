@@ -63,7 +63,7 @@
 
 #include <string.h>
 #include <math.h>
-#include <VL53L4CD_api.h>
+#include <Devices/VL53L4CD_api.h>
 
 static const uint8_t VL53L4CD_DEFAULT_CONFIGURATION[] = {
 	#ifdef VL53L4CD_I2C_FAST_MODE_PLUS

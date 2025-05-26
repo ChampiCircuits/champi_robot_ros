@@ -6,9 +6,9 @@
 #include "Config/DEFINE_PAMI.h"
 
 #ifdef PAMI_1
-  #define ID_SERVO_DIR 18
-  #define ID_SERVO_TRACTION 17
-  #define ID_SERVO_ACTUATOR 19
+  #define ID_SERVO_DIR 16
+  #define ID_SERVO_TRACTION 6 //4
+  #define ID_SERVO_ACTUATOR 19 // TODO le servo actuator c'est un autre type mdrr
 #endif
   // TODO
 #ifdef PAMI_2
