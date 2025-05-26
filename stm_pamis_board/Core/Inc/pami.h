@@ -8,6 +8,7 @@
 #ifdef PAMI_1
   #define ID_SERVO_DIR 18
   #define ID_SERVO_TRACTION 17
+  #define ID_SERVO_ACTUATOR 19
 #endif
   // TODO
 #ifdef PAMI_2
@@ -27,6 +28,9 @@
 
 #define STOPPING_DISTANCE_MM 20 // TODO
 #define STOPPING_DISTANCE_TO_EDGE_MM 20
+
+#define ACTUATOR_POSE1_ANGLE 90
+#define ACTUATOR_POSE2_ANGLE 180
 
 extern SCServos servos;
 extern LaserSensor sensor_obstacle;
