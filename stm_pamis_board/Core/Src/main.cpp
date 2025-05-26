@@ -114,9 +114,11 @@ int main(void)
 
 
   PAMI_Init();
+  PAMI_Loop();
 
   while (1)
   {
+
 
     /* USER CODE END WHILE */
 

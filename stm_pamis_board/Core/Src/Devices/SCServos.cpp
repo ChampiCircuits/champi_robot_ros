@@ -481,8 +481,32 @@ void SCServos::RotateCounterClockwise(){
 void SCServos::scan_ids(uint8_t id_start,  uint8_t id_stop) {
     for(uint8_t id=id_start; id<id_stop; id++) {
         if(ReadPos(id)!=-1) {
-            printf("Found ID %d\n", id);
-
+            printf("Found ID %d!\n", id);
         }
+        else {
+            printf("ID: %d not found.\n", id);
+        }
+        HAL_Delay(50);
     }
+}
+
+#define UNIT_TO_DEG 0.26
+#define DEG_TO_UNIT 3.79
+
+void SCServos::set_angle(uint8_t id, float angle, int ms) {
+    set_angle_async(id, angle, ms);
+    HAL_Delay(ms);
+}
+
+void SCServos::set_angle_async(uint8_t id, float angle, int ms) {
+    int position = (int)(angle * DEG_TO_UNIT);
+    if (position < 0) {
+        position = 0;
+    } else if (position > 1023) {
+        position = 1023;
+    }
+    WritePos(id, position, ms); // TODO je mets deux fois pour tester, des fois ca bougeait pas sur main board !
+    HAL_Delay(10);
+    WritePos(id, position, ms);
+    HAL_Delay(10);
 }

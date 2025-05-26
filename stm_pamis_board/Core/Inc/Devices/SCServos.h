@@ -30,6 +30,11 @@ public:
     void RotateClockwise();
     void RotateCounterClockwise();
     void scan_ids(uint8_t id_start,  uint8_t id_stop);
+
+    // custom added methods taken from scservoapp.h in stm_main_board project
+    void set_angle(uint8_t id, float angle, int ms);
+    void set_angle_async(uint8_t id, float angle, int ms) ;
+
 private:
     int	ReadBuf(uint16_t len, uint8_t *buf=nullptr) const;
     void fflushRevBuf() const;
