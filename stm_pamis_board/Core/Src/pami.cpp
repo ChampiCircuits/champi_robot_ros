@@ -10,6 +10,10 @@ SCServos servos;
 LaserSensor sensor_obstacle;
 LaserSensor sensor_void;
 
+int DIR_ANGLE_STRAIGHT = 140;
+int DIR_ANGLE_RIGHT___ = 200;
+int DIR_ANGLE_LEFT____ = 70;
+
 void config_servos()
 {
     servos.EnableTorque(ID_SERVO_TRACTION, 1);
@@ -26,14 +30,12 @@ void config_servos()
     HAL_Delay(100);
     servos.WriteLimitAngle(ID_SERVO_TRACTION, 0, 0);
     HAL_Delay(100);
-    servos.WriteLimitAngle(ID_SERVO_DIR, 0, 270);
-    HAL_Delay(100);
 }
 
 bool check_servos()
 {
-    return true; // TODO
-    int servos_ids[] = {ID_SERVO_DIR, ID_SERVO_TRACTION};
+    int servos_ids[] = {};
+    // int servos_ids[] = {ID_SERVO_DIR};
 
     for (auto servo_id : servos_ids)
     {
@@ -43,6 +45,7 @@ bool check_servos()
             LOG_ERROR("init", "Servo %d not found !", servo_id);
             return false;
         }
+        LOG_INFO("init", "Servo %d found !", servo_id);
     }
 
     LOG_INFO("init", "Servos test OK");
@@ -51,28 +54,78 @@ bool check_servos()
 
 void visual_check_movement()
 {
-    servos.WriteSpe(ID_SERVO_TRACTION, 511);
+    LOG_INFO("visual_check_movement", "Movement test");
+    // servos.WriteSpe(ID_SERVO_TRACTION, 511);
     HAL_Delay(100);
-    servos.WritePos(ID_SERVO_DIR, DIR_ANGLE_LEFT____, 1000);
-    HAL_Delay(1000);
-    servos.WritePos(ID_SERVO_DIR, DIR_ANGLE_STRAIGHT, 1000);
+    LOG_INFO("visual_check_movement", "Movement left");
+    servos.set_angle(ID_SERVO_DIR, 0, 400);
     HAL_Delay(3000);
+    LOG_INFO("visual_check_movement", "Movement right");
+    servos.set_angle(ID_SERVO_DIR, 135, 400);
+    HAL_Delay(3000);
+    LOG_INFO("visual_check_movement", "Movement straight");
+    servos.set_angle(ID_SERVO_DIR, 270, 400);
+    HAL_Delay(3000);
+    // servos.WriteSpe(ID_SERVO_TRACTION, 0);
+    HAL_Delay(10000000);
+}
 
-    servos.WritePos(ID_SERVO_DIR, DIR_ANGLE_STRAIGHT, 1000);
-    HAL_Delay(100);
-    servos.WriteSpe(ID_SERVO_TRACTION, 0);
-    HAL_Delay(100);
+void debug_servo_dir_positions()
+{
+    LOG_WARN("debug_servo_dir_positions", "Debugging servo DIR positions");
+    // servos.EnableTorque(ID_SERVO_DIR, 0);
+    //
+    // while (1)
+    // {
+    //     int pos = servos.ReadPos(ID_SERVO_DIR);
+    //     LOG_WARN("debug_servo_dir_positions", "Servo DIR position: %d", pos);
+    //     HAL_Delay(1000);
+    // }
+
+    // while (1)
+    // {
+    //     servos.set_angle(ID_SERVO_DIR, 70, 400); // gauche
+    //     HAL_Delay(2000);
+    //     servos.set_angle(ID_SERVO_DIR, 140, 400); // tout droit
+    //     HAL_Delay(2000);
+    //     servos.set_angle(ID_SERVO_DIR, 200, 400); // droite
+    //     HAL_Delay(2000);
+    // }
+}
+
+void goForward(int speed) //[0,255]
+{
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, speed);
+}
+void stop()
+{
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
 }
 
 void PAMI_Init()
 {
-    change_directions_according_to_color();
     check_path_duration();
+
+    //////////////////////////////////////////////////
+    // CHECK COLOR
+    //////////////////////////////////////////////////
+    change_path_according_to_color();
+
+    //////////////////////////////////////////////////
+    // LEGO MOTORS
+    //////////////////////////////////////////////////
+
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
+    stop();
+    //
+
+
 
     //////////////////////////////////////////////////
     // SERVOS
     //////////////////////////////////////////////////
     servos = SCServos(&huart1);
+    HAL_Delay(100);
     // servos.scan_ids(0, 20);
 
     config_servos();
@@ -81,22 +134,24 @@ void PAMI_Init()
         HAL_Delay(500);
     }
 
+    debug_servo_dir_positions();
+
     //////////////////////////////////////////////////
     // SERVO BLEU
     //////////////////////////////////////////////////
-    LOG_INFO("init", "Servo bleu test");
-    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-
-    int angle = 0;  //5°
-    int pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
-    HAL_Delay(2000);
-
-    angle = 180;  //5°
-    pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
-    HAL_Delay(2000);
-    LOG_INFO("init", "Servo bleu test terminé");
+    // LOG_INFO("init", "Servo bleu test");
+    // HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    //
+    // int angle = 0;  //5°
+    // int pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
+    // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
+    // HAL_Delay(2000);
+    //
+    // angle = 180;  //5°
+    // pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
+    // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
+    // HAL_Delay(2000);
+    // LOG_INFO("init", "Servo bleu test terminé");
 
 
     //////////////////////////////////////////////////
@@ -121,15 +176,26 @@ void PAMI_Init()
   sensor_obstacle.enableSensor();
 #endif
 
+    // visual_check_movement();
+    // servos.WriteSpe(ID_SERVO_TRACTION, -511);
+    // HAL_Delay(100000);
+    // servos.WriteSpe(ID_SERVO_TRACTION, 0);
+    // while (1) {}
+
     LOG_WARN("init", "PAMI READY !!")
 }
 
-void wait85s() { HAL_Delay(1000 * 5); } // TODO 85
+void wait85s()
+{
+    LOG_INFO("wait", "waiting for 85s...");
+    HAL_Delay(1000 * 5);
+} // TODO 85
 
 void stopMotorsAndWaitForeverWithActuators()
 {
     LOG_INFO("init", "End of match, waiting forever...");
-    servos.WriteSpe(ID_SERVO_TRACTION, 0);
+    // servos.WriteSpe(ID_SERVO_TRACTION, 0);
+    stop();
     while (true)
     {
         // we move the actuator back and forth
@@ -183,7 +249,15 @@ void superstar_forward_till_void()
 
 void PAMI_Main()
 {
-    wait85s();
+    // wait for tirette
+    while (HAL_GPIO_ReadPin(TIRETTE_GPIO_Port, TIRETTE_Pin) == GPIO_PIN_SET)
+    {
+        LOG_INFO_THROTTLE("main", 20, "waiting for tirette");
+        HAL_Delay(200);
+    }
+    LOG_WARN("main", "TIRETTE RELEASED !!!");
+
+    // wait85s();
     LOG_INFO("pami", "PAMI STARTING !!!");
 
     // execute the path
@@ -192,15 +266,15 @@ void PAMI_Main()
         checkTimeLeft();
 
         Segment segment = path[i];
-        LOG_INFO("pami", "new segment");
+        LOG_INFO("pami", "new segment at speed %d, with angle %d", segment.speed, segment.angle);
 
         // turn the DIR wheel
-        servos.set_angle(ID_SERVO_DIR, segment.dir_servo_angle, 200);
+        servos.set_angle(ID_SERVO_DIR, segment.angle, 200);
         HAL_Delay(200); // TODO check that's enough time, and adjust in check time
 
         // set TRACTION velocity
         // servos.WriteSpe(ID_SERVO_TRACTION, segment.speed);
-        servos.WriteSpe(ID_SERVO_TRACTION, 300);
+        goForward(segment.speed);
 
         // wait for duration
         uint32_t segment_start_time = HAL_GetTick(); // ms

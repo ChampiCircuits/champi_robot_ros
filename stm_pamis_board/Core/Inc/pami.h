@@ -6,9 +6,8 @@
 #include "Config/DEFINE_PAMI.h"
 
 #ifdef PAMI_1
-  #define ID_SERVO_DIR 16
-  #define ID_SERVO_TRACTION 6 //4
-  #define ID_SERVO_ACTUATOR 19 // TODO le servo actuator c'est un autre type mdrr
+  #define ID_SERVO_DIR 3
+  #define ID_SERVO_TRACTION 4
 #endif
   // TODO
 #ifdef PAMI_2
@@ -32,9 +31,17 @@
 #define ACTUATOR_POSE1_ANGLE 90
 #define ACTUATOR_POSE2_ANGLE 180
 
+#define YELLOW 1
+#define BLUE 2
+
 extern SCServos servos;
 extern LaserSensor sensor_obstacle;
 extern LaserSensor sensor_void;
+
+extern int DIR_ANGLE_STRAIGHT;
+extern int DIR_ANGLE_RIGHT___;
+extern int DIR_ANGLE_LEFT____;
+
 
 void PAMI_Init();
 void PAMI_Main();

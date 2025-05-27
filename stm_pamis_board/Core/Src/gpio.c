@@ -51,6 +51,12 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, XSHUT_SENSOR_OBSTACLE_Pin|XSHUT_SENSOR_VOID_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pins : COLOR_BTN_Pin TIRETTE_Pin */
+  GPIO_InitStruct.Pin = COLOR_BTN_Pin|TIRETTE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pins : XSHUT_SENSOR_OBSTACLE_Pin XSHUT_SENSOR_VOID_Pin */
   GPIO_InitStruct.Pin = XSHUT_SENSOR_OBSTACLE_Pin|XSHUT_SENSOR_VOID_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
