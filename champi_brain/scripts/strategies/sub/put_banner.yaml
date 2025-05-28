@@ -11,9 +11,6 @@ actions:
 
   - action: PUT_BANNER
 
-  - action: move
-    target: { x: 0.0, y: 0.3, theta_deg: -60.0 }
-
 ##### ADD THE POINTS
   - action: add_points
     points: 20

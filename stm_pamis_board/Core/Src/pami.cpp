@@ -1,5 +1,6 @@
 #include "pami.h"
 
+#include "i2c.h"
 #include "Config/Config.h"
 #include "Util/logging.h"
 #include "pami_paths.h"
@@ -102,89 +103,6 @@ void stop()
     __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
 }
 
-void PAMI_Init()
-{
-    check_path_duration();
-
-    //////////////////////////////////////////////////
-    // CHECK COLOR
-    //////////////////////////////////////////////////
-    change_path_according_to_color();
-
-    //////////////////////////////////////////////////
-    // LEGO MOTORS
-    //////////////////////////////////////////////////
-
-    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
-    stop();
-    //
-
-
-
-    //////////////////////////////////////////////////
-    // SERVOS
-    //////////////////////////////////////////////////
-    servos = SCServos(&huart1);
-    HAL_Delay(100);
-    // servos.scan_ids(0, 20);
-
-    config_servos();
-    while (!check_servos())
-    {
-        HAL_Delay(500);
-    }
-
-    debug_servo_dir_positions();
-
-    //////////////////////////////////////////////////
-    // SERVO BLEU
-    //////////////////////////////////////////////////
-    // LOG_INFO("init", "Servo bleu test");
-    // HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-    //
-    // int angle = 0;  //5°
-    // int pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
-    // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
-    // HAL_Delay(2000);
-    //
-    // angle = 180;  //5°
-    // pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
-    // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
-    // HAL_Delay(2000);
-    // LOG_INFO("init", "Servo bleu test terminé");
-
-
-    //////////////////////////////////////////////////
-    // SENSORS
-    //////////////////////////////////////////////////
-    sensor_obstacle = LaserSensor(
-        XSHUT_SENSOR_OBSTACLE_GPIO_Port, XSHUT_SENSOR_OBSTACLE_Pin,
-        SENSOR_SENSOR_OBSTACLE_ADDRESS, SENSOR_SENSOR_OBSTACLE_OFFSET);
-
-    // TODO checker le 100, 100 de l'IOC
-    sensor_obstacle.setup();
-
-#ifdef PAMI_SUPERSTAR
-  sensor_void =
-      LaserSensor(XSHUT_SENSOR_VOID_GPIO_Port, XSHUT_SENSOR_VOID_Pin,
-                  SENSOR_SENSOR_VOID_ADDRESS,
-                  SENSOR_SENSOR_VOID_OFFSET); // must disable other sensors to
-                                              // setup a new one
-
-  sensor_obstacle.disableSensor();
-  sensor_void.setup();
-  sensor_obstacle.enableSensor();
-#endif
-
-    // visual_check_movement();
-    // servos.WriteSpe(ID_SERVO_TRACTION, -511);
-    // HAL_Delay(100000);
-    // servos.WriteSpe(ID_SERVO_TRACTION, 0);
-    // while (1) {}
-
-    LOG_WARN("init", "PAMI READY !!")
-}
-
 void wait85s()
 {
     LOG_INFO("wait", "waiting for 85s...");
@@ -247,6 +165,169 @@ void superstar_forward_till_void()
     servos.WriteSpe(ID_SERVO_TRACTION, 0);
 }
 
+void PAMI_Init()
+{
+/*    check_path_duration();
+
+    //////////////////////////////////////////////////
+    // CHECK COLOR
+    //////////////////////////////////////////////////
+    change_path_according_to_color();
+
+    //////////////////////////////////////////////////
+    // LEGO MOTORS
+    //////////////////////////////////////////////////
+
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
+    stop();
+    //
+
+
+
+    //////////////////////////////////////////////////
+    // SERVOS
+    //////////////////////////////////////////////////
+    servos = SCServos(&huart1);
+    HAL_Delay(100);
+    // servos.scan_ids(0, 20);
+
+    config_servos();
+    // while (!check_servos())
+    // {
+    //     HAL_Delay(500);
+    // }
+
+    debug_servo_dir_positions();
+
+    //////////////////////////////////////////////////
+    // SERVO BLEU
+    //////////////////////////////////////////////////
+    // LOG_INFO("init", "Servo bleu test");
+    // HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    //
+    // int angle = 0;  //5°
+    // int pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
+    // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
+    // HAL_Delay(2000);
+    //
+    // angle = 180;  //5°
+    // pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
+    // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
+    // HAL_Delay(2000);
+    // LOG_INFO("init", "Servo bleu test terminé");
+
+
+    //////////////////////////////////////////////////
+    // SENSORS
+    //////////////////////////////////////////////////
+    */
+
+    // sensor_obstacle = LaserSensor(
+    //     XSHUT_SENSOR_OBSTACLE_GPIO_Port, XSHUT_SENSOR_OBSTACLE_Pin,
+    //     SENSOR_SENSOR_OBSTACLE_ADDRESS, SENSOR_SENSOR_OBSTACLE_OFFSET);
+
+        /* Toggle Xshut pin to reset the sensors so that their addresses can be set individually*/
+        HAL_GPIO_WritePin(XSHUT_SENSOR_OBSTACLE_GPIO_Port, XSHUT_SENSOR_OBSTACLE_Pin, GPIO_PIN_SET);
+        HAL_Delay(500);
+    
+        // uint8_t i2c_address = 0x52; // 0x29 est l'adresse 7 bits du VL53L4CX
+        // HAL_StatusTypeDef result = HAL_I2C_IsDeviceReady(&hi2c1, i2c_address, 3, 100);
+
+        // if (result == HAL_OK) {
+        //     printf("✅ VL53L4CX détecté à l’adresse 0x%X\n", i2c_address);
+        // } else {
+        //     printf("❌ VL53L4CX non détecté à l’adresse 0x%X (code erreur %d)\n", i2c_address, result);
+        // }
+
+        /* Setup the first laser sensor */
+        uint16_t sensor_id;
+        uint8_t status;
+        auto pin = XSHUT_SENSOR_OBSTACLE_Pin;
+        auto port = XSHUT_SENSOR_OBSTACLE_GPIO_Port;
+        auto address = 0x52;
+        printf("SENSOR_PIN: %d\n", pin);
+
+        HAL_Delay(5);
+        // set the pin to high to enable the sensor
+        HAL_GPIO_WritePin(port, pin, GPIO_PIN_SET);
+        HAL_Delay(5);
+
+        // set I2C address (other unset addresses XSHUT have to be pull to low before)
+        // status = VL53L4CD_SetI2CAddress(0x52, address); // 0x52 is the default address
+        // if (status)
+        // {
+        //     printf("VL53L4CD_SetI2CAddress failed with status %u\n", status);
+        //     return ;
+        // }
+
+        /* (Optional) Check if there is a VL53L4CD sensor connected */+*/8&
+
+        printf("Checking for laser sensor at address %x\n", address);
+        status = VL53L4CD_GetSensorId(address, &sensor_id);
+        printf("status: %d\n", status);
+        printf("laser sensor id: %d\n", sensor_id);
+
+        if (status || (sensor_id != 0xEBAA))
+        {
+            printf("VL53L4CD not detected at requested address\n");
+            return ;
+        }
+        printf("VL53L4CD detected at address %x\n", address);
+
+        /* (Mandatory) Init VL53L4CD sensor */
+        printf("Initializing laser sensor\n");
+        status = VL53L4CD_SensorInit(address);
+        if (status)
+        {
+            printf("VL53L4CD ULD Loading failed\n");
+            return ;
+        }
+
+        // set the offset
+        status = VL53L4CD_SetOffset(address, 0);
+        if (status)
+        {
+            printf("VL53L4CD_SetOffset failed with status %u\n", status);
+            return ;
+        }
+
+        status = VL53L4CD_StartRanging(address);
+        if (status)
+        {
+            printf("VL53L4CD_StartRanging failed with status %u\n", status);
+            return ;
+        }
+
+        printf("VL53L4CD ULD ready at address %x ready\n", address);
+
+
+        // AFTER ALL SETUPS WE PULL TO HIGH THE SHUTPINS to enable the sensors
+        HAL_GPIO_WritePin(XSHUT_SENSOR_OBSTACLE_GPIO_Port, XSHUT_SENSOR_OBSTACLE_Pin, GPIO_PIN_SET);
+
+    // TODO checker le 100, 100 de l'IOC
+    // sensor_obstacle.setup();
+
+#ifdef PAMI_SUPERSTAR
+  sensor_void =
+      LaserSensor(XSHUT_SENSOR_VOID_GPIO_Port, XSHUT_SENSOR_VOID_Pin,
+                  SENSOR_SENSOR_VOID_ADDRESS,
+                  SENSOR_SENSOR_VOID_OFFSET); // must disable other sensors to
+                                              // setup a new one
+
+  sensor_obstacle.disableSensor();
+  sensor_void.setup();
+  sensor_obstacle.enableSensor();
+#endif
+
+    // visual_check_movement();
+    // servos.WriteSpe(ID_SERVO_TRACTION, -511);
+    // HAL_Delay(100000);
+    // servos.WriteSpe(ID_SERVO_TRACTION, 0);
+    // while (1) {}
+
+    LOG_WARN("init", "PAMI READY !!")
+}
+
 void PAMI_Main()
 {
     // wait for tirette
@@ -282,7 +363,7 @@ void PAMI_Main()
 
         while (HAL_GetTick() - segment_start_time < segment_wait_time_ms)
         {
-            // CheckObstacle(); // TODO
+            CheckObstacle();
             HAL_Delay(200);
         }
     }

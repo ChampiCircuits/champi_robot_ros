@@ -160,6 +160,7 @@ void PutPlanks(int layer)
 void TakeCan(struct ServoY servo)
 {
     devices::scs_servos::set_angle(servo.id, servo.angle_out, 300);
+    osDelay(300);
     devices::stepper_opt0.set_goal_sync(0.37);
     devices::scs_servos::set_angle(servo.id, servo.angle_take, 300);
     osDelay(300);
@@ -182,7 +183,7 @@ void PutCan(int layer, struct ServoY servo)
     osDelay(1000);
 
     devices::stepper_opt0.set_goal_sync(layer_base_height);
-    devices::scs_servos::set_angle(servo.id, servo.angle_take+50., 300); // PUSH
+    devices::scs_servos::set_angle(servo.id, servo.angle_take+70., 300); // PUSH
 
     // little movement to get the Y inside
     // les deux async pour partir à l'état suivant plus tôt

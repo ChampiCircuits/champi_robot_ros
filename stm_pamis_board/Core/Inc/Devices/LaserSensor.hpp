@@ -33,16 +33,18 @@ public:
   int setup() {
     uint16_t sensor_id;
     uint8_t status;
-    LOG_INFO("laser", "trying to setup SENSOR_PIN: %d\n", pin);
+    LOG_INFO("laser", "trying to setup laser with pin: %d\n", pin);
 
     HAL_Delay(10);
 
+    HAL_GPIO_WritePin(XSHUT_SENSOR_OBSTACLE_GPIO_Port, XSHUT_SENSOR_OBSTACLE_Pin, GPIO_PIN_SET);
     // set I2C address (other unset addresses XSHUT have to be pull to low before)
-    status = VL53L4CD_SetI2CAddress(0x52, address); // 0x52 is the default address
-    if (status) {
-      LOG_ERROR("laser", "VL53L4CD_SetI2CAddress failed with status %u\n", status);
-      return status;
-    }
+    // status = VL53L4CD_SetI2CAddress(0x52, address); // 0x52 is the default address
+    // if (status) {
+    //   LOG_ERROR("laser", "VL53L4CD_SetI2CAddress failed with status %u\n", status);
+    //   return status;
+    // }
+    address = 0x52;
 
     /* (Optional) Check if there is a VL53L4CD sensor connected */
     LOG_INFO("laser", "Checking for laser sensor at address %x\n", address);
