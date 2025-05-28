@@ -14,6 +14,9 @@ int DIR_ANGLE_STRAIGHT = 140;
 int DIR_ANGLE_RIGHT___ = 200;
 int DIR_ANGLE_LEFT____ = 70;
 
+// store start time of the match
+uint32_t pami_start_time = 0; // ms
+
 void config_servos()
 {
     servos.EnableTorque(ID_SERVO_TRACTION, 1);
@@ -104,6 +107,9 @@ void stop()
 
 void PAMI_Init()
 {
+    LOG_WARN("init", "PAMI has just started ! counting down 85s...");
+    pami_start_time = HAL_GetTick(); // ms
+
     check_path_duration();
 
     //////////////////////////////////////////////////
@@ -185,11 +191,15 @@ void PAMI_Init()
     LOG_WARN("init", "PAMI READY !!")
 }
 
-void wait85s()
+void waitTill85s()
 {
-    LOG_INFO("wait", "waiting for 85s...");
-    HAL_Delay(1000 * 5);
-} // TODO 85
+    LOG_INFO("wait", "waiting for the 85s start...");
+    while (HAL_GetTick() - pami_start_time < 85 * 1000)
+    {
+        // wait for 85 seconds
+        HAL_Delay(250);
+    }
+}
 
 void stopMotorsAndWaitForeverWithActuators()
 {
@@ -249,15 +259,9 @@ void superstar_forward_till_void()
 
 void PAMI_Main()
 {
-    // wait for tirette
-    while (HAL_GPIO_ReadPin(TIRETTE_GPIO_Port, TIRETTE_Pin) == GPIO_PIN_SET)
-    {
-        LOG_INFO_THROTTLE("main", 20, "waiting for tirette");
-        HAL_Delay(200);
-    }
     LOG_WARN("main", "TIRETTE RELEASED !!!");
 
-    // wait85s();
+    waitTill85s();
     LOG_INFO("pami", "PAMI STARTING !!!");
 
     // execute the path
