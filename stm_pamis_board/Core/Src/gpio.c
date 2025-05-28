@@ -48,31 +48,11 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(XSHUT_SENSOR_VOID_GPIO_Port, XSHUT_SENSOR_VOID_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(XSHUT_SENSOR_OBSTACLE_GPIO_Port, XSHUT_SENSOR_OBSTACLE_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : XSHUT_SENSOR_VOID_Pin */
-  GPIO_InitStruct.Pin = XSHUT_SENSOR_VOID_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(XSHUT_SENSOR_VOID_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : COLOR_BTN_Pin TIRETTE_Pin */
-  GPIO_InitStruct.Pin = COLOR_BTN_Pin|TIRETTE_Pin;
+  /*Configure GPIO pins : COLOR_BTN_Pin CLIC_OBSTACLE_Pin */
+  GPIO_InitStruct.Pin = COLOR_BTN_Pin|CLIC_OBSTACLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : XSHUT_SENSOR_OBSTACLE_Pin */
-  GPIO_InitStruct.Pin = XSHUT_SENSOR_OBSTACLE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(XSHUT_SENSOR_OBSTACLE_GPIO_Port, &GPIO_InitStruct);
 
 }
 

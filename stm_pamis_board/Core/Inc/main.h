@@ -60,20 +60,16 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define XSHUT_SENSOR_VOID_Pin GPIO_PIN_7
-#define XSHUT_SENSOR_VOID_GPIO_Port GPIOA
 #define COLOR_BTN_Pin GPIO_PIN_10
 #define COLOR_BTN_GPIO_Port GPIOA
-#define TIRETTE_Pin GPIO_PIN_11
-#define TIRETTE_GPIO_Port GPIOA
+#define CLIC_OBSTACLE_Pin GPIO_PIN_11
+#define CLIC_OBSTACLE_GPIO_Port GPIOA
 #define T_SWDIO_Pin GPIO_PIN_13
 #define T_SWDIO_GPIO_Port GPIOA
 #define T_SWCLK_Pin GPIO_PIN_14
 #define T_SWCLK_GPIO_Port GPIOA
 #define T_SWO_Pin GPIO_PIN_3
 #define T_SWO_GPIO_Port GPIOB
-#define XSHUT_SENSOR_OBSTACLE_Pin GPIO_PIN_5
-#define XSHUT_SENSOR_OBSTACLE_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
