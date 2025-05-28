@@ -1,0 +1,43 @@
+# o -----> y
+# |
+# v
+# x
+#    use_dynamic_layer: true # default is false
+# strategy is for default color: 'YELLOW'
+# if color 'BLUE' is chosen by the user, then all x positions will become 3-x when loading strategy !
+
+init_pose: { x: 1.18, y: 0.16, theta_deg: -60.0 } # dans la zone de départ jaune en bas, bannière contre mur, côté gauche contre bande intérieure jaune
+home_pose: { x: 0.3, y: 1.0, theta_deg: 0.0 } # dans la zone d'arrivée jaune en haut
+
+actions:
+######################### BANNER ###############################################
+
+  - action: move
+    target: { x: 1.18, y: 0.46, theta_deg: 0.0 }
+
+######################### TAKE FIRST ELEMENT GROUP ######################################
+
+  - action: include_sub_file
+    file: 'take_elements.yaml'
+    parameters:
+        target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
+        tag: 'elements_1'
+
+########################### PUT FIRST ELEMENT GROUP ######################################
+
+  - action: include_sub_file
+    file: 'put_elements.yaml'
+    parameters:
+      target: { x: 1.225, y: 0.1, theta_deg: 180.0 }
+      tag: 'elements_1'
+
+################################# COME HOME #############################################
+
+  - action: move
+    target: { x: 0.3, y: 0.6, theta_deg: -90.0 } # take a look at aruco
+    use_dynamic_layer: true
+
+
+  - action: RESET_ACTUATORS
+    tag: 'elements_3'
+
