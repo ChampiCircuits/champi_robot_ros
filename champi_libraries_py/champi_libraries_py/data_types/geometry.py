@@ -2,7 +2,7 @@
 
 from __future__ import annotations  # Needed for type hinting in the class itself
 
-from math import atan2, cos, sin, sqrt, pi
+from math import atan2, cos, sin, sqrt, pi, acos
 import numpy as np
 from geometry_msgs.msg import Twist, Pose, Point
 
@@ -154,7 +154,8 @@ class Pose2D:
     def __str__(self):
         return f'Pose2D(x={self.x}, y={self.y}, theta={self.theta})'
 
-
+    def __repr__(self):
+        return self.__str__()
 
 class Vect2D:
     def __init__(self, x=0., y=0., pose2d: Pose2D=None):
@@ -185,6 +186,7 @@ class Vect2D:
 
     def sub(self, other: Vect2D):
         """Subtract another vector from this vector."""
+
         return Vect2D(self.x - other.x, self.y - other.y)
 
     def add(self, other: Vect2D):
@@ -206,3 +208,10 @@ class Vect2D:
         if norm_product == 0:
             raise ValueError("Cannot compute the angle with a zero vector.")
         return acos(dot_product / norm_product)
+
+
+    def __str__(self):
+        return f'Vec2D(x={self.x}, y={self.y})'
+
+    def __repr__(self):
+        return self.__str__()

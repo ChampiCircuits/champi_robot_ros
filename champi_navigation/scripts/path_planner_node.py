@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 
 import rclpy
 import rclpy.clock
@@ -31,6 +32,8 @@ from champi_libraries_py.utils.angles import get_yaw
 import diagnostic_msgs
 import diagnostic_updater
 
+from icecream import ic
+
 
 
 from rclpy.logging import get_logger
@@ -52,8 +55,10 @@ class PlannerNode(Node):
         self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
         self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
         self.waypoint_speed_linear = self.declare_parameter('waypoint_speed_linear', rclpy.Parameter.Type.DOUBLE).value
-        self.debug =self.declare_parameter('debug', rclpy.Parameter.Type.BOOL).value
-        self.stop_distance_to_enemy =self.declare_parameter('stop_distance_to_enemy', rclpy.Parameter.Type.DOUBLE).value
+        self.debug = self.declare_parameter('debug', rclpy.Parameter.Type.BOOL).value
+        self.enemy_detect_dist = self.declare_parameter('enemy_detect_dist', rclpy.Parameter.Type.DOUBLE).value
+        self.enemy_detect_angle = self.declare_parameter('enemy_detect_angle', rclpy.Parameter.Type.DOUBLE).value
+        self.backoff_distance = self.declare_parameter('backoff_distance', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Planner started with the following parameters:')
@@ -64,8 +69,7 @@ class PlannerNode(Node):
         # Subscribers
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.enemy_odom_sub = self.create_subscription(Odometry, '/enemy_pose', self.enemy_odom_callback, 10)
-        self.latest_enemy_odom = None
-        self.stopped_because_of_enemy = False
+        self.latest_enemy_pose = Pose2D(x=-100., y=-100.)
 
         # Publisher
         self.champi_path_pub = self.create_publisher(CtrlGoal, '/ctrl_goal', 10)
@@ -114,51 +118,40 @@ class PlannerNode(Node):
 
 
     def odom_callback(self, msg):
-        self.robot_pose = Pose()
-        self.robot_pose.position = msg.pose.pose.position
-        self.robot_pose.orientation = msg.pose.pose.orientation
-    
+        self.robot_pose = Pose2D(pose=msg.pose.pose)
 
     def enemy_odom_callback(self, msg):
-        self.latest_enemy_odom = msg
-        # self.get_logger().warn('print')
+        self.latest_enemy_pose = Pose2D(pose=msg.pose.pose)
 
-        # si l'ennemi est trop proche
-        if self.planning and self.goal_handle_navigate is not None:
-            # Check if the enemy is too close to the robot
-            enemy_pose = Pose2D(pose=msg.pose.pose)
-            robot_pose = Pose2D(pose=self.robot_pose)
+    def is_enemy_close(self, robot_pose: Pose2D, enemy_pose: Pose2D, goal: Pose2D):
 
-            # If the enemy is too close, we cannot go to the goal
-            if hypot(enemy_pose.x - robot_pose.x, enemy_pose.y - robot_pose.y) < self.stop_distance_to_enemy:
-                self.get_logger().warn('Enemy too close, stopping the robot!')
-                self.publish_emergency_stop() # publish with timeout of 1s (in config)
-            else:
-                self.get_logger().warn('Enemy OK')
-            # append en seconde position une position de backoff
+        vect_robot = Vect2D(pose2d=robot_pose)
+        vect_enemy = Vect2D(pose2d=enemy_pose)
+        vect_goal = Vect2D(pose2d=goal)
 
-    def is_enemy_close(self, robot_pose: Pose2D, goal: Pose2D, enemy_pose: Pose2D):
+        vect_robot_to_goal = vect_goal.sub(vect_robot)
+        vect_robot_to_enemy = vect_enemy.sub(vect_robot)
 
-        vect_goal = Vect2D(goal)
-        vect_robot_pose = Vect2D(robot_pose)
-        vect_enemy = Vect2D(enemy_pose)
+        angle_enemy = vect_robot_to_goal.angle(vect_robot_to_enemy)
 
-        vect_robot_to_goal = vect_robot_pose.sub(vect_robot_pose)
-        vect_robot_to_enemy = vect_enemy.sub(vect_robot_pose)
+        ic(angle_enemy * (180.0/math.pi))
 
-        angle =
+        in_fov = abs(angle_enemy) < self.enemy_detect_angle * (math.pi/180.)
 
+        too_close = vect_robot.sub(vect_enemy).norm() < self.enemy_detect_dist
+
+        return in_fov and too_close
 
 
     def make_backoff_pose(self, start: Pose2D, goal: Pose2D, robot_pose: Pose2D, backoff_dist):
 
-        vect_start = Vect2D(start) # TODO we must not go further than the start.
-        vect_goal = Vect2D(goal)
-        vect_robot_pose = Vect2D(robot_pose)
+        vect_start = Vect2D(pose2d=start) # TODO we must not go further than the start.
+        vect_goal = Vect2D(pose2d=goal)
+        vect_robot = Vect2D(pose2d=robot_pose)
 
-        vect_dir = vect_goal.sub(vect_goal).normalize()
+        vect_dir = vect_goal.sub(vect_robot).normalize()
 
-        vect_backoff_pose = vect_robot_pose.add(vect_dir.mult(-backoff_dist))
+        vect_backoff_pose = vect_robot.add(vect_dir.mult(-backoff_dist))
 
         backoff_pose = vect_backoff_pose.to_pose2d()
         backoff_pose.theta = goal.theta
@@ -219,8 +212,8 @@ class PlannerNode(Node):
         # =================================== INITIALIZATION ==========================================
 
         # We're still waiting for first messages (init)
-        while rclpy.ok() and (self.robot_pose is None or self.latest_enemy_odom is None) and goal_handle.is_active:
-            self.get_logger().info(f'Waiting for init messages, robot_pose={self.robot_pose is not None}, latest_enemy_odom={self.latest_enemy_odom is not None}', throttle_duration_sec=1.)
+        while rclpy.ok() and self.robot_pose is None and goal_handle.is_active:
+            self.get_logger().info(f'Waiting for init messages, robot_pose={self.robot_pose is not None}', throttle_duration_sec=1.)
             
             # Feedback
             feedback_msg = get_feedback_msg(ComputePathResult.INITIALIZING, [], 0)
@@ -234,7 +227,9 @@ class PlannerNode(Node):
         navigate_goal_reached = False
         self.timeout.start(self.current_navigate_goal.timeout)
 
-        poses_to_go = [self.current_navigate_goal.pose]
+        start_pose = self.robot_pose
+
+        poses_to_go = [Pose2D(pose=self.current_navigate_goal.pose)]
 
         while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached:
 
@@ -251,9 +246,22 @@ class PlannerNode(Node):
                 self.exec_time_measurer.stop()
                 continue
 
+            # Check if enemy close
+            # len(poses_to_go) == 1 means we are not performing backoff
+            if len(poses_to_go) == 1 and self.is_enemy_close(self.robot_pose, self.latest_enemy_pose, poses_to_go[0]):
+
+                self.get_logger().info("enemy close", throttle_duration_sec=1.)
+
+                self.publish_emergency_stop()
+
+                backoff_pose = self.make_backoff_pose(start_pose, poses_to_go[0], self.robot_pose, self.backoff_distance)
+                # insert it first position
+                poses_to_go = [backoff_pose] + poses_to_go
+
+
             # Check if goal is reached
-            if goal_checker.is_goal_reached(Pose2D(pose=self.current_navigate_goal.pose),
-                                            Pose2D(pose=self.robot_pose),
+            if goal_checker.is_goal_reached(poses_to_go[0],
+                                            self.robot_pose,
                                             self.current_navigate_goal.end_speed == 0,
                                             self.current_navigate_goal.do_look_at_point,
                                             Pose2D(point=self.current_navigate_goal.look_at_point),
@@ -274,19 +282,19 @@ class PlannerNode(Node):
             # We got a valid path, create a CtrlGoal and publish it (+ debug visualizations)
             # Create a CtrlGoal
             ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=False)
-            ctrl_goal.pose = poses_to_go[1]
+            ctrl_goal.pose = poses_to_go[0].to_ros_pose()
 
             # Publish goal
             self.champi_path_pub.publish(ctrl_goal)
 
-            remaining_path = [self.robot_pose].extend(poses_to_go)
+            remaining_path = [self.robot_pose] + poses_to_go
 
             # Publish action feedback
             feedback_msg = get_feedback_msg(result, remaining_path, self.current_navigate_goal.max_linear_speed)
             goal_handle.publish_feedback(feedback_msg)
 
             # Publish path for visualization
-            self.publish_path(remaining_path)
+            self.publish_path([p.to_ros_pose() for p in remaining_path])
 
             self.exec_time_measurer.stop()
 

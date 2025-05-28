@@ -53,7 +53,7 @@ twist_mux:
     topics:
       stop:
         topic   : /emergency/cmd_vel_stop
-        timeout : 0.2
+        timeout : 1.
         priority: 102
       joystick:
         topic   : /teleop/cmd_vel
@@ -99,7 +99,7 @@ costmap_updater:
 pose_controller:
   ros__parameters:
     control_loop_period: 0.02 # s
-    max_linear_acceleration: 0.8 # m/s^2
+    max_linear_acceleration: 0.5 # m/s^2
     max_angular_acceleration: 6.0 # rad/s^2
 
     max_linear_deceleration: 4.0 # m/s^2 # TODO NOT USED
@@ -114,7 +114,8 @@ path_planner:
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
     waypoint_speed_linear: 0.1 # m/s
     debug: true
-    stop_distance_to_enemy: 0.45 # 0.18+0.22= 0.4 m
+    enemy_detect_dist: 0.45 # 0.18+0.22= 0.4 m
+    enemy_detect_angle: 60. # degrees from x+ axis
     backoff_distance: 0.1 # m. Distance to back off from the enemy robot when it is too close after the timeout
 
 sm_ros_itf:

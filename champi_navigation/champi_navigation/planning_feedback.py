@@ -33,7 +33,7 @@ def get_estimated_eta(path, speed):
     """
     distance = 0
     for i in range(1, len(path)):
-        d = hypot(path[i].position.x - path[i-1].position.x, path[i].position.y - path[i-1].position.y)
+        d = hypot(path[i].x - path[i-1].x, path[i].y - path[i-1].y)
         distance += d
     return distance / speed
 
