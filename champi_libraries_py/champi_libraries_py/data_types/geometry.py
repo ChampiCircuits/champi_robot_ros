@@ -153,3 +153,56 @@ class Pose2D:
 
     def __str__(self):
         return f'Pose2D(x={self.x}, y={self.y}, theta={self.theta})'
+
+
+
+class Vect2D:
+    def __init__(self, x=0., y=0., pose2d: Pose2D=None):
+
+        if pose2d is not None:
+            self.x = pose2d.x
+            self.y =pose2d.y
+        else:
+            self.x = x
+            self.y = y
+
+    def to_pose2d(self):
+        return Pose2D(x=self.x, y=self.y)
+
+    def mult(self, scalar: float):
+        """Multiply the vector by a scalar."""
+        return Vect2D(self.x * scalar, self.y * scalar)
+
+    def div(self, scalar: float):
+        """Divide the vector by a scalar."""
+        if scalar == 0:
+            raise ValueError("Division by zero is not allowed.")
+        return Vect2D(self.x / scalar, self.y / scalar)
+
+    def norm(self):
+        """Compute the Euclidean norm of the vector."""
+        return sqrt(self.x**2 + self.y**2)
+
+    def sub(self, other: Vect2D):
+        """Subtract another vector from this vector."""
+        return Vect2D(self.x - other.x, self.y - other.y)
+
+    def add(self, other: Vect2D):
+        """Add another vector to this vector."""
+        return Vect2D(self.x + other.x, self.y + other.y)
+
+    def normalize(self):
+        """Normalize the vector to have a magnitude of 1."""
+        norm = self.norm()
+        if norm == 0:
+            raise ValueError("Cannot normalize a zero vector.")
+        return self.div(norm)
+
+
+    def angle(self, other: Vect2D):
+        """Compute the angle between this vector and another vector in radians."""
+        dot_product = self.x * other.x + self.y * other.y
+        norm_product = self.norm() * other.norm()
+        if norm_product == 0:
+            raise ValueError("Cannot compute the angle with a zero vector.")
+        return acos(dot_product / norm_product)

@@ -25,7 +25,7 @@ from champi_navigation.planning_feedback import ComputePathResult, get_feedback_
 import champi_navigation.goal_checker as goal_checker
 from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
-from champi_libraries_py.data_types.geometry import Pose2D
+from champi_libraries_py.data_types.geometry import Pose2D, Vect2D
 from champi_libraries_py.utils.angles import get_yaw
 
 import diagnostic_msgs
@@ -65,6 +65,7 @@ class PlannerNode(Node):
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.enemy_odom_sub = self.create_subscription(Odometry, '/enemy_pose', self.enemy_odom_callback, 10)
         self.latest_enemy_odom = None
+        self.stopped_because_of_enemy = False
 
         # Publisher
         self.champi_path_pub = self.create_publisher(CtrlGoal, '/ctrl_goal', 10)
@@ -120,7 +121,7 @@ class PlannerNode(Node):
 
     def enemy_odom_callback(self, msg):
         self.latest_enemy_odom = msg
-        self.get_logger().warn('print')
+        # self.get_logger().warn('print')
 
         # si l'ennemi est trop proche
         if self.planning and self.goal_handle_navigate is not None:
@@ -135,6 +136,34 @@ class PlannerNode(Node):
             else:
                 self.get_logger().warn('Enemy OK')
             # append en seconde position une position de backoff
+
+    def is_enemy_close(self, robot_pose: Pose2D, goal: Pose2D, enemy_pose: Pose2D):
+
+        vect_goal = Vect2D(goal)
+        vect_robot_pose = Vect2D(robot_pose)
+        vect_enemy = Vect2D(enemy_pose)
+
+        vect_robot_to_goal = vect_robot_pose.sub(vect_robot_pose)
+        vect_robot_to_enemy = vect_enemy.sub(vect_robot_pose)
+
+        angle =
+
+
+
+    def make_backoff_pose(self, start: Pose2D, goal: Pose2D, robot_pose: Pose2D, backoff_dist):
+
+        vect_start = Vect2D(start) # TODO we must not go further than the start.
+        vect_goal = Vect2D(goal)
+        vect_robot_pose = Vect2D(robot_pose)
+
+        vect_dir = vect_goal.sub(vect_goal).normalize()
+
+        vect_backoff_pose = vect_robot_pose.add(vect_dir.mult(-backoff_dist))
+
+        backoff_pose = vect_backoff_pose.to_pose2d()
+        backoff_pose.theta = goal.theta
+
+        return backoff_pose
 
 
     def publish_emergency_stop(self):
@@ -182,10 +211,7 @@ class PlannerNode(Node):
     async def execute_callback(self, goal_handle):
         """ Called right after we return GoalResponse.ACCEPT in navigate_callback
         """
-
-
         self.mutex_exec.acquire()
-
 
         self.goal_handle_navigate = goal_handle
 
@@ -207,7 +233,8 @@ class PlannerNode(Node):
 
         navigate_goal_reached = False
         self.timeout.start(self.current_navigate_goal.timeout)
-        robot_start_pose = self.robot_pose
+
+        poses_to_go = [self.current_navigate_goal.pose]
 
         while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached:
 
@@ -233,32 +260,33 @@ class PlannerNode(Node):
                                             self.current_navigate_goal.robot_angle_when_looking_at_point,
                                             self.current_navigate_goal.linear_tolerance,
                                             self.current_navigate_goal.angular_tolerance):
-                navigate_goal_reached = True
-                self.exec_time_measurer.stop()
-                continue
+
+                if len(poses_to_go) > 1: # Switch to next goal
+                    poses_to_go.pop(0)
+                else:
+                    navigate_goal_reached = True
+                    self.exec_time_measurer.stop()
+                    continue
 
             # Compute path
             result = ComputePathResult.SUCCESS_STRAIGHT
-            segment_path = [robot_start_pose, self.current_navigate_goal.pose]
-            
+
             # We got a valid path, create a CtrlGoal and publish it (+ debug visualizations)
             # Create a CtrlGoal
             ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=False)
-            ctrl_goal.pose = segment_path[1]
+            ctrl_goal.pose = poses_to_go[1]
 
             # Publish goal
             self.champi_path_pub.publish(ctrl_goal)
 
-            # Publish path for visualization
-            self.publish_path(segment_path)
-
-            if self.debug:
-                pass
-
+            remaining_path = [self.robot_pose].extend(poses_to_go)
 
             # Publish action feedback
-            feedback_msg = get_feedback_msg(result, segment_path, self.current_navigate_goal.max_linear_speed)
+            feedback_msg = get_feedback_msg(result, remaining_path, self.current_navigate_goal.max_linear_speed)
             goal_handle.publish_feedback(feedback_msg)
+
+            # Publish path for visualization
+            self.publish_path(remaining_path)
 
             self.exec_time_measurer.stop()
 
