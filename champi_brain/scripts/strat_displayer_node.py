@@ -11,7 +11,7 @@ from strategies.strategy_loader import load_strategy
 
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
-
+from math import sin, cos
 
 class StrategyPublisher(Node):
 
@@ -24,8 +24,8 @@ class StrategyPublisher(Node):
             get_package_share_directory('champi_brain'), 'scripts', 'strategies', strategy_file
         )
 
-        self.path_targets, self.init_pose = load_strategy(strategy_path, self.get_logger())
-        self.get_logger().info(f'<< Strategy {strategy_file} loaded!')
+        self.path_targets, self.init_pose, self.home_pose = load_strategy(strategy_path, "BLUE", self.get_logger())
+        self.get_logger().info(f'<< Strategy {strategy_file} loaded with BLUE!')
 
         # Timer to publish the path regularly
         self.timer = self.create_timer(1.0, self.publish_path)
@@ -41,7 +41,11 @@ class StrategyPublisher(Node):
         init_pose.header.stamp = self.get_clock().now().to_msg()
         init_pose.pose.position.x = self.init_pose[0]
         init_pose.pose.position.y = self.init_pose[1]
-        init_pose.pose.orientation.w = 1.0  # No rotation for 2D display
+
+        # deg to quaternion
+        angle_rad = self.init_pose[2] * (3.141592653589793 / 180.0)  # Convert degrees to radians
+        init_pose.pose.orientation.z = sin(angle_rad / 2)
+        init_pose.pose.orientation.w = cos(angle_rad / 2)
         path_msg.poses.append(init_pose)
 
         for action in self.path_targets:
@@ -52,11 +56,15 @@ class StrategyPublisher(Node):
             pose.header.stamp = self.get_clock().now().to_msg()
             pose.pose.position.x = action['target']['x']
             pose.pose.position.y = action['target']['y']
-            pose.pose.orientation.w = 1.0  # No rotation for 2D display
+            # deg to quaternion
+            angle_rad = action['target']['theta_deg'] * (3.141592653589793 / 180.0)  # Convert degrees to radians
+            pose.pose.orientation.z = sin(angle_rad / 2)
+            pose.pose.orientation.w = cos(angle_rad / 2)
+
             path_msg.poses.append(pose)
 
         self.publisher_.publish(path_msg)
-        self.get_logger().info('Published path with {} points'.format(len(self.path_targets)))
+        # self.get_logger().info('Published path with {} points'.format(len(self.path_targets)))
 
 
 def main(args=None):
