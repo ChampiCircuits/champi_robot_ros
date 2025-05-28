@@ -12,7 +12,8 @@ def load_init_or_home_pose(name_str, data, color):
     init_or_home_pose = [data[name_str]['x'], data[name_str]['y'], data[name_str]['theta_deg']]
     if color == 'BLUE': # transform x if blue through vertical axis
         init_or_home_pose[0] = 3.0 - init_or_home_pose[0] # inverse the
-        init_or_home_pose[2] = (360 - init_or_home_pose[2]) % 360 # inverse the angle
+        # init_or_home_pose[2] = (360 - init_or_home_pose[2]) % 360 # inverse the angle
+        # do not inverse the angle, because it is already in the correct direction to put banner
 
     init_or_home_pose[2] = init_or_home_pose[2] +90.0  # +90° to align with the coordinate system
     return init_or_home_pose
