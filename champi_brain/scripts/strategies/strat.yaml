@@ -29,6 +29,10 @@ actions:
       target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
       tag: 'elements_1'
 
+  # ptit move intermédiaire pour pas tout casser la pile 2 en passant
+  - action: move
+    target: { x: 1.225, y: 0.6, theta_deg: 0.0 }
+
   ########################### PUT FIRST ELEMENT GROUP ######################################
 
   - action: include_sub_file
