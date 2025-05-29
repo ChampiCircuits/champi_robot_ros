@@ -66,8 +66,8 @@ class DetectPlatformState(ChampiState):
         time.sleep(1)
         half_platform_width = 0.05
 
-        if self.sm.itf.latest_platform_dist == None and self.sm.itf.sim_param:
-            self.sm.itf.latest_platform_dist = 0.2
+        # if self.sm.itf.latest_platform_dist == None and self.sm.itf.sim_param:
+        #     self.sm.itf.latest_platform_dist = 0.2
         if self.sm.itf.latest_platform_dist < 0.0: # (pub = -1.0, but just to be sure)
             # No plank detected !! --> cancel action
             self.sm.cancel_current_tag()

@@ -12,35 +12,35 @@ home_pose: { x: 0.3, y: 1.8, theta_deg: 0.0 } # dans la zone d'arrivée jaune en
 actions:
 ######################### BANNER ###############################################
 
-#  - action: include_sub_file
-#    file: 'put_banner.yaml'
-#    parameters:
-#      target: { x: 1.18, y: 0.16, theta_deg: 0.0 }
-#      tag: 'banner'
+  - action: include_sub_file
+    file: 'put_banner.yaml'
+    parameters:
+      target: { x: 1.18, y: 0.16, theta_deg: 0.0 }
+      tag: 'banner'
 
   - action: move
     target: { x: 1.18, y: 0.46, theta_deg: 0.0 }
 
 ######################### TAKE FIRST ELEMENT GROUP ######################################
 
-#  - action: include_sub_file
-#    file: 'take_elements.yaml'
-#    parameters:
-#        target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
-#        tag: 'elements_1'
-#
-############################ PUT FIRST ELEMENT GROUP ######################################
-#
-#  - action: include_sub_file
-#    file: 'put_elements.yaml'
-#    parameters:
-#      target: { x: 1.225, y: 0.06, theta_deg: 180.0 }
-#      tag: 'elements_1'
+  - action: include_sub_file
+    file: 'take_elements.yaml'
+    parameters:
+        target: { x: 1.1, y: 0.95, theta_deg: 0.0 }
+        tag: 'elements_1'
+
+########################### PUT FIRST ELEMENT GROUP ######################################
+
+  - action: include_sub_file
+    file: 'put_elements.yaml'
+    parameters:
+      target: { x: 1.225, y: 0.06, theta_deg: 180.0 }
+      tag: 'elements_1'
 
 
 ######################### TAKE SECOND ELEMENT GROUP ######################################
   - action: move
-    target: { x: 0.9, y: 0.7, theta_deg: 90.0 } # take a look at aruco (pas 0.6 car IN_OCCUPIED_CELL)
+    target: { x: 0.9, y: 0.6, theta_deg: 90.0 } # take a look at aruco
     use_dynamic_layer: true
     speed: 1.0
 
@@ -83,13 +83,15 @@ actions:
     parameters:
       target: { x: 1.225, y: 0.40, theta_deg: 180.0 }
       tag: 'elements_3'
-o
+
 ################################# COME HOME #############################################
 
-#  - action: move
-#    target: { x: 0.3, y: 0.6, theta_deg: -90.0 } # take a look at aruco
-#    use_dynamic_layer: true
+  - action: move
+    target: { x: 0.6, y: 0.9, theta_deg: 180.0 } # take a look at aruco
+    use_dynamic_layer: true
 
+  - action: GET_READY # needed to put the lift down
+    tag: 'elements_2'
 
 #  - action: move
 #    target: { x: 0.3, y: 1.4, theta_deg: 0.0 } # take a look at aruco
