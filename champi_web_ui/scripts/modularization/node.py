@@ -62,12 +62,44 @@ class PagesNode(Node):
                 '/reset_state_machine',
                 10
             )
+            self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
 
             self.c = 0
             self.get_logger().info("Node created !")
 
         self.c += 1
         self.get_logger().info(f"{self.c} inits of the singleton node")
+
+    def send_actuator_action(self, action):
+        msg = Int8()
+
+        if action == 'PUT_BANNER':
+            msg.data = 0
+        elif action == 'TAKE_LOWER_PLANK':
+            msg.data = 1
+        elif action == 'TAKE_UPPER_PLANK':
+            msg.data = 2
+        elif action == 'PUT_LOWER_PLANK_LAYER_1':
+            msg.data = 3
+        elif action == 'PUT_UPPER_PLANK_LAYER_2':
+            msg.data = 4
+        elif action == 'TAKE_CANS_RIGHT':
+            msg.data = 5
+        elif action == 'TAKE_CANS_LEFT':
+            msg.data = 6
+        elif action == 'PUT_CANS_RIGHT_LAYER_2':
+            msg.data = 7
+        elif action == 'PUT_CANS_LEFT_LAYER_1':
+            msg.data = 8
+        elif action == 'RESET_ACTUATORS':
+            msg.data = 9
+        elif action == 'STOP_ALL_MOTORS':
+            msg.data = 10
+        elif action == 'ENABLE_ALL_MOTORS':
+            msg.data = 11
+        elif action == 'GET_READY':
+            msg.data = 12
+        self.actuators_ctrl_pub.publish(msg)
 
     def update(self):
         if not self.match_started:

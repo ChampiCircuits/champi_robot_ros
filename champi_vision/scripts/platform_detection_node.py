@@ -146,9 +146,9 @@ class PlatformDetectionNode(Node):
             return
 
         # transform filtered point cloud to odom frame
-        filtered_point_cloud_in_odom = self.transform_points_to_odom(filtered_point_cloud_array_in_base_link)
+        # filtered_point_cloud_in_odom = self.transform_points_to_base_link(filtered_point_cloud_array_in_base_link)
         # for viz only :
-        self.publish_filtered_point_cloud(filtered_point_cloud_in_odom, 'base_link')
+        self.publish_filtered_point_cloud(filtered_point_cloud_array_in_base_link, 'base_link')
 
         # Find the shortest from the robot to the platform
         dist_to_platform = find_distance_to_platform(filtered_point_cloud_array_in_base_link)

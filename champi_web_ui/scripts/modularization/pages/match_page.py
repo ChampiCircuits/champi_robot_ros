@@ -73,12 +73,17 @@ def create() -> None:
             with ui.grid(columns=2).style('width: 100%;padding-top:150px'):
                 with ui.column():
                     ui.button("Reset", on_click=reset_all)
+                    ui.button("Ouvrir bannière", on_click=open_banner)
                 with ui.column():
                     container = ui.column().classes('w-full; items-center')
                     with container:
                         ui.label('Match').classes('text-h4 text-grey-8')
                         stepper = ui.stepper().props('vertical').classes('')
                         with stepper:
+                            with ui.step('Placer la bannière'):
+                                with ui.stepper_navigation():
+                                    ui.button('Bannière placée ✓', on_click=stepper.next)
+
                             with ui.step('Positionner le robot sur la table'):
                                 with ui.stepper_navigation():
                                     ui.label('bannière contre mur, côté gauche contre bande intérieure jaune')
@@ -179,6 +184,10 @@ def on_color_chosen():
     global color
     color = radio_color_selection.value
     stepper.next()
+
+def open_banner():
+    ros_node.send_actuator_action('PUT_BANNER')
+
 
 def on_strategy_selected():
     # send the chosen strategy to the node
