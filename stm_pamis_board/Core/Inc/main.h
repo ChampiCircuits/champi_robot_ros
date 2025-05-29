@@ -60,6 +60,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define INPUT_ULTRASOUND_Pin GPIO_PIN_4
+#define INPUT_ULTRASOUND_GPIO_Port GPIOA
+#define OUT_ULTRASOUND_Pin GPIO_PIN_5
+#define OUT_ULTRASOUND_GPIO_Port GPIOA
 #define COLOR_BTN_Pin GPIO_PIN_10
 #define COLOR_BTN_GPIO_Port GPIOA
 #define CLIC_OBSTACLE_Pin GPIO_PIN_11

@@ -6,6 +6,17 @@
 #include "tim.h"
 #include "usart.h"
 
+//TIM_HandleTypeDef htim1;
+
+#define TRIG_PIN GPIO_PIN_5
+#define TRIG_PORT GPIOA
+#define ECHO_PIN GPIO_PIN_4
+#define ECHO_PORT GPIOA
+uint32_t pMillis;
+uint32_t val1 = 0;
+uint32_t val2 = 0;
+uint16_t distance  = 0;
+char string[15];
 SCServos servos;
 //LaserSensor sensor_obstacle;
 //LaserSensor sensor_void;
@@ -106,36 +117,36 @@ void PAMI_Init()
     pami_start_time = HAL_GetTick(); // ms
 
     check_path_duration();
-
-    //////////////////////////////////////////////////
-    // CHECK COLOR
-    //////////////////////////////////////////////////
-    change_path_according_to_color();
-
-    //////////////////////////////////////////////////
-    // LEGO MOTORS
-    //////////////////////////////////////////////////
-
-    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
-    stop();
-    //
-
-
-
-    //////////////////////////////////////////////////
-    // SERVOS
-    //////////////////////////////////////////////////
-    servos = SCServos(&huart1);
-    HAL_Delay(100);
-//     servos.scan_ids(0, 20);
-
-    config_servos();
-    while (!check_servos())
-    {
-        HAL_Delay(500);
-    }
-
-    debug_servo_dir_positions();
+//
+//    //////////////////////////////////////////////////
+//    // CHECK COLOR
+//    //////////////////////////////////////////////////
+//    change_path_according_to_color();
+//
+//    //////////////////////////////////////////////////
+//    // LEGO MOTORS
+//    //////////////////////////////////////////////////
+//
+//    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
+//    stop();
+//    //
+//
+//
+//
+//    //////////////////////////////////////////////////
+//    // SERVOS
+//    //////////////////////////////////////////////////
+//    servos = SCServos(&huart1);
+//    HAL_Delay(100);
+////     servos.scan_ids(0, 20);
+//
+//    config_servos();
+//    while (!check_servos())
+//    {
+//        HAL_Delay(500);
+//    }
+//
+//    debug_servo_dir_positions();
 
     //////////////////////////////////////////////////
     // SERVO BLEU
@@ -258,43 +269,72 @@ void PAMI_Main()
     waitTill85s();
     LOG_INFO("pami", "PAMI STARTING !!!");
 
-    // execute the path
-    for (int i = 0; i < path_length; i++)
+    MX_TIM1_Init();
+
+    HAL_TIM_Base_Start(&htim1);
+    HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_RESET);
+
+    HAL_GPIO_ReadPin (ECHO_PORT, ECHO_PIN);
+
+    while (1)
     {
+  	  HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_SET);
+  	  __HAL_TIM_SET_COUNTER(&htim1, 0);
+  	   while (__HAL_TIM_GET_COUNTER (&htim1) < 10);  // wait for 10 us
+  	   HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_RESET);
 
-        if(HAL_GPIO_ReadPin (GPIOA, GPIO_PIN_11)) {
-        	LOG_INFO("pami", "ENEMEY TOUCHED");
-        	HAL_Delay(200);
-        	continue;
-        }
+  	   pMillis = HAL_GetTick();
+  	   while (!(HAL_GPIO_ReadPin (ECHO_PORT, ECHO_PIN)) && pMillis + 10 >  HAL_GetTick());
+  	   val1 = __HAL_TIM_GET_COUNTER (&htim1);
 
-        checkTimeLeft();
+  	   pMillis = HAL_GetTick();
+  	   while ((HAL_GPIO_ReadPin (ECHO_PORT, ECHO_PIN)) && pMillis + 10 > HAL_GetTick());
+  	   val2 = __HAL_TIM_GET_COUNTER (&htim1);
 
+  	   distance = (val2-val1)* 0.034/2;
 
-
-        Segment segment = path[i];
-        LOG_INFO("pami", "new segment at speed %d, with angle %d", segment.speed, segment.angle);
-
-        // turn the DIR wheel
-        servos.set_angle(ID_SERVO_DIR, segment.angle, 200);
-        HAL_Delay(200); // TODO check that's enough time, and adjust in check time
-
-        // set TRACTION velocity
-        // servos.WriteSpe(ID_SERVO_TRACTION, segment.speed);
-        goForward(segment.speed);
-
-        // wait for duration
-        uint32_t segment_start_time = HAL_GetTick(); // ms
-        uint32_t segment_wait_time_ms = static_cast<uint32_t>(segment.duration_s * 1000.0);
-
-        while (HAL_GetTick() - segment_start_time < segment_wait_time_ms)
-        {
-            CheckObstacle();
-            HAL_Delay(200);
-            if (abandon)
-            	stopMotorsAndWaitForeverWithActuators();
-        }
+//  	   LOG_INFO("pami", "PAMI STARTING !!!");
+  	   LOG_ERROR("Distance", "Distance : %d ", distance);
+  	   HAL_Delay(50);
     }
+
+    // execute the path
+//    for (int i = 0; i < path_length; i++)
+//    {
+//
+//        if(HAL_GPIO_ReadPin (GPIOA, GPIO_PIN_11)) {
+//        	LOG_INFO("pami", "ENEMEY TOUCHED");
+//        	HAL_Delay(200);
+//        	continue;
+//        }
+//
+//        checkTimeLeft();
+//
+//
+//
+//        Segment segment = path[i];
+//        LOG_INFO("pami", "new segment at speed %d, with angle %d", segment.speed, segment.angle);
+//
+//        // turn the DIR wheel
+//        servos.set_angle(ID_SERVO_DIR, segment.angle, 200);
+//        HAL_Delay(200); // TODO check that's enough time, and adjust in check time
+//
+//        // set TRACTION velocity
+//        // servos.WriteSpe(ID_SERVO_TRACTION, segment.speed);
+//        goForward(segment.speed);
+//
+//        // wait for duration
+//        uint32_t segment_start_time = HAL_GetTick(); // ms
+//        uint32_t segment_wait_time_ms = static_cast<uint32_t>(segment.duration_s * 1000.0);
+//
+//        while (HAL_GetTick() - segment_start_time < segment_wait_time_ms)
+//        {
+//            CheckObstacle();
+//            HAL_Delay(200);
+//            if (abandon)
+//            	stopMotorsAndWaitForeverWithActuators();
+//        }
+//    }
 
 #ifdef PAMI_SUPERSTAR
     superstar_forward_till_void();
