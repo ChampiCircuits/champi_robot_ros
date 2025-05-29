@@ -128,7 +128,8 @@ void TakePlank(int plank) { // !!! lift should be down
     devices::scs_servos::set_angle(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_CLOSE_POSITION, 300);
 
     if (plank == LOWER_PLANK) { // dans ce cas, pas besoin de remonter haut vu qu'on va prendre les conserves
-        devices::stepper_opt0.set_goal_async(1.2); // async pour passer dans l'état move plus tôt
+        devices::stepper_opt0.set_goal_async(1.2+1.0); // async pour passer dans l'état move plus tôt
+        // on remonte pas mal plus haut pour éviter les collisions avec les planches sur le jeu !
     }
     else {
         devices::stepper_opt0.set_goal_sync(3.6);
