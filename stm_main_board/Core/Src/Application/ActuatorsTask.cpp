@@ -153,7 +153,7 @@ void PutPlanks(int layer)
     //devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION+10.0, 300);
 
     if (layer == 2) { // in this case we open a bit the arm to not destroy the tower
-        devices::scs_servos::set_angle_async(ID_SERVO_ARM, (SERVO_ARM_UP_POSITION+SERVO_ARM_DOWN_POSITION)/2.0, 300);
+        devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION+23, 300);
     }
 }
 
