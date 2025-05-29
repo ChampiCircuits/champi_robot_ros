@@ -17,6 +17,8 @@ int DIR_ANGLE_LEFT____ = 110;
 // store start time of the match
 uint32_t pami_start_time = 0; // ms
 
+bool abandon = false;
+
 void config_servos()
 {
     HAL_Delay(100);
@@ -139,7 +141,7 @@ void PAMI_Init()
     // SERVO BLEU
     //////////////////////////////////////////////////
     // LOG_INFO("init", "Servo bleu test");
-    // HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
     //
     // int angle = 0;  //5°
     // int pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
@@ -187,11 +189,12 @@ void PAMI_Init()
 void waitTill85s()
 {
     LOG_INFO("wait", "waiting for the 85s start...");
-//    while (HAL_GetTick() - pami_start_time < 85 * 1000)
-//    {
-//        // wait for 85 seconds
-//        HAL_Delay(250);
-//    }
+    while (HAL_GetTick() - pami_start_time < 5 * 1000)
+//        while (HAL_GetTick() - pami_start_time < 85 * 1000)
+    {
+        // wait for 85 seconds
+        HAL_Delay(250);
+    }
 }
 
 void stopMotorsAndWaitForeverWithActuators()
@@ -201,15 +204,10 @@ void stopMotorsAndWaitForeverWithActuators()
     stop();
     while (true)
     {
-        // we move the actuator back and forth
-        int angle = 0;  //5°
-        int pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
+        LOG_INFO("init", "bouge ...");
+        htim2.Instance->CCR1 = 500;
         HAL_Delay(2000);
-
-        angle = 180;  //5°
-        pulse = 250 + (angle*5.55);  // calculate pulse value, starting from 250
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);  // TIM2->CCR1 = pulse
+        htim2.Instance->CCR1 = 125;
         HAL_Delay(2000);
     }
 }
@@ -227,11 +225,14 @@ void checkTimeLeft()
 
 void CheckObstacle()
 {
-//    while (sensor_obstacle.get_dist_mm() < STOPPING_DISTANCE_MM)
-//    {
-//        checkTimeLeft();
-//        HAL_Delay(200);
-//    }
+    if (HAL_GPIO_ReadPin (GPIOA, GPIO_PIN_11))
+    {
+    	stop();
+        checkTimeLeft();
+        HAL_Delay(200);
+        abandon = true;
+    }
+
 }
 
 void superstar_forward_till_void()
@@ -260,7 +261,16 @@ void PAMI_Main()
     // execute the path
     for (int i = 0; i < path_length; i++)
     {
+
+        if(HAL_GPIO_ReadPin (GPIOA, GPIO_PIN_11)) {
+        	LOG_INFO("pami", "ENEMEY TOUCHED");
+        	HAL_Delay(200);
+        	continue;
+        }
+
         checkTimeLeft();
+
+
 
         Segment segment = path[i];
         LOG_INFO("pami", "new segment at speed %d, with angle %d", segment.speed, segment.angle);
@@ -279,8 +289,10 @@ void PAMI_Main()
 
         while (HAL_GetTick() - segment_start_time < segment_wait_time_ms)
         {
-            // CheckObstacle(); // TODO
+            CheckObstacle();
             HAL_Delay(200);
+            if (abandon)
+            	stopMotorsAndWaitForeverWithActuators();
         }
     }
 
