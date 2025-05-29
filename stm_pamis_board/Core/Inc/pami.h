@@ -6,8 +6,7 @@
 #include "Config/DEFINE_PAMI.h"
 
 #ifdef PAMI_1
-  #define ID_SERVO_DIR 3
-  #define ID_SERVO_TRACTION 4
+  #define ID_SERVO_DIR 10
 #endif
   // TODO
 #ifdef PAMI_2
@@ -35,8 +34,8 @@
 #define BLUE 2
 
 extern SCServos servos;
-extern LaserSensor sensor_obstacle;
-extern LaserSensor sensor_void;
+//extern LaserSensor sensor_obstacle;
+//extern LaserSensor sensor_void;
 
 extern int DIR_ANGLE_STRAIGHT;
 extern int DIR_ANGLE_RIGHT___;
