@@ -7,12 +7,12 @@ Panels:
         - /Global Options1
         - /Status1
         - /Grid1/Offset1
-        - /TF1/Status1
         - /TF1/Frames1
         - /Odom1/Shape1
         - /Enemy Pose1
         - /Enemy Pose1/Shape1
         - /PoseWithCovariance1/Topic1
+        - /Strategy path1
       Splitter Ratio: 0.5866336822509766
     Tree Height: 725
   - Class: rviz_common/Selection
@@ -447,7 +447,7 @@ Visualization Manager:
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
       Length: 0.05000000074505806
-      Line Style: Billboards
+      Line Style: Lines
       Line Width: 0.029999999329447746
       Name: Strategy path
       Offset:

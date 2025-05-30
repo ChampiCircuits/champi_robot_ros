@@ -24,8 +24,8 @@ class StrategyPublisher(Node):
             get_package_share_directory('champi_brain'), 'scripts', 'strategies', strategy_file
         )
 
-        self.path_targets, self.init_pose, self.home_pose = load_strategy(strategy_path, "BLUE", self.get_logger())
-        self.get_logger().info(f'<< Strategy {strategy_file} loaded with BLUE!')
+        self.path_targets, self.init_pose, self.home_pose = load_strategy(strategy_path, "YELLOW", self.get_logger())
+        self.get_logger().info(f'<< Strategy {strategy_file} loaded with YELLOW!')
 
         # Timer to publish the path regularly
         self.timer = self.create_timer(1.0, self.publish_path)
@@ -43,7 +43,7 @@ class StrategyPublisher(Node):
         init_pose.pose.position.y = self.init_pose[1]
 
         # deg to quaternion
-        angle_rad = self.init_pose[2] * (3.141592653589793 / 180.0)  # Convert degrees to radians
+        angle_rad = (self.init_pose[2]+90) * (3.141592653589793 / 180.0)  # Convert degrees to radians
         init_pose.pose.orientation.z = sin(angle_rad / 2)
         init_pose.pose.orientation.w = cos(angle_rad / 2)
         path_msg.poses.append(init_pose)
@@ -57,7 +57,7 @@ class StrategyPublisher(Node):
             pose.pose.position.x = action['target']['x']
             pose.pose.position.y = action['target']['y']
             # deg to quaternion
-            angle_rad = action['target']['theta_deg'] * (3.141592653589793 / 180.0)  # Convert degrees to radians
+            angle_rad = (action['target']['theta_deg']+90) * (3.141592653589793 / 180.0)  # Convert degrees to radians
             pose.pose.orientation.z = sin(angle_rad / 2)
             pose.pose.orientation.w = cos(angle_rad / 2)
 
