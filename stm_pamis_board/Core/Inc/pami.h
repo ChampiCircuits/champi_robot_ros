@@ -9,6 +9,7 @@
 #endif
   // TODO
 #ifdef PAMI_2
+  #define ID_SERVO_DIR 6
 #endif
 #ifdef PAMI_3
   // TODO

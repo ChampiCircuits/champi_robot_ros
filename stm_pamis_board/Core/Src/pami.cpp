@@ -22,6 +22,8 @@ int DIR_ANGLE_STRAIGHT = 149;
 int DIR_ANGLE_RIGHT___ = 170;
 int DIR_ANGLE_LEFT____ = 100;
 
+
+
 // store start time of the match
 uint32_t pami_start_time = 0; // ms
 
@@ -101,6 +103,7 @@ void debug_servo_dir_positions()
 
 void goForward(int speed) //[0,255]
 {
+	LOG_WARN("Moove", "PAMI is mooving...");
     __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, speed);
 }
 void stop()
@@ -132,7 +135,7 @@ void PAMI_Init()
     //////////////////////////////////////////////////
     servos = SCServos(&huart1);
     HAL_Delay(100);
-//     servos.scan_ids(0, 20);
+    //servos.scan_ids(0, 20);
 
     config_servos();
     while (!check_servos())
@@ -185,11 +188,11 @@ void stopMotorsAndWaitForeverWithActuators()
     stop();
     while (true)
     {
-        LOG_INFO("init", "bouge ...");
-        htim2.Instance->CCR1 = 500;
-        HAL_Delay(2000);
-        htim2.Instance->CCR1 = 125;
-        HAL_Delay(2000);
+//        LOG_INFO("init", "bouge ...");
+//        htim2.Instance->CCR1 = 500;
+//        HAL_Delay(2000);
+//        htim2.Instance->CCR1 = 125;
+//        HAL_Delay(2000);
     }
 }
 

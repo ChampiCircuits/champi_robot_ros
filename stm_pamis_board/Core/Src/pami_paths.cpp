@@ -20,9 +20,9 @@ const int path_length = sizeof(path) / sizeof(path[0]);
 #ifdef PAMI_2
 
 Segment path[] = {
-  // TODO
+  {DIR_STRAIGHT, 3.0, MAX_SPEED},
+  {DIR_RIGHT___, 2.65, MAX_SPEED},
 };
-
 const int path_length = sizeof(path) / sizeof(path[0]);
 #endif
 
@@ -45,6 +45,33 @@ Segment path[] = {
 const int path_length = sizeof(path) / sizeof(path[0]);
 #endif
 
+
+
+
+
+#ifdef PAMI_1
+int DIR_ANGLE_STRAIGHT_CONST = 149;
+int DIR_ANGLE_RIGHT____CONST = 170;
+int DIR_ANGLE_LEFT_____CONST = 100;
+#endif
+
+#ifdef PAMI_2
+int DIR_ANGLE_STRAIGHT_CONST = 100;
+int DIR_ANGLE_RIGHT____CONST = 170;
+int DIR_ANGLE_LEFT_____CONST = 50;
+#endif
+
+#ifdef PAMI_3
+int DIR_ANGLE_STRAIGHT_CONST = 149;
+int DIR_ANGLE_RIGHT____CONST = 170;
+int DIR_ANGLE_LEFT_____CONST = 100;
+#endif
+
+#ifdef PAMI_SUPERSTAR
+int DIR_ANGLE_STRAIGHT_CONST = 149;
+int DIR_ANGLE_RIGHT____CONST = 170;
+int DIR_ANGLE_LEFT_____CONST = 100;
+#endif
 
 void check_path_duration() {
   int total_duration = 0;
@@ -87,12 +114,12 @@ void change_path_according_to_color()
     {
       if (path[i].dir_servo_angle ==DIR_RIGHT___)
       {
-        path[i].angle = DIR_ANGLE_RIGHT___;
+        path[i].angle = DIR_ANGLE_RIGHT____CONST;
         LOG_INFO("init", "Angle right = %d", path[i].angle);
       }
       else if (path[i].dir_servo_angle == DIR_LEFT____)
       {
-        path[i].angle = DIR_ANGLE_LEFT____;
+        path[i].angle = DIR_ANGLE_LEFT_____CONST;
         LOG_INFO("init", "Angle left = %d", path[i].angle);
       }
     }
@@ -100,16 +127,16 @@ void change_path_according_to_color()
     {
       if (path[i].dir_servo_angle ==DIR_RIGHT___)
       {
-        path[i].angle = DIR_ANGLE_LEFT____; // INVERSED
+        path[i].angle = DIR_ANGLE_LEFT_____CONST; // INVERSED
       }
       else if (path[i].dir_servo_angle ==DIR_LEFT____)
       {
-        path[i].angle = DIR_ANGLE_RIGHT___; // INVERSED
+        path[i].angle = DIR_ANGLE_RIGHT____CONST; // INVERSED
       }
     }
     if (path[i].dir_servo_angle == DIR_STRAIGHT)
     {
-      path[i].angle = DIR_ANGLE_STRAIGHT;
+      path[i].angle = DIR_ANGLE_STRAIGHT_CONST;
       LOG_INFO("init", "Angle straight = %d", path[i].angle);
     }
     LOG_INFO("init", "Segment %d: angle = %d, speed = %d", i, path[i].angle, path[i].speed);
