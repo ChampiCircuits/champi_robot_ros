@@ -8,6 +8,11 @@
 #define LOW_SPEED 120
 
 
+
+#define COLOR_YELLOW 0
+#define COLOR_BLUE 1
+
+
 struct Segment {
   // it means that we turn the servo, and then go at speed during duration_s
   int dir_servo_angle; // name of direction
@@ -16,10 +21,9 @@ struct Segment {
   int angle; // at which angle of DIR servo
 };
 
-extern Segment path[];
-extern const int path_length;
+extern Segment path[50];
+extern int path_length;
 
-void check_path_duration();
-void change_path_according_to_color();
+void make_path(int color);
 
 #endif //PAMI_PATHS_H

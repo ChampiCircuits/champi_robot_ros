@@ -111,12 +111,26 @@ void PAMI_Init()
     LOG_WARN("init", "PAMI has just started ! counting down 85s...");
     pami_start_time = HAL_GetTick(); // ms
 
-    check_path_duration();
-
     //////////////////////////////////////////////////
     // CHECK COLOR
     //////////////////////////////////////////////////
-    change_path_according_to_color();
+
+    LOG_INFO("init", "Checking color...");
+    // read COLOR_BTN
+    int color;
+    while (1)
+    {
+        if (HAL_GPIO_ReadPin(COLOR_BTN_GPIO_Port, COLOR_BTN_Pin) == GPIO_PIN_SET)
+        {
+            LOG_INFO("init", "Color = YELLOW");
+            color = COLOR_YELLOW;
+        } else
+        {
+            LOG_INFO("init", "Color = BLUE");
+            color = COLOR_BLUE;
+        }
+    }
+    make_path(color);
 
     //////////////////////////////////////////////////
     // LEGO MOTORS

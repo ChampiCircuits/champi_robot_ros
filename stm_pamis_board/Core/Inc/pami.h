@@ -30,9 +30,6 @@
 #define ACTUATOR_POSE1_ANGLE 90
 #define ACTUATOR_POSE2_ANGLE 180
 
-#define YELLOW 1
-#define BLUE 2
-
 extern SCServos servos;
 
 void PAMI_Init();
