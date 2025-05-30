@@ -113,6 +113,9 @@ class PathPlannerUINode(Node):
         goal.linear_tolerance = 0.005
         goal.angular_tolerance = 0.05
 
+        # goal.accel_linear = 0.1
+        # goal.accel_angular = 0.1
+
         goal.do_look_at_point = False
 
         goal.look_at_point = Point()

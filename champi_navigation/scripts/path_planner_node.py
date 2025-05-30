@@ -394,6 +394,9 @@ class PlannerNode(Node):
 
         ctrl_goal.max_angular_speed = navigate_goal.max_angular_speed
 
+        ctrl_goal.accel_linear = navigate_goal.accel_linear
+        ctrl_goal.accel_angular = navigate_goal.accel_angular
+
         ctrl_goal.angular_tolerance = navigate_goal.angular_tolerance
 
         ctrl_goal.do_look_at_point = navigate_goal.do_look_at_point

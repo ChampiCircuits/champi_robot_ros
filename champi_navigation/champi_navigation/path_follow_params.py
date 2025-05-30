@@ -65,6 +65,15 @@ class PathFollowParams:
         self.max_speed_linear = ctrl_goal.max_linear_speed
         self.max_speed_angular = ctrl_goal.max_angular_speed
 
+        if ctrl_goal.accel_linear != 0:
+            self.max_acc_linear = ctrl_goal.accel_linear
+        if ctrl_goal.accel_angular != 0:
+            self.max_acc_angular = ctrl_goal.accel_angular
+
+
+        self.accel_linear = ctrl_goal.accel_linear
+        self.accel_angular = ctrl_goal.accel_angular
+
         if ctrl_goal.do_look_at_point:
             self.look_at_point = Pose2D(point=ctrl_goal.look_at_point)
             
