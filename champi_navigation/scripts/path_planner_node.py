@@ -132,9 +132,11 @@ class PlannerNode(Node):
         vect_robot_to_goal = vect_goal.sub(vect_robot)
         vect_robot_to_enemy = vect_enemy.sub(vect_robot)
 
-        angle_enemy = vect_robot_to_goal.angle(vect_robot_to_enemy)
-
-        ic(angle_enemy * (180.0/math.pi))
+        try:
+            angle_enemy = vect_robot_to_goal.angle(vect_robot_to_enemy)
+        except:
+            ic(vect_robot_to_goal, vect_robot_to_enemy)
+            return False # We're spinning on one point
 
         in_fov = abs(angle_enemy) < self.enemy_detect_angle * (math.pi/180.)
 
