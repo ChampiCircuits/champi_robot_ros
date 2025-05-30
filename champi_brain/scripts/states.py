@@ -25,7 +25,7 @@ class InitPoseState(ChampiState):
         theta_rad = theta_deg * 3.14159 / 180.0
 
         get_logger(self.name+'_state').info(f"Start moving to INIT pose: x={x}, y={y}, theta={theta_deg}°")
-        self.sm.itf.send_goal(x, y, theta_rad, speed=0.2)
+        # self.sm.itf.send_goal(x, y, theta_rad, use_dynamic_layer=False, speed=0.2, end_speed=0.)
 
 
 class MoveState(ChampiState):
@@ -38,12 +38,14 @@ class MoveState(ChampiState):
         use_dynamic_layer = event_data.kwargs.get('use_dynamic_layer', None)
         speed = event_data.kwargs.get('speed', None)
         end_speed = event_data.kwargs.get('end_speed', None)
-        self.move_to(x, y, theta_deg, use_dynamic_layer, speed, end_speed)
+        accel_linear = event_data.kwargs.get('accel_linear', None)
+        accel_angular = event_data.kwargs.get('accel_angular', None)
+        self.move_to(x, y, theta_deg, use_dynamic_layer, speed, end_speed, accel_linear, accel_angular)
 
-    def move_to(self, x, y, theta_deg, use_dynamic_layer, speed, end_speed):
+    def move_to(self, x, y, theta_deg, use_dynamic_layer, speed, end_speed, accel_linear, accel_angular):
         theta_rad = theta_deg * math.pi / 180.0
-        get_logger(self.name+'_state').info(f"Start moving to x={x}, y={y}, theta={theta_deg}° with end_speed={end_speed}")
-        self.sm.itf.send_goal(x, y, theta_rad, use_dynamic_layer, speed=speed, end_speed=end_speed)
+        get_logger(self.name+'_state').info(f"Start moving to x={x}, y={y}, theta={theta_deg}° with end_speed={end_speed}, speed={speed}, accel_linear={accel_linear}, accel_angular={accel_angular}")
+        self.sm.itf.send_goal(x, y, theta_rad, use_dynamic_layer, speed=speed, end_speed=end_speed, accel_linear=accel_linear, accel_angular=accel_angular)
 
 class DetectPlatformState(ChampiState):
     def enter(self, event_data):
@@ -110,7 +112,8 @@ class MoveForPlatformState(MoveState):
 
         get_logger(self.name).info(f'computed pose is {x_front_platform} {y_front_platform} {theta_deg_front_platform}°')
 
-        self.move_to(x_front_platform, y_front_platform, theta_deg_front_platform+90., use_dynamic_layer=False, speed=0.3, end_speed=0.0) # +90° to align with the coordinate system
+        self.move_to(x_front_platform, y_front_platform, theta_deg_front_platform+90., use_dynamic_layer=False, speed=0.3, end_speed=0.0, 
+                     accel_linear=0.5, accel_angular=6.0) # +90° to align with the coordinate system
 
 class WaitState(ChampiState):
     def enter(self, event_data):
@@ -150,7 +153,8 @@ class ComeHomeState(MoveState):
         theta_deg = self.sm.home_pose[2]
 
         get_logger(self.name+'_state').info(f"Start moving to HOME pose: x={x}, y={y}, theta={theta_deg}°")
-        self.move_to(x, y, theta_deg, use_dynamic_layer=False, speed=MAX_LINEAR_SPEED, end_speed=0.)  # no dynamic_layer for home position
+        self.move_to(x, y, theta_deg, use_dynamic_layer=False, speed=MAX_LINEAR_SPEED, end_speed=0., 
+                     accel_linear=0.5, accel_angular=6.0)  # no dynamic_layer for home position
 
         self.sm.itf.add_points(10) # add 10 points for coming home, we don't wait for move to finish but flemme, should be ok ;)
 
@@ -161,5 +165,6 @@ class WaitToComeHomeState(MoveState):
         theta_deg = self.sm.home_pose[2]
 
         get_logger(self.name+'_state').info(f"Start moving to WAIT FOR HOME pose: x={x}, y={y}, theta={theta_deg}°")
-        self.move_to(x, y, theta_deg, use_dynamic_layer=False, speed=MAX_LINEAR_SPEED, end_speed=0.)  # no dynamic_layer for home position
+        self.move_to(x, y, theta_deg, use_dynamic_layer=False, speed=MAX_LINEAR_SPEED, end_speed=0.,
+                     accel_linear=0.5, accel_angular=6.0)  # no dynamic_layer for home position
         self.sm.itf.send_actuator_action('RESET_ACTUATORS')

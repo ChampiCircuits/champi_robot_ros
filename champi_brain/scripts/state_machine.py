@@ -201,8 +201,17 @@ class ChampiStateMachine(object):
                     end_speed = action['end_speed']
                 else:
                     end_speed = 0.
+                if 'accel_linear' in action:
+                    accel_linear = action['accel_linear']
+                else:
+                    accel_linear = 0.5 # default value
+                if 'accel_angular' in action:
+                    accel_angular = action['accel_angular']
+                else:
+                    accel_angular = 6.0 # default value
                 self.can_start_moving = True
-                self.start_move(x=x, y=y, theta_deg=theta_deg+90.0, use_dynamic_layer=use_dynamic_layer, speed=speed, end_speed=end_speed)  # +90° to align with the coordinate system
+                self.start_move(x=x, y=y, theta_deg=theta_deg+90.0, use_dynamic_layer=use_dynamic_layer, speed=speed, end_speed=end_speed, 
+                                accel_linear=accel_linear, accel_angular=accel_angular)  # +90° to align with the coordinate system
 
             elif action_name == 'moveForPlatform':
                 x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']

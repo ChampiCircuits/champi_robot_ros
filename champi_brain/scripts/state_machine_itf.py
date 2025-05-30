@@ -287,7 +287,7 @@ class ChampiStateMachineITF(Node):
 
 
 # ============================================ Utils ==============================================
-    def send_goal(self, x, y, theta_rad, use_dynamic_layer, speed, end_speed=0.):
+    def send_goal(self, x, y, theta_rad, use_dynamic_layer, speed, end_speed, accel_linear, accel_angular):
         self.get_logger().info(f' Call action to move to {x} {y}')
 
         msg = Bool()
@@ -305,14 +305,14 @@ class ChampiStateMachineITF(Node):
         goal_pose.orientation.w = cos(theta_rad / 2.0)
 
         # Create a Navigate request and send it
-        goal = self.create_action_goal(goal_pose, speed, end_speed)
+        goal = self.create_action_goal(goal_pose, speed, end_speed, accel_linear, accel_angular)
         future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
         future_navigate_result.add_done_callback(self.goal_response_callback)
 
         self.get_logger().info('Goal sent...')
 
 
-    def create_action_goal(self, goal_pose, speed, end_speed):
+    def create_action_goal(self, goal_pose, speed, end_speed, accel_linear, accel_angular):
 
         goal = Navigate.Goal()
         
@@ -322,6 +322,8 @@ class ChampiStateMachineITF(Node):
 
         goal.max_linear_speed = speed
         goal.max_angular_speed = 3.0
+        goal.accel_linear = accel_linear
+        goal.accel_angular = accel_angular
         
         goal.linear_tolerance = 0.005
         goal.angular_tolerance = 0.05

@@ -21,6 +21,8 @@ actions:
   - action: move
     target: { x: 1.18, y: 0.46, theta_deg: 0.0 }
     end_speed: 0.2
+    accel_linear: 1.0 # default is 0.5 m/s^2
+    accel_angular: 10.0 # default is 6.0 rad/s^2
 
   ######################### TAKE FIRST ELEMENT GROUP ######################################
 
