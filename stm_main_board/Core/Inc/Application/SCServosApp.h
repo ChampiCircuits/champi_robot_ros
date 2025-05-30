@@ -9,7 +9,7 @@
 
 #define ID_SERVO_ARM_END_RIGHT 5
 #define ID_SERVO_ARM_END_LEFT 9
-#define ID_SERVO_ARM 15
+#define ID_SERVO_ARM 7
 #define ID_SERVO_Y_RIGHT 8
 #define ID_SERVO_Y_LEFT 18
 #define ID_SERVO_BANNER 14
