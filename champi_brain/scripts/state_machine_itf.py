@@ -195,7 +195,7 @@ class ChampiStateMachineITF(Node):
                 # self.get_logger().error(f'approx_time_to_home: {approx_time_to_home}s, dist={dist_x_y}')
 
                 last_action_done = (len(self.champi_sm.strategy) == 0 and self.champi_sm.state == 'idle')
-                if self.time_left <= 3.2:  # 3 last seconds, we trigger come home
+                if self.time_left <= 4.0:  # 3 last seconds, we trigger come home
                     if not self.champi_sm.state in ['comeHome', 'endOfMatch'] and not self.champi_sm.come_home_requested:
                         self.get_logger().error(f'GO HOOOOME, state={self.champi_sm.state}')
 
@@ -203,7 +203,7 @@ class ChampiStateMachineITF(Node):
                         self.champi_sm.come_home_requested = True
                         self.champi_sm.please_come_home() # trigger comeHome state
 
-                elif self.time_left <= approx_time_to_home+3.2 or last_action_done:
+                elif self.time_left <= approx_time_to_home+4.0 or last_action_done:
                     if not self.champi_sm.state in ['waitToComeHome', 'comeHome', 'endOfMatch'] and not self.champi_sm.wait_to_come_home_requested:
                         self.get_logger().error(f'GO WAIT IN FRONT OF HOOOOME, state={self.champi_sm.state}, approx_time_to_home={approx_time_to_home}')
 
