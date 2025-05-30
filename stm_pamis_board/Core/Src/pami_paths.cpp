@@ -40,6 +40,7 @@ const int path_length = sizeof(path) / sizeof(path[0]);
 Segment path[] = {
   {DIR_STRAIGHT, 3.0, MAX_SPEED},
   {DIR_LEFT____, 2.65, MAX_SPEED},
+  {DIR_STRAIGHT, 3.0, low},
 };
 
 const int path_length = sizeof(path) / sizeof(path[0]);
