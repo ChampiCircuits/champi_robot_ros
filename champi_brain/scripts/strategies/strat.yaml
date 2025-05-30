@@ -22,8 +22,11 @@ actions:
     target: { x: 1.18, y: 0.46, theta_deg: 0.0 }
     end_speed: 0.2
     accel_linear: 1.0 # default is 0.5 m/s^2
-    accel_angular: 10.0 # default is 6.0 rad/s^2
+    accel_angular: 9.0 # default is 6.0 rad/s^2
 
+  - action: GET_READY # needed to put the lift down
+    tag: 'elements_1'
+    
   ######################### TAKE FIRST ELEMENT GROUP ######################################
 
   - action: include_sub_file
@@ -35,7 +38,10 @@ actions:
   # ptit move intermédiaire pour pas tout casser la pile 2 en passant
   - action: move
     target: { x: 1.225, y: 0.6, theta_deg: 180.0 }
-
+    end_speed: 0.2
+    accel_linear: 1.0 # default is 0.5 m/s^2
+    accel_angular: 9.0 # default is 6.0 rad/s^2
+    
   ########################### PUT FIRST ELEMENT GROUP ######################################
 
   - action: include_sub_file
@@ -50,7 +56,9 @@ actions:
     target: { x: 0.9, y: 0.75, theta_deg: 90.0 } # take a look at aruco
     use_dynamic_layer: true
     speed: 1.0
-
+    accel_linear: 1.0 # default is 0.5 m/s^2
+    accel_angular: 9.0 # default is 6.0 rad/s^2
+  
   - action: GET_READY # needed to put the lift down
     tag: 'elements_1'
 
@@ -73,7 +81,9 @@ actions:
     target: { x: 0.9, y: 0.6, theta_deg: 90.0 } # take a look at aruco
     use_dynamic_layer: true
     speed: 1.0
-
+    accel_linear: 1.0 # default is 0.5 m/s^2
+    accel_angular: 9.0 # default is 6.0 rad/s^2
+  
   - action: GET_READY # needed to put the lift down
     tag: 'elements_2'
 
@@ -88,14 +98,16 @@ actions:
   - action: include_sub_file
     file: 'put_elements.yaml'
     parameters:
-      target: { x: 0.65, y: 0.3, theta_deg: -90.0 }
+      target: { x: 0.65, y: 0.25, theta_deg: -90.0 }
       tag: 'elements_3'
 
   ################################# COME HOME #############################################
 
   - action: move
-    target: { x: 0.6, y: 0.9, theta_deg: 180.0 } # take a look at aruco
+    target: { x: 0.45, y: 0.9, theta_deg: 180.0 } # take a look at aruco
     use_dynamic_layer: true
-
+    accel_linear: 1.0 # default is 0.5 m/s^2
+    accel_angular: 9.0 # default is 6.0 rad/s^2
+  
   - action: GET_READY # needed to put the lift down
     tag: 'elements_2'

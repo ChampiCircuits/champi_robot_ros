@@ -117,15 +117,14 @@ void TakePlank(int plank) { // !!! lift should be down
         plank_height = STEPPER_LOWER_POSITION + 0.45;
     }
 
-    // HALF CLOSED PLANK
-    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300); // avant y'avait un -10.0
+    // CLOSED TO TAKE PLANK
+    devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300);
 
     devices::stepper_opt0.set_goal_sync(plank_height);
-    // CLOSED TO TAKE PLANK
-    //devices::scs_servos::set_angle(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION, 300);
 
     devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_CLOSE_POSITION, 300);
     devices::scs_servos::set_angle(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_CLOSE_POSITION, 300);
+    osDelay(400);
 
     if (plank == LOWER_PLANK) { // dans ce cas, pas besoin de remonter haut vu qu'on va prendre les conserves
         devices::stepper_opt0.set_goal_async(0.37+0.7); // async pour passer dans l'état move plus tôt
@@ -211,11 +210,11 @@ void PutBanner()
 
 void getReady()
 {
-    devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION+23, 300);
+    devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_DOWN_POSITION+33, 300);
     devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_OPEN_POSITION, 300); // init au cas ou
     devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_OPEN_POSITION, 300); // init au cas ou
 //    InitLift();
-    devices::stepper_opt0.set_goal_async(STEPPER_LOWER_POSITION);
+    devices::stepper_opt0.set_goal_async(STEPPER_LOWER_POSITION + 0.45);
 }
 
 void HandleRequest(ActuatorCommand cmd) {

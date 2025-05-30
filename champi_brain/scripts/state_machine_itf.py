@@ -318,7 +318,8 @@ class ChampiStateMachineITF(Node):
         
         goal.pose = goal_pose
         
-        goal.end_speed = end_speed
+        # goal.end_speed = end_speed
+        goal.end_speed = 0. # TODO quick fix
 
         goal.max_linear_speed = speed
         goal.max_angular_speed = 3.0
