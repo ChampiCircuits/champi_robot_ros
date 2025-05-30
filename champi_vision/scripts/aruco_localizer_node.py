@@ -99,7 +99,7 @@ class ArucoLocalizerNode(Node):
 
             # initialize bird view
             K = np.array(self.camera_info.k).reshape(3,3)
-            self.bird_view = bv.BirdView(K, transform_mtx, (0.2, -0.4), (0.9, 0.4), resolution=378)
+            self.bird_view = bv.BirdView(K, transform_mtx, (0.2, -0.4), (0.7, 0.4), resolution=378)
 
             # compute undistortion map
             self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (self.camera_info.width,self.camera_info.height), cv2.CV_32FC1)
