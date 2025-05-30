@@ -137,7 +137,7 @@ def create() -> None:
                             with ui.step('Choisir la strategie'):
                                 available_strategies = get_available_strategies()
                                 global radio_strategy_selection
-                                radio_strategy_selection = ui.radio(available_strategies, value='test_strat.yaml')
+                                radio_strategy_selection = ui.radio(available_strategies, value='strat.yaml')
                                 with ui.stepper_navigation():
                                     btn_next = ui.button('Prêt !! 😬', on_click=ready_to_launch_match)
                                     btn_next.bind_enabled_from(radio_strategy_selection, 'value')

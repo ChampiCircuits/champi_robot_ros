@@ -20,6 +20,7 @@ actions:
 
   - action: move
     target: { x: 1.18, y: 0.46, theta_deg: 0.0 }
+    end_speed: 0.2
 
   ######################### TAKE FIRST ELEMENT GROUP ######################################
 

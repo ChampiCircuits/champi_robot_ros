@@ -197,8 +197,12 @@ class ChampiStateMachine(object):
                     use_dynamic_layer = action['use_dynamic_layer']
                 else:
                     use_dynamic_layer = False
+                if 'end_speed' in action:
+                    end_speed = action['end_speed']
+                else:
+                    end_speed = 0.
                 self.can_start_moving = True
-                self.start_move(x=x, y=y, theta_deg=theta_deg+90.0, use_dynamic_layer=use_dynamic_layer, speed=speed)  # +90° to align with the coordinate system
+                self.start_move(x=x, y=y, theta_deg=theta_deg+90.0, use_dynamic_layer=use_dynamic_layer, speed=speed, end_speed=end_speed)  # +90° to align with the coordinate system
 
             elif action_name == 'moveForPlatform':
                 x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']

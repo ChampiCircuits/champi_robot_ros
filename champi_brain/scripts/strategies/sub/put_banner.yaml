@@ -6,8 +6,8 @@
 # v
 # x
 actions:
-  - action: move
-    target: { x: 0.0, y: 0.0, theta_deg: -60.0 } # aligné avec le mur, à la position demandée
+#  - action: move
+#    target: { x: 0.0, y: 0.0, theta_deg: -60.0 } # aligné avec le mur, à la position demandée
 
   - action: PUT_BANNER
 
