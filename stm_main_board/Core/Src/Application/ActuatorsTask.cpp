@@ -37,11 +37,11 @@ bool stop_all_actuators_requested = false;
 #define STEPPER_LOWER_POSITION 0.0
 
 #define SERVO_Y_RIGHT_OUT_POS 270
-#define SERVO_Y_RIGHT_TAKE_POS 150
 #define SERVO_Y_RIGHT_IN_POS 145
+#define SERVO_Y_RIGHT_TAKE_POS SERVO_Y_RIGHT_IN_POS //150
 #define SERVO_Y_LEFT_OUT_POS 255
-#define SERVO_Y_LEFT_TAKE_POS 140
 #define SERVO_Y_LEFT_IN_POS 130
+#define SERVO_Y_LEFT_TAKE_POS SERVO_Y_LEFT_IN_POS //140
 
 struct ServoY
 {
@@ -128,7 +128,8 @@ void TakePlank(int plank) { // !!! lift should be down
 
     if (plank == LOWER_PLANK) { // dans ce cas, pas besoin de remonter haut vu qu'on va prendre les conserves
         devices::stepper_opt0.set_goal_async(0.37+0.7); // async pour passer dans l'état move plus tôt
-        devices::scs_servos::set_angle_async(SERVO_Y_LEFT.id, SERVO_Y_LEFT.angle_out, 300); // pour préparer la suite
+        osDelay(300);
+        devices::scs_servos::set_angle_async(SERVO_Y_LEFT.id, SERVO_Y_LEFT.angle_out, 600); // pour préparer la suite
     }
     else {
         devices::stepper_opt0.set_goal_sync(3.6);
