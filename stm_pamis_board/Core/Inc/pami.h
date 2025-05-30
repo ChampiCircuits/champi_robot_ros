@@ -34,13 +34,6 @@
 #define BLUE 2
 
 extern SCServos servos;
-//extern LaserSensor sensor_obstacle;
-//extern LaserSensor sensor_void;
-
-extern int DIR_ANGLE_STRAIGHT;
-extern int DIR_ANGLE_RIGHT___;
-extern int DIR_ANGLE_LEFT____;
-
 
 void PAMI_Init();
 void PAMI_Main();

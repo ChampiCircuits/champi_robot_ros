@@ -20,8 +20,10 @@ const int path_length = sizeof(path) / sizeof(path[0]);
 #ifdef PAMI_2
 
 Segment path[] = {
+  {DIR_STRAIGHT, 1.0, MAX_SPEED},
+  {DIR_RIGHT___, 1.0, MAX_SPEED},
+  {DIR_LEFT____, 1.0, MAX_SPEED},
   {DIR_STRAIGHT, 3.0, MAX_SPEED},
-  {DIR_RIGHT___, 2.65, MAX_SPEED},
 };
 const int path_length = sizeof(path) / sizeof(path[0]);
 #endif
@@ -38,41 +40,23 @@ const int path_length = sizeof(path) / sizeof(path[0]);
 #ifdef PAMI_SUPERSTAR
 
 Segment path[] = {
-  {DIR_STRAIGHT, 3.0, MAX_SPEED},
-  {DIR_LEFT____, 2.65, MAX_SPEED},
-  {DIR_STRAIGHT, 3.0, low},
+  {DIR_STRAIGHT, 5.0, MAX_SPEED},
+  {DIR_LEFT____, 1.0, MAX_SPEED},
+  // {DIR_LEFT____, 0.1, LOW_SPEED},
+  // {DIR_LEFT____, 0.1, LOW_SPEED},
+  // {DIR_LEFT____, 0.1, LOW_SPEED},
+  // {DIR_LEFT____, 0.1, LOW_SPEED},
+  // {DIR_LEFT____, 0.1, LOW_SPEED},
+  // {DIR_LEFT____, 0.1, LOW_SPEED},
+  // {DIR_LEFT____, 0.1, LOW_SPEED},
+  // {DIR_LEFT____, 0.1, LOW_SPEED},
+  // {DIR_LEFT____, 0.1, LOW_SPEED},
 };
 
 const int path_length = sizeof(path) / sizeof(path[0]);
 #endif
 
 
-
-
-
-#ifdef PAMI_1
-int DIR_ANGLE_STRAIGHT_CONST = 149;
-int DIR_ANGLE_RIGHT____CONST = 170;
-int DIR_ANGLE_LEFT_____CONST = 100;
-#endif
-
-#ifdef PAMI_2
-int DIR_ANGLE_STRAIGHT_CONST = 100;
-int DIR_ANGLE_RIGHT____CONST = 170;
-int DIR_ANGLE_LEFT_____CONST = 50;
-#endif
-
-#ifdef PAMI_3
-int DIR_ANGLE_STRAIGHT_CONST = 149;
-int DIR_ANGLE_RIGHT____CONST = 170;
-int DIR_ANGLE_LEFT_____CONST = 100;
-#endif
-
-#ifdef PAMI_SUPERSTAR
-int DIR_ANGLE_STRAIGHT_CONST = 149;
-int DIR_ANGLE_RIGHT____CONST = 170;
-int DIR_ANGLE_LEFT_____CONST = 100;
-#endif
 
 void check_path_duration() {
   int total_duration = 0;

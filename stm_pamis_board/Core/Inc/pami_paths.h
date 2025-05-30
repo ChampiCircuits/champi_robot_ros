@@ -5,7 +5,7 @@
 
 
 #define MAX_SPEED 255 // [0, 255]
-#define LOW_SPEED 100
+#define LOW_SPEED 120
 
 
 struct Segment {

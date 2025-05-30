@@ -18,11 +18,6 @@ uint32_t val2 = 0;
 char string[15];
 SCServos servos;
 
-int DIR_ANGLE_STRAIGHT = 149;
-int DIR_ANGLE_RIGHT___ = 170;
-int DIR_ANGLE_LEFT____ = 100;
-
-
 
 // store start time of the match
 uint32_t pami_start_time = 0; // ms
@@ -103,12 +98,12 @@ void debug_servo_dir_positions()
 
 void goForward(int speed) //[0,255]
 {
-	LOG_WARN("Moove", "PAMI is mooving...");
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, speed);
+ htim4.Instance->CCR1 = speed;
 }
 void stop()
 {
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
+    // __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
+    htim4.Instance->CCR1 = 0;
 }
 
 void PAMI_Init()
@@ -142,8 +137,8 @@ void PAMI_Init()
     {
         HAL_Delay(500);
     }
-    servos.set_angle(ID_SERVO_DIR, DIR_ANGLE_STRAIGHT, 200);
-    servos.set_angle(ID_SERVO_DIR, DIR_ANGLE_STRAIGHT, 200);
+    servos.set_angle(ID_SERVO_DIR, DIR_ANGLE_STRAIGHT_CONST, 200);
+    servos.set_angle(ID_SERVO_DIR, DIR_ANGLE_STRAIGHT_CONST, 200);
 
 //    debug_servo_dir_positions();
 
@@ -188,11 +183,11 @@ void stopMotorsAndWaitForeverWithActuators()
     stop();
     while (true)
     {
-//        LOG_INFO("init", "bouge ...");
-//        htim2.Instance->CCR1 = 500;
-//        HAL_Delay(2000);
-//        htim2.Instance->CCR1 = 125;
-//        HAL_Delay(2000);
+        LOG_INFO("init", "bouge ...");
+        htim2.Instance->CCR1 = 500;
+        HAL_Delay(500);
+        htim2.Instance->CCR1 = 125;
+        HAL_Delay(500);
     }
 }
 
