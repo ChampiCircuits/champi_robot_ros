@@ -31,20 +31,20 @@ actions:
 
   # ptit move intermédiaire pour pas tout casser la pile 2 en passant
   - action: move
-    target: { x: 1.225, y: 0.6, theta_deg: 0.0 }
+    target: { x: 1.225, y: 0.6, theta_deg: 180.0 }
 
   ########################### PUT FIRST ELEMENT GROUP ######################################
 
   - action: include_sub_file
     file: 'put_elements.yaml'
     parameters:
-      target: { x: 1.225, y: 0.06, theta_deg: 180.0 }
+      target: { x: 1.225, y: 0.1, theta_deg: 180.0 }
       tag: 'elements_1'
 
 
-  ######################### TAKE SECOND ELEMENT GROUP ######################################
+#  ######################### TAKE SECOND ELEMENT GROUP ######################################
   - action: move
-    target: { x: 0.9, y: 0.6, theta_deg: 90.0 } # take a look at aruco
+    target: { x: 0.9, y: 0.75, theta_deg: 90.0 } # take a look at aruco
     use_dynamic_layer: true
     speed: 1.0
 
@@ -62,12 +62,12 @@ actions:
   - action: include_sub_file
     file: 'put_elements.yaml'
     parameters:
-      target: { x: 1.225, y: 0.24, theta_deg: 180.0 }
+      target: { x: 1.225, y: 0.28, theta_deg: 180.0 }
       tag: 'elements_2'
 
   ######################## TAKE THIRD ELEMENT GROUP ######################################
   - action: move
-    target: { x: 0.35, y: 0.6, theta_deg: -90.0 } # take a look at aruco
+    target: { x: 0.9, y: 0.6, theta_deg: 90.0 } # take a look at aruco
     use_dynamic_layer: true
     speed: 1.0
 
@@ -85,7 +85,7 @@ actions:
   - action: include_sub_file
     file: 'put_elements.yaml'
     parameters:
-      target: { x: 1.225, y: 0.40, theta_deg: 180.0 }
+      target: { x: 0.65, y: 0.3, theta_deg: -90.0 }
       tag: 'elements_3'
 
   ################################# COME HOME #############################################
@@ -96,11 +96,3 @@ actions:
 
   - action: GET_READY # needed to put the lift down
     tag: 'elements_2'
-
-#  - action: move
-#    target: { x: 0.3, y: 1.4, theta_deg: 0.0 } # take a look at aruco
-#    use_dynamic_layer: true
-
-#  - action: RESET_ACTUATORS
-#    tag: 'elements_3'
-
