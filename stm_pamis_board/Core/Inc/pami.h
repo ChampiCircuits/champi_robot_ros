@@ -6,7 +6,6 @@
 #include "Config/DEFINE_PAMI.h"
 
 #ifdef PAMI_1
-  #define ID_SERVO_DIR 10
 #endif
   // TODO
 #ifdef PAMI_2
@@ -15,7 +14,7 @@
   // TODO
 #endif
 #ifdef PAMI_SUPERSTAR
-  // TODO
+  #define ID_SERVO_DIR 10
 #endif
 
 

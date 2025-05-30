@@ -13,12 +13,6 @@
 // path are defined for color YELLOW by default
 #ifdef PAMI_1
 
-Segment path[] = {
-  {DIR_STRAIGHT, 5.0, MAX_SPEED},
-  {DIR_RIGHT___, 1.5, MAX_SPEED},
-  {DIR_LEFT____, 1.5, MAX_SPEED},
-  {DIR_STRAIGHT, 5.0, MAX_SPEED},
-};
 
 const int path_length = sizeof(path) / sizeof(path[0]);
 #endif
@@ -42,9 +36,10 @@ const int path_length = sizeof(path) / sizeof(path[0]);
 #endif
 
 #ifdef PAMI_SUPERSTAR
-// TODO POUR LA SUPERSTAR, LE DERNIER SEGMENT POUR S'APPROCHER DU VIDE EST JUSTE UNE ROTATION, avancer est géré dans le code
+
 Segment path[] = {
-  // TODO
+  {DIR_STRAIGHT, 3.0, MAX_SPEED},
+  {DIR_LEFT____, 2.65, MAX_SPEED},
 };
 
 const int path_length = sizeof(path) / sizeof(path[0]);
