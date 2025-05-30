@@ -6,6 +6,9 @@ float32 end_speed
 float32 max_linear_speed
 float32 max_angular_speed
 
+float32 accel_linear
+float32 accel_angular
+
 float32 linear_tolerance
 float32 angular_tolerance
 
