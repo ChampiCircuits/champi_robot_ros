@@ -98,7 +98,7 @@ actions:
   - action: include_sub_file
     file: 'put_elements.yaml'
     parameters:
-      target: { x: 0.7, y: 0.1, theta_deg: 180.0 }
+      target: { x: 0.6, y: 0.1, theta_deg: 180.0 }
       tag: 'elements_3'
 
   ################################# COME HOME #############################################
