@@ -2,6 +2,7 @@
 
 #include "math.h"
 #include "usart.h"
+#include <vector>
 
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
@@ -26,6 +27,17 @@ const osThreadAttr_t ledTask_attributes = {
 
 
 
+std::vector<std::vector<int>> colors = {
+  {0,0,0},{83,89,96},{125,88,91},{122,124,127},{119,120,124},{114,74,78},{64,70,77},{0,0,0},
+  {83,96,102},{175,86,89},{175,150,152},{244,244,244},{243,243,243},{168,140,142},{164,64,65},{57,64,70},
+  {145,151,154},{184,84,85},{187,186,188},{243,243,243},{181,180,181},{173,61,62},{123,130,135},{172,178,180},
+  {182,82,83},{169,114,116},{225,226,226},{223,224,225},{163,102,104},{167,57,59},{145,150,153},{129,102,105},
+  {205,73,73},{207,70,70},{155,70,72},{150,65,67},{194,53,53},{189,48,48},{105,73,78},{120,83,86},
+  {164,79,79},{165,143,137},{186,173,163},{186,174,163},{165,140,133},{159,58,59},{104,53,56},{85,85,85},
+  {136,135,132},{215,198,184},{186,174,164},{186,173,163},{221,201,186},{118,115,114},{28,57,57},{0,0,0},
+  {78,89,94},{173,163,156},{182,171,161},{183,171,161},{166,156,148},{61,72,72},{0,0,0}
+};
+
 
 //----------------------------------------------------------------------------//
 //-------------------------------ANIMATIONS-----------------------------------//
@@ -49,7 +61,7 @@ void explosion_animation() {
     Set_Ring_Brightness(LED_RING_BRIGHTNESS);
     WS2812_Send();
 
-    osDelay(100);
+    osDelay(10);
     //efface
     Set_LED(pos_1, 0, 0, 0);
     Set_LED(pos_2, 0, 0, 0);
@@ -79,7 +91,7 @@ void explosion_animation() {
           Set_LED(i, t, t, 0);
         }
         WS2812_Send();
-        osDelay(10);
+        osDelay(1);
       }
       osDelay(3000);
     }
@@ -89,7 +101,7 @@ void explosion_animation() {
     WS2812_Send();
     pos_1++;
     pos_2--;
-    osDelay(20);
+    osDelay(1);
   }
 
 }
@@ -362,23 +374,50 @@ void LedTask(void *argument) {
 //  }
 
   while (true) {
-//    applyStatusLedState({led_holo::color, led_holo::brightness}, LED_HOLO);
-//    applyStatusLedState({led_otos::color, led_otos::brightness}, LED_OTOS);
+    // for (int i=0;i<MAX_LED;i++)
+    // {
+    //   applyStatusLedState({GREEN, led_holo::brightness}, i);
+    // }
+    // applyStatusLedState({led_otos::color, led_otos::brightness}, LED_OTOS);
+
+    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+    bool e_stop_pressed = mod_reg::state->e_stop_pressed;
+    xSemaphoreGive(ModbusH.ModBusSphrHandle);
+
+    if (e_stop_pressed) {
+      BAU_pushed_animation();
+    }
+    else {
+       turning_rainbow_animation();
+//      float brightness = 50; // ajuste si besoin
+//      int startIndex = 25;
 //
-//    xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-//    bool e_stop_pressed = mod_reg::state->e_stop_pressed;
-//    xSemaphoreGive(ModbusH.ModBusSphrHandle);
+//      for (int row = 0; row < 8; ++row) {
+//        for (int col = 0; col < 8; ++col) {
+//          int indexInColors;
+//          if (row % 2 == 0) {
+//            // ligne paire → gauche à droite
+//            indexInColors = row * 8 + col;
+//          } else {
+//            // ligne impaire → droite à gauche
+//            indexInColors = row * 8 + (7 - col);
+//          }
 //
-//    if (e_stop_pressed) {
-//      BAU_pushed_animation();
-//    }
-//    else {
-//      turning_rainbow_animation();
-//    }
-//    Set_Ring_Brightness(100);
+//          int r = colors[indexInColors][0];
+//          int g = colors[indexInColors][1];
+//          int b = colors[indexInColors][2];
+//          int ledIndex = startIndex + row * 8 + col;
 //
-//    WS2812_Send(); // TODO appelé plusieurs fois
-    osDelay(50); // less time than 50 seems to make it bug :=(
+//          led::setColor(ledIndex, r, g, b, brightness);
+//        }
+//      }
+
+    }
+    // Set_Ring_Brightness(100);
+
+    WS2812_Send();
+    // TODO appelé plusieurs fois
+    osDelay(50);
   }
 }
 

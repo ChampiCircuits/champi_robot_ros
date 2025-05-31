@@ -250,8 +250,9 @@ class ChampiStateMachineITF(Node):
     # ==================================== Feedback Callbacks =====================================
 
     def feedback_callback(self, feedback_msg):
-        self.get_logger().debug(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {round(feedback_msg.feedback.eta, 2)}s')
+        # self.get_logger().debug(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {round(feedback_msg.feedback.eta, 2)}s')
         # TODO prendre en compte
+        pass
 
 
     # ==================================== Done Callbacks ==========================================

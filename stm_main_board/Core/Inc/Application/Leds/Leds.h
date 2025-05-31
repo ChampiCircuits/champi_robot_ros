@@ -4,9 +4,9 @@
 #include "tim.h"
 
 
-#define MAX_LED (2+24)
+#define MAX_LED (24+256)
 #define USE_BRIGHTNESS 1
-#define LED_RING_BRIGHTNESS 100
+#define LED_RING_BRIGHTNESS 20
 
 #define PI 3.14159265
 
@@ -73,7 +73,7 @@ namespace led
 inline void setColor(int ledIndex, int r, int g, int b, float brightness) {
   Set_LED(ledIndex, r, g, b);
   Set_Brightness(brightness, ledIndex);
-  WS2812_Send();
+  // WS2812_Send();
 }
 
 inline void clear(int ledIndex, float brightness) {
