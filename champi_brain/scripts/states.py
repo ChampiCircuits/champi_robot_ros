@@ -66,7 +66,7 @@ class DetectPlatformState(ChampiState):
         get_logger(self.name).info(f'robot pose is {x_robot} {y_robot} {theta_deg_robot}°')
 
         get_logger(self.name).info('Starting platform detection')
-        time.sleep(1)
+        time.sleep(0.5)
         half_platform_width = 0.05
 
         # if self.sm.itf.latest_platform_dist == None and self.sm.itf.sim_param:

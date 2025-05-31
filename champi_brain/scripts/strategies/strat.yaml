@@ -42,7 +42,8 @@ actions:
     speed: 1.0
     accel_linear: 1.0 # default is 0.5 m/s^2
     accel_angular: 12.0 # default is 6.0 rad/s^2
-    
+    tag: 'elements_1'
+
   ########################### PUT FIRST ELEMENT GROUP ######################################
 
   - action: include_sub_file
@@ -102,6 +103,31 @@ actions:
       target: { x: 0.6, y: 0.1, theta_deg: 180.0 }
       tag: 'elements_3'
 
+  - action: move
+    target: { x: 0.45, y: 0.9, theta_deg: 180.0 } # take a look at aruco
+    use_dynamic_layer: true
+    speed: 1.0
+    accel_linear: 1.0 # default is 0.5 m/s^2
+    accel_angular: 15.0 # default is 6.0 rad/s^2
+
+  - action: GET_READY # needed to put the lift down
+    tag: 'elements_2'
+
+  - action: include_sub_file
+    file: 'take_half_elements.yaml'
+    parameters:
+      target: { x: 0.825, y: 1.725, theta_deg: 0.0 }
+      tag: 'elements_3'
+
+  - action: include_sub_file
+    file: 'put_half_elements.yaml'
+    parameters:
+      target: { x: 1.225, y: 0.4, theta_deg: 180.0 }
+      tag: 'elements_3'
+
+  - action: GET_READY # needed to put the lift down
+    tag: 'elements_2'
+
   ################################# COME HOME #############################################
 
   - action: move
@@ -110,6 +136,3 @@ actions:
     speed: 1.0
     accel_linear: 1.0 # default is 0.5 m/s^2
     accel_angular: 15.0 # default is 6.0 rad/s^2
-  
-  - action: GET_READY # needed to put the lift down
-    tag: 'elements_2'
