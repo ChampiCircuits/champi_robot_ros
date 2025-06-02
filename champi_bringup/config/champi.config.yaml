@@ -32,8 +32,8 @@ hardware_interface:
         wheel_radius: 0.0292 # en m # 0.029
         base_radius: 0.13 # en m
 
-        max_acceleration_linear: 1.5 # m/s^2
-        max_acceleration_angular: 10.1 # rad/s^2
+        max_acceleration_linear: 0.5 # m/s^2
+        max_acceleration_angular: 0.5 # rad/s^2
 
         max_deceleration_linear: 10.0 # m/s^2
         max_deceleration_angular: 20.0 # rad/s^2
@@ -44,8 +44,8 @@ hardware_interface:
 
 holo_teleop_joy_node:
   ros__parameters:
-    max_linear_speed: 0.3 # m/s
-    max_angular_speed: 1.0 # rad/s
+    max_linear_speed: 200. # m/s
+    max_angular_speed: 200. # rad/s
 
 twist_mux:
   ros__parameters:
@@ -82,10 +82,10 @@ ld_lidar:
 enemy_tracker:
   ros__parameters:
     crop_box:
-        x_min: 0.1 # m
-        x_max: 2.9 # m
-        y_min: 0.1 # m
-        y_max: 1.9 # m
+      x_min: 0.1 # m
+      x_max: 2.9 # m
+      y_min: 0.1 # m
+      y_max: 1.9 # m
 
 costmap_updater:
   ros__parameters:

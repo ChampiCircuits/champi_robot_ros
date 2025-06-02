@@ -1,0 +1,21 @@
+##########################################
+# IN SUB FILES, EVERY POSITION ARE OFFSETS
+##########################################
+# we assume center robot to center of plank taker is 0.21
+# so target pose passed as argument is the position to put/take the planks
+# o -----> y
+# |
+# v
+# x
+actions:
+  - action: move
+    target: { x: 0.0, y: -0.21, theta_deg: -60.0 } # pour aller en position
+
+  - action: PUT_CANS_LEFT_LAYER_1
+  - action: PUT_LOWER_PLANK_LAYER_1
+
+
+##### ADD THE POINTS
+  - action: add_points
+    points: 4
+    reason: "put_elements finished. 4 points per layer of level 1"
