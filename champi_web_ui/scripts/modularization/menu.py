@@ -10,3 +10,4 @@ def menu() -> None:
     ui.link('Diagnostics', '/diagnostics').classes(replace='text-white')
     ui.link('IP', '/ip').classes(replace='text-white')
     ui.link('Usages', '/usages').classes(replace='text-white')
+    ui.link('Speeds', '/speeds').classes(replace='text-white')

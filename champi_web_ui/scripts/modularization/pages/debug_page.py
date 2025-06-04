@@ -254,6 +254,3 @@ odom_subscriber = ros_node.create_subscription(Odometry, '/odometry/filtered', u
 goal_pose_publisher = ros_node.create_publisher(PoseStamped, '/goal_pose', 10)
 zone_pub = ros_node.create_publisher(String, '/start_zone', 10)
 cmd_vel_publisher = ros_node.create_publisher(Twist,'/cmd_vel_stop',10)
-
-
-# TODO update CAN state et nb plants
