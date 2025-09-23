@@ -4,8 +4,8 @@
 USER="champi"
 DEST_PATH="/home/champi/champi_ws/src/champi_robot_ros"
 LOCAL_PATH="$HOME/champi_ws/src/champi_robot_ros"
-IP_WIFI="10.0.0.1"
-IP_ETH="172.0.0.1"
+IP_ETH="10.0.0.1"
+IP_WIFI="172.0.0.1"
 
 # Exclude patterns (edit this list!)
 EXCLUDES=(
