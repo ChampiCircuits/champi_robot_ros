@@ -13,6 +13,14 @@
 #define LED_HOLO 0
 #define LED_OTOS 1
 
+
+
+struct LedState {
+  int color;
+  float brightness;
+};
+
+
 enum COLOR {
   CLEAR = 0,
   RED = 1,
@@ -20,6 +28,8 @@ enum COLOR {
   BLUE = 3,
   ORANGE = 4
 };
+
+void applyLedState(const LedState& state, int ledIndex);
 
 void WS2812_Send();
 

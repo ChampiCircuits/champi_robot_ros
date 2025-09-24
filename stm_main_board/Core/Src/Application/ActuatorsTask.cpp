@@ -265,8 +265,7 @@ void HandleRequest(ActuatorCommand cmd) {
 }
 
 void ActuatorsTask(void *argument) {
-    LOG_INFO("act", "Init actuators.");
-
+    LOG_INFO("act", "Begining actuators init...");
     osDelay(3000);
     SCServosApp_Init(); // Reminder: blocking until the servos are found
     osDelay(1000);

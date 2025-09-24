@@ -158,3 +158,10 @@ Regarder ce site pour savoir commment organiser un package c++ + python : https:
 ### setup.py deprecation warning
 
 Pas de solution pour le moment : https://github.com/ament/ament_cmake/issues/382
+
+
+
+
+debug la stm :
+pio device monitor -p /dev/ttyACM0 -b 115200 -f direct
+ou ACM1 en fonction

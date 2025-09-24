@@ -1,5 +1,29 @@
 #include "Application/Leds/Leds.h"
 
+
+
+void applyLedState(const LedState& state, int ledIndex) {
+  switch (state.color) {
+  case CLEAR:
+    led::clear(ledIndex, state.brightness);
+    break;
+  case GREEN:
+    led::setGreen(ledIndex, state.brightness);
+    break;
+  case RED:
+    led::setRed(ledIndex, state.brightness);
+    break;
+  case ORANGE:
+    led::setOrange(ledIndex, state.brightness);
+    break;
+  case BLUE:
+    led::setBlue(ledIndex, state.brightness);
+    break;
+  }
+}
+
+
+
 namespace led_holo
 {
 float brightness = 5;
