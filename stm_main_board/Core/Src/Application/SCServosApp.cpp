@@ -88,7 +88,7 @@ namespace devices
 using namespace devices::scs_servos;
 
 int SCServosApp_Init() {
-
+    LOG_INFO("scs", "Initializing servos...");
     servos = SCServos(&huart10);
     //find_ids(0, 16);
     //test_angle(ID_SERVO_Y_FRONT, 270);
@@ -106,6 +106,7 @@ int SCServosApp_Init() {
         osDelay(10);
     }
     init_successful = true;
+    LOG_INFO("scs", "Initializing servos OK !");
 
     return 0;
 }

@@ -92,6 +92,7 @@ void InitLift()
 
 void InitEverything()
 {
+    LOG_INFO("act", "Initializing actuators...");
     devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_LEFT, SERVO_END_LEFT_OPEN_POSITION, 300);
     devices::scs_servos::set_angle_async(ID_SERVO_ARM_END_RIGHT, SERVO_END_RIGHT_OPEN_POSITION, 300);
 
@@ -103,6 +104,7 @@ void InitEverything()
     devices::scs_servos::set_angle_async(ID_SERVO_BANNER, 90, 300);
     devices::scs_servos::set_angle_async(ID_SERVO_ARM, SERVO_ARM_UP_POSITION, 300);
     InitYServos();
+    LOG_INFO("act", "Initializing actuators done !");
 }
 
 void TakePlank(int plank) { // !!! lift should be down
@@ -263,6 +265,7 @@ void HandleRequest(ActuatorCommand cmd) {
 }
 
 void ActuatorsTask(void *argument) {
+    LOG_INFO("act", "Init actuators.");
 
     osDelay(3000);
     SCServosApp_Init(); // Reminder: blocking until the servos are found
