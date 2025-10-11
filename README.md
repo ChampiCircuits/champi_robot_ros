@@ -1,167 +1,101 @@
-# Coupe de France de Robotique 2024 : Code ROS2
+# Coupe de France de Robotique 2026 : Code ROS2 + STM32
 
-sudo systemctl restart isc-dhcp-server
-
-## Pictures
-
-|2024 robot!|
-| -------- |
-|<img src="docs/ressources/robot1.jpg"  width="50%">|
+|2024 robot|2025 robot|
+| -------- | -------- |
+|<img src="docs/ressources/robot2024.jpg"  width="500">|<img src="docs/ressources/robot2025.jpg"  width="445">|
 
 
 
-## Links to other READMEs
+## Other helpful Readme(s) :
 
-* [marker_helper](champi_libraries_py/champi_libraries_py/marker_helper/README.md)
+* [How to ? And Traps !](docs/HowToREADME.md)
+* [marker_helper library](champi_libraries_py/champi_libraries_py/marker_helper/README.md)
 
-## Setup
+## Setup the project on your computer
 
+Requirements :
+- Ubuntu 24
+- ROS2 Jazzy
+
+Let's start :
 1) Make sure your workspace is `~/champi_ws`. The scripts are hardcoded to this path.
 2) Install dependencies:
-```bash
+```shell
 ~/champi_ws/src/champi_robot_ros/setup/install_deps.sh
 ```
 3) Setup the environment (exports, aliases, etc.) by adding one of those line in your `.bashrc` or `.zshrc`:
-```bash
+```shell
 source ~/champi_ws/src/champi_robot_ros/setup/env/champi_env_dev_pc.sh # on your PC
 # or
 source ~/champi_ws/src/champi_robot_ros/setup/env/champi_env_robot.sh # on the robot 
 ```
 
-3) Every time you want to share your internet connection with the robot, run:
-```bash
-share_internet
-```
-
-## Using Clion
-
-When opening the project, a lot of build directories are displayed in the project tree.
-Remove them by un-ticking `clion.workspace.external.source.group.into.folders` in Registry (Search in Shift Shift menu).
-
-
-## Robot
-
-### IPs
-
-* Over Wifi (hotspot): `172.0.0.1`
-* Over direct Ethernet: `10.0.0.1`
-
-## Commandes
-
-### Teleop
-```bash
-ros2 launch champi_bringup teleop.launch.py
-```
-
-*Paramètres*:
-- *sim* : `true` | `false`.
-- *joy* : `true` | `false`.
-
-### Navigation
-```bash
-
-```
-
-
-
-## Requirements
-
-- Ubuntu 24
-- ROS2 Jazzy
-
-## How to
-
-
-### STM32
-
-Create a symlink to the STM32 project in the workspace:
-```bash
-ln -s /ros2_ws/stm_main_board /stm_ws/stm_main_board
-```
-
-### Configuration du projet
-
-La première fois, se placer à la racine du workspace et lancer la commande suivante pour installer les dépendances et ajouter
-des variables d'environnement et des alias dans le zshrc:
-```bash
-./src/champi_robot_ros/scripts/setup.sh
-```
-depuis le workspace :
-```bash
+If you encounters some errors when building, `rosdep` may have failed in `install_deps.sh` script. Let's run:
+```shell
+cd ~/champi_ws/
 rosdep install --from-paths src -y --ignore-src 
 ```
 
-### Compilation
+### Tips for CLion:
+We recommend using CLion to code.
+1. When opening the project, a lot of build directories are displayed in the project tree.
+Remove them by un-ticking `clion.workspace.external.source.group.into.folders` in Registry (Search in Shift Shift menu).
+2. You can easily add scripts to run directly via a button in CLion. Next to the green arrow on the top bar, click `Edit configurations` and add a new configuration to run a bash script or a command.
+We usually use it for commands such as `build`, `build and send STM32 code to the STM via the robot connection`, `reset the STM remotly from your computer`.
 
-Le script `setup.sh` a ajouté des alias dans le zshrc pour simplifier la compilation: on peut lancer la commande
-`champi_build` depuis n'importe quel répertoire pour compiler le workspace.
-
-On peut aussi ajouter des options à la commande `champi_build`. Celles-ci sont les mêmes que pour `colcon build`.
-Par exemple, pour ne compiler que le package `mon_package`:
-```bash
-champi_build --packages-select mon_package
+### Build the project
+Sourcing the script `champi_env_dev_pc.sh` added aliases in your terminal to simplify building the project. You can now run `build` from anywhere to compile the workspace.
+```shell
+build
+```
+You can also add options to this command. Those options are the same that for the original `colcon build` used to compile in ros2 projects (refer to ros2 docs for more examples). For instance if you only want to compile the package `my_package` to save time on compilation :
+```shell
+build --packages-up-to my_package
 ```
 
-## CAN
-### Generate protobuf files for the CAN Bus
-Add the msg in the .proto file, and then :
-```bash
-cd scripts/gen_proto
-chmod +x gen.sh
-./gen.sh
-```
-@See the comment  // comment me when compile for cpp and python
 
 
-### Generate Msg IDs for the CAN Bus
-Add the msg id in the .csv file, and then :
-```bash
-cd scripts/gen_can_ids
-python3 gen_ids.py
+## Useful scripts
+
+1. To connect to the robot via ssh, you must be connected on the same network as the robot. So make sure you are either connected to the Access Point created by the robot: `champiAP` or by ethernet. Then
+```shell
+ssh champi@172.0.0.1 # Over WiFi
+ssh champi@10.0.0.1  # With direct ethernet
 ```
 
-### Replace by the generated files :
-- from gen_proto/out/
-    - champi_libraries_cpp/include/champi_can/msgs_can.pb.h
-    - champi_libraries_cpp/src/champi_can/msgs_can.pb.cc
-- from gen_can_ids/out/can_ids_ns.hpp **(copy content from NS file)**
-    - champi_libraries_cpp/include/champi_can/can_ids.hpp
+2. Every time you want to share your internet connection with the robot, run `share_internet`/
 
-### Publier des goals pour nav2 sur Rviz2
-
-Utiliser "2D Nav Goal" pour publier un goal, pas "Nav2 Goal".
-
-En effet ces 2 boutons publient un goal avec timestamp. Lorsque nav2 cherche la transformation entre le goal et la pose actuelle du robot, il regarde donc par rapport au goal du passé (à cause de sa timestamp). Si le trajet fait plus de 10s, il dépasse le buffer TF de 10s.
-Il y a donc un node supplémentaire lancé par champi_bringup qui republie " 2D Nav Goal" en mettant à 0 le timestamp, ce qui permet à nav2 d'utiliser la dernière transformation disponible.
-Voir les liens suivants pour plus d'infos:
-
-https://github.com/ros-planning/navigation2/issues/3075
-
-https://answers.ros.org/question/396864/nav2-computepathtopose-throws-tf-error-because-goal-stamp-is-out-of-tf-buffer/
+3. Coding directly on the robot via SSH is painful... So you can code on your computer and then run the command `rsync_update`. This will sync everything in the `champi_robot_ros` folder. Then just build the code on the robot and relaunch it !
 
 
-###  Créer un package: ne jamais créer de package python !
+4. If you have trooble with nodes that you can't kill. Use the script `kill_nodes` on the robot. This script has hardcoded nodes names, so if you created a new one add it in it. Otherwise you can simply open htop on the robot via ssh and find all nodes and kill them there.
 
-Avec des packages c++, on peut faire aussi des nodes python. Mais avec des package python: 
-- c'est super galère d'ajouter des nodes et des fichiers dans le projet
-- bug avec symlink-install qui ne marche pas pour les launch files et les fichiers de config.
-Regarder ce site pour savoir commment organiser un package c++ + python : https://roboticsbackend.com/ros2-package-for-both-python-and-cpp-nodes/
+5. If you want to program the STM32 remotly via the connection to the robot you can ! This is a super useful script that cross-compile the STM32 firmware on your computer, sends the compiled binary to the robot mini-pc and then flash it to the STM board via USB.
+```shell
+./scripts/cmds/rsync_main_STM.bash
+```
 
-**Attention!** Ne pas oublier le sheebang `#!/usr/bin/env python3` en haut des nodes python! Sinon cela fait des erreurs atroces :(
+6. Similarly you can reset the STM32 remotly without having to get up and have access to the robot :)
+```shell
+./scripts/cmds/reset_main_STM.bash
+```
 
-## Nice ressources
+7. You can monitor STM32's logs directly on your computer. First `ssh` on the robot, then find if the STM is connected via USB on `ACM0` or `ACM1` with `ls /dev/ttycACM*`. Then accordingly run:
+```shell
+pio device monitor -p /dev/ttyACM0 -b 115200 -f direct
+# or
+pio device monitor -p /dev/ttyACM1 -b 115200 -f direct
+```
 
-* CAN cpp examples: https://github.com/craigpeacock/CAN-Examples/tree/master
+8. If you encounter problems with the robot's access point/hotspot you can try to restart the dchcp:
+```shell
+sudo systemctl restart isc-dhcp-server
+```
+
+
 
 ## Notes
 
 ### setup.py deprecation warning
 
-Pas de solution pour le moment : https://github.com/ament/ament_cmake/issues/382
-
-
-
-
-debug la stm :
-pio device monitor -p /dev/ttyACM0 -b 115200 -f direct
-ou ACM1 en fonction
+No solution currently for the warning : https://github.com/ament/ament_cmake/issues/382

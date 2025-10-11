@@ -43,7 +43,6 @@ void LedTask(void *argument) {
         turning_rainbow_animation();
      }
 
-      //horizontal_lines_animation();
     osDelay(50);
   }
 }
