@@ -34,6 +34,11 @@ source ~/champi_ws/src/champi_robot_ros/setup/env/champi_env_robot.sh # on the r
 source ~/champi_ws/install/setup.bash
 ```
 
+5) Optional. Link the default rviz config file to the one we customized so that it opens by default:
+```shell
+ln -s ~/champi_ws/src/champi_robot_ros/champi_bringup/config/rviz/config.rviz ~/.rviz2/default.rviz
+```
+
 ### Tips for CLion:
 We recommend using CLion to code.
 1. When opening the project, a lot of build directories are displayed in the project tree.
