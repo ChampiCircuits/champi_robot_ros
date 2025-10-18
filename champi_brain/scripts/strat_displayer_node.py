@@ -7,7 +7,7 @@ from rclpy.executors import ExternalShutdownException
 
 import sys
 import os
-from strategies.strategy_loader import load_strategy
+from champi_brain.champi_brain.strategy_loader import load_strategy
 
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path

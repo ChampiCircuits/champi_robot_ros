@@ -1,4 +1,4 @@
-from state_machine_custom_classes import ChampiState
+from champi_brain.state_machine_custom_classes import ChampiState
 from rclpy.logging import get_logger
 import time
 from std_msgs.msg import Int8

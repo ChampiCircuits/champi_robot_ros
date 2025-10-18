@@ -3,6 +3,7 @@ import yaml
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from champi_brain.enums import ZoneType, Color, ElementState, NutsBox, Zone
+from ament_index_python.packages import get_package_share_directory
 
 
 class WorldState:
@@ -129,7 +130,7 @@ class WorldState:
 
 if __name__ == "__main__":
     from champi_brain.utils import print_all_elements_with_rich, print_all_zones_with_rich
-    world = WorldState.from_yaml("../config/world_state.yaml")
+    world = WorldState.from_yaml(get_package_share_directory('champi_brain') + "/config/initial_world_state.yaml")
 
     print_all_zones_with_rich(world, "All zones")
     print_all_elements_with_rich(world, "All elements at start")

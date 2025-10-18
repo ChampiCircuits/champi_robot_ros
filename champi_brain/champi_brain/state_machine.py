@@ -5,8 +5,8 @@ from rclpy.logging import get_logger
 import logging
 from ament_index_python.packages import get_package_share_directory
 
-from state_machine_custom_classes import CustomHierarchicalGraphMachine
-from states import *
+from champi_brain.state_machine_custom_classes import CustomHierarchicalGraphMachine
+from champi_brain.states import *
 
 DEFAULT_SPEED = 0.3 # max speed is defined in itf
 
