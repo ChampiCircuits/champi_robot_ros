@@ -13,6 +13,7 @@
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
   <depend>tf_transformations</depend>
+  <depend>twist-mux</depend>
   <depend>champi_interfaces</depend>
 
 

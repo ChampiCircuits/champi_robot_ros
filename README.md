@@ -19,7 +19,7 @@ Requirements :
 
 Let's start :
 1) Make sure your workspace is `~/champi_ws`. The scripts are hardcoded to this path.
-2) Install dependencies:
+2) Install dependencies with the following command. If something fails, correct the error and relaunch the script.
 ```shell
 ~/champi_ws/src/champi_robot_ros/setup/install_deps.sh
 ```
@@ -29,11 +29,9 @@ source ~/champi_ws/src/champi_robot_ros/setup/env/champi_env_dev_pc.sh # on your
 # or
 source ~/champi_ws/src/champi_robot_ros/setup/env/champi_env_robot.sh # on the robot 
 ```
-
-If you encounters some errors when building, `rosdep` may have failed in `install_deps.sh` script. Let's run:
+4) Then source the workspace. If you're using zsh, replace with `setup.zsh`
 ```shell
-cd ~/champi_ws/
-rosdep install --from-paths src -y --ignore-src 
+source ~/champi_ws/install/setup.bash
 ```
 
 ### Tips for CLion:
