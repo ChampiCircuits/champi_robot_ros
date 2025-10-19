@@ -1,0 +1,275 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+# template language: javascript
+
+EXTERNPROTO "BaseTable.proto"
+EXTERNPROTO "CrateGroup.proto"
+EXTERNPROTO "CrateGroup2.proto"
+EXTERNPROTO "EmptyCrateGroup.proto"
+EXTERNPROTO "CalculationZone.proto"
+EXTERNPROTO "BeaconSupport.proto"
+EXTERNPROTO "FixedBeacon.proto"
+
+PROTO Eurobot2026 [
+  field SFBool grid_playmat FALSE
+  field SFBool blue_fixed_beacons TRUE
+  field SFBool yellow_fixed_beacons FALSE
+  field SFBool yellow_game_elements TRUE
+  field SFBool blue_game_elements TRUE
+  field SFBool attic TRUE
+]
+
+{
+%<
+  import * as wbrandom from 'wbrandom.js';
+  wbrandom.seed(Date.now());
+  let colors = [];
+  for(let i=0; i<8; ++i) {
+    colors.push(wbrandom.integer(0,5));
+  }
+
+  let colors2 = [];
+  for(let i=0; i<4; ++i) {
+    colors2.push(wbrandom.integer(0,1));
+  }
+
+>%
+Group {
+  children [
+    BaseTable {
+      grid_playmat IS grid_playmat
+    }
+	
+    CalculationZone {
+      translation -0.225 1.122 0.048
+      name "CalculationZone#yellow"
+      color "yellow"
+    }
+    
+    CalculationZone {
+      translation 0.225 1.122 0.048
+      name "CalculationZone#blue"
+      color "blue"
+    }
+    
+    BeaconSupport {
+      translation -1.594 0.952 0.01
+      name "BeaconSupport#yellow1"
+      color "yellow"
+    }
+    
+    BeaconSupport {
+      translation -1.594 0 0.01
+      name "BeaconSupport#blue1"
+      color "blue"
+    }
+    
+    BeaconSupport {
+      translation -1.594 -0.952 0.01
+      name "BeaconSupport#yellow2"
+      color "yellow"
+    }
+    
+    BeaconSupport {
+      translation 1.594 0.952 0.01
+      rotation 0 0 1 3.14159265359
+      name "BeaconSupport#blue2"
+      color "blue"
+    }
+    
+    BeaconSupport {
+      translation 1.594 0 0.01
+      rotation 0 0 1 3.14159265359
+      name "BeaconSupport#yellow3"
+      color "yellow"
+    }
+    
+    BeaconSupport {
+      translation 1.594 -0.952 0.01
+      rotation 0 0 1 3.14159265359
+      name "BeaconSupport#blue3"
+      color "blue"
+    }
+
+    %< if (fields.blue_fixed_beacons.value) { >%
+
+    FixedBeacon {
+      translation -1.594 0 0.51
+      name "FixedBeacon#Blue1"
+    }
+
+    FixedBeacon {
+      translation 1.594 0.952 0.51
+      name "FixedBeacon#Blue2"
+    }
+
+    FixedBeacon {
+      translation 1.594 -0.952 0.51
+      name "FixedBeacon#Blue3"
+    }
+
+    %< } >%
+
+    %< if (fields.yellow_fixed_beacons.value) { >%
+
+    FixedBeacon {
+      translation -1.594 0.952 0.51
+      name "FixedBeacon#Yellow1"
+    }
+      bounce 0
+    }
+  ]
+
+    FixedBeacon {
+      translation -1.594 -0.952 0.51
+      name "FixedBeacon#Yellow2"
+    }
+
+    FixedBeacon {
+      translation 1.594 0 0.51
+      name "FixedBeacon#Yellow3"
+    }
+
+    %< } >%
+
+    %< if (fields.attic.value) { >%
+
+    DEF Attic Group {
+      children [
+        Solid {
+          translation 0 0.775 0.0275
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColorMap ImageTexture {
+                  url ["../textures/attic.jpg"]
+                }
+                roughness 1
+                metalness 0
+              }
+              geometry DEF AtticShape Box {
+                size 1.8 0.45 0.055
+              }
+            }
+          ]
+          name "attic"
+          boundingObject USE AtticShape
+        }
+      ]
+    }
+
+    %< } >%
+
+    %< if (fields.yellow_game_elements.value) { >%
+  
+    DEF Stack1 CrateGroup {
+      name "Stack1"
+      translation -0.35 -0.2 0
+      colors %<=colors[0]>%
+      }
+
+    DEF Stack2 CrateGroup {
+      name "Stack2"
+      translation -0.4 -0.80 0
+      colors %<=colors[1]>%
+      }
+
+    DEF Stack3 CrateGroup {
+      name "Stack3"
+      translation -1.325 0.2 0
+      rotation 0 0 1 1.5707963268
+      colors %<=colors[2]>%
+    }
+
+    DEF Stack4 CrateGroup {
+      name "Stack4"
+      translation -1.325 -0.6 0
+      rotation 0 0 1 1.5707963268
+      colors %<=colors[3]>%
+    }
+
+    DEF Stack5 CrateGroup {
+      name "Stack5"
+      translation -0.7 0.675 0.055
+      colors 6
+    }
+
+    DEF Stack6 CrateGroup2 {
+      name "Stack6"
+      translation -0.400 0.725 0.055
+      colors %<=colors2[0]>%
+    }
+
+    DEF Stack7 CrateGroup2 {
+      name "Stack7"
+      translation -0.150 0.775 0.055
+      colors %<=colors2[1]>%
+    }
+
+    DEF Stack8 EmptyCrateGroup {
+      name "Stack8"
+      translation -0.7 0.675 0.085
+    }
+
+    %< } >%
+
+    %< if (fields.blue_game_elements.value) { >%
+
+    DEF Stack1Blue CrateGroup {
+      name "Stack1#blue"
+      translation 0.35 -0.2 0
+      colors %<=colors[4]>%
+    }
+
+    DEF Stack2Blue CrateGroup {
+      name "Stack2#blue"
+      translation 0.4 -0.80 0
+      colors %<=colors[5]>%
+    }
+
+    DEF Stack3Blue CrateGroup {
+      name "Stack3#blue"
+      translation 1.325 0.2 0
+      rotation 0 0 1 1.5707963268
+      colors %<=colors[6]>%
+    }
+
+    DEF Stack4Blue CrateGroup {
+      name "Stack4#blue"
+      translation 1.325 -0.6 0
+      rotation 0 0 1 1.5707963268
+      colors %<=colors[7]>%
+    }
+
+    DEF Stack5Blue CrateGroup {
+      name "Stack5#blue"
+      translation 0.7 0.675 0.055
+      colors 7
+    }
+
+    DEF Stack6Blue CrateGroup2 {
+      name "Stack6#blue"
+      translation 0.400 0.725 0.055
+      colors %<=colors2[2]>%
+    }
+
+    DEF Stack7Blue CrateGroup2 {
+      name "Stack7#blue"
+      translation 0.150 0.775 0.055
+      colors %<=colors2[3]>%
+    }
+
+    DEF Stack8Blue EmptyCrateGroup {
+      name "Stack8#blue"
+      translation 0.7 0.675 0.085
+    }
+
+
+    %< } >%
+
+    
+
+  ]
+}
+}

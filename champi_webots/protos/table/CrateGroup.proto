@@ -1,0 +1,56 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+# template language: javascript
+
+EXTERNPROTO "Crate.proto"
+
+PROTO CrateGroup [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString name "CrateGroup"
+  field SFInt32 {0,1,2,3,4,5,6,7} colors 2
+]
+
+{
+%<
+  const rots = [
+    [0, 0, 3.1415926535, 3.1415926535],
+    [3.1415926535, 3.1415926535, 0, 0],
+    [0, 3.1415926535, 0, 3.1415926535],
+    [0, 3.1415926535, 3.1415926535, 0],
+    [3.1415926535, 0, 3.1415926535, 0],
+    [3.1415926535, 0, 0, 3.1415926535],
+    [0, 0, 0, 0],
+    [3.1415926535, 3.1415926535, 3.1415926535, 3.1415926535]
+  ];
+  >%
+
+  Transform {
+    translation IS translation
+    rotation IS rotation
+    children [
+      Crate {
+        translation -0.0251 0 0.015
+        name %<= '"' + fields.name.value + '#Crate1"' >%
+        rotation 1 0 0 %<=rots[fields.colors.value][0]>%
+      }
+      Crate {
+        translation -0.0752 0 0.015
+        name %<= '"' + fields.name.value + '#Crate2"' >%
+        rotation 1 0 0 %<=rots[fields.colors.value][1]>%
+      }
+      Crate {
+        translation 0.0752 0 0.015
+        name %<= '"' + fields.name.value + '#Crate3"' >%
+        rotation 1 0 0 %<=rots[fields.colors.value][2]>%
+      }
+      Crate {
+        translation 0.0251 0 0.015
+        #translation 0.0752 0 0.05
+        name %<= '"' + fields.name.value + '#Crate4"' >%
+        rotation 1 0 0 %<=rots[fields.colors.value][3]>%
+      }
+    ]
+  }
+}

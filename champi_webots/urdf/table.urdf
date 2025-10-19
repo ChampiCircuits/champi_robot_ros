@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<robot name="Table">
+    <webots>
+        <device reference="camera" type="Camera">
+            <ros>
+                <topicName>/camera</topicName>
+            </ros>
+        </device>
+    </webots>
+
+</robot>
