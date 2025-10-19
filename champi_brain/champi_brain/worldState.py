@@ -7,11 +7,17 @@ from ament_index_python.packages import get_package_share_directory
 
 
 class WorldState:
-    def __init__(self, elements: List[NutsBox], init_zones: List[Zone]):
+    def __init__(self, elements: List[NutsBox], init_zones: List[Zone], matching_distance_threshold:float, max_missing: int):
+        """
+        elements: list of NutsBox objects representing the initial known state
+        init_zones: list of Zone objects representing predefined zones
+        matching_distance_threshold: maximum distance to consider a detection matching an existing object (in meters)
+        max_missing: number of consecutive misses before removing an object
+        """
         self.elements: Dict[str, NutsBox] = {e.id: e for e in elements}
         self.zones: List[Zone] = init_zones
-        self.matching_distance_threshold: float = 0.2  # meters
-        self.max_missing: int = 5  # number of consecutive misses before removing an object
+        self.matching_distance_threshold: float = matching_distance_threshold
+        self.max_missing: int = max_missing
 
     def get_elements_by_state(self, state: ElementState) -> List[NutsBox]:
         return [e for e in self.elements.values() if e.state == state]
@@ -66,14 +72,13 @@ class WorldState:
             if distance < self.matching_distance_threshold:
                 det = detections[c]
                 # update object
+                self.elements[obj_id].missing_count = 0 # reset missing counter
                 self.elements[obj_id].x = det.x
                 self.elements[obj_id].y = det.y
                 self.elements[obj_id].orientation = det.orientation
                 self.elements[obj_id].state = det.state
                 if isinstance(self.elements[obj_id], NutsBox):
                     self.elements[obj_id].color = det.color
-                # reset missing counter
-                self.elements[obj_id].missing_count = 0
 
                 matched_detections.add(c)
                 matched_objects.add(obj_id)
@@ -95,13 +100,13 @@ class WorldState:
         self._remove_lost_objects()
 
     @staticmethod
-    def from_yaml(path: str) -> 'WorldState':
+    def from_yaml(path: str) -> tuple[List[NutsBox], List[Zone]]:
         with open(path, 'r') as f:
             data = yaml.safe_load(f)
         raw_elements = data.get('elements', data.get('boxes', []))
-        parsed_elements = []
+        init_elements = []
         for element in raw_elements:
-            parsed_elements.append(NutsBox(
+            init_elements.append(NutsBox(
                 id=element['id'],
                 x=element['x'],
                 y=element['y'],
@@ -124,13 +129,15 @@ class WorldState:
                 color=Color(zone.get('color', None)) if 'color' in zone else None
             ))
 
-        return WorldState(parsed_elements, init_zones)
+        return init_elements, init_zones
 
 
 
 if __name__ == "__main__":
     from champi_brain.utils import print_all_elements_with_rich, print_all_zones_with_rich
-    world = WorldState.from_yaml(get_package_share_directory('champi_brain') + "/config/initial_world_state.yaml")
+
+    init_elements, init_zones = WorldState.from_yaml(get_package_share_directory('champi_brain') + "/config/initial_world_state.yaml")
+    world = WorldState(init_elements, init_zones, matching_distance_threshold=0.3, max_missing=2)
 
     print_all_zones_with_rich(world, "All zones")
     print_all_elements_with_rich(world, "All elements at start")

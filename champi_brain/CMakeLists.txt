@@ -38,7 +38,7 @@ endif()
 install(DIRECTORY
   launch
   scripts
-  # config
+  config
   resources
   DESTINATION share/${PROJECT_NAME}
 )
@@ -50,6 +50,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
         scripts/state_machine_itf.py
         scripts/strat_displayer_node.py
+        scripts/world_state_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
