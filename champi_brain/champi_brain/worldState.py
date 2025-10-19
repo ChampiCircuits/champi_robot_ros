@@ -24,7 +24,7 @@ class WorldState:
 
     def _create_object(self, det: NutsBox) -> str:
         new_id = f"unknown_{len(self.elements)}"
-        self.elements[new_id] = NutsBox(new_id, det.x, det.y, orientation=det.orientation, state=det.state, color=det.color)
+        self.elements[new_id] = NutsBox(new_id, det.x, det.y, theta_deg=det.theta_deg, state=det.state, color=det.color)
         return new_id
 
     def _remove_lost_objects(self) -> None:
@@ -75,7 +75,7 @@ class WorldState:
                 self.elements[obj_id].missing_count = 0 # reset missing counter
                 self.elements[obj_id].x = det.x
                 self.elements[obj_id].y = det.y
-                self.elements[obj_id].orientation = det.orientation
+                self.elements[obj_id].theta_deg = det.theta_deg
                 self.elements[obj_id].state = det.state
                 if isinstance(self.elements[obj_id], NutsBox):
                     self.elements[obj_id].color = det.color
@@ -110,7 +110,7 @@ class WorldState:
                 id=element['id'],
                 x=element['x'],
                 y=element['y'],
-                orientation=element.get('orientation', 0.0),
+                theta_deg=element.get('theta_deg', 0.0),
                 color=Color(element.get('color', Color.NOT_INITIALIZED.value)),
                 state=ElementState(element.get('state', 'on_table'))
             ))

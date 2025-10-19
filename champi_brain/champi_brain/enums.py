@@ -20,17 +20,17 @@ class ElementState(Enum):
     MISSING = "missing"     # Box no longer at expected location
 
 class GameElement:
-    def __init__(self, id: str, x: float, y: float, orientation: float, state: ElementState):
+    def __init__(self, id: str, x: float, y: float, theta_deg: float, state: ElementState):
         self.id: str = id
         self.x: float = x
         self.y: float = y
-        self.orientation: float = orientation
+        self.theta_deg: float = theta_deg
         self.state: ElementState = state
         self.missing_count: int = 0  # Number of consecutive times this element was not observed
 
 class NutsBox(GameElement):
-    def __init__(self, id: str, x: float, y: float, orientation: float, color: Color, state: ElementState):
-        super().__init__(id, x, y, orientation, state)
+    def __init__(self, id: str, x: float, y: float, theta_deg: float, color: Color, state: ElementState):
+        super().__init__(id, x, y, theta_deg, state)
         self.color: Color = color
 
 class Zone():
