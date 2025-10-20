@@ -42,7 +42,7 @@ def load_strategy(file_path, color, logger): # only one recursion level in files
         if action['action'] == 'include_sub_file':
             sub_file_name = action['file']
             logger.info(f'SUB {i}: {sub_file_name}')
-            sub_strat = load_yaml(get_package_share_directory('champi_brain') + '/scripts/strategies/sub/' + sub_file_name)
+            sub_strat = load_yaml(get_package_share_directory('champi_brain') + '/strategies/sub/' + sub_file_name)
             tag = action['parameters']['tag']
 
             # for transforming coordinates

@@ -16,9 +16,9 @@ from rclpy.action import ActionClient
 from champi_interfaces.srv import SetPose
 
 from math import sin, cos, pi, atan2
-from state_machine import ChampiStateMachine
+from champi_brain.state_machine import ChampiStateMachine
 import time
-from strategies.strategy_loader import load_strategy
+from champi_brain.strategy_loader import load_strategy
 
 TOTAL_AVAILABLE_TIME = 100
 # also defined in states.py
@@ -65,7 +65,7 @@ class ChampiStateMachineITF(Node):
         if use_above_default_strategy_param and self.sim_param: # TODOOOOOO
             self.get_logger().info('>> Loading DEFAULT strategy...')
             self.champi_sm.color = 'YELLOW'
-            self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose = load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param, self.champi_sm.color, self.get_logger())
+            self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose = load_strategy(get_package_share_directory('champi_brain') + '/strategies/' + strategy_file_param, self.champi_sm.color, self.get_logger())
             self.get_logger().info(f'<< DEFAULT Strategy {strategy_file_param} loaded!')
             self.get_logger().info(f'<< Init pose {self.champi_sm.init_pose}')
             self.champi_sm.user_has_chosen_config = True
@@ -146,7 +146,7 @@ class ChampiStateMachineITF(Node):
         self.get_logger().info(f'Chosen strategy: {strategy_file_param}, Color: {self.champi_sm.color}')
 
         self.get_logger().info('>> Loading strategy...')
-        self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose = load_strategy(get_package_share_directory('champi_brain') + '/scripts/strategies/' + strategy_file_param, self.champi_sm.color, self.get_logger())
+        self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose = load_strategy(get_package_share_directory('champi_brain') + '/strategies/' + strategy_file_param, self.champi_sm.color, self.get_logger())
         self.get_logger().info(f'<< Strategy {strategy_file_param} loaded!')
         self.get_logger().info(f'<< Init pose {self.champi_sm.init_pose}')
         self.champi_sm.user_has_chosen_config = True

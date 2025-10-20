@@ -13,6 +13,8 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CtrlGoal.msg"
   "msg/STMState.msg"
+  "msg/GameElement.msg"
+  "msg/TableObservation.msg"
   "action/Navigate.action"
   "srv/SetPose.srv"
   DEPENDENCIES geometry_msgs
