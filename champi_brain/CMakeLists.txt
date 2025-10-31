@@ -48,7 +48,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-        scripts/state_machine_itf.py
+        scripts/state_machine_node.py
         scripts/strat_displayer_node.py
         scripts/world_state_node.py
   DESTINATION lib/${PROJECT_NAME}
