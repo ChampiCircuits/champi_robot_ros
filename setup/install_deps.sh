@@ -12,7 +12,11 @@ pip3 install -r ~/champi_ws/src/champi_robot_ros/requirements.txt --break-system
 # Install rosdep dependencies
 echo "Installing rosdep dependencies..."
 sudo apt install -y python3-rosdep
-sudo rosdep init
+# Initialize rosdep if needed
+if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
+  echo "Initializing rosdep..."
+  sudo rosdep init
+fi
 rosdep update
 rosdep install --from src --ignore-src -y
 
