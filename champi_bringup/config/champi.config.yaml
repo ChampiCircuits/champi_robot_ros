@@ -124,6 +124,7 @@ sm_ros_itf:
     use_above_default_strategy: true # works only in sim mode
 
 world_state_node:
+  ros__parameters:
     update_rate: 5.0 # Hz
     matching_distance_threshold: 0.1 # meters. The maximum distance to consider that an observed object matches a known object
     max_missing: 10 # number of consecutive misses before an object is considered gone
