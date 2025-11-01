@@ -18,7 +18,7 @@ from champi_interfaces.srv import SetPose
 from math import sin, cos, pi, atan2
 from champi_brain.state_machine import ChampiStateMachine
 import time
-from champi_brain.strategy_loader import load_strategy
+from champi_brain.strategy_loader_v2 import load_strategy
 
 TOTAL_AVAILABLE_TIME = 100
 # also defined in states.py
@@ -63,10 +63,10 @@ class ChampiStateMachineITF(Node):
 
         # # Strategy
         if use_above_default_strategy_param and self.sim_param: # TODOOOOOO
-            self.get_logger().info('>> Loading DEFAULT strategy...')
+            self.get_logger().warn('>> State machine in SIM mode --> loading DEFAULT strategy...')
             self.champi_sm.color = 'YELLOW'
             self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose = load_strategy(get_package_share_directory('champi_brain') + '/strategies/' + strategy_file_param, self.champi_sm.color, self.get_logger())
-            self.get_logger().info(f'<< DEFAULT Strategy {strategy_file_param} loaded!')
+            self.get_logger().warn(f'<< DEFAULT Strategy {strategy_file_param} loaded!')
             self.get_logger().info(f'<< Init pose {self.champi_sm.init_pose}')
             self.champi_sm.user_has_chosen_config = True
             self.sim_user_choose_strat_and_pose() # TODO remove
