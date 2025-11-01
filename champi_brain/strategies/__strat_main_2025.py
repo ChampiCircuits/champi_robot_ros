@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
-import os
-
 from champi_brain.strategy_dsl import StrategyBuilder, Position, Color
 
 def create_main_strategy() -> StrategyBuilder:   
@@ -50,7 +47,8 @@ def create_main_strategy() -> StrategyBuilder:
         ######################### COME HOME ##########################################
         .move_to(0.45, 0.9, 180.0, group="come_home", use_dynamic_layer=True,
                 speed=1.0, accel_linear=1.0, accel_angular=15.0)
-        .come_home()
+
+        # .come_home() # done automatically at the end by the planner
     )
     
     return strategy

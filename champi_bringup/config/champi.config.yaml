@@ -120,7 +120,7 @@ path_planner:
 
 sm_ros_itf:
   ros__parameters:
-    strategy_file: 'main_strategy_2025.py'
+    strategy_file: '__strat_main_2025.py'
     use_above_default_strategy: true # works only in sim mode
 
 world_state_node:
