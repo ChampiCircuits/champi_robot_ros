@@ -7,6 +7,7 @@ def create_main_strategy() -> StrategyBuilder:
         # Configuration of poses
         .set_init_pose(1.18, 0.16, -60.0)  # yellow starting zone
         .set_home_pose(0.3, 1.8, 0.0)      # yellow ending zone
+        .set_wait_to_come_home_pose(0.3, 1.4, 0.0)  # position in front of yellow home zone
         
         # Create groups
         .create_group("banner")

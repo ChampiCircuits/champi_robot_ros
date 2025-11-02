@@ -93,6 +93,7 @@ class ChampiStateMachine(object):
         self.color = None
         self.init_pose = None
         self.home_pose = None
+        self.wait_to_come_home_pose = None
 
         # OTHERS
         self.itf:ChampiStateMachineITF = None

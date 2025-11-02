@@ -124,6 +124,7 @@ class StrategyBuilder:
         self.groups: Dict[str, ActionGroup] = {}
         self.init_pose: Optional[Position] = None
         self.home_pose: Optional[Position] = None
+        self.wait_to_come_home_pose: Optional[Position] = None
         self.current_group: Optional[str] = None
         
     def create_group(self, name: str) -> 'StrategyBuilder':
@@ -146,6 +147,11 @@ class StrategyBuilder:
     def set_home_pose(self, x: float, y: float, theta_deg: float) -> 'StrategyBuilder':
         """Set the home pose"""
         self.home_pose = Position(x, y, theta_deg)
+        return self
+    
+    def set_wait_to_come_home_pose(self, x: float, y: float, theta_deg: float) -> 'StrategyBuilder':
+        """Set the wait-to-come-home pose"""
+        self.wait_to_come_home_pose = Position(x, y, theta_deg)
         return self
     
     def move_to(self, target: Union[Position, float], y: Optional[float] = None, theta_deg: float = 0.0, group: Optional[str] = None, **motion_kwargs) -> 'StrategyBuilder':
@@ -328,7 +334,7 @@ class StrategyBuilder:
         """Get all group names"""
         return list(self.groups.keys())
     
-    def get_transformed_actions(self, color: Color = Color.YELLOW) -> List[Action]:
+    def get_transformed_actions(self, color: Color) -> List[Action]:
         """Get list of transformed Action objects (keeps typing) for the given color"""
         actions = self.actions
         
@@ -371,7 +377,7 @@ class StrategyBuilder:
         
         return actions_rotated
     
-    def get_init_pose(self, color: Color = Color.YELLOW) -> Position:
+    def get_init_pose(self, color: Color) -> Position:
         """Get transformed init pose"""
         if not self.init_pose:
             raise ValueError("Init pose must be set")
@@ -383,7 +389,7 @@ class StrategyBuilder:
         # Add +90° for coordinate system alignment
         return Position(init_pose.x, init_pose.y, init_pose.theta_deg + 90.0)
     
-    def get_home_pose(self, color: Color = Color.YELLOW) -> Position:
+    def get_home_pose(self, color: Color) -> Position:
         """Get transformed home pose"""
         if not self.home_pose:
             raise ValueError("Home pose must be set")
@@ -395,72 +401,14 @@ class StrategyBuilder:
         # Add +90° for coordinate system alignment
         return Position(home_pose.x, home_pose.y, home_pose.theta_deg + 90.0)
     
-    # def to_dict(self, color: Color = Color.YELLOW) -> Dict[str, Any]:
-    #     """Convert strategy to dictionary"""
-    #     if not self.init_pose or not self.home_pose:
-    #         raise ValueError("Init pose and home pose must be set")
+    def get_wait_to_come_home_pose(self, color: Color) -> Position:
+        """Get transformed wait-to-come-home pose"""
+        if not self.wait_to_come_home_pose:
+            raise ValueError("Wait-to-come-home pose must be set")
         
-    #     init_pose = self.init_pose
-    #     home_pose = self.home_pose
-    #     actions = self.actions
+        wait_pose = self.wait_to_come_home_pose
+        if color == Color.BLUE:
+            wait_pose = wait_pose.transform_for_blue()
         
-    #     # Transform for blue team
-    #     if color == Color.BLUE:
-    #         init_pose = self.init_pose.transform_for_blue()
-    #         home_pose = self.home_pose.transform_for_blue()
-    #         # Transform actions - transform Position targets, keep Offset as-is
-    #         actions = []
-    #         for action in self.actions:
-    #             transformed_target = action.target.transform_for_blue() if action.target else None
-                
-    #             new_action = Action(
-    #                 action=action.action,
-    #                 target=transformed_target,
-    #                 offset=action.offset,  # Offsets stay relative, not transformed
-    #                 group=action.group,
-    #                 motion=action.motion,
-    #                 points=action.points,
-    #                 reason=action.reason,
-    #                 extra_params=action.extra_params.copy()
-    #             )
-    #             actions.append(new_action)
-        
-    #     # Add +90° for coordinate system alignment
-    #     init_pose = Position(init_pose.x, init_pose.y, init_pose.theta_deg + 90.0)
-    #     home_pose = Position(home_pose.x, home_pose.y, home_pose.theta_deg + 90.0)
-        
-    #     # Also rotate absolute Position targets by +90° (offsets stay relative)
-    #     actions_rotated = []
-    #     for action in actions:
-    #         rotated_target = None
-    #         if action.target:
-    #             rotated_target = Position(action.target.x, action.target.y, action.target.theta_deg + 90.0)
-            
-    #         action_copy = Action(
-    #             action=action.action,
-    #             target=rotated_target,
-    #             offset=action.offset,  # Offsets stay as-is
-    #             group=action.group,
-    #             motion=action.motion,
-    #             points=action.points,
-    #             reason=action.reason,
-    #             extra_params=action.extra_params.copy()
-    #         )
-    #         actions_rotated.append(action_copy)
-        
-    #     result = {
-    #         "init_pose": init_pose.to_dict(),
-    #         "home_pose": home_pose.to_dict(),
-    #         "actions": [action.to_dict() for action in actions_rotated]
-    #     }
-        
-    #     # Add group information for action cancellation
-    #     if self.groups:
-    #         result["groups"] = {
-    #             name: {
-    #                 "action_count": len(group.actions)
-    #             }
-    #             for name, group in self.groups.items()
-    #         }
-        
-    #     return result
+        # Add +90° for coordinate system alignment
+        return Position(wait_pose.x, wait_pose.y, wait_pose.theta_deg + 90.0)

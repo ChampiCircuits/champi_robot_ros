@@ -1,3 +1,4 @@
+from champi_brain.strategy_dsl import MotionParams
 from champi_brain.state_machine_custom_classes import ChampiState
 from rclpy.logging import get_logger
 import time
@@ -41,7 +42,7 @@ class MoveState(ChampiState):
 
     def move_to(self, x, y, theta_deg, motion_params):
         theta_rad = theta_deg * math.pi / 180.0
-        get_logger(self.name+'_state').info(f"Start moving to x={x}, y={y}, theta={theta_deg}° with motion params: {motion_params}")
+        get_logger(self.name+'_state').info(f"Start moving to x={x}, y={y}, theta={theta_deg}° with {motion_params}")
         self.sm.itf.send_goal(x, y, theta_rad, motion_params)
 
 class DetectPlatformState(ChampiState):
@@ -158,18 +159,30 @@ class ComeHomeState(MoveState):
         theta_deg = self.sm.home_pose[2]
 
         get_logger(self.name+'_state').info(f"Start moving to HOME pose: x={x}, y={y}, theta={theta_deg}°")
-        self.move_to(x, y, theta_deg, use_dynamic_layer=False, speed=MAX_LINEAR_SPEED, end_speed=0., 
-                     accel_linear=0.5, accel_angular=6.0)  # no dynamic_layer for home position
+        motion_params = MotionParams(
+            use_dynamic_layer=False,
+            speed=MAX_LINEAR_SPEED,
+            end_speed=0.0,
+            accel_linear=0.5,
+            accel_angular=6.0
+        )
+        self.move_to(x, y, theta_deg, motion_params)
 
         self.sm.itf.add_points(10) # add 10 points for coming home, we don't wait for move to finish but flemme, should be ok ;)
 
 class WaitToComeHomeState(MoveState):
     def enter(self, event_data):
-        x = self.sm.home_pose[0]
-        y = self.sm.home_pose[1] - 0.4 # to be in front of the home position
-        theta_deg = self.sm.home_pose[2]
+        x = self.sm.wait_to_come_home_pose[0]
+        y = self.sm.wait_to_come_home_pose[1]
+        theta_deg = self.sm.wait_to_come_home_pose[2]
 
         get_logger(self.name+'_state').info(f"Start moving to WAIT FOR HOME pose: x={x}, y={y}, theta={theta_deg}°")
-        self.move_to(x, y, theta_deg, use_dynamic_layer=False, speed=MAX_LINEAR_SPEED, end_speed=0.,
-                     accel_linear=0.5, accel_angular=6.0)  # no dynamic_layer for home position
+        motions_params = MotionParams(
+            use_dynamic_layer=False,
+            speed=MAX_LINEAR_SPEED,
+            end_speed=0.0,
+            accel_linear=0.5,
+            accel_angular=6.0
+        )
+        self.move_to(x, y, theta_deg, motions_params)
         self.sm.itf.send_actuator_action('RESET_ACTUATORS')

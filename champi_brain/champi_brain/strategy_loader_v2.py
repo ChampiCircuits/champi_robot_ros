@@ -33,18 +33,21 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     actions = strategy_builder.get_transformed_actions(color_enum)
     init_pose_obj = strategy_builder.get_init_pose(color_enum)
     home_pose_obj = strategy_builder.get_home_pose(color_enum)
+    wait_to_come_home_pose_obj = strategy_builder.get_wait_to_come_home_pose(color_enum)
     
     # Convert poses to list format for compatibility
     init_pose = [init_pose_obj.x, init_pose_obj.y, init_pose_obj.theta_deg]
     home_pose = [home_pose_obj.x, home_pose_obj.y, home_pose_obj.theta_deg]
+    wait_to_come_home_pose = [wait_to_come_home_pose_obj.x, wait_to_come_home_pose_obj.y, wait_to_come_home_pose_obj.theta_deg]
     
     logger.info(f'<< Init pose will be {init_pose[0]} {init_pose[1]} {init_pose[2]}°!')
     logger.info(f'<< Home pose will be {home_pose[0]} {home_pose[1]} {home_pose[2]}°!')
+    logger.info(f'<< Wait to come home pose will be {wait_to_come_home_pose[0]} {wait_to_come_home_pose[1]} {wait_to_come_home_pose[2]}°!')
     
     for (i, action) in enumerate(actions):
         logger.info(f'Action {i}: {action}')
     
-    return actions, init_pose, home_pose
+    return actions, init_pose, home_pose, wait_to_come_home_pose
 
 def load_strategy(file_path, color, logger):
     """Main entry point to load a strategy"""

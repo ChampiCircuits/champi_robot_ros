@@ -17,6 +17,7 @@ def create_main_strategy() -> StrategyBuilder:
     # Configuration of poses
     strategy.set_init_pose(1.0, 1.0, 0.0)
     strategy.set_home_pose(1.0, 1.0, 0.0)
+    strategy.set_wait_to_come_home_pose(1.0, 1.0, 0.0)
 
     # Add back-and-forth movements
     for i in range(num_iterations):

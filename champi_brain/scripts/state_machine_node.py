@@ -66,9 +66,11 @@ class ChampiStateMachineITF(Node):
         if use_above_default_strategy_param and self.sim_param: # TODOOOOOO
             self.get_logger().warn('>> State machine in SIM mode --> loading DEFAULT strategy...')
             self.champi_sm.color = 'YELLOW'
-            self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose = load_strategy(get_package_share_directory('champi_brain') + '/strategies/' + strategy_file_param, self.champi_sm.color, self.get_logger())
+            self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose, self.champi_sm.wait_to_come_home_pose = load_strategy(get_package_share_directory('champi_brain') + '/strategies/' + strategy_file_param, self.champi_sm.color, self.get_logger())
             self.get_logger().warn(f'<< DEFAULT Strategy {strategy_file_param} loaded!')
             self.get_logger().info(f'<< Init pose {self.champi_sm.init_pose}')
+            self.get_logger().info(f'<< Home pose {self.champi_sm.home_pose}')
+            self.get_logger().info(f'<< Wait to come home pose {self.champi_sm.wait_to_come_home_pose}')
             self.champi_sm.user_has_chosen_config = True
             self.sim_user_choose_strat_and_pose() # TODO remove
 
@@ -216,7 +218,7 @@ class ChampiStateMachineITF(Node):
 
                 elif self.time_left <= approx_time_to_home+4.0 or last_action_done:
                     if not self.champi_sm.state in ['waitToComeHome', 'comeHome', 'endOfMatch'] and not self.champi_sm.wait_to_come_home_requested:
-                        self.get_logger().error(f'GO WAIT IN FRONT OF HOOOOME, state={self.champi_sm.state}, approx_time_to_home={approx_time_to_home}')
+                        self.get_logger().info(f'Going to wait in front of home, state={self.champi_sm.state}, approx_time_to_home={approx_time_to_home}')
 
                         self.champi_sm.reset_flags()
                         self.champi_sm.wait_to_come_home_requested = True
@@ -227,14 +229,14 @@ class ChampiStateMachineITF(Node):
                 self.champi_sm.match_ended = True
                 self.champi_sm.end_of_match()
                 self.get_logger().error(f'No time left. Triggering end of match. Was in state {self.champi_sm.state}.')
-                # Cancel current goal if self.future_navigate_result not None
-                if self.goal_handle_navigate is not None:
+                # Cancel current goal if self.future_navigate_result not None and self.state in move states
+                if self.goal_handle_navigate is not None and 'move' in self.champi_sm.state:
                     self.get_logger().info('Cancelling current goal...')
 
                     future = self.goal_handle_navigate.cancel_goal_async()
                     future.add_done_callback(self.cancel_done_callback)
 
-                    self.send_actuator_action('STOP_ALL_MOTORS')
+                self.send_actuator_action('STOP_ALL_MOTORS')
 
 
     def init_robot_pose(self):
@@ -330,8 +332,8 @@ class ChampiStateMachineITF(Node):
         
         goal.pose = goal_pose
         
-        # goal.end_speed = end_speed
-        goal.end_speed = 0. # TODO quick fix
+        goal.end_speed = motion_params.end_speed
+        # goal.end_speed = 0. # TODO quick fix
 
         goal.max_linear_speed = motion_params.speed
         goal.max_angular_speed = 3.0
