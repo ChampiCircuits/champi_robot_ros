@@ -119,7 +119,7 @@ class ChampiStateMachineITF(Node):
     def current_pose_callback(self, msg):
         # convert from quaternion to euler angles
         theta_rad = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
-        theta_deg = theta_rad * 180.0 / pi - 90.0 # to align with the coordinate system
+        theta_deg = theta_rad * 180.0 / pi
         self.latest_pose = [msg.pose.pose.position.x, msg.pose.pose.position.y, theta_deg]
 
     def get_current_pose(self):
@@ -248,8 +248,8 @@ class ChampiStateMachineITF(Node):
         msg.pose.pose.position.z = 0.
         msg.pose.pose.orientation.x = 0.
         msg.pose.pose.orientation.y = 0.
-        msg.pose.pose.orientation.z = sin(self.champi_sm.init_pose[2]*3.14159/180/2)
-        msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]*3.14159/180/2)
+        msg.pose.pose.orientation.z = sin(self.champi_sm.init_pose[2]*pi/180./2.)
+        msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]*pi/180./2.)
 
         # Call service /set_pose
         request = SetPose.Request()
@@ -257,7 +257,13 @@ class ChampiStateMachineITF(Node):
         future = self.client.call_async(request)
 
         self.get_logger().info(f'requested set_pose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
-        time.sleep(1)
+
+        # handle future result
+        rclpy.spin_until_future_complete(self, future) # TODO sometimes does not work but result seems ok
+        if future.result() is not None:
+            self.get_logger().debug('Set pose service call successful, result: ' + str(future.result()))
+        else:
+            self.get_logger().error('Set pose service call failed')
 
 
     # ==================================== Feedback Callbacks =====================================
@@ -332,13 +338,11 @@ class ChampiStateMachineITF(Node):
         
         goal.pose = goal_pose
         
-        goal.end_speed = motion_params.end_speed
-        # goal.end_speed = 0. # TODO quick fix
-
         goal.max_linear_speed = motion_params.speed
         goal.max_angular_speed = 3.0
         goal.accel_linear = motion_params.accel_linear
         goal.accel_angular = motion_params.accel_angular
+        goal.end_speed = motion_params.end_speed
 
         goal.linear_tolerance = 0.005
         goal.angular_tolerance = 0.05
@@ -346,11 +350,10 @@ class ChampiStateMachineITF(Node):
         goal.do_look_at_point = False
 
         goal.look_at_point = Point()
-        goal.look_at_point.x = 2.
-        goal.look_at_point.y = 2.
-        goal.look_at_point.z = 0.
-
-        goal.robot_angle_when_looking_at_point = 0.
+        goal.look_at_point.x = 2.0
+        goal.look_at_point.y = 2.0
+        goal.look_at_point.z = 0.0
+        goal.robot_angle_when_looking_at_point = 0.0
 
         goal.timeout = 20. # seconds
 

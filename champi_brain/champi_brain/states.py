@@ -6,6 +6,7 @@ from std_msgs.msg import Int8
 import math
 
 MAX_LINEAR_SPEED = 1.0 # also defined in itf
+# TODO centralize this value in params
 
 class InitState(ChampiState):
     pass
@@ -96,31 +97,6 @@ class DetectPlatformState(ChampiState):
         get_logger(self.name).info(f'platform pose is {x_front_platform} {y_front_platform} {theta_deg_front_platform}°')
         self.sm.platformDetected = True
 
-# class MoveForPlatformState(MoveState): # TODO on utilise plus move for platform, donc trouver un moyen de toujours prendre en compte l'offset détecté
-#     def enter(self, event_data):
-#         # super().enter(event_data)
-#         # here x y theta are offsets
-#         x_offset = event_data.kwargs.get('x', None)
-#         y_offset = event_data.kwargs.get('y', None)
-#         theta_deg_offset = event_data.kwargs.get('theta_deg', None)
-#         theta_rad_offset = theta_deg_offset * math.pi / 180.0
-#         get_logger(self.name).info(f'offset are {x_offset} {y_offset} {theta_deg_offset}°')
-
-#         platform_center = self.sm.platform_center # theta in deg
-#         get_logger(self.name).info(f'platform_center is {platform_center[0]} {platform_center[1]} {platform_center[2]}°')
-
-#         # compute pose in front of platform
-#         # subtract the dist to the pose taking the angle in account
-#         # Apply rotation and translation
-#         x_front_platform = (x_offset * math.cos(platform_center[2]* math.pi / 180.0) - y_offset * math.sin(platform_center[2]* math.pi / 180.0)) + platform_center[0]
-#         y_front_platform = (x_offset * math.sin(platform_center[2]* math.pi / 180.0) + y_offset * math.cos(platform_center[2]* math.pi / 180.0)) + platform_center[1]
-#         theta_deg_front_platform = platform_center[2] + theta_deg_offset
-
-#         get_logger(self.name).info(f'computed pose is {x_front_platform} {y_front_platform} {theta_deg_front_platform}°')
-
-#         self.move_to(x_front_platform, y_front_platform, theta_deg_front_platform+90., use_dynamic_layer=False, speed=0.3, end_speed=0.0, 
-#                      accel_linear=0.5, accel_angular=6.0) # +90° to align with the coordinate system
-
 class WaitState(ChampiState):
     def enter(self, event_data):
         super().enter(event_data)
@@ -168,8 +144,6 @@ class ComeHomeState(MoveState):
         )
         self.move_to(x, y, theta_deg, motion_params)
 
-        self.sm.itf.add_points(10) # add 10 points for coming home, we don't wait for move to finish but flemme, should be ok ;)
-
 class WaitToComeHomeState(MoveState):
     def enter(self, event_data):
         x = self.sm.wait_to_come_home_pose[0]
@@ -178,7 +152,7 @@ class WaitToComeHomeState(MoveState):
 
         get_logger(self.name+'_state').info(f"Start moving to WAIT FOR HOME pose: x={x}, y={y}, theta={theta_deg}°")
         motions_params = MotionParams(
-            use_dynamic_layer=False,
+            use_dynamic_layer=True,
             speed=MAX_LINEAR_SPEED,
             end_speed=0.0,
             accel_linear=0.5,

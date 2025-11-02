@@ -4,6 +4,18 @@ import importlib.util
 import sys
 import os
 from pathlib import Path
+import yaml
+from ament_index_python.packages import get_package_share_directory
+
+
+def load_points_per_action():
+    """Load points per action from a YAML file"""
+
+    points_yaml_file = get_package_share_directory('champi_brain') + '/strategies/points_per_action.yaml'
+    with open(points_yaml_file, 'r') as f:
+        data = yaml.safe_load(f)
+
+    return data.get('points_per_action', {})
 
 def load_strategy_dsl(strategy_file_path, color, logger):
     """Load a strategy from a Python DSL file - returns typed objects"""
@@ -11,6 +23,10 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     # Import the strategy module
     spec = importlib.util.spec_from_file_location("strategy_module", strategy_file_path)
     strategy_module = importlib.util.module_from_spec(spec)
+
+    # Load the points per action configuration
+    points_per_action = load_points_per_action()
+    logger.info(f'Loaded points per action configuration: {points_per_action}')
     
     # Add module directory to PATH for imports
     strategy_dir = os.path.dirname(strategy_file_path)
@@ -21,7 +37,7 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     
     # Get the strategy
     if hasattr(strategy_module, 'create_main_strategy'):
-        strategy_builder = strategy_module.create_main_strategy()
+        strategy_builder = strategy_module.create_main_strategy(points_per_action)
     else:
         raise ValueError(f"File {strategy_file_path} must contain a 'create_main_strategy()' function")
     

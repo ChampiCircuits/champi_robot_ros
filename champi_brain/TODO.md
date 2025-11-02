@@ -10,7 +10,7 @@
 - end_speed est pas bien supportée par le path control
 - des fois le brain crashe au démarrage, je crois s'il n'a pas encore recu d'odom
 - le probleme de la pose init qui est toujours pas réglé
-- l'ajout des points ca doit être un fichier de config 
+- l'ajout des points gagnés ca doit être un fichier de config 
 
 ### 1. Charger les paramètres de mouvement depuis la config ROS
 **Fichier**: `strategy_dsl.py` (ligne 56)  

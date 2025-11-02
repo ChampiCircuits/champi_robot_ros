@@ -30,13 +30,15 @@ class StrategyPublisher(Node):
             get_package_share_directory('champi_brain'), 'scripts', 'strategies', strategy_file
         )
 
-        self.actions, self.init_pose, self.home_pose = load_strategy(strategy_path, "YELLOW", self.get_logger())
+        self.actions, self.init_pose, self.home_pose, self.wait_to_come_home_pose = load_strategy(strategy_path, "YELLOW", self.get_logger())
         self.get_logger().info(f'<< Strategy {strategy_file} loaded with YELLOW!')
         self.get_logger().info(f'   Total actions: {len(self.actions)}')
 
         # print strat
         self.get_logger().info(f'   Initial pose: {self.init_pose}')
         self.get_logger().info(f'   Home pose: {self.home_pose}')
+        self.get_logger().info(f'   Wait to come home pose: {self.wait_to_come_home_pose}')
+        
         for i, action in enumerate(self.actions):
             self.get_logger().info(f'   Action {i}: {action.action}')
             if action.target:
@@ -178,6 +180,44 @@ class StrategyPublisher(Node):
 
         return marker_array, marker_id
     
+    def add_wait_to_come_home_markers(self, marker_array, line_points, marker_id):
+        # Add wait to come home pose marker
+        wait_marker = Marker()
+        wait_marker.header.frame_id = "odom"
+        wait_marker.header.stamp = self.get_clock().now().to_msg()
+        wait_marker.ns = "strategy_actions"
+        wait_marker.id = marker_id
+        wait_marker.type = Marker.SPHERE
+        wait_marker.action = Marker.ADD
+        wait_marker.pose.position.x = self.wait_to_come_home_pose[0]
+        wait_marker.pose.position.y = self.wait_to_come_home_pose[1]
+        wait_marker.pose.position.z = 0.0
+        wait_marker.scale.x = 0.035
+        wait_marker.scale.y = 0.035
+        wait_marker.scale.z = 0.035
+        wait_marker.color = ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)  # Blue for wait to come home
+        marker_array.markers.append(wait_marker)
+        marker_id += 1
+        
+        # Add wait to come home text
+        wait_text = Marker()
+        wait_text.header.frame_id = "odom"
+        wait_text.header.stamp = self.get_clock().now().to_msg()
+        wait_text.ns = "strategy_labels"
+        wait_text.id = marker_id
+        wait_text.type = Marker.TEXT_VIEW_FACING
+        wait_text.action = Marker.ADD
+        wait_text.pose.position.x = self.wait_to_come_home_pose[0]
+        wait_text.pose.position.y = self.wait_to_come_home_pose[1]
+        wait_text.pose.position.z = 0.0
+        wait_text.scale.z = 0.02
+        wait_text.color = ColorRGBA(r=1.0, g=1.0, b=1.0, a=1.0)
+        wait_text.text = "WAIT_TO_COME_HOME"
+        marker_array.markers.append(wait_text)
+        marker_id += 1
+
+        return marker_array, marker_id
+    
     def publish_markers(self):
         """Publish detailed markers for all actions"""
         path_msg = Path()
@@ -207,7 +247,7 @@ class StrategyPublisher(Node):
             if has_target:
                 # Use target as reference position
                 x, y = action.target.x, action.target.y
-                theta_deg = action.target.theta_deg - 90 # TODO 90 should be better handled
+                theta_deg = action.target.theta_deg
                 
                 if has_offset:
                     # Has both target (reference) and offset - display at reference, stack vertically
@@ -239,7 +279,7 @@ class StrategyPublisher(Node):
             marker = Marker()
             marker.header.frame_id = "odom"
             marker.header.stamp = self.get_clock().now().to_msg()
-            marker.ns = "strategy_actions"
+            marker.ns = "strategy_actions" if 'action' in action_type else "strategy_moves"
             marker.id = marker_id
             marker.type = self.get_action_marker_type(action_type)
             marker.action = Marker.ADD
@@ -282,7 +322,7 @@ class StrategyPublisher(Node):
             text_marker = Marker()
             text_marker.header.frame_id = "odom"
             text_marker.header.stamp = self.get_clock().now().to_msg()
-            text_marker.ns = "strategy_labels"
+            text_marker.ns = "strategy_labels_move" if 'move' in action_type else "strategy_labels_action"
             text_marker.id = marker_id
             text_marker.type = Marker.TEXT_VIEW_FACING
             text_marker.action = Marker.ADD
@@ -305,6 +345,7 @@ class StrategyPublisher(Node):
             action_count += 1
 
 
+        marker_array, marker_id = self.add_wait_to_come_home_markers(marker_array, line_points, marker_id)
         marker_array, marker_id = self.add_home_markers(marker_array, line_points, marker_id)
 
         # Create line strip connecting all positions

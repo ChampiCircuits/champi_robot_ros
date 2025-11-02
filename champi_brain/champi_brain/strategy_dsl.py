@@ -119,13 +119,14 @@ class Action:
 class StrategyBuilder:
     """Strategy builder with fluent DSL"""
     
-    def __init__(self):
+    def __init__(self, points_per_action: Optional[dict] = None):
         self.actions: List[Action] = []
         self.groups: Dict[str, ActionGroup] = {}
         self.init_pose: Optional[Position] = None
         self.home_pose: Optional[Position] = None
         self.wait_to_come_home_pose: Optional[Position] = None
         self.current_group: Optional[str] = None
+        self.points_per_action: dict = points_per_action or {}
         
     def create_group(self, name: str) -> 'StrategyBuilder':
         """Create a new action group"""
@@ -243,12 +244,11 @@ class StrategyBuilder:
         Args:
             target_position: Position object where to place the banner
             group: Group name for these actions
-            
-        Note: The original YAML had no move action (commented out), so we just do the action directly.
         """
         self.set_current_group(group)
         self.custom_action("PUT_BANNER")
-        self.add_points(20, "put_banner finished. 20 points for putting the banner")
+        points = self.points_per_action["PUT_BANNER"]
+        self.add_points(points, f"put_banner finished. {points} points for putting the banner", group=group)
         return self
 
     
@@ -263,23 +263,23 @@ class StrategyBuilder:
         self.set_current_group(group)
 
         # Approach movement
-        self.move_relative_to(platform_center, Offset(0.0, -0.35, 0.0))
+        self.move_relative_to(platform_center, Offset(-0.35, 0.0, 0.0))
         
         # Platform detection - offset from platform center
         # self.custom_action("detectPlatform")
         
         # Taking sequence - offsets from detected platform center
-        self.move_relative_to(platform_center, Offset(0.0, -0.215, -60.0))
+        self.move_relative_to(platform_center, Offset(-0.215, 0.0, -60.0))
         self.custom_action("TAKE_LOWER_PLANK")
         
         # Take left cans - offsets from platform center
-        self.move_relative_to(platform_center, Offset(-0.1, -0.25, -60.0))
-        self.move_relative_to(platform_center, Offset(-0.1, -0.205, -60.0))
+        self.move_relative_to(platform_center, Offset(-0.25, -0.1, -60.0))
+        self.move_relative_to(platform_center, Offset(-0.205, -0.1, -60.0))
         self.custom_action("TAKE_CANS_LEFT")
         
         # Take right cans - offsets from platform center
-        self.move_relative_to(platform_center, Offset(0.1, -0.25, 60.0))
-        self.move_relative_to(platform_center, Offset(0.1, -0.205, 60.0))
+        self.move_relative_to(platform_center, Offset(-0.25, 0.1, 60.0))
+        self.move_relative_to(platform_center, Offset(-0.205, 0.1, 60.0))
         self.custom_action("TAKE_CANS_RIGHT")
         
         return self
@@ -294,36 +294,35 @@ class StrategyBuilder:
         self.set_current_group(group)
         
         # First positioning - offset from target center
-        self.move_relative_to(target_position, Offset(0.0, -0.21, -60.0))
+        self.move_relative_to(target_position, Offset(-0.21, 0.0, -60.0))
 
         self.custom_action("PUT_CANS_LEFT_LAYER_1")
         self.custom_action("PUT_LOWER_PLANK_LAYER_1")
         self.custom_action("TAKE_UPPER_PLANK")
         
         # Turn with RIGHT side facing - offset from target center
-        self.move_relative_to(target_position, Offset(0.0, -0.21, 60.0))
+        self.move_relative_to(target_position, Offset(-0.21, 0.0, 60.0))
         
         self.custom_action("PUT_CANS_RIGHT_LAYER_2")
         
         # Turn with LEFT side facing - offset from target center
-        self.move_relative_to(target_position, Offset(0.0, -0.21, -60.0))
+        self.move_relative_to(target_position, Offset(-0.21, 0.0, -60.0))
         
         self.custom_action("PUT_UPPER_PLANK_LAYER_2")
         
         # Add points
-        self.add_points(12, "put_elements finished. 4 points per layer of level 1 + 8 points per layer of level 2")
-        
+        points = self.points_per_action["2_LAYERS_STRUCTURE"]
+        self.add_points(points, f"put_elements finished. {points} points for 2 layers structure", group=group)
+
         return self
     
     def come_home(self) -> 'StrategyBuilder':
         """Return home
-        
-        Note: Uses offset (0, 0, 0) from come_home.yaml, which means we just go to the exact home pose.
         """
         if self.home_pose:
-            # Offset is (0, 0, 0), so just go directly to home_pose
             self.move_to(self.home_pose, group="come_home")
-        self.add_points(10, "come_home finished. 10 points for coming home", group="come_home")
+        points = self.points_per_action["COME_HOME"]
+        self.add_points(points, f"come_home finished. {points} points for coming home", group="come_home")
         return self
     
     def get_actions_by_group(self, group_name: str) -> List[Action]:
@@ -356,12 +355,11 @@ class StrategyBuilder:
                 )
                 actions.append(new_action)
         
-        # Add +90° for coordinate system alignment (only to Position targets, not Offsets)
         actions_rotated = []
         for action in actions:
             rotated_target = None
             if action.target:
-                rotated_target = Position(action.target.x, action.target.y, action.target.theta_deg + 90.0)
+                rotated_target = Position(action.target.x, action.target.y, action.target.theta_deg)
             
             action_copy = Action(
                 action=action.action,
@@ -386,8 +384,7 @@ class StrategyBuilder:
         if color == Color.BLUE:
             init_pose = init_pose.transform_for_blue()
         
-        # Add +90° for coordinate system alignment
-        return Position(init_pose.x, init_pose.y, init_pose.theta_deg + 90.0)
+        return Position(init_pose.x, init_pose.y, init_pose.theta_deg)
     
     def get_home_pose(self, color: Color) -> Position:
         """Get transformed home pose"""
@@ -398,8 +395,7 @@ class StrategyBuilder:
         if color == Color.BLUE:
             home_pose = home_pose.transform_for_blue()
         
-        # Add +90° for coordinate system alignment
-        return Position(home_pose.x, home_pose.y, home_pose.theta_deg + 90.0)
+        return Position(home_pose.x, home_pose.y, home_pose.theta_deg)
     
     def get_wait_to_come_home_pose(self, color: Color) -> Position:
         """Get transformed wait-to-come-home pose"""
@@ -410,5 +406,4 @@ class StrategyBuilder:
         if color == Color.BLUE:
             wait_pose = wait_pose.transform_for_blue()
         
-        # Add +90° for coordinate system alignment
-        return Position(wait_pose.x, wait_pose.y, wait_pose.theta_deg + 90.0)
+        return Position(wait_pose.x, wait_pose.y, wait_pose.theta_deg)

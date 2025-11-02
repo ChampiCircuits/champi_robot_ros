@@ -191,7 +191,7 @@ class ChampiStateMachine(object):
                     get_logger(self.name).debug(f'Action {action_name} with tag {self.current_tag} is valid.')
 
             if action_name == 'move':
-                x, y, theta_deg = action.target.x, action.target.y, action.target.theta_deg - 90.0
+                x, y, theta_deg = action.target.x, action.target.y, action.target.theta_deg
                 
                 # Apply offset if present
                 if action.offset:
