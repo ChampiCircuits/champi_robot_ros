@@ -14,39 +14,34 @@ def create_main_strategy() -> StrategyBuilder:
         .create_group("elements_2")
         .create_group("elements_3")
         .create_group("come_home")
+
+        # TODO il faudra que les takes et tout on donne pas une position, mais le nom de l'élément dans le world state
         
         ######################### BANNER ###############################################
-        .put_banner(1.18, 0.16, 0.0, "banner")
-        .move_to(1.18, 0.46, 0.0, group="banner", 
-                end_speed=0.2, speed=1.0, accel_linear=1.1, accel_angular=15.0)
-        
+        .put_banner("banner")
+        .move_to(Position(1.18, 0.46, 0.0), group="banner", end_speed=0.2, speed=1.0, accel_linear=1.1, accel_angular=15.0)
+
         ######################### FIRST ELEMENT GROUP ################################
         .get_ready("elements_1")
-        .take_elements_sequence(1.1, 0.95, 0.0, "elements_1")
-        
+        .take_elements_sequence(Position(1.1, 0.95, 0.0), "elements_1")        
         # Intermediate movement
-        .move_to(1.225, 0.6, 180.0, group="elements_1",
-                speed=1.0, accel_linear=1.0, accel_angular=12.0)
-        
-        .put_elements_sequence(1.225, 0.1, 180.0, "elements_1")
-        
+        .move_to(Position(1.225, 0.6, 180.0), group="elements_1", use_dynamic_layer=True, speed=1.0, accel_linear=1.0, accel_angular=12.0)
+        .put_elements_sequence(Position(1.225, 0.1, 180.0), "elements_1")
+
         ######################### SECOND ELEMENT GROUP ###############################
         .get_ready("elements_2")
-        .move_to(0.9, 0.75, 90.0, group="elements_2", use_dynamic_layer=True,
-                speed=1.0, accel_linear=1.0, accel_angular=15.0)
-        .take_elements_sequence(0.775, 0.25, 180.0, "elements_2")
-        .put_elements_sequence(1.225, 0.28, 180.0, "elements_2")
-        
+        .move_to(Position(0.9, 0.75, 90.0), group="elements_2", use_dynamic_layer=True, speed=1.0, accel_linear=1.0, accel_angular=15.0)
+        .take_elements_sequence(Position(0.775, 0.25, 180.0), "elements_2")
+        .put_elements_sequence(Position(1.225, 0.28, 180.0), "elements_2")
+
         ######################### THIRD ELEMENT GROUP ################################
         .get_ready("elements_3")
-        .move_to(0.9, 0.6, 90.0, group="elements_3", use_dynamic_layer=True,
-                speed=1.0, accel_linear=1.0, accel_angular=15.0)
-        .take_elements_sequence(0.075, 0.4, 90.0, "elements_3")
-        .put_elements_sequence(0.6, 0.1, 180.0, "elements_3")
+        .move_to(Position(0.9, 0.6, 90.0), group="elements_3", use_dynamic_layer=True, speed=1.0, accel_linear=1.0, accel_angular=15.0)
+        .take_elements_sequence(Position(0.075, 0.4, 90.0), "elements_3")
+        .put_elements_sequence(Position(0.6, 0.1, 180.0), "elements_3")
         
         ######################### COME HOME ##########################################
-        .move_to(0.45, 0.9, 180.0, group="come_home", use_dynamic_layer=True,
-                speed=1.0, accel_linear=1.0, accel_angular=15.0)
+        .move_to(Position(0.45, 0.9, 180.0), group="come_home", use_dynamic_layer=True, speed=1.0, accel_linear=1.0, accel_angular=15.0)
 
         # .come_home() # done automatically at the end by the planner
     )

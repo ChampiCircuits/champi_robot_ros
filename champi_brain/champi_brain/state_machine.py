@@ -7,6 +7,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from champi_brain.state_machine_custom_classes import CustomHierarchicalGraphMachine
 from champi_brain.states import *
+from champi_brain.strategy_dsl import Action
 
 DEFAULT_SPEED = 0.3 # max speed is defined in itf
 
@@ -37,7 +38,6 @@ class ChampiStateMachine(object):
         self.sm.add_state(ChampiState(name='idle', sm=self))
         self.sm.add_state(WaitState(name='wait', sm=self))
         self.sm.add_state(MoveState(name='move', sm=self))
-        self.sm.add_state(MoveForPlatformState(name='moveForPlatform', sm=self))
         self.sm.add_state(DetectPlatformState(name='detectPlatform', sm=self))
         self.sm.add_state(ChampiState(name='endOfMatch', sm=self))
         self.sm.add_state(ComeHomeState(name='comeHome', sm=self))
@@ -52,8 +52,8 @@ class ChampiStateMachine(object):
         self.sm.get_state('init').add_substate(ChampiState(name='waitForTirette', sm=self))
 
         # TRANSITIONS
-        self.sm.add_transition('please_stop', ['init','idle','wait','move', 'moveForPlatform', 'detectPlatform','endOfMatch','action','comeHome','waitToComeHome'], 'stop', conditions='stop_requested')
-        self.sm.add_transition('please_wait_to_come_home', ['init','idle','wait','move', 'moveForPlatform', 'detectPlatform', 'action'], 'waitToComeHome', conditions='wait_to_come_home_requested')
+        self.sm.add_transition('please_stop', ['init','idle','wait','move', 'detectPlatform','endOfMatch','action','comeHome','waitToComeHome'], 'stop', conditions='stop_requested')
+        self.sm.add_transition('please_wait_to_come_home', ['init','idle','wait','move', 'detectPlatform', 'action'], 'waitToComeHome', conditions='wait_to_come_home_requested')
         self.sm.add_transition('please_come_home', 'waitToComeHome', 'comeHome', conditions='come_home_requested')
         ## INIT
         self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
@@ -64,10 +64,9 @@ class ChampiStateMachine(object):
         ## BASIC ACTIONS
         self.sm.add_transition('start_move', 'idle', 'move', conditions='can_start_moving')
         self.sm.add_transition('start_detect_platform', 'idle', 'detectPlatform', conditions='can_start_detecting_platform')
-        self.sm.add_transition('start_move_for_platform', 'idle', 'moveForPlatform', conditions='can_start_moving_for_platform')
         self.sm.add_transition('start_wait', 'idle', 'wait', conditions='can_start_waiting')
         self.sm.add_transition('back_to_idle', 'detectPlatform', 'idle', conditions='platformDetected')
-        self.sm.add_transition('back_to_idle', ['move', 'moveForPlatform'], 'idle', conditions='goal_reached')
+        self.sm.add_transition('back_to_idle', ['move'], 'idle', conditions='goal_reached')
         self.sm.add_transition('back_to_idle', 'action', 'idle', conditions='end_of_actuator_state')
         self.sm.add_transition('back_to_idle', 'wait', 'idle', conditions='end_of_wait')
         self.sm.add_transition('end_of_match', '*', 'endOfMatch', conditions='match_has_ended')
@@ -173,13 +172,13 @@ class ChampiStateMachine(object):
             get_logger(self.name).warn(f'End of actions ! Staying in [{self.state}] waiting to go home...')
             get_logger(self.name).info(f'All actions in {(100.-self.itf.time_left):.1f} seconds.')
         else:
-            action = self.strategy[0]
+            action: Action = self.strategy[0]
             get_logger(self.name).info(f'Next action is {action}')
 
-            action_name = action['action']
-            get_logger(self.name).info(f' name: {action_name} & tag: {action.get('tag')}')
-            if action.get('tag') is not None:
-                self.current_tag = action['tag']
+            action_name = action.action
+            get_logger(self.name).info(f' name: {action_name} & tag: {action.group}')
+            if action.group is not None:
+                self.current_tag = action.group
                 if self.current_tag == self.latest_canceled_tag:
                     get_logger(self.name).warn(f'Action {action_name} with tag {self.current_tag} was previously canceled.')
                     self.strategy.pop(0)
@@ -191,37 +190,23 @@ class ChampiStateMachine(object):
                     get_logger(self.name).debug(f'Action {action_name} with tag {self.current_tag} is valid.')
 
             if action_name == 'move':
-                x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
-                speed = action['speed'] if 'speed' in action else DEFAULT_SPEED
-                if 'use_dynamic_layer' in action:
-                    use_dynamic_layer = action['use_dynamic_layer']
-                else:
-                    use_dynamic_layer = False
-                if 'end_speed' in action:
-                    end_speed = action['end_speed']
-                else:
-                    end_speed = 0.
-                if 'accel_linear' in action:
-                    accel_linear = action['accel_linear']
-                else:
-                    accel_linear = 0.5 # default value
-                if 'accel_angular' in action:
-                    accel_angular = action['accel_angular']
-                else:
-                    accel_angular = 6.0 # default value
+                x, y, theta_deg = action.target.x, action.target.y, action.target.theta_deg - 90.0
+                
+                # Apply offset if present
+                if action.offset:
+                    offset_x, offset_y, offset_theta = action.offset.x, action.offset.y, action.offset.theta_deg
+                    theta_rad = theta_deg * math.pi / 180.0
+                    x += offset_x * math.cos(theta_rad) - offset_y * math.sin(theta_rad)
+                    y += offset_x * math.sin(theta_rad) + offset_y * math.cos(theta_rad)
+                    theta_deg += offset_theta
+                
                 self.can_start_moving = True
-                self.start_move(x=x, y=y, theta_deg=theta_deg+90.0, use_dynamic_layer=use_dynamic_layer, speed=speed, end_speed=end_speed, 
-                                accel_linear=accel_linear, accel_angular=accel_angular)  # +90° to align with the coordinate system
-
-            elif action_name == 'moveForPlatform':
-                x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
-                self.can_start_moving_for_platform = True
-                self.start_move_for_platform(x=x, y=y, theta_deg=theta_deg)  # +90° to align with the coordinate system --> is done in the state after computations
+                self.start_move(x=x, y=y, theta_deg=theta_deg, motion_params=action.motion)
 
             elif action_name == 'detectPlatform':
-                x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
+                # detectPlatform doesn't need target coordinates - it uses current robot position
                 self.can_start_detecting_platform = True
-                self.start_detect_platform(x_robot=x, y_robot=y, theta_deg_robot=theta_deg)
+                self.start_detect_platform()
 
             elif action_name in self.action_list:
                 self.can_start_action = True
@@ -229,10 +214,12 @@ class ChampiStateMachine(object):
 
             elif action_name == 'wait':
                 self.can_start_waiting = True
-                self.start_wait(duration=action['duration'])
+                # Get duration from extra_params
+                duration = action.extra_params.get('duration', 0.0)
+                self.start_wait(duration=duration)
 
             elif action_name == 'add_points':
-                self.itf.add_points(int(action['points']))
+                self.itf.add_points(action.points)
                 self.add_points_is_done = True
                 self.add_points_done()
 

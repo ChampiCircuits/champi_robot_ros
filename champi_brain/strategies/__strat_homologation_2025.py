@@ -20,24 +20,21 @@ def create_main_strategy() -> StrategyBuilder:
         
         ######################### BANNER ###############################################
         # Move forward from starting position
-        .move_to(1.18, 0.46, 0.0, group="banner")
+        .move_to(Position(1.18, 0.46, 0.0), group="banner")
         
         ######################### FIRST ELEMENT GROUP ##################################
         # Take elements from first platform
-        .take_elements_sequence(1.1, 0.95, 0.0, "elements_1")
-        
-        # Put elements in jardiniere
-        .put_elements_sequence(1.225, 0.1, 180.0, "elements_1")
-        
+        .take_elements_sequence(Position(1.1, 0.95, 0.0), "elements_1")
+
+        # Put elements
+        .put_elements_sequence(Position(1.225, 0.1, 180.0), "elements_1")
+
         ######################### COME HOME ############################################
         # Move to position to look at aruco marker
-        .move_to(0.3, 0.6, -90.0, group="come_home", use_dynamic_layer=True)
+        .move_to(Position(0.3, 0.6, -90.0), group="come_home", use_dynamic_layer=True)
         
         # Reset actuators before final positioning
         .custom_action("RESET_ACTUATORS", group="elements_3")
-        
-        # Note: Final come_home action will move to home_pose (0.3, 1.0, 0°)
-        # But we don't call it here since we're already close
     )
     
     return strategy

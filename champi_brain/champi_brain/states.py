@@ -13,19 +13,19 @@ class StopState(ChampiState):
     def enter(self, event_data):
         self.sm.stop_requested = False # request satisfied
 
-class InitPoseState(ChampiState):
-    def enter(self, event_data):
-        super().enter(event_data)
+# class InitPoseState(ChampiState): # TODO quand on voudra init la pose du robot pendant le temps de prep automatiquement
+#     def enter(self, event_data):
+#         super().enter(event_data)
 
-        # TODO attendre un tag aruco OK
+#         # TODO attendre un tag aruco OK
 
-        x = self.sm.init_pose[0]
-        y = self.sm.init_pose[1]
-        theta_deg = self.sm.init_pose[2]
-        theta_rad = theta_deg * 3.14159 / 180.0
+#         x = self.sm.init_pose[0]
+#         y = self.sm.init_pose[1]
+#         theta_deg = self.sm.init_pose[2]
+#         theta_rad = theta_deg * 3.14159 / 180.0
 
-        get_logger(self.name+'_state').info(f"Start moving to INIT pose: x={x}, y={y}, theta={theta_deg}°")
-        # self.sm.itf.send_goal(x, y, theta_rad, use_dynamic_layer=False, speed=0.2, end_speed=0.)
+#         get_logger(self.name+'_state').info(f"Start moving to INIT pose: x={x}, y={y}, theta={theta_deg}°")
+#         # self.sm.itf.send_goal(x, y, theta_rad, use_dynamic_layer=False, speed=0.2, end_speed=0.)
 
 
 class MoveState(ChampiState):
@@ -35,17 +35,14 @@ class MoveState(ChampiState):
         x = event_data.kwargs.get('x', None)
         y = event_data.kwargs.get('y', None)
         theta_deg = event_data.kwargs.get('theta_deg', None)
-        use_dynamic_layer = event_data.kwargs.get('use_dynamic_layer', None)
-        speed = event_data.kwargs.get('speed', None)
-        end_speed = event_data.kwargs.get('end_speed', None)
-        accel_linear = event_data.kwargs.get('accel_linear', None)
-        accel_angular = event_data.kwargs.get('accel_angular', None)
-        self.move_to(x, y, theta_deg, use_dynamic_layer, speed, end_speed, accel_linear, accel_angular)
+        motion_params = event_data.kwargs.get('motion_params', None)
 
-    def move_to(self, x, y, theta_deg, use_dynamic_layer, speed, end_speed, accel_linear, accel_angular):
+        self.move_to(x, y, theta_deg, motion_params)
+
+    def move_to(self, x, y, theta_deg, motion_params):
         theta_rad = theta_deg * math.pi / 180.0
-        get_logger(self.name+'_state').info(f"Start moving to x={x}, y={y}, theta={theta_deg}° with end_speed={end_speed}, speed={speed}, accel_linear={accel_linear}, accel_angular={accel_angular}")
-        self.sm.itf.send_goal(x, y, theta_rad, use_dynamic_layer, speed=speed, end_speed=end_speed, accel_linear=accel_linear, accel_angular=accel_angular)
+        get_logger(self.name+'_state').info(f"Start moving to x={x}, y={y}, theta={theta_deg}° with motion params: {motion_params}")
+        self.sm.itf.send_goal(x, y, theta_rad, motion_params)
 
 class DetectPlatformState(ChampiState):
     def enter(self, event_data):
@@ -57,11 +54,19 @@ class DetectPlatformState(ChampiState):
         et les prochains moveForPlatform se basent sur ca
         """
 
+    # TODO, pour l'instant cette année on utilise plus de détection interne
+    # mais sinon faudra mettre à jour le world state depuis ici
+    # et que le move sache qu'il doit se baser sur cette détection
+
         super().enter(event_data)
-        # x,y,theta_deg are the pose of the platform in /odom frame
-        x_robot = event_data.kwargs.get('x_robot', None)
-        y_robot = event_data.kwargs.get('y_robot', None)
-        theta_deg_robot = event_data.kwargs.get('theta_deg_robot', None)
+        # Get robot's current pose from odometry
+        x_robot, y_robot, theta_deg_robot = self.sm.itf.get_current_pose()
+        if x_robot is None:
+            get_logger(self.name).error('Odometry not available !!')
+            # stop action
+            self.sm.cancel_current_tag()
+            return
+        
         theta_rad_robot = theta_deg_robot * math.pi / 180.0
         get_logger(self.name).info(f'robot pose is {x_robot} {y_robot} {theta_deg_robot}°')
 
@@ -90,30 +95,30 @@ class DetectPlatformState(ChampiState):
         get_logger(self.name).info(f'platform pose is {x_front_platform} {y_front_platform} {theta_deg_front_platform}°')
         self.sm.platformDetected = True
 
-class MoveForPlatformState(MoveState):
-    def enter(self, event_data):
-        # super().enter(event_data)
-        # here x y theta are offsets
-        x_offset = event_data.kwargs.get('x', None)
-        y_offset = event_data.kwargs.get('y', None)
-        theta_deg_offset = event_data.kwargs.get('theta_deg', None)
-        theta_rad_offset = theta_deg_offset * math.pi / 180.0
-        get_logger(self.name).info(f'offset are {x_offset} {y_offset} {theta_deg_offset}°')
+# class MoveForPlatformState(MoveState): # TODO on utilise plus move for platform, donc trouver un moyen de toujours prendre en compte l'offset détecté
+#     def enter(self, event_data):
+#         # super().enter(event_data)
+#         # here x y theta are offsets
+#         x_offset = event_data.kwargs.get('x', None)
+#         y_offset = event_data.kwargs.get('y', None)
+#         theta_deg_offset = event_data.kwargs.get('theta_deg', None)
+#         theta_rad_offset = theta_deg_offset * math.pi / 180.0
+#         get_logger(self.name).info(f'offset are {x_offset} {y_offset} {theta_deg_offset}°')
 
-        platform_center = self.sm.platform_center # theta in deg
-        get_logger(self.name).info(f'platform_center is {platform_center[0]} {platform_center[1]} {platform_center[2]}°')
+#         platform_center = self.sm.platform_center # theta in deg
+#         get_logger(self.name).info(f'platform_center is {platform_center[0]} {platform_center[1]} {platform_center[2]}°')
 
-        # compute pose in front of platform
-        # subtract the dist to the pose taking the angle in account
-        # Apply rotation and translation
-        x_front_platform = (x_offset * math.cos(platform_center[2]* math.pi / 180.0) - y_offset * math.sin(platform_center[2]* math.pi / 180.0)) + platform_center[0]
-        y_front_platform = (x_offset * math.sin(platform_center[2]* math.pi / 180.0) + y_offset * math.cos(platform_center[2]* math.pi / 180.0)) + platform_center[1]
-        theta_deg_front_platform = platform_center[2] + theta_deg_offset
+#         # compute pose in front of platform
+#         # subtract the dist to the pose taking the angle in account
+#         # Apply rotation and translation
+#         x_front_platform = (x_offset * math.cos(platform_center[2]* math.pi / 180.0) - y_offset * math.sin(platform_center[2]* math.pi / 180.0)) + platform_center[0]
+#         y_front_platform = (x_offset * math.sin(platform_center[2]* math.pi / 180.0) + y_offset * math.cos(platform_center[2]* math.pi / 180.0)) + platform_center[1]
+#         theta_deg_front_platform = platform_center[2] + theta_deg_offset
 
-        get_logger(self.name).info(f'computed pose is {x_front_platform} {y_front_platform} {theta_deg_front_platform}°')
+#         get_logger(self.name).info(f'computed pose is {x_front_platform} {y_front_platform} {theta_deg_front_platform}°')
 
-        self.move_to(x_front_platform, y_front_platform, theta_deg_front_platform+90., use_dynamic_layer=False, speed=0.3, end_speed=0.0, 
-                     accel_linear=0.5, accel_angular=6.0) # +90° to align with the coordinate system
+#         self.move_to(x_front_platform, y_front_platform, theta_deg_front_platform+90., use_dynamic_layer=False, speed=0.3, end_speed=0.0, 
+#                      accel_linear=0.5, accel_angular=6.0) # +90° to align with the coordinate system
 
 class WaitState(ChampiState):
     def enter(self, event_data):

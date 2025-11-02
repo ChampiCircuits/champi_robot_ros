@@ -14,6 +14,7 @@ from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32, Bool
 from nav_msgs.msg import Odometry
 from rclpy.action import ActionClient
 from champi_interfaces.srv import SetPose
+from champi_brain.strategy_dsl import MotionParams
 
 from math import sin, cos, pi, atan2
 from champi_brain.state_machine import ChampiStateMachine
@@ -118,6 +119,16 @@ class ChampiStateMachineITF(Node):
         theta_rad = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
         theta_deg = theta_rad * 180.0 / pi - 90.0 # to align with the coordinate system
         self.latest_pose = [msg.pose.pose.position.x, msg.pose.pose.position.y, theta_deg]
+
+    def get_current_pose(self):
+        """Get the current pose of the robot from odometry
+        Returns:
+            tuple: (x, y, theta_deg) or (None, None, None) if not available yet
+        """
+        if self.latest_pose is None:
+            self.get_logger().warn('No odometry data received yet, cannot get current pose')
+            return None, None, None
+        return self.latest_pose[0], self.latest_pose[1], self.latest_pose[2]
 
     def reset_state_machine_callback(self, msg):
         self.champi_sm.reset()
@@ -288,11 +299,11 @@ class ChampiStateMachineITF(Node):
 
 
 # ============================================ Utils ==============================================
-    def send_goal(self, x, y, theta_rad, use_dynamic_layer, speed, end_speed, accel_linear, accel_angular):
+    def send_goal(self, x, y, theta_rad, motion_params: MotionParams):
         self.get_logger().info(f' Call action to move to {x} {y}')
 
         msg = Bool()
-        msg.data = use_dynamic_layer
+        msg.data = motion_params.use_dynamic_layer
         self.use_dynamic_layer_pub.publish(msg)
 
 
@@ -306,14 +317,14 @@ class ChampiStateMachineITF(Node):
         goal_pose.orientation.w = cos(theta_rad / 2.0)
 
         # Create a Navigate request and send it
-        goal = self.create_action_goal(goal_pose, speed, end_speed, accel_linear, accel_angular)
+        goal = self.create_action_goal(goal_pose, motion_params)
         future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
         future_navigate_result.add_done_callback(self.goal_response_callback)
 
         self.get_logger().info('Goal sent...')
 
 
-    def create_action_goal(self, goal_pose, speed, end_speed, accel_linear, accel_angular):
+    def create_action_goal(self, goal_pose, motion_params: MotionParams):
 
         goal = Navigate.Goal()
         
@@ -322,11 +333,11 @@ class ChampiStateMachineITF(Node):
         # goal.end_speed = end_speed
         goal.end_speed = 0. # TODO quick fix
 
-        goal.max_linear_speed = speed
+        goal.max_linear_speed = motion_params.speed
         goal.max_angular_speed = 3.0
-        goal.accel_linear = accel_linear
-        goal.accel_angular = accel_angular
-        
+        goal.accel_linear = motion_params.accel_linear
+        goal.accel_angular = motion_params.accel_angular
+
         goal.linear_tolerance = 0.005
         goal.angular_tolerance = 0.05
 
