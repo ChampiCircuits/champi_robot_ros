@@ -2,7 +2,7 @@ from rich.console import Console
 from rich.text import Text
 from rich.console import Console
 from rich.table import Table
-from champi_brain.worldState import WorldState
+from champi_brain.world_state.worldState import WorldState
 from champi_brain.enums import ZoneType
 
 

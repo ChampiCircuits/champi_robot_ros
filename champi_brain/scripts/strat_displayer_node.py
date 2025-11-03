@@ -7,7 +7,7 @@ from rclpy.executors import ExternalShutdownException
 
 import sys
 import os
-from champi_brain.strategy_loader_v2 import load_strategy
+from champi_brain.strategy_loader import load_strategy
 from champi_brain.strategy_dsl import Action
 from champi_libraries_py.utils.angles import rad_to_quat
 
@@ -225,7 +225,7 @@ class StrategyPublisher(Node):
         path_msg.header.stamp = self.get_clock().now().to_msg()
 
         marker_array = MarkerArray()
-        line_points = []
+        line_points: list = []
 
         marker_array, line_points = self.add_init_markers(line_points, marker_array)
 

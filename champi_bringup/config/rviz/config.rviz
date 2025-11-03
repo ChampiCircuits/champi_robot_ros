@@ -14,7 +14,7 @@ Panels:
         - /strategy path1/Topic1
         - /strategy path1/Namespaces1
       Splitter Ratio: 0.6868008971214294
-    Tree Height: 769
+    Tree Height: 439
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -463,9 +463,7 @@ Visualization Manager:
       Enabled: true
       Name: strategy path
       Namespaces:
-        strategy_actions: true
-        strategy_labels: true
-        strategy_path: true
+        {}
       Topic:
         Depth: 1
         Durability Policy: Volatile
@@ -518,26 +516,21 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz_default_plugins/XYOrbit
-      Distance: 2.003848075866699
+      Angle: 0
+      Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 0.13111692667007446
-        Y: 1.2283806800842285
-        Z: -5.960464477539063e-08
-      Focal Shape Fixed Size: true
-      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.524796485900879
+      Scale: 328.96966552734375
       Target Frame: map
-      Value: XYOrbit (rviz_default_plugins)
-      Yaw: 3.8223915100097656
+      Value: TopDownOrtho (rviz_default_plugins)
+      X: 1.1822233200073242
+      Y: 0.564838707447052
     Saved: ~
 Window Geometry:
   Displays:
@@ -559,5 +552,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1920
-  X: 1920
-  Y: 32
+  X: 0
+  Y: 16

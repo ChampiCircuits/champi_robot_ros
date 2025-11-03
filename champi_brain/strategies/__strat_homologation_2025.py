@@ -39,39 +39,3 @@ def create_main_strategy() -> StrategyBuilder:
     )
     
     return strategy
-
-# Example usage
-if __name__ == "__main__":
-    # Create the strategy
-    strategy = create_main_strategy()
-    
-    # Display preview
-    print("=== Yellow team strategy (Homologation) ===")
-    yellow_dict = strategy.to_dict(Color.YELLOW)
-    print(f"Actions: {len(yellow_dict['actions'])}")
-    if 'groups' in yellow_dict:
-        print(f"Groups: {list(yellow_dict['groups'].keys())}")
-    print(f"Init pose: {yellow_dict['init_pose']}")
-    print(f"Home pose: {yellow_dict['home_pose']}")
-    print()
-    
-    # Show all actions
-    print("Actions:")
-    for i, action in enumerate(yellow_dict['actions']):
-        print(f"  {i}: {action['action']}", end='')
-        if 'target' in action:
-            t = action['target']
-            print(f" -> ({t['x']:.2f}, {t['y']:.2f}, {t['theta_deg']:.0f}°)", end='')
-        if 'group' in action:
-            print(f" [group: {action['group']}]", end='')
-        print()
-
-    print("\n=== Blue team strategy (Homologation) ===")
-    blue_dict = strategy.to_dict(Color.BLUE)
-    print(f"Actions: {len(blue_dict['actions'])}")
-    if 'groups' in blue_dict:
-        print(f"Groups: {list(blue_dict['groups'].keys())}")
-    print(f"Init pose: {blue_dict['init_pose']}")
-    print(f"Home pose: {blue_dict['home_pose']}")
-
-    print(f"\nStrategy ready for loading with strategy_loader_v2")

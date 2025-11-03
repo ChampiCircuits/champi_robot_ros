@@ -78,7 +78,7 @@ class Action:
     
     def to_dict(self) -> Dict[str, Any]:
         """Converts action to dictionary"""
-        result = {"action": self.action}
+        result: Dict[str, Any] = {"action": self.action}
         
         if self.target:
             result["target"] = self.target.to_dict()

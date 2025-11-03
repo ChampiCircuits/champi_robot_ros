@@ -1,4 +1,4 @@
-from champi_brain.worldState import WorldState
+from champi_brain.world_state.worldState import WorldState
 from champi_brain.enums import NutsBox, Color, ElementState
 import unittest
 

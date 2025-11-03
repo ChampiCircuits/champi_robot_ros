@@ -22,6 +22,8 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     
     # Import the strategy module
     spec = importlib.util.spec_from_file_location("strategy_module", strategy_file_path)
+    if spec is None:
+        raise ValueError(f"Could not load spec from {strategy_file_path}")
     strategy_module = importlib.util.module_from_spec(spec)
 
     # Load the points per action configuration
@@ -33,6 +35,8 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     if strategy_dir not in sys.path:
         sys.path.insert(0, strategy_dir)
     
+    if spec.loader is None:
+        raise ValueError(f"Spec loader is None for {strategy_file_path}")
     spec.loader.exec_module(strategy_module)
     
     # Get the strategy

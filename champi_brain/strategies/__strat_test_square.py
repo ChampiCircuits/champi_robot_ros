@@ -9,10 +9,10 @@ from champi_brain.strategy_dsl import StrategyBuilder, Position, Color
 num_iterations = 10
 
 
-def create_main_strategy() -> StrategyBuilder:   
+def create_main_strategy(points_per_action: dict) -> StrategyBuilder:   
     """Create a square movement strategy
     """
-    strategy = StrategyBuilder()
+    strategy = StrategyBuilder(points_per_action)
 
     # Configuration of poses
     strategy.set_init_pose(1.0, 1.0, 0.0)
@@ -30,28 +30,3 @@ def create_main_strategy() -> StrategyBuilder:
     strategy.come_home()
 
     return strategy
-
-# Example usage
-if __name__ == "__main__":
-    print(f"Creating strategy with {num_iterations} back-and-forth cycles")
-    print()
-
-    # Create the strategy
-    strategy = create_main_strategy()
-
-    # Display preview
-    print("=== Yellow team strategy ===")
-    yellow_dict = strategy.to_dict(Color.YELLOW)
-    print(f"Actions: {len(yellow_dict['actions'])}")
-    if 'groups' in yellow_dict:
-        print(f"Groups: {list(yellow_dict['groups'].keys())}")
-    print(f"Init pose: {yellow_dict['init_pose']}")
-    print(f"Home pose: {yellow_dict['home_pose']}")
-
-    print("\n=== Blue team strategy ===")
-    blue_dict = strategy.to_dict(Color.BLUE)
-    print(f"Actions: {len(blue_dict['actions'])}")
-    if 'groups' in blue_dict:
-        print(f"Groups: {list(blue_dict['groups'].keys())}")
-    print(f"Init pose: {blue_dict['init_pose']}")
-    print(f"Home pose: {blue_dict['home_pose']}")

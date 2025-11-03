@@ -118,7 +118,7 @@ path_planner:
     enemy_detect_angle: 60. # degrees from x+ axis
     backoff_distance: 0.1 # m. Distance to back off from the enemy robot when it is too close after the timeout
 
-sm_ros_itf:
+state_machine:
   ros__parameters:
     # strategy_file: '__strat_test_square.py'
     strategy_file: '__strat_main_2025.py'

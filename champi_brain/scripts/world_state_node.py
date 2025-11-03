@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
-from champi_brain.worldState import WorldState, NutsBox
+from champi_brain.world_state.worldState import WorldState, NutsBox
 from champi_interfaces.msg import TableObservation, GameElement
 
 class WorldStateNode(Node):
@@ -44,7 +44,7 @@ class WorldStateNode(Node):
                 id=elem.id,
                 x=elem.x,
                 y=elem.y,
-                orientation=elem.orientation,
+                theta_deg=elem.orientation,
                 state=elem.state,
                 color=elem.color
             )
@@ -62,7 +62,7 @@ class WorldStateNode(Node):
             game_elem.id = elem.id
             game_elem.x = elem.x
             game_elem.y = elem.y
-            game_elem.orientation = elem.orientation
+            game_elem.orientation = elem.theta_deg
             game_elem.state = elem.state
             game_elem.color = elem.color
             msg.elements.append(game_elem)

@@ -1,426 +1,414 @@
 #!/usr/bin/env python3
+"""
+State Machine ROS Node - Thin ROS wrapper
+Connects the pure state machine to ROS interfaces.
+"""
 
 import rclpy
 from rclpy.node import Node
 from rclpy.clock import Clock
-from rclpy.qos import QoSProfile, QoSReliabilityPolicy
-from ament_index_python.packages import get_package_share_directory
 from rclpy.executors import ExternalShutdownException
+from ament_index_python.packages import get_package_share_directory
+from typing import Optional
 
-from champi_interfaces.action import Navigate
 from champi_interfaces.msg import STMState
-from geometry_msgs.msg import Point, Pose, PoseWithCovarianceStamped
 from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32, Bool
 from nav_msgs.msg import Odometry
-from rclpy.action import ActionClient
-from champi_interfaces.srv import SetPose
-from champi_brain.strategy_dsl import MotionParams
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
-from math import sin, cos, pi, atan2
-from champi_brain.state_machine import ChampiStateMachine
 import time
-from champi_brain.strategy_loader_v2 import load_strategy
+from math import atan2, pi, sqrt
 
-TOTAL_AVAILABLE_TIME = 100
-# also defined in states.py
-MAX_LINEAR_SPEED = 1.0 #default speed is defined in state_machine.py
+from champi_brain.strategy_dsl import Action, MotionParams, Position, Offset
+from champi_brain.enums import Color
+from champi_brain.state_machine import StateMachine, StateMachineConfig
+from champi_brain.core.match_controller import MatchController
+from champi_brain.ros.ros_action_executor import ROSActionExecutor
+from champi_brain.strategy_loader import load_strategy
 
-class ChampiStateMachineITF(Node):
 
-    def stm_initialized_callback(self): self.champi_sm.stm_initialized = True
-    def goal_reached_callback(self): self.champi_sm.goal_reached = True
-
+class StateMachineNode(Node):
+    """
+    ROS2 node that wraps the pure state machine.
+    Responsibilities:
+    - Create and configure StateMachine with ROS dependencies
+    - Convert ROS messages to state machine calls
+    - Publish state machine status to ROS topics
+    """
+    
     def __init__(self):
-        super().__init__('sm_ros_itf')
+        super().__init__('state_machine')
         self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
-
-        self.get_logger().info('Launching ChampiSMRosInterface...')
-        self.itf_initialized = False
-
-        # Parameters
-        strategy_file_param = self.declare_parameter('strategy_file', rclpy.Parameter.Type.STRING).value
-        use_above_default_strategy_param = self.declare_parameter('use_above_default_strategy', rclpy.Parameter.Type.BOOL).value
-        self.sim_param = self.declare_parameter('sim', rclpy.Parameter.Type.BOOL).value
-
-        # Print parameters
-        self.get_logger().info('SM interface started with the following parameters:')
-        self.get_logger().info(f'strategy: {strategy_file_param}')
-        self.get_logger().info(f'use_above_default_strategy_param: {use_above_default_strategy_param}')
-        self.get_logger().info(f'sim: {self.sim_param}')
-
-
-        self.champi_sm = ChampiStateMachine()
-        self.champi_sm.set_itf(self)
-
-        self.clock = Clock()
-        self.start_time = None
-        self.time_left = TOTAL_AVAILABLE_TIME
-
-        self.timer = self.create_timer(timer_period_sec=0.2, callback=self.callback_timer)
-
-        # service /set_pose
-        self.client = self.create_client(SetPose, '/set_pose')
-
-
-        # # Strategy
-        if use_above_default_strategy_param and self.sim_param: # TODOOOOOO
-            self.get_logger().warn('>> State machine in SIM mode --> loading DEFAULT strategy...')
-            self.champi_sm.color = 'YELLOW'
-            self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose, self.champi_sm.wait_to_come_home_pose = load_strategy(get_package_share_directory('champi_brain') + '/strategies/' + strategy_file_param, self.champi_sm.color, self.get_logger())
-            self.get_logger().warn(f'<< DEFAULT Strategy {strategy_file_param} loaded!')
-            self.get_logger().info(f'<< Init pose {self.champi_sm.init_pose}')
-            self.get_logger().info(f'<< Home pose {self.champi_sm.home_pose}')
-            self.get_logger().info(f'<< Wait to come home pose {self.champi_sm.wait_to_come_home_pose}')
-            self.champi_sm.user_has_chosen_config = True
-            self.sim_user_choose_strat_and_pose() # TODO remove
-
-        # Action client for /navigate
-        self.get_logger().info('>> Waiting for action client /navigate...')
-        self.goal_handle_navigate = None
-        self.action_client_navigate = ActionClient(self, Navigate, '/navigate')
-        self.action_client_navigate.wait_for_server()
-        self.get_logger().info('<< Action client /navigate is ready!')
-
-        self.use_dynamic_layer_pub = self.create_publisher(Bool, '/use_dynamic_layer', 10)
-
-        # publisher topic /ctrl/actuators
-        self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
-        if not self.sim_param:
-            self.send_actuator_action('RESET_ACTUATORS')
-        # subscriber topic //actuators_finished
-        self.actuators_finished_sub = self.create_subscription(Int8MultiArray, '/actuators_finished', self.actuators_finished_callback, 10)
-        # subscriber e_stop+tirette state
-        self.STM_State_sub = self.create_subscription(STMState, '/STM_state', self.stm_state_callback, 10)
-        self.e_stop_pressed = None
-        self.tirette_released = None
-
-        # publisher topic /points
-        self.points_pub = self.create_publisher(Int8, '/final_score', 10)
-        self.current_points = 0
-
-        # subscriber topic /chosen_strategy
-        self.chosen_strategy_sub = self.create_subscription(String, '/chosen_strategy', self.chosen_strategy_callback, 10)
-
-        # subscriber topic /reset_state_machine
-        self.reset_state_machine_sub = self.create_subscription(Empty, '/reset_state_machine', self.reset_state_machine_callback, 10)
-
-        # subscriber topic /platform_distance
-        self.platform_distance_sub = self.create_subscription(Float32, '/platform_distance', self.platform_distance_callback, 10)
-        self.latest_platform_dist = None
-
-        # subscriber topic /odom
-        self.current_pose_sub = self.create_subscription(Odometry, '/odom', self.current_pose_callback, 10)
-        self.latest_pose = None # [x, y, theta_deg]
-
-        self.champi_sm.ros_initialized = True # TODO more things ?
-        self.itf_initialized = True
-        self.get_logger().warn('Launched ChampiSMRosInterface !')
-
-    def current_pose_callback(self, msg):
-        # convert from quaternion to euler angles
-        theta_rad = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
-        theta_deg = theta_rad * 180.0 / pi
-        self.latest_pose = [msg.pose.pose.position.x, msg.pose.pose.position.y, theta_deg]
-
-    def get_current_pose(self):
-        """Get the current pose of the robot from odometry
-        Returns:
-            tuple: (x, y, theta_deg) or (None, None, None) if not available yet
-        """
-        if self.latest_pose is None:
-            self.get_logger().warn('No odometry data received yet, cannot get current pose')
-            return None, None, None
-        return self.latest_pose[0], self.latest_pose[1], self.latest_pose[2]
-
-    def reset_state_machine_callback(self, msg):
-        self.champi_sm.reset()
-        self.current_points = 0
-        self.start_time = None
-        self.time_left = TOTAL_AVAILABLE_TIME
-
-        # Cancel current goal if self.future_navigate_result not None
-        if self.goal_handle_navigate is not None:
-            self.get_logger().info('Cancelling current goal...')
-
-            future = self.goal_handle_navigate.cancel_goal_async()
-            future.add_done_callback(self.cancel_done_callback)
-
-        if not self.sim_param:
-            self.send_actuator_action('ENABLE_ALL_MOTORS')
-            time.sleep(1)
-            self.send_actuator_action('RESET_ACTUATORS')
-        self.get_logger().warn('\nChampiSM has been reset!\n')
-
-    def platform_distance_callback(self, msg):
-        self.latest_platform_dist = msg.data
-
-    def chosen_strategy_callback(self, msg):
-        strategy_file_param, self.champi_sm.color = msg.data.split('#')
-        self.get_logger().info(f'Chosen strategy: {strategy_file_param}, Color: {self.champi_sm.color}')
-
-        self.get_logger().info('>> Loading strategy...')
-        self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose = load_strategy(get_package_share_directory('champi_brain') + '/strategies/' + strategy_file_param, self.champi_sm.color, self.get_logger())
-        self.get_logger().info(f'<< Strategy {strategy_file_param} loaded!')
-        self.get_logger().info(f'<< Init pose {self.champi_sm.init_pose}')
-        self.champi_sm.user_has_chosen_config = True
-        self.sim_user_choose_strat_and_pose() # TODO remove
-
-    def add_points(self, points):
-        self.current_points += points
-
-        msg = Int8()
-        msg.data = self.current_points
-        self.points_pub.publish(msg)
-
-    def stm_state_callback(self, msg):
+        self.get_logger().info('🚀 Launching State Machine...')
+        
+        # ============================================================
+        # PARAMETERS
+        # ============================================================
+        strategy_file = self.declare_parameter('strategy_file', '').value
+        use_default_strategy = self.declare_parameter('use_above_default_strategy', False).value
+        self.sim_mode = self.declare_parameter('sim', False).value
+        
+        self.get_logger().info(f'Parameters:')
+        self.get_logger().info(f'  strategy_file: {strategy_file}')
+        self.get_logger().info(f'  use_default_strategy: {use_default_strategy}')
+        self.get_logger().info(f'  sim_mode: {self.sim_mode}')
+        
+        # ============================================================
+        # CREATE CORE COMPONENTS
+        # ============================================================
+        
+        # Match controller (100s match)
+        self.match_controller = MatchController(total_time=100.0)
+        self.match_controller.on_score_changed = self._on_score_changed
+        
+        # ROS Action Executor
+        self.action_executor = ROSActionExecutor(self)
+        self.action_executor.on_goal_reached = self._on_action_completed
+        self.action_executor.on_goal_failed = self._on_action_failed
+        
+        # State Machine Config (will be filled when strategy is chosen)
+        self.sm_config = None
+        self.state_machine: Optional[StateMachine] = None
+        
+        # ============================================================
+        # ROS SUBSCRIBERS
+        # ============================================================
+        
+        # STM state (e-stop + tirette)
+        self.create_subscription(
+            STMState, '/STM_state',
+            self._on_stm_state,
+            10
+        )
+        self.e_stop_pressed = False
+        self.tirette_released = False
+        
+        # Odometry
+        self.create_subscription(
+            Odometry, '/odom',
+            self._on_odometry,
+            10
+        )
+        self.current_pose = None  # (x, y, theta_deg)
+        
+        # Chosen strategy
+        self.create_subscription(
+            String, '/chosen_strategy',
+            self._on_chosen_strategy,
+            10
+        )
+        
+        # Reset command
+        self.create_subscription(
+            Empty, '/reset_state_machine',
+            self._on_reset_request,
+            10
+        )
+        
+        # Platform detection
+        self.create_subscription(
+            Float32, '/platform_distance',
+            self._on_platform_distance,
+            10
+        )
+        self.platform_distance = None
+        
+        # Actuators finished
+        self.create_subscription(
+            Int8MultiArray, '/actuators_finished',
+            self._on_actuators_finished,
+            10
+        )
+        
+        # ============================================================
+        # ROS PUBLISHERS
+        # ============================================================
+        
+        # Score
+        self.score_pub = self.create_publisher(Int8, '/final_score', 10)
+        
+        # State (for debugging/monitoring)
+        self.state_pub = self.create_publisher(String, '/sm_state', 10)
+        
+        # ============================================================
+        # TIMER
+        # ============================================================
+        
+        # Main update loop (10 Hz)
+        self.create_timer(0.1, self._update_callback)
+        
+        # ============================================================
+        # AUTO-START IN SIM MODE
+        # ============================================================
+        
+        # Store for later use
+        self.use_default_strategy = use_default_strategy
+        self.strategy_file = strategy_file
+        
+        if use_default_strategy and self.sim_mode and strategy_file:
+            self.get_logger().warn(f'🎮 SIM MODE: Auto-loading strategy: {strategy_file}')
+            # Default to YELLOW team in simulation
+            self._load_strategy(strategy_file, 'YELLOW')
+        
+        self.get_logger().warn('✅ State Machine ready!')
+    
+    # ================================================================
+    # ROS CALLBACKS
+    # ================================================================
+    
+    def _on_stm_state(self, msg: STMState) -> None:
+        """Handle STM state (e-stop and tirette)."""
         self.e_stop_pressed = msg.e_stop_pressed
         self.tirette_released = msg.tirette_released
-
-    def actuators_finished_callback(self, msg):
-        array = msg.data # 9 elements
-        self.get_logger().debug(f'Actuators finished: {array}') # TODO check for which one but should be ok without
-
-        self.champi_sm.end_of_actuator_state = True
-
-    def sim_user_choose_strat_and_pose(self):
-        self.init_robot_pose()
-        self.get_logger().info('Pose has been init')
-
-    def callback_timer(self):
-        if self.champi_sm.state == 'init_waitForTirette':
-            if self.tirette_released or self.sim_param: # in sim, no tirette
-                self.champi_sm.tirette_released = True
-                self.start_time = self.clock.now()
-                self.get_logger().warn('>> Tirette pulled! Starting match...')
-                self.champi_sm.in_match = True
-
-        if self.champi_sm.in_match:
-            # CHECK TIME LEFT
-            elapsed_time = (self.clock.now() - self.start_time).nanoseconds / 1e9
-            self.time_left = TOTAL_AVAILABLE_TIME - elapsed_time
-
-            if self.time_left > 0.0:
-                # self.get_logger().debug(f'time left= {self.time_left}, state={self.champi_sm.state}')
-                # compute approx time from robot pose to home
-                dist_x_y = ((self.champi_sm.home_pose[0] - self.latest_pose[0])**2 + (self.champi_sm.home_pose[1] - self.latest_pose[1])**2)**0.5
-                approx_mean_speed = MAX_LINEAR_SPEED # m/s
-                approx_time_to_home = dist_x_y / approx_mean_speed + 1.0 # safety margin
-                # self.get_logger().error(f'approx_time_to_home: {approx_time_to_home}s, dist={dist_x_y}')
-
-                last_action_done = (len(self.champi_sm.strategy) == 0 and self.champi_sm.state == 'idle')
-                if self.time_left <= 4.0:  # 3 last seconds, we trigger come home
-                    if not self.champi_sm.state in ['comeHome', 'endOfMatch'] and not self.champi_sm.come_home_requested:
-                        self.get_logger().error(f'GO HOOOOME, state={self.champi_sm.state}')
-
-                        self.champi_sm.reset_flags()
-                        self.champi_sm.come_home_requested = True
-                        self.champi_sm.please_come_home() # trigger comeHome state
-
-                elif self.time_left <= approx_time_to_home+4.0 or last_action_done:
-                    if not self.champi_sm.state in ['waitToComeHome', 'comeHome', 'endOfMatch'] and not self.champi_sm.wait_to_come_home_requested:
-                        self.get_logger().info(f'Going to wait in front of home, state={self.champi_sm.state}, approx_time_to_home={approx_time_to_home}')
-
-                        self.champi_sm.reset_flags()
-                        self.champi_sm.wait_to_come_home_requested = True
-                        self.champi_sm.please_wait_to_come_home() # trigger waitToComeHome state
-
-
-            elif not self.champi_sm.match_ended:
-                self.champi_sm.match_ended = True
-                self.champi_sm.end_of_match()
-                self.get_logger().error(f'No time left. Triggering end of match. Was in state {self.champi_sm.state}.')
-                # Cancel current goal if self.future_navigate_result not None and self.state in move states
-                if self.goal_handle_navigate is not None and 'move' in self.champi_sm.state:
-                    self.get_logger().info('Cancelling current goal...')
-
-                    future = self.goal_handle_navigate.cancel_goal_async()
-                    future.add_done_callback(self.cancel_done_callback)
-
-                self.send_actuator_action('STOP_ALL_MOTORS')
-
-
-    def init_robot_pose(self):
+        
+        if not self.state_machine:
+            return
+        
+        # Handle e-stop
+        if self.e_stop_pressed:
+            self.get_logger().error('🛑 E-STOP PRESSED!')
+            self.state_machine.request_stop()
+        
+        # Handle tirette in init state
+        if self.tirette_released and self.state_machine.get_state() == StateMachine.STATE_INIT:
+            self.get_logger().warn('🏁 TIRETTE RELEASED - Starting match!')
+            self.state_machine.notify_tirette_released()
+    
+    def _on_odometry(self, msg: Odometry) -> None:
+        """Handle odometry updates."""
+        # Convert quaternion to euler
+        theta_rad = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
+        theta_deg = theta_rad * 180.0 / pi
+        
+        self.current_pose = (
+            msg.pose.pose.position.x,
+            msg.pose.pose.position.y,
+            theta_deg
+        )
+    
+    def _on_chosen_strategy(self, msg: String) -> None:
+        """Handle strategy choice."""
+        # Format: "strategy_file#COLOR"
+        parts = msg.data.split('#')
+        if len(parts) != 2:
+            self.get_logger().error(f'Invalid strategy format: {msg.data}')
+            return
+        
+        strategy_file, color = parts
+        self.get_logger().info(f'📋 Chosen strategy: {strategy_file}, Color: {color}')
+        
+        self._load_strategy(strategy_file, color)
+    
+    def _on_reset_request(self, msg: Empty) -> None:
+        """Handle reset request."""
+        self.get_logger().warn('🔄 Reset requested')
+        
+        if self.state_machine:
+            self.state_machine.reset()
+        
+        if self.action_executor:
+            self.action_executor.cancel_current_action()
+        
+        if self.match_controller:
+            self.match_controller.reset()
+        
+        # Reset actuators
+        if not self.sim_mode:
+            time.sleep(0.5)
+            self.action_executor.execute_actuator_action('ENABLE_ALL_MOTORS')
+            time.sleep(1.0)
+            self.action_executor.execute_actuator_action('RESET_ACTUATORS')
+        
+        self.get_logger().warn('✅ State machine reset complete')
+    
+    def _on_platform_distance(self, msg: Float32) -> None:
+        """Handle platform distance detection."""
+        self.platform_distance = msg.data
+        
+        if not self.state_machine or not self.current_pose:
+            return
+        
+        # Only process if we're in detection mode
+        if self.state_machine.get_state() != StateMachine.STATE_EXECUTING_ACTION:
+            return
+        
+        # Check if platform detected
+        if self.platform_distance is not None and self.platform_distance > 0 and self.platform_distance < 0.6:
+            # Compute platform pose from robot pose
+            x_robot, y_robot, theta_deg = self.current_pose
+            theta_rad = theta_deg * pi / 180.0
+            
+            # Platform is at distance in front of robot
+            half_platform = 0.05
+            center_dist = self.platform_distance + half_platform
+            
+            from math import cos, sin
+            x_platform = x_robot + center_dist * cos(theta_rad)
+            y_platform = y_robot + center_dist * sin(theta_rad)
+            
+            self.get_logger().info(f'📍 Platform detected at ({x_platform:.2f}, {y_platform:.2f})')
+            self.state_machine.notify_platform_detected((x_platform, y_platform, theta_deg))
+    
+    def _on_actuators_finished(self, msg: Int8MultiArray) -> None:
+        """Handle actuator completion."""
+        if not self.state_machine:
+            return
+        
+        self.get_logger().debug(f'🤖 Actuators finished: {msg.data}')
+        self.state_machine.notify_action_completed()
+    
+    # ================================================================
+    # STATE MACHINE CALLBACKS
+    # ================================================================
+    
+    def _on_action_completed(self) -> None:
+        """Called when action executor completes an action."""
+        if self.state_machine:
+            self.state_machine.notify_action_completed()
+    
+    def _on_action_failed(self, error_msg: str) -> None:
+        """Called when action executor fails."""
+        self.get_logger().error(f'❌ Action failed: {error_msg}')
+        
+        # For now, treat as completion (could implement retry logic)
+        if self.state_machine:
+            self.state_machine.notify_action_completed()
+    
+    def _on_score_changed(self, new_score: int) -> None:
+        """Called when score changes."""
+        msg = Int8()
+        msg.data = new_score
+        self.score_pub.publish(msg)
+        
+        self.get_logger().info(f'🎯 Score: {new_score} points')
+    
+    # ================================================================
+    # MAIN UPDATE LOOP
+    # ================================================================
+    
+    def _update_callback(self) -> None:
+        """Main update loop called at 10 Hz."""
+        if not self.state_machine:
+            # Publish "waiting" state when no strategy loaded
+            msg = String()
+            msg.data = "waiting_for_strategy"
+            self.state_pub.publish(msg)
+            return
+        
+        # Auto-release tirette in sim mode
+        if self.sim_mode and self.state_machine.get_state() == StateMachine.STATE_INIT:
+            if not self.tirette_released:
+                self.get_logger().warn('🤖 Simulation mode: auto-releasing tirette')
+                self.tirette_released = True
+                self.state_machine.notify_tirette_released()
+        
+        # Call state machine update
+        self.state_machine.update()
+        
+        # Publish current state
+        msg = String()
+        msg.data = self.state_machine.get_state()
+        self.state_pub.publish(msg)
+    
+    # ================================================================
+    # HELPER METHODS
+    # ================================================================
+    
+    def _load_strategy(self, strategy_file: str, color: str) -> None:
+        """Load strategy and create state machine."""
+        try:
+            # Load strategy from file
+            strategy_path = get_package_share_directory('champi_brain') + '/strategies/' + strategy_file
+            strategy, init_pose, home_pose, wait_home_pose = load_strategy(
+                strategy_path,
+                color,
+                self.get_logger()
+            )
+            
+            self.get_logger().info(f'✅ Strategy loaded:')
+            self.get_logger().info(f'   Init pose: {init_pose}')
+            self.get_logger().info(f'   Home pose: {home_pose}')
+            self.get_logger().info(f'   Wait home pose: {wait_home_pose}')
+            self.get_logger().info(f'   Actions: {len(strategy)}')
+            
+            # Create config
+            self.sm_config = StateMachineConfig(
+                color=color,
+                init_pose=tuple(init_pose),
+                home_pose=tuple(home_pose),
+                wait_to_come_home_pose=tuple(wait_home_pose),
+                simulation_mode=self.sim_mode
+            )
+            
+            # Create state machine
+            self.state_machine = StateMachine(
+                executor=self.action_executor,
+                match_controller=self.match_controller,
+                config=self.sm_config
+            )
+            
+            # Set strategy
+            self.state_machine.set_strategy(strategy)
+            
+            # Set callbacks
+            self.state_machine.on_state_changed = self._on_state_changed
+            self.state_machine.on_strategy_completed = self._on_strategy_completed
+            
+            # Initialize robot pose
+            self._set_initial_pose(init_pose)
+            
+            # Start initialization
+            self.state_machine.start_initialization()
+            self.state_machine.notify_ros_initialized()
+            self.state_machine.notify_config_chosen()
+            
+        except Exception as e:
+            self.get_logger().error(f'❌ Failed to load strategy: {e}')
+            import traceback
+            traceback.print_exc()
+    
+    def _set_initial_pose(self, pose: list) -> None:
+        """Set initial robot pose in localization."""
         msg = PoseWithCovarianceStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = 'odom'
-        msg.pose.pose.position.x = self.champi_sm.init_pose[0]
-        msg.pose.pose.position.y = self.champi_sm.init_pose[1]
-        msg.pose.pose.position.z = 0.
-        msg.pose.pose.orientation.x = 0.
-        msg.pose.pose.orientation.y = 0.
-        msg.pose.pose.orientation.z = sin(self.champi_sm.init_pose[2]*pi/180./2.)
-        msg.pose.pose.orientation.w = cos(self.champi_sm.init_pose[2]*pi/180./2.)
-
-        # Call service /set_pose
-        request = SetPose.Request()
-        request.pose = msg
-        future = self.client.call_async(request)
-
-        self.get_logger().info(f'requested set_pose to {self.champi_sm.init_pose[0]} {self.champi_sm.init_pose[1]} {self.champi_sm.init_pose[2]} rad')
-
-        # handle future result
-        rclpy.spin_until_future_complete(self, future) # TODO sometimes does not work but result seems ok
-        if future.result() is not None:
-            self.get_logger().debug('Set pose service call successful, result: ' + str(future.result()))
-        else:
-            self.get_logger().error('Set pose service call failed')
-
-
-    # ==================================== Feedback Callbacks =====================================
-
-    def feedback_callback(self, feedback_msg):
-        # self.get_logger().debug(f'Feedback received! path_compute_result:{self.path_compute_result_to_str(feedback_msg.feedback.path_compute_result)}, ETA: {round(feedback_msg.feedback.eta, 2)}s')
-        # TODO prendre en compte
-        pass
-
-
-    # ==================================== Done Callbacks ==========================================
-
-    def goal_response_callback(self, future):
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.get_logger().info('Goal rejected :(') # TODO
-            return
+        msg.pose.pose.position.x = pose[0]
+        msg.pose.pose.position.y = pose[1]
+        msg.pose.pose.position.z = 0.0
         
-        self.goal_handle_navigate = goal_handle
-
-        self.get_logger().info('Goal accepted!')
-
-        get_result_future = goal_handle.get_result_async()
-        get_result_future.add_done_callback(self.get_result_callback)
+        # Convert theta to quaternion
+        theta_rad = pose[2] * pi / 180.0
+        from math import sin, cos
+        msg.pose.pose.orientation.z = sin(theta_rad / 2.0)
+        msg.pose.pose.orientation.w = cos(theta_rad / 2.0)
         
+        # TODO: Publish to /initialpose or call SetPose service
+        self.get_logger().info(f'📍 Initial pose set: {pose}')
+    
+    def _on_state_changed(self, new_state: str) -> None:
+        """Called when state machine changes state."""
+        self.get_logger().info(f'🔄 State: {new_state}')
+    
+    def _on_strategy_completed(self) -> None:
+        """Called when all strategy actions are complete."""
+        self.get_logger().warn('✅ Strategy completed!')
 
-    def get_result_callback(self, future): # TODO
-        result = future.result().result
-        self.get_logger().info(f'Action result: {result.success}, {result.message}')
-        if result.success:
-            self.goal_reached_callback()
-        else:
-            self.get_logger().error(f'Move failed: {result.message}')
-            if 'move' in self.champi_sm.state:
-                self.champi_sm.cancel_current_tag()
-
-
-
-    def cancel_done_callback(self, future):
-        self.get_logger().info('Goal cancelled succesfully!')
-
-
-# ============================================ Utils ==============================================
-    def send_goal(self, x, y, theta_rad, motion_params: MotionParams):
-        self.get_logger().info(f' Call action to move to {x} {y}')
-
-        msg = Bool()
-        msg.data = motion_params.use_dynamic_layer
-        self.use_dynamic_layer_pub.publish(msg)
-
-
-        goal_pose = Pose()
-        goal_pose.position.x = x
-        goal_pose.position.y = y  
-
-        goal_pose.orientation.x = 0.0
-        goal_pose.orientation.y = 0.0
-        goal_pose.orientation.z = sin(theta_rad / 2.0)
-        goal_pose.orientation.w = cos(theta_rad / 2.0)
-
-        # Create a Navigate request and send it
-        goal = self.create_action_goal(goal_pose, motion_params)
-        future_navigate_result = self.action_client_navigate.send_goal_async(goal, feedback_callback=self.feedback_callback)
-        future_navigate_result.add_done_callback(self.goal_response_callback)
-
-        self.get_logger().info('Goal sent...')
-
-
-    def create_action_goal(self, goal_pose, motion_params: MotionParams):
-
-        goal = Navigate.Goal()
-        
-        goal.pose = goal_pose
-        
-        goal.max_linear_speed = motion_params.speed
-        goal.max_angular_speed = 3.0
-        goal.accel_linear = motion_params.accel_linear
-        goal.accel_angular = motion_params.accel_angular
-        goal.end_speed = motion_params.end_speed
-
-        goal.linear_tolerance = 0.005
-        goal.angular_tolerance = 0.05
-
-        goal.do_look_at_point = False
-
-        goal.look_at_point = Point()
-        goal.look_at_point.x = 2.0
-        goal.look_at_point.y = 2.0
-        goal.look_at_point.z = 0.0
-        goal.robot_angle_when_looking_at_point = 0.0
-
-        goal.timeout = 20. # seconds
-
-        return goal
-
-
-    def path_compute_result_to_str(self, path_compute_result):
-        if path_compute_result == Navigate.Feedback.SUCCESS_STRAIGHT:
-            return 'SUCCESS_STRAIGHT'
-        elif path_compute_result == Navigate.Feedback.SUCCESS_AVOIDANCE:
-            return 'SUCCESS_AVOIDANCE'
-        elif path_compute_result == Navigate.Feedback.START_NOT_IN_COSTMAP:
-            return 'START_NOT_IN_COSTMAP'
-        elif path_compute_result == Navigate.Feedback.GOAL_NOT_IN_COSTMAP:
-            return 'GOAL_NOT_IN_COSTMAP'
-        elif path_compute_result == Navigate.Feedback.GOAL_IN_OCCUPIED_CELL:
-            return 'GOAL_IN_OCCUPIED_CELL'
-        elif path_compute_result == Navigate.Feedback.NO_PATH_FOUND:
-            return 'NO_PATH_FOUND'
-        elif path_compute_result == Navigate.Feedback.INTITIALIZING:
-            return 'INTITIALIZING'
-        else:
-            return 'UNKNOWN (error)'
-
-
-    def send_actuator_action(self, action):
-        msg = Int8()
-
-        if action == 'PUT_BANNER':
-            msg.data = 0
-        elif action == 'TAKE_LOWER_PLANK':
-            msg.data = 1
-        elif action == 'TAKE_UPPER_PLANK':
-            msg.data = 2
-        elif action == 'PUT_LOWER_PLANK_LAYER_1':
-            msg.data = 3
-        elif action == 'PUT_UPPER_PLANK_LAYER_2':
-            msg.data = 4
-        elif action == 'TAKE_CANS_RIGHT':
-            msg.data = 5
-        elif action == 'TAKE_CANS_LEFT':
-            msg.data = 6
-        elif action == 'PUT_CANS_RIGHT_LAYER_2':
-            msg.data = 7
-        elif action == 'PUT_CANS_LEFT_LAYER_1':
-            msg.data = 8
-        elif action == 'RESET_ACTUATORS':
-            msg.data = 9
-        elif action == 'STOP_ALL_MOTORS':
-            msg.data = 10
-        elif action == 'ENABLE_ALL_MOTORS':
-            msg.data = 11
-        elif action == 'GET_READY':
-            msg.data = 12
-        self.actuators_ctrl_pub.publish(msg)
 
 def main(args=None):
+    """Main entry point."""
     rclpy.init(args=args)
-
-    node = ChampiStateMachineITF()
+    
     try:
+        node = StateMachineNode()
         rclpy.spin(node)
-    except (KeyboardInterrupt, ExternalShutdownException):
+    except KeyboardInterrupt:
+        pass
+    except ExternalShutdownException:
         pass
     finally:
-        node.destroy_node()
-        rclpy.try_shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

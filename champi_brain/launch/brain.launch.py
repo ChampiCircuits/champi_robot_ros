@@ -23,10 +23,10 @@ def generate_launch_description():
     # =========================== NODES NEEDED BOTH IN SIMULATION AND ON REAL ROBOT ===========================
     sim_config = LaunchConfiguration('sim')
 
-    sm = Node(
+    sm_node = Node(
         package='champi_brain',
         executable='state_machine_node.py',
-        name='sm_ros_itf',
+        name='state_machine',
         output='screen',
         respawn=True,
         parameters=[config_file_path, {'sim': sim_config}],
@@ -34,5 +34,5 @@ def generate_launch_description():
 
     return LaunchDescription([
         sim_arg,
-        sm
+        sm_node
     ])
