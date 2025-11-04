@@ -63,7 +63,7 @@ class ROSActionExecutor:
             theta_deg: Target orientation in degrees
             motion_params: Motion parameters (speed, acceleration, etc.)
         """
-        self.logger.info(f'Sending move goal: ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)')
+        self.logger.info(f'Sending move goal: ({x:.2f}, {y:.2f}, {theta_deg:.1f}°) with {motion_params}')
         
         # Publish dynamic layer setting
         use_dynamic_msg = Bool()

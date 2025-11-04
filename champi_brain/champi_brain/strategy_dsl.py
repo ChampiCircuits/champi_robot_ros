@@ -53,15 +53,56 @@ class Offset:
         return result
     
     
-# TODO ces params par défaut devront être lus dans le champi.config.yaml via ros
 @dataclass
 class MotionParams:
-    """Motion parameters with default values"""
-    speed: float = 1.0          # m/s
-    end_speed: float = 0.0      # m/s
-    accel_linear: float = 0.5   # m/s²
-    accel_angular: float = 6.0  # rad/s²
-    use_dynamic_layer: bool = False
+    """Motion parameters with default values
+    
+    Default values MUST be configured using set_defaults() class method at startup.
+    These defaults are read from pose_controller ROS parameters.
+    """
+    # Class variables for defaults (configured at startup from ROS params)
+    _default_speed: float = None
+    _default_end_speed: float = None
+    _default_accel_linear: float = None
+    _default_accel_angular: float = None
+    _default_use_dynamic_layer: bool = None
+    
+    # Instance variables with defaults from class variables
+    speed: float = None          # m/s
+    end_speed: float = None      # m/s
+    accel_linear: float = None   # m/s²
+    accel_angular: float = None  # rad/s²
+    use_dynamic_layer: bool = None
+    
+    def __post_init__(self):
+        """Initialize instance variables with class defaults if not provided"""
+        if self.speed is None:
+            self.speed = MotionParams._default_speed
+        if self.end_speed is None:
+            self.end_speed = MotionParams._default_end_speed
+        if self.accel_linear is None:
+            self.accel_linear = MotionParams._default_accel_linear
+        if self.accel_angular is None:
+            self.accel_angular = MotionParams._default_accel_angular
+        if self.use_dynamic_layer is None:
+            self.use_dynamic_layer = MotionParams._default_use_dynamic_layer
+    
+    @classmethod
+    def set_defaults(cls, 
+                     speed: float,
+                     end_speed: float,
+                     accel_linear: float,
+                     accel_angular: float,
+                     use_dynamic_layer: bool):
+        """Configure default values for all MotionParams instances
+        
+        This MUST be called once at startup with values from ROS parameters.
+        """
+        cls._default_speed = speed
+        cls._default_end_speed = end_speed
+        cls._default_accel_linear = accel_linear
+        cls._default_accel_angular = accel_angular
+        cls._default_use_dynamic_layer = use_dynamic_layer
 
 @dataclass
 class Action:
@@ -95,17 +136,12 @@ class Action:
         if self.reason:
             result["reason"] = self.reason
             
-        # Add motion parameters only if they differ from defaults
-        if self.motion.speed != 1.0:
-            result["speed"] = self.motion.speed
-        if self.motion.end_speed != 0.0:
-            result["end_speed"] = self.motion.end_speed
-        if self.motion.accel_linear != 0.5:
-            result["accel_linear"] = self.motion.accel_linear
-        if self.motion.accel_angular != 6.0:
-            result["accel_angular"] = self.motion.accel_angular
-        if self.motion.use_dynamic_layer:
-            result["use_dynamic_layer"] = self.motion.use_dynamic_layer
+        # Add motion parameters
+        result["speed"] = self.motion.speed
+        result["end_speed"] = self.motion.end_speed
+        result["accel_linear"] = self.motion.accel_linear
+        result["accel_angular"] = self.motion.accel_angular
+        result["use_dynamic_layer"] = self.motion.use_dynamic_layer
             
         # Add extra parameters, converting Position/Offset objects to dict
         for key, value in self.extra_params.items():

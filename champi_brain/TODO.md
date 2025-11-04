@@ -163,7 +163,7 @@ get_logger(self.name).info(f'Distance to platform width middle is {center_platfo
 **Priorité**: 🟡 Moyenne  
 **Contexte**:
 ```python
-if use_above_default_strategy_param and self.sim_param: # TODOOOOOO
+if use_above_default_strategy_in_sim_param and self.sim_param: # TODOOOOOO
     self.get_logger().warn('>> State machine in SIM mode --> loading DEFAULT strategy...')
     self.champi_sm.color = 'YELLOW'
     self.champi_sm.strategy, self.champi_sm.init_pose, self.champi_sm.home_pose = load_strategy(...)

@@ -15,6 +15,7 @@ from champi_interfaces.msg import STMState
 from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32, Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovarianceStamped
+from rclpy.duration import Duration
 
 import time
 from math import atan2, pi, sqrt
@@ -44,14 +45,21 @@ class StateMachineNode(Node):
         # ============================================================
         # PARAMETERS
         # ============================================================
-        strategy_file = self.declare_parameter('strategy_file', '').value
-        use_default_strategy = self.declare_parameter('use_above_default_strategy', False).value
+        self.strategy_file = self.declare_parameter('strategy_file', '').value
+        self.use_default_strategy = self.declare_parameter('use_above_default_strategy_in_sim', False).value
         self.sim_mode = self.declare_parameter('sim', False).value
+        self.default_sim_color = self.declare_parameter('default_sim_color', 'YELLOW').value
         
         self.get_logger().info(f'Parameters:')
-        self.get_logger().info(f'  strategy_file: {strategy_file}')
-        self.get_logger().info(f'  use_default_strategy: {use_default_strategy}')
+        self.get_logger().info(f'  strategy_file: {self.strategy_file}')
+        self.get_logger().info(f'  use_default_strategy: {self.use_default_strategy}')
         self.get_logger().info(f'  sim_mode: {self.sim_mode}')
+        self.get_logger().info(f'  default_sim_color: {self.default_sim_color}')
+        
+        # ============================================================
+        # CONFIGURE MOTION DEFAULTS FROM POSE CONTROLLER PARAMS
+        # ============================================================
+        self._configure_motion_defaults()
         
         # ============================================================
         # CREATE CORE COMPONENTS
@@ -140,22 +148,43 @@ class StateMachineNode(Node):
         # ============================================================
         # AUTO-START IN SIM MODE
         # ============================================================
-        
-        # Store for later use
-        self.use_default_strategy = use_default_strategy
-        self.strategy_file = strategy_file
-        
-        if use_default_strategy and self.sim_mode and strategy_file:
-            self.get_logger().warn(f'🎮 SIM MODE: Auto-loading strategy: {strategy_file}')
-            # Default to YELLOW team in simulation
-            self._load_strategy(strategy_file, 'YELLOW') # TODO make color a param
+                
+        if self.use_default_strategy and self.sim_mode and self.strategy_file:
+            self.get_logger().warn(f'🎮 SIM MODE: Auto-loading strategy: {self.strategy_file}')
+            self._load_strategy(self.strategy_file, self.default_sim_color)
         
         self.get_logger().warn('✅ State Machine ready!')
+
     
+    def _configure_motion_defaults(self) -> None:
+        """Configure default motion parameters from ROS parameters."""
+        # Read motion defaults from state_machine parameters
+        default_speed = self.declare_parameter('default_motion_speed', 0.5).value
+        default_end_speed = self.declare_parameter('default_motion_end_speed', 0.0).value
+        accel_linear = self.declare_parameter('default_motion_accel_linear', 0.5).value
+        accel_angular = self.declare_parameter('default_motion_accel_angular', 6.0).value
+        use_dynamic_layer = self.declare_parameter('default_motion_use_dynamic_layer', True).value
+                
+        # Configure MotionParams class defaults
+        MotionParams.set_defaults(
+            speed=default_speed,
+            end_speed=default_end_speed,
+            accel_linear=accel_linear,
+            accel_angular=accel_angular,
+            use_dynamic_layer=use_dynamic_layer
+        )
+        
+        self.get_logger().info(f'Motion defaults configured:')
+        self.get_logger().info(f'  speed: {default_speed} m/s')
+        self.get_logger().info(f'  end_speed: {default_end_speed} m/s')
+        self.get_logger().info(f'  accel_linear: {accel_linear} m/s²')
+        self.get_logger().info(f'  accel_angular: {accel_angular} rad/s²')
+        self.get_logger().info(f'  use_dynamic_layer: {use_dynamic_layer}')
+
     # ================================================================
     # ROS CALLBACKS
     # ================================================================
-    
+
     def _on_stm_state(self, msg: STMState) -> None:
         """Handle STM state (e-stop and tirette)."""
         self.e_stop_pressed = msg.e_stop_pressed
@@ -298,7 +327,10 @@ class StateMachineNode(Node):
         # Auto-release tirette in sim mode
         if self.sim_mode and self.state_machine.get_state() == StateMachine.STATE_INIT:
             if not self.tirette_released:
-                self.get_logger().warn('🤖 Simulation mode: auto-releasing tirette')
+                delay = 2.0  # seconds
+                self.get_logger().warn(f'🤖 Simulation mode: auto-releasing tirette after {delay} seconds')
+                self.get_clock().sleep_for(Duration(seconds=delay))
+                self.get_logger().warn('🤖 Simulation mode: Tirette released !')
                 self.tirette_released = True
                 self.state_machine.notify_tirette_released()
         
