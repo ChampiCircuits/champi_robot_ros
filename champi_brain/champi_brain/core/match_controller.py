@@ -20,14 +20,16 @@ class MatchController:
     - Callbacks for external notification (ROS publishing, etc.)
     """
     
-    def __init__(self, total_time: float = 100.0):
+    def __init__(self, total_time: float, return_home_safety_margin: float):
         """
         Initialize match controller.
         
         Args:
-            total_time: Total match duration in seconds (default: 100s)
+            total_time: Total match duration in seconds
+            return_home_safety_margin: Safety margin for return home calculation in seconds
         """
         self.total_time = total_time
+        self.return_home_safety_margin = return_home_safety_margin
         self.start_time: Optional[float] = None
         self.score = 0
         
@@ -69,29 +71,18 @@ class MatchController:
         """Check if match time has expired."""
         return self.get_remaining_time() <= 0.0
     
-    def should_return_home(self, estimated_time_to_home: float, safety_margin: float = 4.0) -> bool:
+    def should_return_home(self, estimated_time_to_home: float) -> bool:
         """
         Determine if robot should start returning home.
         
         Args:
             estimated_time_to_home: Estimated time to reach home in seconds
-            safety_margin: Safety margin to add to the estimate # TODO ca devrait être un param ros
             
         Returns:
             True if robot should start returning home
         """
         remaining = self.get_remaining_time()
-        return remaining <= (estimated_time_to_home + safety_margin)
-    
-    def should_emergency_return_home(self) -> bool:
-        """
-        Determine if robot should immediately return home (emergency).
-        Called when only a few seconds remain.
-        
-        Returns:
-            True if less than 4 seconds remain
-        """
-        return self.get_remaining_time() <= 4.0 # TODO ca devrait être un param ros
+        return remaining <= (estimated_time_to_home + self.return_home_safety_margin)
     
     def add_points(self, points: int, reason: str = "") -> None:
         """

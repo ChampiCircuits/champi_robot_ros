@@ -130,10 +130,15 @@ path_planner:
 
 state_machine:
   ros__parameters:
+    # Strategy parameters
     # strategy_file: '__strat_test_square.py'
     strategy_file: '__strat_main_2025.py'
     use_above_default_strategy_in_sim: true
     default_sim_color: 'YELLOW' # Default team color for simulation: 'YELLOW' or 'BLUE'
+    
+    # Match timing parameters
+    match_total_time: 100.0 # seconds - Total match duration
+    return_home_safety_margin: 2.0 # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left
 
 world_state_node:
   ros__parameters:

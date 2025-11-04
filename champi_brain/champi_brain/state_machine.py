@@ -158,6 +158,16 @@ class StateMachine:
                 self._transition_to(self.STATE_END_OF_MATCH)
                 return
         
+        # Check if we should return home (in any state except already coming home or ended)
+        if self.match.is_match_started():
+            if self.state not in [self.STATE_COME_HOME, self.STATE_END_OF_MATCH, self.STATE_STOP]:
+                # TODO: Compute real estimated time to home based on current position
+                estimated_time_to_home = 5.0
+                if self.match.should_return_home(estimated_time_to_home):
+                    self.logger.warn(f"[SM] Time to return home! (remaining: {self.match.get_remaining_time():.1f}s)")
+                    self.request_come_home()
+                    return
+        
         # Handle state-specific logic
         if self.state == self.STATE_IDLE:
             self._handle_idle_state()
@@ -174,7 +184,7 @@ class StateMachine:
         old_state = self.state
         self.state = new_state
         
-        self.logger.debug(f"[SM] Transition: {old_state} -> {new_state}")
+        self.logger.debug(f"[SM] Transition: {old_state} -> {new_state} \t time left: {self.match.get_remaining_time():.1f}s")
         
         # State entry actions
         if new_state == self.STATE_IDLE:
@@ -231,7 +241,7 @@ class StateMachine:
         
         self.logger.info(f"[SM] Coming home to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
         self.executor.move_to(x, y, theta_deg, motion)
-        # Note: In real system, this will trigger notify_action_completed when done
+        # TODO: sometimes logs are strange when canceling nav goals (cancel and then re asked again same goal...)
     
     def _on_enter_wait_to_come_home(self) -> None:
         """Handle entry into wait to come home state."""
@@ -255,10 +265,7 @@ class StateMachine:
     
     def _handle_idle_state(self) -> None:
         """Handle updates while in idle state."""
-        # Check if we should return home
-        if self.match.should_return_home(estimated_time_to_home=5.0):
-            self.logger.info("[SM] Time to return home!")
-            self.request_come_home()
+        pass
     
     def _find_next_action(self) -> None:
         """Find and execute the next action from strategy."""
@@ -371,7 +378,7 @@ class StateMachine:
     def _cancel_current_action(self) -> None:
         """Cancel the current action."""
         if self.state == self.STATE_EXECUTING_ACTION:
-            self.logger.info("[SM] Canceling current action")
+            self.logger.warn("[SM] Cancelling current action")
             self.executor.cancel_current_action()
         
         self.current_action = None

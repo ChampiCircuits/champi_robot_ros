@@ -118,7 +118,7 @@ class ROSActionExecutor:
     def cancel_current_action(self) -> None:
         """Cancel currently executing navigation goal."""
         if self.current_goal_handle is not None:
-            self.logger.info('Cancelling current navigation goal')
+            self.logger.warn('Cancelling current navigation goal')
             cancel_future = self.current_goal_handle.cancel_goal_async()
             cancel_future.add_done_callback(self._cancel_done_callback)
     

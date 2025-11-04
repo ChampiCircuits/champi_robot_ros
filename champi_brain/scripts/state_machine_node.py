@@ -49,12 +49,16 @@ class StateMachineNode(Node):
         self.use_default_strategy = self.declare_parameter('use_above_default_strategy_in_sim', False).value
         self.sim_mode = self.declare_parameter('sim', False).value
         self.default_sim_color = self.declare_parameter('default_sim_color', 'YELLOW').value
+        match_total_time = self.declare_parameter('match_total_time', 100.0).value
+        return_home_safety_margin = self.declare_parameter('return_home_safety_margin', 5.0).value
         
         self.get_logger().info(f'Parameters:')
         self.get_logger().info(f'  strategy_file: {self.strategy_file}')
         self.get_logger().info(f'  use_default_strategy: {self.use_default_strategy}')
         self.get_logger().info(f'  sim_mode: {self.sim_mode}')
         self.get_logger().info(f'  default_sim_color: {self.default_sim_color}')
+        self.get_logger().info(f'  total_time: {match_total_time}s')
+        self.get_logger().info(f'  return_home_safety_margin: {return_home_safety_margin}s')
         
         # ============================================================
         # CONFIGURE MOTION DEFAULTS FROM POSE CONTROLLER PARAMS
@@ -65,8 +69,8 @@ class StateMachineNode(Node):
         # CREATE CORE COMPONENTS
         # ============================================================
         
-        # Match controller (100s match)
-        self.match_controller = MatchController(total_time=100.0) # TODO make param
+        # Match controller with timing parameters
+        self.match_controller = MatchController(total_time=match_total_time, return_home_safety_margin=return_home_safety_margin)
         self.match_controller.on_score_changed = self._on_score_changed
         
         # ROS Action Executor
