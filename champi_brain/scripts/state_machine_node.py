@@ -308,8 +308,7 @@ class StateMachineNode(Node):
         msg = Int8()
         msg.data = new_score
         self.score_pub.publish(msg)
-        
-        self.get_logger().info(f'🎯 Score: {new_score} points')
+        self.get_logger().info(f'🎯 Score changed --> now: {new_score} points')
     
     # ================================================================
     # MAIN UPDATE LOOP
@@ -328,9 +327,9 @@ class StateMachineNode(Node):
         if self.sim_mode and self.state_machine.get_state() == StateMachine.STATE_INIT:
             if not self.tirette_released:
                 delay = 2.0  # seconds
-                self.get_logger().warn(f'🤖 Simulation mode: auto-releasing tirette after {delay} seconds')
+                self.get_logger().warn(f'🎮 Simulation mode: auto-releasing tirette after {delay} seconds')
                 self.get_clock().sleep_for(Duration(seconds=delay))
-                self.get_logger().warn('🤖 Simulation mode: Tirette released !')
+                self.get_logger().warn('🎮 Simulation mode: Tirette released !')
                 self.tirette_released = True
                 self.state_machine.notify_tirette_released()
         
@@ -419,7 +418,8 @@ class StateMachineNode(Node):
     
     def _on_state_changed(self, new_state: str) -> None:
         """Called when state machine changes state."""
-        self.get_logger().info(f'🔄 State: {new_state}')
+        # self.get_logger().debug(f'🔄 New state: {new_state}')
+        pass
     
     def _on_strategy_completed(self) -> None:
         """Called when all strategy actions are complete."""

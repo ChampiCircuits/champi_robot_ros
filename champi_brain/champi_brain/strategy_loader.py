@@ -64,8 +64,8 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     logger.info(f'<< Home pose will be {home_pose[0]} {home_pose[1]} {home_pose[2]}°!')
     logger.info(f'<< Wait to come home pose will be {wait_to_come_home_pose[0]} {wait_to_come_home_pose[1]} {wait_to_come_home_pose[2]}°!')
     
-    # for (i, action) in enumerate(actions): # TODO verbose mode
-    #     logger.info(f'Action {i}: {action}')
+    for (i, action) in enumerate(actions):
+        logger.debug(f'Action {i}: {action}')
     
     return actions, init_pose, home_pose, wait_to_come_home_pose
 

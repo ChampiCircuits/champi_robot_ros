@@ -174,7 +174,7 @@ class StateMachine:
         old_state = self.state
         self.state = new_state
         
-        self.logger.info(f"[SM] Transition: {old_state} -> {new_state}")
+        self.logger.debug(f"[SM] Transition: {old_state} -> {new_state}")
         
         # State entry actions
         if new_state == self.STATE_IDLE:
@@ -282,10 +282,8 @@ class StateMachine:
         self.current_action = action
         self.current_tag = action.group
         self.strategy.pop(0)
-        
-        self.logger.info(f"[SM] Executing action: {action.action}")
-        if action.group:
-            self.logger.info(f"[SM]   Tag: {action.group}")
+
+        self.logger.info(f"[SM] Will now execute action: {action.action}" + (f" (group: {action.group})" if action.group else ""))
         
         self._execute_action(action)
     
@@ -355,8 +353,8 @@ class StateMachine:
         """Execute add points action."""
         if action.points:
             reason = action.reason or "Points added"
+            self.logger.info(f"[SM]   Added {action.points} points: \"{reason}\"")
             self.match.add_points(action.points, reason)
-            self.logger.info(f"[SM]   Added {action.points} points: {reason}")
         
         # Points are added immediately, no waiting
         self.notify_action_completed()
