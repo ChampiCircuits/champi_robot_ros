@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from champi_brain.core.action_executor import ActionExecutor
 from champi_brain.core.match_controller import MatchController
 from champi_brain.strategy_dsl import Action, MotionParams, Position
+from rclpy.logging import get_logger
 
 
 @dataclass
@@ -56,6 +57,7 @@ class StateMachine:
         self.executor = executor
         self.match = match_controller
         self.config = config
+        self.logger = get_logger('state_machine')
         
         # State
         self.state = self.STATE_STOP
@@ -172,7 +174,7 @@ class StateMachine:
         old_state = self.state
         self.state = new_state
         
-        print(f"[SM] Transition: {old_state} -> {new_state}")
+        self.logger.info(f"[SM] Transition: {old_state} -> {new_state}")
         
         # State entry actions
         if new_state == self.STATE_IDLE:
@@ -191,19 +193,19 @@ class StateMachine:
     def _check_init_progress(self) -> None:
         """Check initialization progress and advance if ready."""
         if not self._ros_initialized:
-            print("[SM] Waiting for ROS initialization...")
+            self.logger.info("[SM] Waiting for ROS initialization...")
             return
             
         if not self._config_chosen:
-            print("[SM] Waiting for user to choose configuration...")
+            self.logger.info("[SM] Waiting for user to choose configuration...")
             return
             
         if not self._tirette_released:
-            print("[SM] Waiting for tirette release...")
+            self.logger.info("[SM] Waiting for tirette release...")
             return
             
         # All initialization steps complete - start match
-        print("[SM] Initialization complete! Starting match...")
+        self.logger.info("[SM] Initialization complete! Starting match...")
         self.match.start_match()
         self._transition_to(self.STATE_IDLE)
     
@@ -227,7 +229,7 @@ class StateMachine:
             use_dynamic_layer=False
         )
         
-        print(f"[SM] Coming home to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
+        self.logger.info(f"[SM] Coming home to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
         self.executor.move_to(x, y, theta_deg, motion)
         # Note: In real system, this will trigger notify_action_completed when done
     
@@ -242,26 +244,26 @@ class StateMachine:
             use_dynamic_layer=True
         )
         
-        print(f"[SM] Moving to wait position ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
+        self.logger.info(f"[SM] Moving to wait position ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
         self.executor.move_to(x, y, theta_deg, motion)
         self.executor.execute_actuator_action('RESET_ACTUATORS')
     
     def _on_enter_end_of_match(self) -> None:
         """Handle end of match."""
-        print(f"[SM] Match ended! Final score: {self.match.get_score()}")
+        self.logger.info(f"[SM] Match ended! Final score: {self.match.get_score()}")
         self.executor.cancel_current_action()
     
     def _handle_idle_state(self) -> None:
         """Handle updates while in idle state."""
         # Check if we should return home
         if self.match.should_return_home(estimated_time_to_home=5.0):
-            print("[SM] Time to return home!")
+            self.logger.info("[SM] Time to return home!")
             self.request_come_home()
     
     def _find_next_action(self) -> None:
         """Find and execute the next action from strategy."""
         if not self.strategy:
-            print("[SM] Strategy complete - no more actions")
+            self.logger.info("[SM] Strategy complete - no more actions")
             if self.on_strategy_completed:
                 self.on_strategy_completed()
             return
@@ -271,7 +273,7 @@ class StateMachine:
         
         # Check if action's tag was canceled
         if action.group and action.group in self.canceled_tags:
-            print(f"[SM] Skipping action with canceled tag '{action.group}'")
+            self.logger.info(f"[SM] Skipping action with canceled tag '{action.group}'")
             self.strategy.pop(0)
             self._find_next_action()  # Try next action
             return
@@ -281,9 +283,9 @@ class StateMachine:
         self.current_tag = action.group
         self.strategy.pop(0)
         
-        print(f"[SM] Executing action: {action.action}")
+        self.logger.info(f"[SM] Executing action: {action.action}")
         if action.group:
-            print(f"[SM]   Tag: {action.group}")
+            self.logger.info(f"[SM]   Tag: {action.group}")
         
         self._execute_action(action)
     
@@ -310,17 +312,17 @@ class StateMachine:
                 self._execute_actuator_action(action)
                 
             else:
-                print(f"[SM] ERROR: Unknown action '{action_name}'")
+                self.logger.info(f"[SM] ERROR: Unknown action '{action_name}'")
                 self.notify_action_completed()
                 
         except Exception as e:
-            print(f"[SM] ERROR executing action: {e}")
+            self.logger.info(f"[SM] ERROR executing action: {e}")
             self.notify_action_completed()
     
     def _execute_move(self, action: Action) -> None:
         """Execute a move action."""
         if not action.target:
-            print("[SM] ERROR: Move action without target")
+            self.logger.info("[SM] ERROR: Move action without target")
             self.notify_action_completed()
             return
         
@@ -333,19 +335,19 @@ class StateMachine:
             y += action.offset.x * math.sin(theta_rad) + action.offset.y * math.cos(theta_rad)
             theta_deg += action.offset.theta_deg
         
-        print(f"[SM]   Move to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
+        self.logger.info(f"[SM]   Move to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
         self.executor.move_to(x, y, theta_deg, action.motion)
     
     def _execute_detect_platform(self, action: Action) -> None:
         """Execute platform detection."""
-        print("[SM]   Detecting platform...")
+        self.logger.info("[SM]   Detecting platform...")
         self.executor.detect_platform()
         # Note: Real implementation will call notify_platform_detected when done
     
     def _execute_wait(self, action: Action) -> None:
         """Execute wait action."""
         duration = action.extra_params.get('duration', 1.0)
-        print(f"[SM]   Waiting {duration}s...")
+        self.logger.info(f"[SM]   Waiting {duration}s...")
         self.executor.wait(duration)
         # Note: Executor should call notify_action_completed when done
     
@@ -354,7 +356,7 @@ class StateMachine:
         if action.points:
             reason = action.reason or "Points added"
             self.match.add_points(action.points, reason)
-            print(f"[SM]   Added {action.points} points: {reason}")
+            self.logger.info(f"[SM]   Added {action.points} points: {reason}")
         
         # Points are added immediately, no waiting
         self.notify_action_completed()
@@ -362,16 +364,16 @@ class StateMachine:
     def _execute_actuator_action(self, action: Action) -> None:
         """Execute actuator action."""
         if self.config.simulation_mode:
-            print(f"[SM]   Actuator '{action.action}' skipped (simulation mode)")
+            self.logger.info(f"[SM]   Actuator '{action.action}' skipped (simulation mode)")
             self.notify_action_completed()
         else:
-            print(f"[SM]   Executing actuator: {action.action}")
+            self.logger.info(f"[SM]   Executing actuator: {action.action}")
             self.executor.execute_actuator_action(action.action)
     
     def _cancel_current_action(self) -> None:
         """Cancel the current action."""
         if self.state == self.STATE_EXECUTING_ACTION:
-            print("[SM] Canceling current action")
+            self.logger.info("[SM] Canceling current action")
             self.executor.cancel_current_action()
         
         self.current_action = None

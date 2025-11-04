@@ -58,7 +58,7 @@ class StateMachineNode(Node):
         # ============================================================
         
         # Match controller (100s match)
-        self.match_controller = MatchController(total_time=100.0)
+        self.match_controller = MatchController(total_time=100.0) # TODO make param
         self.match_controller.on_score_changed = self._on_score_changed
         
         # ROS Action Executor
@@ -105,7 +105,7 @@ class StateMachineNode(Node):
             10
         )
         
-        # Platform detection
+        # Platform detection # TODO remove
         self.create_subscription(
             Float32, '/platform_distance',
             self._on_platform_distance,
@@ -148,7 +148,7 @@ class StateMachineNode(Node):
         if use_default_strategy and self.sim_mode and strategy_file:
             self.get_logger().warn(f'🎮 SIM MODE: Auto-loading strategy: {strategy_file}')
             # Default to YELLOW team in simulation
-            self._load_strategy(strategy_file, 'YELLOW')
+            self._load_strategy(strategy_file, 'YELLOW') # TODO make color a param
         
         self.get_logger().warn('✅ State Machine ready!')
     
