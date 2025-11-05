@@ -88,7 +88,7 @@ class LocNode(Node):
     def set_pose_callback(self, msg: PoseWithCovarianceStamped):
         self.latest_set_pose = msg
         self.robot_pose_when_set_pose = self.latest_robot_pose
-        self.get_logger().info("Set pose received")
+        self.get_logger().warn("📍 Set pose received")
 
     def aruco_pose_callback(self, msg: PoseWithCovarianceStamped):
         # We receive an aruco pose at 5Hz.

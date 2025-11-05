@@ -211,7 +211,7 @@ class StateMachine:
             return
             
         if not self._tirette_released:
-            self.logger.info("[SM] Waiting for tirette release...")
+            self.logger.info("[SM] Waiting for tirette release...") # TODO better logging [SM]
             return
             
         # All initialization steps complete - start match

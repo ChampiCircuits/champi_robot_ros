@@ -16,6 +16,7 @@ from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32, Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from rclpy.duration import Duration
+from champi_interfaces.srv import SetPose
 
 import time
 from math import atan2, pi, sqrt
@@ -141,6 +142,13 @@ class StateMachineNode(Node):
         
         # State (for debugging/monitoring)
         self.state_pub = self.create_publisher(String, '/sm_state', 10)
+        
+        # ============================================================
+        # ROS SERVICE CLIENTS
+        # ============================================================
+        
+        # Service client for setting initial pose
+        self.set_pose_client = self.create_client(SetPose, '/set_pose')
         
         # ============================================================
         # TIMER
@@ -403,22 +411,35 @@ class StateMachineNode(Node):
             traceback.print_exc()
     
     def _set_initial_pose(self, pose: list) -> None:
-        """Set initial robot pose in localization."""
-        msg = PoseWithCovarianceStamped()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.header.frame_id = 'odom'
-        msg.pose.pose.position.x = pose[0]
-        msg.pose.pose.position.y = pose[1]
-        msg.pose.pose.position.z = 0.0
+        """Set initial robot pose in localization via SetPose service."""
+        self.get_logger().warn(f'📍 Setting initial pose via /set_pose service: ({pose[0]:.2f}, {pose[1]:.2f}, {pose[2]:.1f}°)')
+        # Wait for service to be available
+        if not self.set_pose_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error('⚠️ /set_pose service not available, pose not set')
+            exit(1) # TODO better error handling
+        
+        # Create request
+        request = SetPose.Request()
+        request.pose.header.stamp = self.get_clock().now().to_msg()
+        request.pose.header.frame_id = 'odom'
+        request.pose.pose.pose.position.x = pose[0]
+        request.pose.pose.pose.position.y = pose[1]
+        request.pose.pose.pose.position.z = 0.0
         
         # Convert theta to quaternion
         theta_rad = pose[2] * pi / 180.0
         from math import sin, cos
-        msg.pose.pose.orientation.z = sin(theta_rad / 2.0)
-        msg.pose.pose.orientation.w = cos(theta_rad / 2.0)
+        request.pose.pose.pose.orientation.z = sin(theta_rad / 2.0)
+        request.pose.pose.pose.orientation.w = cos(theta_rad / 2.0)
         
-        # TODO: Publish to /initialpose or call SetPose service
-        self.get_logger().info(f'📍 Initial pose set: {pose}')
+        # Set covariance (small uncertainty for initial pose) # TODO make param ?
+        request.pose.pose.covariance[0] = 1e-5   # x variance
+        request.pose.pose.covariance[7] = 1e-5   # y variance
+        request.pose.pose.covariance[35] = 1e-5  # yaw variance
+        
+        # Call service asynchronously
+        future = self.set_pose_client.call_async(request)
+        
     
     def _on_state_changed(self, new_state: str) -> None:
         """Called when state machine changes state."""
