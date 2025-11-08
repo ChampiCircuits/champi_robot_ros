@@ -58,24 +58,33 @@ class MotionParams:
     """Motion parameters with default values
     
     Default values MUST be configured using set_defaults() class method at startup.
-    These defaults are read from pose_controller ROS parameters.
+    These defaults are read from ROS parameters.
     """
     # Class variables for defaults (configured at startup from ROS params)
-    _default_speed: float = None
-    _default_end_speed: float = None
-    _default_accel_linear: float = None
-    _default_accel_angular: float = None
-    _default_use_dynamic_layer: bool = None
+    _default_speed: Optional[float] = None
+    _default_end_speed: Optional[float] = None
+    _default_accel_linear: Optional[float] = None
+    _default_accel_angular: Optional[float] = None
+    _default_use_dynamic_layer: Optional[bool] = None
     
-    # Instance variables with defaults from class variables
-    speed: float = None          # m/s
-    end_speed: float = None      # m/s
-    accel_linear: float = None   # m/s²
-    accel_angular: float = None  # rad/s²
-    use_dynamic_layer: bool = None
+    # Instance variables - will be set in __post_init__
+    speed: Optional[float] = None          # m/s
+    end_speed: Optional[float] = None      # m/s
+    accel_linear: Optional[float] = None   # m/s²
+    accel_angular: Optional[float] = None  # rad/s²
+    use_dynamic_layer: Optional[bool] = None
     
     def __post_init__(self):
-        """Initialize instance variables with class defaults if not provided"""
+        """Initialize instance variables with class defaults if not provided
+        
+        Raises RuntimeError if defaults haven't been configured via set_defaults()
+        """
+        if MotionParams._default_speed is None:
+            raise RuntimeError(
+                "MotionParams.set_defaults() must be called before creating instances. "
+                "This should be done at node startup with values from ROS parameters."
+            )
+        
         if self.speed is None:
             self.speed = MotionParams._default_speed
         if self.end_speed is None:
@@ -93,7 +102,7 @@ class MotionParams:
                      end_speed: float,
                      accel_linear: float,
                      accel_angular: float,
-                     use_dynamic_layer: bool):
+                     use_dynamic_layer: bool) -> None:
         """Configure default values for all MotionParams instances
         
         This MUST be called once at startup with values from ROS parameters.

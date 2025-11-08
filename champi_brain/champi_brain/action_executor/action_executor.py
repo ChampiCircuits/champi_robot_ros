@@ -1,36 +1,32 @@
 #!/usr/bin/env python3
 """
-ROS Action Executor - ROS2 implementation of ActionExecutor interface.
-Communicates with ROS topics and action servers to control the robot.
+Action Executor Interface - Interface for executing robot actions.
+This allows the state machine to be independent of ROS implementation.
 """
 
-from typing import Optional
 import math
-from rclpy.node import Node
-from rclpy.action import ActionClient
-from std_msgs.msg import Int8, Bool
-from champi_interfaces.action import Navigate
 from geometry_msgs.msg import Pose
+from typing import Protocol, Optional
+from rclpy.action import ActionClient
 from champi_brain.strategy_dsl import MotionParams
+from champi_interfaces.action import Navigate
+from std_msgs.msg import Int8, Bool
+from rclpy.node import Node
+from abc import abstractmethod
 
+class ActionExecutor():
+    """
+    Interface with abstract methods for executing robot actions.
 
-class ROSActionExecutor:
+    This defines the contract that any executor must implement.
+    Allows for different implementations (ROS, Simulation, Mock for testing).
     """
-    ROS2 implementation of the ActionExecutor interface.
-    
-    This class handles all ROS communication for robot control:
-    - Navigation via /navigate action server
-    - Actuator control via /ctrl/actuators topic
-    - Dynamic layer control via /use_dynamic_layer topic
-    """
-    
     def __init__(self, node: Node):
         """
-        Initialize ROS action executor.
-        
-        Args:
-            node: ROS2 node for creating publishers/action clients
+        Initialize action executor.
+
         """
+        
         self.node = node
         self.logger = node.get_logger()
         
@@ -46,7 +42,7 @@ class ROSActionExecutor:
         self.logger.info('Waiting for /navigate action server...')
         self.navigate_client.wait_for_server()
         self.logger.info('Connected to /navigate action server')
-        
+
         # Callbacks (to be set by the state machine node)
         self.on_goal_accepted = lambda: None
         self.on_goal_rejected = lambda: None
@@ -77,15 +73,16 @@ class ROSActionExecutor:
         send_goal_future = self.navigate_client.send_goal_async(goal)
         send_goal_future.add_done_callback(self._goal_response_callback)
     
+    @abstractmethod
     def detect_platform(self) -> None:
         """
-        Trigger platform detection.
-        Note: Detection is handled by sensor callbacks in the state machine.
+        Trigger platform detection using sensors.
+        The detected position will be made available through callbacks.
         """
-        self.logger.info('Platform detection triggered')
-        # Platform detection is passive - sensors publish to topics
-        # The state machine will process sensor data
+        ...
+        # TODO delete ?
     
+    @abstractmethod
     def execute_actuator_action(self, action_name: str) -> None:
         """
         Send actuator command to the robot.
@@ -93,17 +90,8 @@ class ROSActionExecutor:
         Args:
             action_name: Name of actuator action (PUT_BANNER, TAKE_CANS, etc.)
         """
-        self.logger.info(f'Executing actuator action: {action_name}')
-        
-        action_id = self._action_name_to_id(action_name)
-        if action_id is None:
-            self.logger.error(f'Unknown actuator action: {action_name}')
-            return
-        
-        msg = Int8()
-        msg.data = action_id
-        self.actuator_pub.publish(msg)
-    
+        ...
+
     def wait(self, duration: float) -> None:
         """
         Wait for a duration.
@@ -113,7 +101,8 @@ class ROSActionExecutor:
             duration: Duration in seconds
         """
         self.logger.info(f'Starting wait for {duration:.1f}s')
-        # Waiting is handled by the state machine timer
+        # Waiting is handled by the state machine timer # TODO ??
+        
     
     def cancel_current_action(self) -> None:
         """Cancel currently executing navigation goal."""

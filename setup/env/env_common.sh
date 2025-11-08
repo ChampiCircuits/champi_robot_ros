@@ -3,7 +3,7 @@ alias type-check='echo "🔍 Running type checks..." && python3 -m mypy champi_b
 alias build='echo "📦 Sourcing environment..." && source ~/champi_ws/src/champi_robot_ros/setup/env/env_common.sh && echo "🔨 Building packages..." && ~/champi_ws/src/champi_robot_ros/scripts/cmds/champi_build.sh && type-check'
 alias clean='echo "🧹 Cleaning workspace..." && rm -R ~/champi_ws/log ~/champi_ws/build ~/champi_ws/install && echo "✅ Workspace cleaned!"'
 alias kill_nodes='~/champi_ws/src/champi_robot_ros/scripts/cmds/kill_nodes.bash'
-
+# TODO j'ai cassé les params optionnels de colcon build pour l'instant, a remettre plus tard
 export RCUTILS_COLORIZED_OUTPUT=1
 
 

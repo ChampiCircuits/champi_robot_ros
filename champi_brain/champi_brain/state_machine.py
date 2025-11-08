@@ -9,8 +9,8 @@ import time
 from typing import List, Optional, Callable
 from dataclasses import dataclass
 
-from champi_brain.core.action_executor import ActionExecutor
-from champi_brain.core.match_controller import MatchController
+from champi_brain.action_executor.action_executor import ActionExecutor
+from champi_brain.match_controller import MatchController
 from champi_brain.strategy_dsl import Action, MotionParams, Position
 from rclpy.logging import get_logger
 
@@ -368,12 +368,12 @@ class StateMachine:
     
     def _execute_actuator_action(self, action: Action) -> None:
         """Execute actuator action."""
-        if self.config.simulation_mode:
-            self.logger.info(f"[SM]   Actuator '{action.action}' skipped (simulation mode)")
-            self.notify_action_completed()
-        else:
-            self.logger.info(f"[SM]   Executing actuator: {action.action}")
-            self.executor.execute_actuator_action(action.action)
+        # if self.config.simulation_mode:
+        #     self.logger.info(f"[SM]   Actuator '{action.action}' skipped (simulation mode)")
+        # else:
+        self.logger.info(f"[SM]   Executing actuator: {action.action}")
+        self.executor.execute_actuator_action(action.action)
+        self.notify_action_completed()
     
     def _cancel_current_action(self) -> None:
         """Cancel the current action."""

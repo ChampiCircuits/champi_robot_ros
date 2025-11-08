@@ -131,18 +131,19 @@ path_planner:
 state_machine:
   ros__parameters:
     # Strategy parameters
-    # strategy_file: '__strat_test_square.py'
-    strategy_file: '__strat_main_2025.py'
-    use_above_default_strategy_in_sim: true
-    default_sim_color: 'YELLOW' # Default team color for simulation: 'YELLOW' or 'BLUE'
+    use_default_strategy_and_color_in_sim: true       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
+    # default_strategy_file: '__strat_test_square.py' # Default strategy file for simulation
+    default_strategy_file: '__strat_main_2025.py'     # Default strategy file for simulation
+    default_sim_color: 'YELLOW'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
     
     # Match timing parameters
-    match_total_time: 100.0 # seconds - Total match duration
-    return_home_safety_margin: 2.0 # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left
+    match_total_time: 100.0                           # seconds - Total match duration
+    return_home_safety_margin: 2.0                    # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left
+    simulate_actuators_delays: true                   # If false, actuators commands will be applied instantly (no delay simulation)
 
 world_state_node:
   ros__parameters:
     update_rate: 5.0 # Hz
-    matching_distance_threshold: 0.1 # meters. The maximum distance to consider that an observed object matches a known object
-    max_missing: 10 # number of consecutive misses before an object is considered gone
+    matching_distance_threshold: 0.1                  # meters. The maximum distance to consider that an observed object matches a known object
+    max_missing: 10                                   # number of consecutive misses before an object is considered gone
     initial_world_state_file: 'initial_world_state.yaml'

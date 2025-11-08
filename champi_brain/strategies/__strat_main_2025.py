@@ -23,7 +23,7 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .move_to(Position(1.18, 0.46, 90.0), group="banner", end_speed=0.2, speed=1.0, accel_linear=1.1, accel_angular=15.0)
 
         ######################### FIRST ELEMENT GROUP ################################
-        .get_ready("elements_1")
+        .get_ready("elements_1") # TODO verif that group cancellation still works
         .take_elements_sequence(Position(1.1, 0.95, 90.0), "elements_1")        
         # Intermediate movement
         .move_to(Position(1.225, 0.6, 180.0), group="elements_1", use_dynamic_layer=True, speed=1.0, accel_linear=1.0, accel_angular=12.0)

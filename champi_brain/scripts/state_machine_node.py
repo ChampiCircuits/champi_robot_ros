@@ -3,29 +3,29 @@
 State Machine ROS Node - Thin ROS wrapper
 Connects the pure state machine to ROS interfaces.
 """
-
+# ROS2 imports
 import rclpy
 from rclpy.node import Node
-from rclpy.clock import Clock
 from rclpy.executors import ExternalShutdownException
 from ament_index_python.packages import get_package_share_directory
-from typing import Optional
-
+# Messages imports
 from champi_interfaces.msg import STMState
 from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32, Bool
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovarianceStamped
 from rclpy.duration import Duration
 from champi_interfaces.srv import SetPose
-
+# Other imports
 import time
-from math import atan2, pi, sqrt
-
+from math import atan2, pi
+from typing import Optional
+# champi_brain imports
 from champi_brain.strategy_dsl import Action, MotionParams, Position, Offset
 from champi_brain.enums import Color
 from champi_brain.state_machine import StateMachine, StateMachineConfig
-from champi_brain.core.match_controller import MatchController
-from champi_brain.ros.ros_action_executor import ROSActionExecutor
+from champi_brain.match_controller import MatchController
+from champi_brain.action_executor.action_executor import ActionExecutor
+from champi_brain.action_executor.ros_action_executor import ROSActionExecutor
+from champi_brain.action_executor.sim_action_executor import SIMActionExecutor
 from champi_brain.strategy_loader import load_strategy
 
 
@@ -45,20 +45,31 @@ class StateMachineNode(Node):
         
         # ============================================================
         # PARAMETERS
-        # ============================================================
-        self.strategy_file = self.declare_parameter('strategy_file', '').value
-        self.use_default_strategy = self.declare_parameter('use_above_default_strategy_in_sim', False).value
-        self.sim_mode = self.declare_parameter('sim', False).value
-        self.default_sim_color = self.declare_parameter('default_sim_color', 'YELLOW').value
-        match_total_time = self.declare_parameter('match_total_time', 100.0).value
-        return_home_safety_margin = self.declare_parameter('return_home_safety_margin', 5.0).value
-        
+        # ============================================================     
+        self.declare_parameter('default_strategy_file', rclpy.Parameter.Type.STRING)
+        self.declare_parameter('use_default_strategy_and_color_in_sim', rclpy.Parameter.Type.BOOL)
+        self.declare_parameter('sim', rclpy.Parameter.Type.BOOL)
+        self.declare_parameter('default_sim_color', rclpy.Parameter.Type.STRING)
+        self.declare_parameter('match_total_time', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('return_home_safety_margin', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('simulate_actuators_delays', rclpy.Parameter.Type.BOOL)
+
+        self.default_strategy_file = self.get_parameter('default_strategy_file').value
+        self.use_default_strategy_and_color_in_sim = self.get_parameter('use_default_strategy_and_color_in_sim').value
+        self.sim_mode = self.get_parameter('sim').value
+        self.default_sim_color = self.get_parameter('default_sim_color').value
+        match_total_time = self.get_parameter('match_total_time').value
+        return_home_safety_margin = self.get_parameter('return_home_safety_margin').value
+        simulate_actuators_delays = self.get_parameter('simulate_actuators_delays').value
+
         self.get_logger().info(f'Parameters:')
-        self.get_logger().info(f'  strategy_file: {self.strategy_file}')
-        self.get_logger().info(f'  use_default_strategy: {self.use_default_strategy}')
         self.get_logger().info(f'  sim_mode: {self.sim_mode}')
-        self.get_logger().info(f'  default_sim_color: {self.default_sim_color}')
-        self.get_logger().info(f'  total_time: {match_total_time}s')
+        self.get_logger().info(f'  use_default_strategy_and_color_in_sim: {self.use_default_strategy_and_color_in_sim}')
+        if self.use_default_strategy_and_color_in_sim:
+            self.get_logger().info(f'  default_sim_color: {self.default_sim_color}')
+            self.get_logger().info(f'  default_strategy_file: {self.default_strategy_file}')
+            self.get_logger().info(f'  simulate_actuators_delays: {simulate_actuators_delays}')
+        self.get_logger().info(f'  match_total_time: {match_total_time}s')
         self.get_logger().info(f'  return_home_safety_margin: {return_home_safety_margin}s')
         
         # ============================================================
@@ -74,8 +85,12 @@ class StateMachineNode(Node):
         self.match_controller = MatchController(total_time=match_total_time, return_home_safety_margin=return_home_safety_margin)
         self.match_controller.on_score_changed = self._on_score_changed
         
-        # ROS Action Executor
-        self.action_executor = ROSActionExecutor(self)
+        # Action Executor
+        self.action_executor: ActionExecutor
+        if self.sim_mode:
+            self.action_executor = SIMActionExecutor(self, simulate_actuators_delays)
+        else:
+            self.action_executor = ROSActionExecutor(self)
         self.action_executor.on_goal_reached = self._on_action_completed
         self.action_executor.on_goal_failed = self._on_action_failed
         
@@ -161,37 +176,46 @@ class StateMachineNode(Node):
         # AUTO-START IN SIM MODE
         # ============================================================
                 
-        if self.use_default_strategy and self.sim_mode and self.strategy_file:
-            self.get_logger().warn(f'🎮 SIM MODE: Auto-loading strategy: {self.strategy_file}')
-            self._load_strategy(self.strategy_file, self.default_sim_color)
+        if self.sim_mode and self.use_default_strategy_and_color_in_sim:
+            self.get_logger().warn(f'🎮 SIM MODE: Auto-loading strategy: {self.default_strategy_file}')
+            self._load_strategy(self.default_strategy_file, self.default_sim_color)
         
-        self.get_logger().warn('✅ State Machine ready!')
+        self.get_logger().warn('✅ State Machine ready!\n')
 
     
     def _configure_motion_defaults(self) -> None:
         """Configure default motion parameters from ROS parameters."""
-        # Read motion defaults from state_machine parameters
-        default_speed = self.declare_parameter('default_motion_speed', 0.5).value
-        default_end_speed = self.declare_parameter('default_motion_end_speed', 0.0).value
-        accel_linear = self.declare_parameter('default_motion_accel_linear', 0.5).value
-        accel_angular = self.declare_parameter('default_motion_accel_angular', 6.0).value
-        use_dynamic_layer = self.declare_parameter('default_motion_use_dynamic_layer', True).value
-                
-        # Configure MotionParams class defaults
+        params = {
+            'default_motion_speed': rclpy.Parameter.Type.DOUBLE,
+            'default_motion_end_speed': rclpy.Parameter.Type.DOUBLE,
+            'default_motion_accel_linear': rclpy.Parameter.Type.DOUBLE,
+            'default_motion_accel_angular': rclpy.Parameter.Type.DOUBLE,
+            'default_motion_use_dynamic_layer': rclpy.Parameter.Type.BOOL
+        }
+        
+        values = {}
+        for name, param_type in params.items():
+            self.declare_parameter(name, param_type)
+            param = self.get_parameter(name)
+            if param.type_ == rclpy.Parameter.Type.NOT_SET:
+                raise RuntimeError(f"Required parameter '{name}' not found in config under 'state_machine'")
+            values[name] = param.value
+        
         MotionParams.set_defaults(
-            speed=default_speed,
-            end_speed=default_end_speed,
-            accel_linear=accel_linear,
-            accel_angular=accel_angular,
-            use_dynamic_layer=use_dynamic_layer
+            speed=values['default_motion_speed'],
+            end_speed=values['default_motion_end_speed'],
+            accel_linear=values['default_motion_accel_linear'],
+            accel_angular=values['default_motion_accel_angular'],
+            use_dynamic_layer=values['default_motion_use_dynamic_layer']
         )
         
-        self.get_logger().info(f'Motion defaults configured:')
-        self.get_logger().info(f'  speed: {default_speed} m/s')
-        self.get_logger().info(f'  end_speed: {default_end_speed} m/s')
-        self.get_logger().info(f'  accel_linear: {accel_linear} m/s²')
-        self.get_logger().info(f'  accel_angular: {accel_angular} rad/s²')
-        self.get_logger().info(f'  use_dynamic_layer: {use_dynamic_layer}')
+        self.get_logger().info(
+            f"Motion defaults: speed={values['default_motion_speed']}, "
+            f"end_speed={values['default_motion_end_speed']}, "
+            f"accel_linear={values['default_motion_accel_linear']}, "
+            f"accel_angular={values['default_motion_accel_angular']}, "
+            f"use_dynamic_layer={values['default_motion_use_dynamic_layer']}"
+        )
 
     # ================================================================
     # ROS CALLBACKS
