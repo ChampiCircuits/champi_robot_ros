@@ -20,10 +20,12 @@ class SIMActionExecutor(ActionExecutor):
         
         Args:
             node: ROS2 node for creating publishers/action clients
+            simulate_actuators_delays: Whether to simulate delays for actuator actions
         """
 
         super().__init__(node)
         self.simulate_actuators_delays = simulate_actuators_delays
+        self.time_per_action: dict = {}
     
     def execute_actuator_action(self, action_name: str) -> None:
         """
@@ -36,11 +38,23 @@ class SIMActionExecutor(ActionExecutor):
             self.logger.info(f'Executing actuator action: {action_name} in sim, no delay simulated')
             return
         
-        delay = 2.0  # seconds, simulate actuator action duration
-        self.logger.info(f'Executing actuator action: {action_name} in sim, so waiting {delay}s')
-        time.sleep(delay) # TODO non blocking or not ??
-        # TODO temps variable selon l'action, a def dans un fichier config comme les points
-        self.logger.info(f'Executing actuator action: {action_name} done !')
+        # Get delay from configuration
+        delay = self.time_per_action[action_name]
+        if delay is None:
+            raise ValueError(f'No time_per_action entry for action: {action_name}')
+        self.logger.info(f'Executing actuator action: {action_name} in sim, waiting {delay}s')
+        time.sleep(delay)  # TODO: make non-blocking with timer callback?
+        self.logger.info(f'Executing actuator action: {action_name} done!')
+
+    def set_time_per_action(self, time_per_action: dict) -> None:
+        """
+        Update the time per action configuration.
+        
+        Args:
+            time_per_action: Dictionary mapping action names to their execution time in seconds
+        """
+        self.time_per_action = time_per_action
+        self.logger.info(f'Updated time per action configuration with {len(time_per_action)} entries')
 
     def detect_platform(self) -> None:
         """

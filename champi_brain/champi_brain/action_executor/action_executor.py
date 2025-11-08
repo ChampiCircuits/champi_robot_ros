@@ -36,7 +36,6 @@ class ActionExecutor():
         
         # Publishers
         self.actuator_pub = node.create_publisher(Int8, '/ctrl/actuators', 10)
-        self.use_dynamic_layer_pub = node.create_publisher(Bool, '/use_dynamic_layer', 10)
         
         # Wait for action server
         self.logger.info('Waiting for /navigate action server...')
@@ -60,11 +59,6 @@ class ActionExecutor():
             motion_params: Motion parameters (speed, acceleration, etc.)
         """
         self.logger.info(f'Sending move goal: ({x:.2f}, {y:.2f}, {theta_deg:.1f}°) with {motion_params}')
-        
-        # Publish dynamic layer setting
-        use_dynamic_msg = Bool()
-        use_dynamic_msg.data = motion_params.use_dynamic_layer
-        self.use_dynamic_layer_pub.publish(use_dynamic_msg)
         
         # Create goal
         goal = self._create_navigate_goal(x, y, theta_deg, motion_params)
@@ -132,6 +126,8 @@ class ActionExecutor():
         goal.accel_linear = motion_params.accel_linear
         goal.accel_angular = motion_params.accel_angular
         goal.end_speed = motion_params.end_speed
+        # TODO send use_collision_avoidance to goal
+
         
         # Tolerances
         goal.linear_tolerance = 0.005

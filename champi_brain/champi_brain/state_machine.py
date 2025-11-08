@@ -236,7 +236,7 @@ class StateMachine:
             end_speed=0.0,
             accel_linear=0.5,
             accel_angular=6.0,
-            use_dynamic_layer=False
+            use_collision_avoidance=False
         )
         
         self.logger.info(f"[SM] Coming home to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
@@ -251,7 +251,7 @@ class StateMachine:
             end_speed=0.0,
             accel_linear=0.5,
             accel_angular=6.0,
-            use_dynamic_layer=True
+            use_collision_avoidance=True
         )
         
         self.logger.info(f"[SM] Moving to wait position ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")

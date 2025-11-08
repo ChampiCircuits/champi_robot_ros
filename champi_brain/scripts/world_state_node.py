@@ -1,23 +1,41 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 from champi_brain.world_state.worldState import WorldState, NutsBox
 from champi_interfaces.msg import TableObservation, GameElement
+from champi_interfaces.srv import GetWorldState
 
 class WorldStateNode(Node):
     def __init__(self):
+        """
+        Node that maintains and updates the world state based on observations.
+        Receives observations as TableObservation messages, updates the world state,
+        and publishes the updated world state.
+        """
         super().__init__('world_state_node')
         self.get_logger().info(f'Initializing WorldStateNode...')
 
-        ## Retrieve parameters
-        self.declare_parameter('matching_distance_threshold', 0.3)
-        self.declare_parameter('max_missing', 2)
-        self.declare_parameter('initial_world_state_file', 'initial_world_state.yaml')
-        matching_distance_threshold = self.get_parameter('matching_distance_threshold').get_parameter_value().double_value
-        max_missing = self.get_parameter('max_missing').get_parameter_value().integer_value
-        initial_world_state_file = self.get_parameter('initial_world_state_file').get_parameter_value().string_value
+        # ============================================================
+        # PARAMETERS
+        # ============================================================   
+        self.declare_parameter('matching_distance_threshold', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_missing', rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter('initial_world_state_file', rclpy.Parameter.Type.STRING)
 
-        ## Subscriber and publisher
+        matching_distance_threshold = self.get_parameter('matching_distance_threshold').value
+        max_missing = self.get_parameter('max_missing').value
+        initial_world_state_file = self.get_parameter('initial_world_state_file').value
+
+        self.get_logger().info(f'Parameters:')
+        self.get_logger().info(f'\tmatching_distance_threshold: {matching_distance_threshold}')
+        self.get_logger().info(f'\tmax_missing: {max_missing}')
+        self.get_logger().info(f'\tinitial_world_state_file: {initial_world_state_file}')
+
+        # ============================================================
+        # ROS
+        # ============================================================
         self.create_subscription(
             TableObservation,
             '/new_table_observation',
@@ -34,7 +52,7 @@ class WorldStateNode(Node):
             matching_distance_threshold=matching_distance_threshold,
             max_missing=max_missing
         )
-        self.get_logger().info(f'WorldStateNode started with initial state from YAML: {config_path}')
+        self.get_logger().info(f'WorldStateNode started !')
 
     def observation_callback(self, msg):
         # Convert TableObservation message to list of NutsBox
@@ -53,9 +71,8 @@ class WorldStateNode(Node):
         self.get_logger().info('World state updated with new observations.')
         self.publish_world_state()
 
-    def publish_world_state(self):
-        self.get_logger().info('Publishing current world state...')
-        # Retrieve current world state and publish as TableObservation message
+    def constructTableObservationMsg(self):
+        # Retrieve current world state and create a TableObservation message
         msg = TableObservation()
         for elem in self.world_state.elements.values():
             game_elem = GameElement()
@@ -66,7 +83,11 @@ class WorldStateNode(Node):
             game_elem.state = elem.state
             game_elem.color = elem.color
             msg.elements.append(game_elem)
-        self.publisher.publish(msg)
+        return msg
+        
+    def publish_world_state(self):
+        self.get_logger().info('Publishing current world state...')
+        self.publisher.publish(self.constructTableObservationMsg())
 
 
 def main(args=None):

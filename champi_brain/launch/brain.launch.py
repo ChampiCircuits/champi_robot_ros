@@ -32,7 +32,17 @@ def generate_launch_description():
         parameters=[config_file_path, {'sim': sim_config}],
     )
 
+    world_state_node = Node(
+        package='champi_brain',
+        executable='world_state_node.py',
+        name='world_state_node',
+        output='screen',
+        respawn=True,
+        parameters=[config_file_path, {'sim': sim_config}],
+    )
+
     return LaunchDescription([
         sim_arg,
-        sm_node
+        sm_node,
+        world_state_node
     ])

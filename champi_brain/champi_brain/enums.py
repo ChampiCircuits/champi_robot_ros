@@ -6,6 +6,8 @@ class ZoneType(Enum):
     NOT_IN_A_ZONE = "not_in_a_zone"     # Default type when no zone is assigned, so elements are free to be taken
     PLACEMENT_ZONE = "placement_zone"   # Zone where elements can be placed, but also stolen by opponent
     SECURE_ZONE = "secure_zone"         # Zone where elements are safe from opponent
+    FORBIDDEN_ZONE = "forbidden_zone"   # Zone where robot shall not enter
+
 
 class Color(Enum):
     YELLOW = "yellow"

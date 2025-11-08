@@ -65,14 +65,14 @@ class MotionParams:
     _default_end_speed: Optional[float] = None
     _default_accel_linear: Optional[float] = None
     _default_accel_angular: Optional[float] = None
-    _default_use_dynamic_layer: Optional[bool] = None
+    _default_use_collision_avoidance: Optional[bool] = None
     
     # Instance variables - will be set in __post_init__
     speed: Optional[float] = None          # m/s
     end_speed: Optional[float] = None      # m/s
     accel_linear: Optional[float] = None   # m/s²
     accel_angular: Optional[float] = None  # rad/s²
-    use_dynamic_layer: Optional[bool] = None
+    use_collision_avoidance: Optional[bool] = None # without collision avoidance, we do straight lines
     
     def __post_init__(self):
         """Initialize instance variables with class defaults if not provided
@@ -93,8 +93,8 @@ class MotionParams:
             self.accel_linear = MotionParams._default_accel_linear
         if self.accel_angular is None:
             self.accel_angular = MotionParams._default_accel_angular
-        if self.use_dynamic_layer is None:
-            self.use_dynamic_layer = MotionParams._default_use_dynamic_layer
+        if self.use_collision_avoidance is None:
+            self.use_collision_avoidance = MotionParams._default_use_collision_avoidance
     
     @classmethod
     def set_defaults(cls, 
@@ -102,7 +102,7 @@ class MotionParams:
                      end_speed: float,
                      accel_linear: float,
                      accel_angular: float,
-                     use_dynamic_layer: bool) -> None:
+                     use_collision_avoidance: bool) -> None:
         """Configure default values for all MotionParams instances
         
         This MUST be called once at startup with values from ROS parameters.
@@ -111,7 +111,7 @@ class MotionParams:
         cls._default_end_speed = end_speed
         cls._default_accel_linear = accel_linear
         cls._default_accel_angular = accel_angular
-        cls._default_use_dynamic_layer = use_dynamic_layer
+        cls._default_use_collision_avoidance = use_collision_avoidance
 
 @dataclass
 class Action:
@@ -123,6 +123,7 @@ class Action:
     motion: MotionParams = field(default_factory=MotionParams)
     points: Optional[int] = None
     reason: Optional[str] = None
+    time: Optional[float] = None  # Time in seconds for the action
     # Other specific parameters
     extra_params: Dict[str, Any] = field(default_factory=dict)
     
@@ -308,7 +309,7 @@ class StrategyBuilder:
         self.set_current_group(group)
 
         # Approach movement
-        self.move_relative_to(platform_center, Offset(-0.35, 0.0, 0.0))
+        self.move_relative_to(platform_center, Offset(-0.35, 0.0, 0.0), use_collision_avoidance=True)
         
         # Platform detection - offset from platform center
         # self.custom_action("detectPlatform")
@@ -339,7 +340,7 @@ class StrategyBuilder:
         self.set_current_group(group)
         
         # First positioning - offset from target center
-        self.move_relative_to(target_position, Offset(-0.21, 0.0, -60.0))
+        self.move_relative_to(target_position, Offset(-0.21, 0.0, -60.0), use_collision_avoidance=True)
 
         self.custom_action("PUT_CANS_LEFT_LAYER_1")
         self.custom_action("PUT_LOWER_PLANK_LAYER_1")

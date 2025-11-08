@@ -63,14 +63,14 @@ class StateMachineNode(Node):
         simulate_actuators_delays = self.get_parameter('simulate_actuators_delays').value
 
         self.get_logger().info(f'Parameters:')
-        self.get_logger().info(f'  sim_mode: {self.sim_mode}')
-        self.get_logger().info(f'  use_default_strategy_and_color_in_sim: {self.use_default_strategy_and_color_in_sim}')
+        self.get_logger().info(f'\tsim_mode: {self.sim_mode}')
+        self.get_logger().info(f'\tuse_default_strategy_and_color_in_sim: {self.use_default_strategy_and_color_in_sim}')
         if self.use_default_strategy_and_color_in_sim:
-            self.get_logger().info(f'  default_sim_color: {self.default_sim_color}')
-            self.get_logger().info(f'  default_strategy_file: {self.default_strategy_file}')
-            self.get_logger().info(f'  simulate_actuators_delays: {simulate_actuators_delays}')
-        self.get_logger().info(f'  match_total_time: {match_total_time}s')
-        self.get_logger().info(f'  return_home_safety_margin: {return_home_safety_margin}s')
+            self.get_logger().info(f'\tdefault_sim_color: {self.default_sim_color}')
+            self.get_logger().info(f'\tdefault_strategy_file: {self.default_strategy_file}')
+            self.get_logger().info(f'\tsimulate_actuators_delays: {simulate_actuators_delays}')
+        self.get_logger().info(f'\tmatch_total_time: {match_total_time}s')
+        self.get_logger().info(f'\treturn_home_safety_margin: {return_home_safety_margin}s')
         
         # ============================================================
         # CONFIGURE MOTION DEFAULTS FROM POSE CONTROLLER PARAMS
@@ -190,7 +190,7 @@ class StateMachineNode(Node):
             'default_motion_end_speed': rclpy.Parameter.Type.DOUBLE,
             'default_motion_accel_linear': rclpy.Parameter.Type.DOUBLE,
             'default_motion_accel_angular': rclpy.Parameter.Type.DOUBLE,
-            'default_motion_use_dynamic_layer': rclpy.Parameter.Type.BOOL
+            'default_motion_use_collision_avoidance': rclpy.Parameter.Type.BOOL
         }
         
         values = {}
@@ -206,7 +206,7 @@ class StateMachineNode(Node):
             end_speed=values['default_motion_end_speed'],
             accel_linear=values['default_motion_accel_linear'],
             accel_angular=values['default_motion_accel_angular'],
-            use_dynamic_layer=values['default_motion_use_dynamic_layer']
+            use_collision_avoidance=values['default_motion_use_collision_avoidance']
         )
         
         self.get_logger().info(
@@ -214,7 +214,7 @@ class StateMachineNode(Node):
             f"end_speed={values['default_motion_end_speed']}, "
             f"accel_linear={values['default_motion_accel_linear']}, "
             f"accel_angular={values['default_motion_accel_angular']}, "
-            f"use_dynamic_layer={values['default_motion_use_dynamic_layer']}"
+            f"use_collision_avoidance={values['default_motion_use_collision_avoidance']}"
         )
 
     # ================================================================
@@ -386,7 +386,7 @@ class StateMachineNode(Node):
         try:
             # Load strategy from file
             strategy_path = get_package_share_directory('champi_brain') + '/strategies/' + strategy_file
-            strategy, init_pose, home_pose, wait_home_pose = load_strategy(
+            strategy, init_pose, home_pose, wait_home_pose, time_per_action = load_strategy(
                 strategy_path,
                 color,
                 self.get_logger()
@@ -397,6 +397,10 @@ class StateMachineNode(Node):
             self.get_logger().info(f'   Home pose: {home_pose}')
             self.get_logger().info(f'   Wait home pose: {wait_home_pose}')
             self.get_logger().info(f'   Actions: {len(strategy)}')
+            
+            # Update time per action for simulation executor
+            if self.sim_mode:
+                self.action_executor.set_time_per_action(time_per_action)
             
             # Create config
             self.sm_config = StateMachineConfig(

@@ -32,7 +32,7 @@ def create_main_strategy() -> StrategyBuilder:
 
         ######################### COME HOME ############################################
         # Move to position to look at aruco marker
-        .move_to(Position(0.3, 0.6, 0.0), group="come_home", use_dynamic_layer=True)
+        .move_to(Position(0.3, 0.6, 0.0), group="come_home", use_collision_avoidance=True)
         
         # Reset actuators before final positioning
         .custom_action("RESET_ACTUATORS", group="elements_3")

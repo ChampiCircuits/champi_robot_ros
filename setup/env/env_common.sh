@@ -20,7 +20,7 @@ underline='\x1b[4m'
 slow_blink='\x1b[5m'
 rapid_blink='\x1b[6m'
 normal='\x1b[22m' # reset bold/faint
-export RCUTILS_CONSOLE_OUTPUT_FORMAT="${del}${carriage_return}[${faint}{date_time_with_ms}${normal}] ${bold}[{severity}]${normal} [{name}]: {message}${r}"
+export RCUTILS_CONSOLE_OUTPUT_FORMAT="${del}${carriage_return}${bold}[{severity}]${normal} [{name}]: {message}${r}"
 
 
 # argcomplete for ros2 & colcon

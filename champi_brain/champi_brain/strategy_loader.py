@@ -17,6 +17,15 @@ def load_points_per_action():
 
     return data.get('points_per_action', {})
 
+def load_time_per_action():
+    """Load time per action from a YAML file"""
+
+    time_yaml_file = get_package_share_directory('champi_brain') + '/strategies/time_per_action.yaml'
+    with open(time_yaml_file, 'r') as f:
+        data = yaml.safe_load(f)
+
+    return data.get('time_per_action', {})
+
 def load_strategy_dsl(strategy_file_path, color, logger):
     """Load a strategy from a Python DSL file - returns typed objects"""
     
@@ -29,7 +38,11 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     # Load the points per action configuration
     points_per_action = load_points_per_action()
     logger.info(f'Loaded points per action configuration: {points_per_action}')
-    
+
+    # Load the time per action configuration
+    time_per_action = load_time_per_action()
+    logger.info(f'Loaded time per action configuration: {time_per_action}')
+
     # Add module directory to PATH for imports
     strategy_dir = os.path.dirname(strategy_file_path)
     if strategy_dir not in sys.path:
@@ -40,11 +53,8 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     spec.loader.exec_module(strategy_module)
     
     # Get the strategy
-    if hasattr(strategy_module, 'create_main_strategy'):
-        strategy_builder = strategy_module.create_main_strategy(points_per_action)
-    else:
-        raise ValueError(f"File {strategy_file_path} must contain a 'create_main_strategy()' function")
-    
+    strategy_builder = strategy_module.create_main_strategy(points_per_action)
+
     # Get typed objects instead of dicts
     from champi_brain.strategy_dsl import Color as DSLColor
     color_enum = DSLColor.BLUE if color == 'BLUE' else DSLColor.YELLOW
@@ -67,10 +77,14 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     for (i, action) in enumerate(actions):
         logger.debug(f'Action {i}: {action}')
     
-    return actions, init_pose, home_pose, wait_to_come_home_pose
+    return actions, init_pose, home_pose, wait_to_come_home_pose, time_per_action
 
 def load_strategy(file_path, color, logger):
-    """Main entry point to load a strategy"""
+    """Main entry point to load a strategy
+    
+    Returns:
+        tuple: (actions, init_pose, home_pose, wait_to_come_home_pose, time_per_action)
+    """
     
     file_ext = Path(file_path).suffix.lower()
     

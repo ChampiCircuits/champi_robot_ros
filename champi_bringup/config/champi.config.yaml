@@ -115,7 +115,7 @@ pose_controller:
     default_motion_end_speed: 0.0 # m/s # TODO a bit duplicated with pose_controller
     default_motion_accel_linear: 0.5 # m/s²
     default_motion_accel_angular: 6.0 # rad/s²
-    default_motion_use_dynamic_layer: true
+    default_motion_use_collision_avoidance: true
 
 
 path_planner:
@@ -139,7 +139,7 @@ state_machine:
     # Match timing parameters
     match_total_time: 100.0                           # seconds - Total match duration
     return_home_safety_margin: 2.0                    # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left
-    simulate_actuators_delays: true                   # If false, actuators commands will be applied instantly (no delay simulation)
+    simulate_actuators_delays: false                   # If false, actuators commands will be applied instantly (no delay simulation)
 
 world_state_node:
   ros__parameters:
