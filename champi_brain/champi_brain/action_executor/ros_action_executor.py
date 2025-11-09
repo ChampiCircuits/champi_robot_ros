@@ -15,7 +15,6 @@ class ROSActionExecutor(ActionExecutor):
     This class handles all ROS communication for robot control:
     - Navigation via /navigate action server
     - Actuator control via /ctrl/actuators topic
-    - Dynamic layer control via /use_dynamic_layer topic
     """
     
     def __init__(self, node: Node):

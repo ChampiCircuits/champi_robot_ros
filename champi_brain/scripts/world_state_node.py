@@ -2,10 +2,13 @@
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
 from ament_index_python.packages import get_package_share_directory
+from geometry_msgs.msg import Pose
 from champi_brain.world_state.worldState import WorldState, NutsBox
 from champi_interfaces.msg import TableObservation, GameElement
-from champi_interfaces.srv import GetWorldState
+from math import pi
+from champi_libraries_py.utils.angles import rad_to_quat
 
 class WorldStateNode(Node):
     def __init__(self):
@@ -41,7 +44,14 @@ class WorldStateNode(Node):
             '/new_table_observation',
             self.observation_callback,
             10)
-        self.publisher = self.create_publisher(TableObservation, '/world_state', 10)
+        
+        # TRANSIENT_LOCAL QoS to keep last message for late subscribers
+        latched_qos = QoSProfile(
+            depth=1,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=ReliabilityPolicy.RELIABLE
+        )
+        self.publisher = self.create_publisher(TableObservation, '/world_state', latched_qos)
 
         # Load initial world state from YAML using WorldState.from_yaml
         config_path = get_package_share_directory('champi_brain') + '/config/' + initial_world_state_file
@@ -52,14 +62,16 @@ class WorldStateNode(Node):
             matching_distance_threshold=matching_distance_threshold,
             max_missing=max_missing
         )
+        # publish initial world state
+        self.publish_world_state()
         self.get_logger().info(f'WorldStateNode started !')
 
     def observation_callback(self, msg):
         # Convert TableObservation message to list of NutsBox
         detections = []
-        for elem in msg.elements:
+        for i, elem in enumerate(msg.elements):
             detection = NutsBox(
-                id=elem.id,
+                id=f'detection_{i}',  # Temporary ID for detections
                 x=elem.x,
                 y=elem.y,
                 theta_deg=elem.orientation,
@@ -77,12 +89,15 @@ class WorldStateNode(Node):
         for elem in self.world_state.elements.values():
             game_elem = GameElement()
             game_elem.id = elem.id
-            game_elem.x = elem.x
-            game_elem.y = elem.y
-            game_elem.orientation = elem.theta_deg
-            game_elem.state = elem.state
-            game_elem.color = elem.color
-            msg.elements.append(game_elem)
+            game_elem.type = 'nut_box'  # All elements are nut boxes for now
+            pose = Pose()
+            pose.position.x = elem.x
+            pose.position.y = elem.y
+            pose.orientation.z, pose.orientation.w = rad_to_quat(elem.theta_deg*pi/180.0)
+            game_elem.pose = pose
+            game_elem.state = elem.state.value
+            game_elem.color = elem.color.value
+            msg.detected_game_elements.append(game_elem)
         return msg
         
     def publish_world_state(self):

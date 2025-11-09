@@ -66,6 +66,9 @@ class StateMachine:
         self.current_tag: Optional[str] = None
         self.canceled_tags: set[str] = set()
         
+        # World state (updated by ROS node)
+        self.world_state_elements: dict = {}  # Dict of {id: (x, y, theta_deg, state, color)}
+        
         # Flags for state transitions
         self._stop_requested = False
         self._action_completed = False
@@ -88,6 +91,15 @@ class StateMachine:
     def set_strategy(self, strategy: List[Action]) -> None:
         """Set the strategy (list of actions) to execute."""
         self.strategy = strategy.copy()
+    
+    def update_world_state(self, elements: dict) -> None:
+        """Update the world state with new element positions.
+        
+        Args:
+            elements: Dict of {element_id: (x, y, theta_deg, state, color)}
+        """
+        self.world_state_elements = elements
+        self.logger.debug(f"[SM] World state updated: {len(elements)} elements")
         
     def start_initialization(self) -> None:
         """Start the initialization sequence."""
@@ -230,7 +242,7 @@ class StateMachine:
     
     def _on_enter_come_home(self) -> None:
         """Handle entry into come home state."""
-        x, y, theta_deg = self.config.home_pose
+        x, y, theta_deg = self.config.home_pose # TODO come home params should be specified in strategy 
         motion = MotionParams(
             speed=1.0,
             end_speed=0.0,
@@ -326,13 +338,27 @@ class StateMachine:
     
     def _execute_move(self, action: Action) -> None:
         """Execute a move action."""
-        if not action.target:
-            self.logger.info("[SM] ERROR: Move action without target")
+        # Determine if target is a Position or a named target string
+        if action.pos_target is not None:
+            # Absolute position specified
+            x, y, theta_deg = action.pos_target.x, action.pos_target.y, action.pos_target.theta_deg
+        elif action.named_target is not None:
+            # Get target from world state by name
+            target_name = action.named_target
+            if target_name not in self.world_state_elements:
+                self.logger.error(f"[SM] ERROR: Element '{target_name}' not found in world state!")
+                self.notify_action_completed()
+                return
+            
+            # Get element position from world state
+            elem_data = self.world_state_elements[target_name]
+            x, y, theta_deg = elem_data[0], elem_data[1], elem_data[2]
+            self.logger.info(f"[SM]   Target '{target_name}' found at ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
+        else:
+            self.logger.error("[SM] ERROR: No target specified for move action!")
             self.notify_action_completed()
             return
-        
-        x, y, theta_deg = action.target.x, action.target.y, action.target.theta_deg
-        
+
         # Apply offset if present
         if action.offset:
             theta_rad = theta_deg * math.pi / 180.0
@@ -347,7 +373,6 @@ class StateMachine:
         """Execute platform detection."""
         self.logger.info("[SM]   Detecting platform...")
         self.executor.detect_platform()
-        # Note: Real implementation will call notify_platform_detected when done
     
     def _execute_wait(self, action: Action) -> None:
         """Execute wait action."""
@@ -358,19 +383,15 @@ class StateMachine:
     
     def _execute_add_points(self, action: Action) -> None:
         """Execute add points action."""
-        if action.points:
-            reason = action.reason or "Points added"
-            self.logger.info(f"[SM]   Added {action.points} points: \"{reason}\"")
-            self.match.add_points(action.points, reason)
+        reason = action.reason or "Points added"
+        self.logger.info(f"[SM]   Added {action.points} points: \"{reason}\"")
+        self.match.add_points(action.points, reason)
         
         # Points are added immediately, no waiting
         self.notify_action_completed()
     
     def _execute_actuator_action(self, action: Action) -> None:
         """Execute actuator action."""
-        # if self.config.simulation_mode:
-        #     self.logger.info(f"[SM]   Actuator '{action.action}' skipped (simulation mode)")
-        # else:
         self.logger.info(f"[SM]   Executing actuator: {action.action}")
         self.executor.execute_actuator_action(action.action)
         self.notify_action_completed()

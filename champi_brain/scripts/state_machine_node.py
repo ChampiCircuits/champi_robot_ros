@@ -7,17 +7,19 @@ Connects the pure state machine to ROS interfaces.
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
 from ament_index_python.packages import get_package_share_directory
 # Messages imports
-from champi_interfaces.msg import STMState
 from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32, Bool
 from nav_msgs.msg import Odometry
 from rclpy.duration import Duration
+from champi_interfaces.msg import STMState, TableObservation
 from champi_interfaces.srv import SetPose
 # Other imports
 import time
 from math import atan2, pi
 from typing import Optional
+from champi_libraries_py.utils.angles import quat_to_rad
 # champi_brain imports
 from champi_brain.strategy_dsl import Action, MotionParams, Position, Offset
 from champi_brain.enums import Color
@@ -96,7 +98,7 @@ class StateMachineNode(Node):
         
         # State Machine Config (will be filled when strategy is chosen)
         self.sm_config = None
-        self.state_machine: Optional[StateMachine] = None
+        self.state_machine: StateMachine = None
         
         # ============================================================
         # ROS SUBSCRIBERS
@@ -117,7 +119,7 @@ class StateMachineNode(Node):
             self._on_odometry,
             10
         )
-        self.current_pose = None  # (x, y, theta_deg)
+        self.current_pose = None  # (x, y, theta_deg) # TODO object Position instead?
         
         # Chosen strategy
         self.create_subscription(
@@ -139,7 +141,7 @@ class StateMachineNode(Node):
             self._on_platform_distance,
             10
         )
-        self.platform_distance = None
+        self.last_platform_distance = None
         
         # Actuators finished
         self.create_subscription(
@@ -147,7 +149,20 @@ class StateMachineNode(Node):
             self._on_actuators_finished,
             10
         )
-        
+
+        # World state - Subscribe with TRANSIENT_LOCAL to receive last message
+        latched_qos = QoSProfile(
+            depth=1,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,  # Receive last published message
+            reliability=ReliabilityPolicy.RELIABLE
+        )
+        self.create_subscription(
+            TableObservation,
+            '/world_state',
+            self._on_world_state,
+            latched_qos
+        )
+
         # ============================================================
         # ROS PUBLISHERS
         # ============================================================
@@ -226,7 +241,7 @@ class StateMachineNode(Node):
         self.e_stop_pressed = msg.e_stop_pressed
         self.tirette_released = msg.tirette_released
         
-        if not self.state_machine:
+        if not self.state_machine: # TODO useful ? et les autres aussi
             return
         
         # Handle e-stop
@@ -287,8 +302,8 @@ class StateMachineNode(Node):
         self.get_logger().warn('✅ State machine reset complete')
     
     def _on_platform_distance(self, msg: Float32) -> None:
-        """Handle platform distance detection."""
-        self.platform_distance = msg.data
+        """Handle platform distance detection.""" # TODO informer le world state ?
+        self.last_platform_distance = msg.data
         
         if not self.state_machine or not self.current_pose:
             return
@@ -298,14 +313,14 @@ class StateMachineNode(Node):
             return
         
         # Check if platform detected
-        if self.platform_distance is not None and self.platform_distance > 0 and self.platform_distance < 0.6:
+        if self.last_platform_distance is not None and self.last_platform_distance > 0 and self.last_platform_distance < 0.6:
             # Compute platform pose from robot pose
             x_robot, y_robot, theta_deg = self.current_pose
             theta_rad = theta_deg * pi / 180.0
             
             # Platform is at distance in front of robot
             half_platform = 0.05
-            center_dist = self.platform_distance + half_platform
+            center_dist = self.last_platform_distance + half_platform
             
             from math import cos, sin
             x_platform = x_robot + center_dist * cos(theta_rad)
@@ -321,6 +336,20 @@ class StateMachineNode(Node):
         
         self.get_logger().debug(f'🤖 Actuators finished: {msg.data}')
         self.state_machine.notify_action_completed()
+    
+    def _on_world_state(self, msg: TableObservation) -> None:
+        """Handle world state updates."""
+        self.get_logger().debug(f'🌍 World state received: {len(msg.detected_game_elements)} elements')
+        
+        # Convert TableObservation to dict for state machine
+        elements = {}
+        for elem in msg.detected_game_elements:
+            elements[elem.id] = (elem.pose.position.x, elem.pose.position.y, 
+                                 quat_to_rad(elem.pose.orientation.z, elem.pose.orientation.w)*180.0/pi,
+                                 elem.state, elem.color)
+        
+        # Update state machine world state
+        self.state_machine.update_world_state(elements)
     
     # ================================================================
     # STATE MACHINE CALLBACKS

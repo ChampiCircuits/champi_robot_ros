@@ -1,13 +1,15 @@
-
+from dataclasses import dataclass
 from typing import Optional
 from enum import Enum
 
+###################################
+### ENUMS
+###################################
 class ZoneType(Enum):
     NOT_IN_A_ZONE = "not_in_a_zone"     # Default type when no zone is assigned, so elements are free to be taken
     PLACEMENT_ZONE = "placement_zone"   # Zone where elements can be placed, but also stolen by opponent
     SECURE_ZONE = "secure_zone"         # Zone where elements are safe from opponent
     FORBIDDEN_ZONE = "forbidden_zone"   # Zone where robot shall not enter
-
 
 class Color(Enum):
     YELLOW = "yellow"
@@ -21,27 +23,32 @@ class ElementState(Enum):
     SECURED = "secured"     # Box placed where the opponent cannot take it
     MISSING = "missing"     # Box no longer at expected location
 
+###################################
+### DATA CLASSES
+###################################
+@dataclass
 class GameElement:
-    def __init__(self, id: str, x: float, y: float, theta_deg: float, state: ElementState):
-        self.id: str = id
-        self.x: float = x
-        self.y: float = y
-        self.theta_deg: float = theta_deg
-        self.state: ElementState = state
-        self.missing_count: int = 0  # Number of consecutive times this element was not observed
+    """Base class for game elements on the table."""
+    id: str
+    x: float
+    y: float
+    theta_deg: float
+    state: ElementState
+    missing_count: int = 0  # Number of consecutive times this element was not observed
 
+@dataclass
 class NutsBox(GameElement):
-    def __init__(self, id: str, x: float, y: float, theta_deg: float, color: Color, state: ElementState):
-        super().__init__(id, x, y, theta_deg, state)
-        self.color: Color = color
+    """A nuts box element with a specific color."""
+    color: Color = Color.NOT_INITIALIZED
 
-class Zone():
-    def __init__(self, id: str, x: float, y: float, width: float, height: float, zone_type:ZoneType, color: Optional[Color] = None):
-        self.id: str = id
-        self.x: float = x
-        self.y: float = y
-        self.width: float = width
-        self.height: float = height
-        self.type: ZoneType = zone_type
-        self.color: Optional[Color] = color # Optional color for secure zone
+@dataclass
+class Zone:
+    """A zone on the table (placement, secure, or forbidden)."""
+    id: str
+    x: float
+    y: float
+    width: float
+    height: float
+    zone_type: ZoneType
+    color: Optional[Color] = None  # Optional color for secure zone
 

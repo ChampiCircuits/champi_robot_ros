@@ -117,7 +117,8 @@ class MotionParams:
 class Action:
     """Base action with all possible parameters"""
     action: str
-    target: Optional[Position] = None
+    named_target: Optional[str] = None # Target by name in world state instead of target position
+    pos_target: Optional[Position] = None
     offset: Optional[Offset] = None
     group: Optional[str] = None  # Group name
     motion: MotionParams = field(default_factory=MotionParams)
@@ -127,40 +128,19 @@ class Action:
     # Other specific parameters
     extra_params: Dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
-        """Converts action to dictionary"""
-        result: Dict[str, Any] = {"action": self.action}
-        
-        if self.target:
-            result["target"] = self.target.to_dict()
-        
-        if self.offset:
-            result["offset"] = self.offset.to_dict()
-        
-        if self.group:
-            result["group"] = self.group
-            
-        if self.points is not None:
-            result["points"] = self.points
-            
-        if self.reason:
-            result["reason"] = self.reason
-            
-        # Add motion parameters
-        result["speed"] = self.motion.speed
-        result["end_speed"] = self.motion.end_speed
-        result["accel_linear"] = self.motion.accel_linear
-        result["accel_angular"] = self.motion.accel_angular
-        result["use_dynamic_layer"] = self.motion.use_dynamic_layer
-            
-        # Add extra parameters, converting Position/Offset objects to dict
-        for key, value in self.extra_params.items():
-            if isinstance(value, (Position, Offset)):
-                result[key] = value.to_dict()
-            else:
-                result[key] = value
-        
-        return result
+    def __post_init__(self):
+        """Validate that either named_target or target is set, but not both"""
+        if self.named_target is not None and self.pos_target is not None:
+            raise ValueError(
+                f"Action '{self.action}': cannot specify both 'named_target' and 'target'. "
+                "Use either named_target (for world state references) or target (for absolute positions)."
+            )
+        # if self.named_target is None and self.pos_target is None:
+        #     raise ValueError(
+        #         f"Action '{self.action}': must specify either 'named_target' or 'target'. "
+        #         "Use named_target for world state references or target for absolute positions."
+        #     )
+
 
 class StrategyBuilder:
     """Strategy builder with fluent DSL"""
@@ -201,47 +181,29 @@ class StrategyBuilder:
         self.wait_to_come_home_pose = Position(x, y, theta_deg)
         return self
     
-    def move_to(self, target: Union[Position, float], y: Optional[float] = None, theta_deg: float = 0.0, group: Optional[str] = None, **motion_kwargs) -> 'StrategyBuilder':
-        """Add a movement action
-        
-        Can be called as:
-        - move_to(Position(...), group=..., **motion_kwargs)
-        - move_to(x, y, theta_deg, group=..., **motion_kwargs)
-        """
-        # Handle both Position object and (x, y, theta_deg) arguments
-        if isinstance(target, Position):
-            pos = target
-        else:
-            # target is x coordinate
-            if y is None:
-                raise ValueError("When providing x coordinate, y must also be provided")
-            pos = Position(target, y, theta_deg)
-        
-        motion = MotionParams(**motion_kwargs)
-        action = Action(
-            action="move",
-            target=pos,
-            group=group or self.current_group,
-            motion=motion
-        )
-        self.actions.append(action)
-        if action.group and action.group in self.groups:
-            self.groups[action.group].actions.append(action)
-        return self
-
-    def move_relative_to(self, target: Position, offset: Offset, group: Optional[str] = None, **motion_kwargs) -> 'StrategyBuilder':
+    def move_relative_to(self, target: Union[Position, str], offset: Offset, group: Optional[str] = None, **motion_kwargs) -> 'StrategyBuilder':
         """Add a movement action with offset
         
         Args:
-            target: Position object for the reference point
+            target: Position object or string (named target in world state) for the reference point
             offset: Offset object for the relative movement from target
             group: Optional group name
-            **motion_kwargs: Motion parameters (speed, end_speed, accel_linear, accel_angular, use_dynamic_layer)
+            **motion_kwargs: Motion parameters (speed, end_speed, accel_linear, accel_angular, use_collision_avoidance)
         """
         motion = MotionParams(**motion_kwargs)
+        
+        # Determine if target is a Position or a named target string
+        if isinstance(target, str):
+            named_target = target
+            target = None
+        else:
+            pos_target = target
+            named_target = None
+
         action = Action(
             action="move",
-            target=target,
+            pos_target=pos_target,
+            named_target=named_target,
             offset=offset,
             group=group or self.current_group,
             motion=motion
@@ -249,6 +211,17 @@ class StrategyBuilder:
         self.actions.append(action)
         if action.group and action.group in self.groups:
             self.groups[action.group].actions.append(action)
+        return self
+    
+    def move_to(self, target: Union[Position, str], group: Optional[str] = None, **motion_kwargs) -> 'StrategyBuilder':
+        """Add a movement action
+
+        Args:
+            target: Position object or string (named target in world state) for the reference point
+            group: Optional group name
+            **motion_kwargs: Motion parameters (speed, end_speed, accel_linear, accel_angular, use_collision_avoidance)
+        """
+        self.move_relative_to(target, Offset(0.0, 0.0, 0.0), group=group, **motion_kwargs)
         return self
     
     def get_ready(self, group: Optional[str] = None) -> 'StrategyBuilder':
@@ -284,7 +257,7 @@ class StrategyBuilder:
         return self
     
     # Reusable functions for common sub-actions
-    def put_banner(self, group: str = "banner") -> 'StrategyBuilder':
+    def put_banner(self, group: str) -> 'StrategyBuilder':
         """Complete sequence for placing the banner
         
         Args:
@@ -298,7 +271,7 @@ class StrategyBuilder:
         return self
 
     
-    def take_elements_sequence(self, platform_center: Position, group: str = "elements") -> 'StrategyBuilder':
+    def take_elements_sequence(self, platform_center: Position, group: str) -> 'StrategyBuilder':
         """Complete sequence for taking elements
         
         Args:
@@ -330,7 +303,7 @@ class StrategyBuilder:
         
         return self
     
-    def put_elements_sequence(self, target_position: Position, group: str = "elements") -> 'StrategyBuilder':
+    def put_elements_sequence(self, target_position: Position, group: str) -> 'StrategyBuilder':
         """Complete sequence for placing elements
         
         Args:
@@ -371,9 +344,9 @@ class StrategyBuilder:
         self.add_points(points, f"come_home finished. {points} points for coming home", group="come_home")
         return self
     
-    def get_actions_by_group(self, group_name: str) -> List[Action]:
+    def get_actions_by_group(self, group: str) -> List[Action]:
         """Get all actions belonging to a specific group"""
-        return [action for action in self.actions if action.group == group_name]
+        return [action for action in self.actions if action.group == group]
     
     def get_group_names(self) -> List[str]:
         """Get all group names"""
@@ -387,7 +360,7 @@ class StrategyBuilder:
         if color == Color.BLUE:
             actions = []
             for action in self.actions:
-                transformed_target = action.target.transform_for_blue() if action.target else None
+                transformed_target = action.pos_target.transform_for_blue() if action.pos_target else None
                 
                 new_action = Action(
                     action=action.action,
@@ -404,12 +377,13 @@ class StrategyBuilder:
         actions_rotated = []
         for action in actions:
             rotated_target = None
-            if action.target:
-                rotated_target = Position(action.target.x, action.target.y, action.target.theta_deg)
+            if action.pos_target:
+                rotated_target = Position(action.pos_target.x, action.pos_target.y, action.pos_target.theta_deg)
             
             action_copy = Action(
                 action=action.action,
-                target=rotated_target,
+                named_target=action.named_target,
+                pos_target=rotated_target,
                 offset=action.offset,  # Offsets stay as-is
                 group=action.group,
                 motion=action.motion,

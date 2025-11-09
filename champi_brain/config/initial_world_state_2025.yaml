@@ -1,0 +1,30 @@
+################################################################################
+# The initial world_state.yaml with real measurements from the rules
+# the elements positions are given at their center
+# the zones positions are given at their bottom-left corner
+# the origin of the coordinate system is at the bottom-left corner of the table
+# all measurements are in meters
+################################################################################
+
+
+#################################################################################
+# Definition of the elements on the table
+#################################################################################
+elements:
+
+  - id: banner
+    type: banner
+    x: 1.18
+    y: 0.46
+    theta_deg: 90.0
+
+  - id: elements_1
+    type: elements
+    x: 0.175
+    y: 1.2
+    theta_deg: 0.0
+
+#################################################################################
+# Definition of the zones on the table
+#################################################################################
+zones:

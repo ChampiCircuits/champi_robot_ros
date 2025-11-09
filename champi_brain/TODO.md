@@ -6,7 +6,7 @@ FEATURES
 - améliorer la verif de ros initialized ? checker par ex que tous les noeuds sont vivants
 - quand une action termine (par ex un actuateur, il faut appeler un callback plutot que d'attendre activement)
 - utiliser le feedback de la nav + rejet de goal
-
+- ajouter des diags partout
 
 BUGS
 - des fois le brain crashe au démarrage, je crois s'il n'a pas encore recu d'odom

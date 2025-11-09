@@ -24,7 +24,14 @@ class WorldState:
 
     def _create_object(self, det: NutsBox) -> str:
         new_id = f"unknown_{len(self.elements)}"
-        self.elements[new_id] = NutsBox(new_id, det.x, det.y, theta_deg=det.theta_deg, state=det.state, color=det.color)
+        self.elements[new_id] = NutsBox(
+            id=new_id,
+            x=det.x,
+            y=det.y,
+            theta_deg=det.theta_deg,
+            state=det.state,
+            color=det.color
+        )
         return new_id
 
     def _remove_lost_objects(self) -> None:
@@ -144,9 +151,9 @@ if __name__ == "__main__":
 
     # Simulate observations
     observations = [
-        NutsBox("det1", 1.0, 0.5, 0, Color.BLUE, ElementState.ON_TABLE),  #
-        NutsBox("det2", 1.5, 0.8, 0, Color.BLUE, ElementState.ON_TABLE),  #
-        NutsBox("det3", 2.0, 2.0, 0, Color.YELLOW, ElementState.ON_TABLE)   # new unknown
+        NutsBox(id="det1", x=1.0, y=0.5, theta_deg=0, state=ElementState.ON_TABLE, color=Color.BLUE),
+        NutsBox(id="det2", x=1.5, y=0.8, theta_deg=0, state=ElementState.ON_TABLE, color=Color.BLUE),
+        NutsBox(id="det3", x=2.0, y=2.0, theta_deg=0, state=ElementState.ON_TABLE, color=Color.YELLOW)   # new unknown
     ]
     world.process_observation(observations)
     
