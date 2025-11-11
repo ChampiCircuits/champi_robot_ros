@@ -7,7 +7,7 @@ from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import Pose
 from champi_brain.world_state.worldState import WorldState, NutsBox
 from champi_interfaces.msg import TableObservation, GameElement
-from math import pi
+from math import radians
 from champi_libraries_py.utils.angles import rad_to_quat
 
 class WorldStateNode(Node):
@@ -93,7 +93,7 @@ class WorldStateNode(Node):
             pose = Pose()
             pose.position.x = elem.x
             pose.position.y = elem.y
-            pose.orientation.z, pose.orientation.w = rad_to_quat(elem.theta_deg*pi/180.0)
+            pose.orientation.z, pose.orientation.w = rad_to_quat(radians(elem.theta_deg))
             game_elem.pose = pose
             game_elem.state = elem.state.value
             game_elem.color = elem.color.value

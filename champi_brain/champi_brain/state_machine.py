@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import math
+from math import degrees, radians, sin, cos
 from typing import List, Optional, Callable, Dict, Tuple
 from dataclasses import dataclass
 from rclpy.logging import get_logger
@@ -405,7 +405,7 @@ class StateMachine:
             element = self.world_state_elements[target_name]
             x = element.pose.position.x
             y = element.pose.position.y
-            theta_deg = get_yaw(element.pose) * 180.0 / math.pi
+            theta_deg = degrees(get_yaw(element.pose))
             self.logger.info(f"[SM]   Target '{target_name}' found at ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
             return (x, y, theta_deg)
         
@@ -423,9 +423,9 @@ class StateMachine:
         Returns:
             Tuple of (x, y, theta_deg) with offset applied
         """
-        theta_rad = math.radians(theta_deg)
-        cos_theta = math.cos(theta_rad)
-        sin_theta = math.sin(theta_rad)
+        theta_rad = radians(theta_deg)
+        cos_theta = cos(theta_rad)
+        sin_theta = sin(theta_rad)
         
         # Rotate offset by robot's orientation
         new_x = x + offset.x * cos_theta - offset.y * sin_theta

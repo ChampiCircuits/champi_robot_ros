@@ -15,7 +15,7 @@ from geometry_msgs.msg import PoseStamped, Point
 from nav_msgs.msg import Path
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
-from math import sin, cos, pi
+from math import sin, cos, radians
 
 class StrategyPublisher(Node):
 
@@ -258,8 +258,8 @@ class StrategyPublisher(Node):
                     theta_deg_offset = action.offset.theta_deg
 
                     # Apply rotation and translation
-                    x = (x_offset * cos(theta_deg * pi / 180.0) - y_offset * sin(theta_deg * pi / 180.0)) + x
-                    y = (x_offset * sin(theta_deg * pi / 180.0) + y_offset * cos(theta_deg * pi / 180.0)) + y
+                    x = (x_offset * cos(radians(theta_deg)) - y_offset * sin(radians(theta_deg))) + x
+                    y = (x_offset * sin(radians(theta_deg)) + y_offset * cos(radians(theta_deg))) + y
                     theta_deg = theta_deg + theta_deg_offset
 
                 last_x, last_y, last_theta = x, y, theta_deg
@@ -298,7 +298,7 @@ class StrategyPublisher(Node):
                 marker.pose.position.z = 0.05 + (stack_count * 0.1)
             
             # Orientation
-            angle_rad = theta_deg * (pi / 180.0)
+            angle_rad = radians(theta_deg)
             marker.pose.orientation.z = sin(angle_rad / 2)
             marker.pose.orientation.w = cos(angle_rad / 2)
             

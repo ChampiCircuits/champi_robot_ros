@@ -2,17 +2,16 @@
 
 import rclpy
 from rclpy.node import Node
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped, PoseStamped, Pose
-import tf_transformations
-from rclpy.time import Time, Duration
-from tf2_ros import TransformBroadcaster
-import numpy as np
-import tf2_ros
-import tf2_geometry_msgs
+from rclpy.time import Duration
 from rclpy.duration import Duration
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped, Pose
 from champi_interfaces.srv import SetPose
-from math import atan2
+import tf2_ros
+import tf_transformations
+from tf2_ros import TransformBroadcaster
+from math import atan2, degrees
+
 
 def pose_to_transform(pose: Pose):
     """Convert a Pose to a tf_transformations Transform."""
@@ -137,7 +136,7 @@ class LocNode(Node):
         self.robot_pose_when_set_pose = self.latest_robot_pose
 
         position = msg.pose.pose.position
-        rotation_deg = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w) * 180.0 / np.pi
+        rotation_deg = degrees(atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w))
         self.get_logger().info(f"New aruco pose received (pose={position.x} {position.y} {rotation_deg}°) (now waiting cooldown={self.cooldown_value}s)")
 
     def odom_callback(self, msg: Odometry):
@@ -161,7 +160,6 @@ class LocNode(Node):
         self.odom_pub.publish(new_odom)
 
         # Publish transform
-
         transform = TransformStamped()
         transform.header.stamp = self.get_clock().now().to_msg()
         transform.header.frame_id = "odom"

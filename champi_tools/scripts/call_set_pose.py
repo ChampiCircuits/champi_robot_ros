@@ -2,16 +2,13 @@
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from robot_localization.srv import SetPose
-from math import cos, sin, pi
-
 from rclpy.executors import ExternalShutdownException
 
 class CallSetPoseNode(Node):
 
     def __init__(self):
-
         super().__init__('call_set_pose')
 
         self.sub_initial_pose = self.create_subscription(

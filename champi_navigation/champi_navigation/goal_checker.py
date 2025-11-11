@@ -1,4 +1,4 @@
-from math import hypot, pi
+from math import hypot
 
 from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.angles import normalize_angle

@@ -2,13 +2,13 @@
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from nav_msgs.msg import OccupancyGrid, Odometry
 from std_msgs.msg import Bool
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
 import time
-from rclpy.executors import ExternalShutdownException
 
 
 class CostmapUpdaterNode(Node):

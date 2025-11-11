@@ -1,4 +1,4 @@
-from math import pi, sqrt, cos, sin, trunc, copysign, atan2
+from math import pi, sqrt, cos, sin, copysign, atan2
 
 from champi_libraries_py.data_types.geometry import Vel2D
 from champi_libraries_py.control.pid import PID

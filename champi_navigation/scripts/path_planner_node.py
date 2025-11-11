@@ -1,44 +1,31 @@
 #!/usr/bin/env python3
-import math
 
 import rclpy
-import rclpy.clock
 from rclpy.node import Node
 from rclpy.action import ActionServer, GoalResponse, CancelResponse
-
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.executors import ExternalShutdownException
 
-from nav_msgs.msg import OccupancyGrid, Odometry, Path
-from champi_interfaces.action import Navigate
-from champi_interfaces.msg import CtrlGoal
+from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import Pose, PoseStamped, Twist
 
-from math import hypot
-import numpy as np
+from champi_interfaces.action import Navigate
+from champi_interfaces.msg import CtrlGoal
+
+from math import radians
 import time
 from threading import Lock
+import diagnostic_updater
+from icecream import ic
 
-
-from champi_navigation.path_planner import PathPlanner, ComputePathResult
-from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
 import champi_navigation.goal_checker as goal_checker
+from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
 from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
 from champi_libraries_py.data_types.geometry import Pose2D, Vect2D
 from champi_libraries_py.utils.angles import get_yaw
 
-import diagnostic_msgs
-import diagnostic_updater
-
-from icecream import ic
-
-
-
-from rclpy.logging import get_logger
-
-from icecream import ic
 
 
 class PlannerNode(Node):
@@ -138,7 +125,7 @@ class PlannerNode(Node):
             ic(vect_robot_to_goal, vect_robot_to_enemy)
             return False # We're spinning on one point
 
-        in_fov = abs(angle_enemy) < self.enemy_detect_angle * (math.pi/180.)
+        in_fov = abs(angle_enemy) < radians(self.enemy_detect_angle)
 
         too_close = vect_robot.sub(vect_enemy).norm() < self.enemy_detect_dist
 

@@ -10,19 +10,16 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
 from ament_index_python.packages import get_package_share_directory
 # Messages imports
-from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32, Bool
+from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32
 from nav_msgs.msg import Odometry
 from rclpy.duration import Duration
 from champi_interfaces.msg import STMState, TableObservation
 from champi_interfaces.srv import SetPose
 # Other imports
 import time
-from math import atan2, pi
-from typing import Optional
-from champi_libraries_py.utils.angles import quat_to_rad
+from math import atan2, degrees, radians
 # champi_brain imports
-from champi_brain.strategy_dsl import Action, MotionParams, Position, Offset
-from champi_brain.enums import Color
+from champi_brain.strategy_dsl import MotionParams
 from champi_brain.state_machine import StateMachine, StateMachineConfig
 from champi_brain.match_controller import MatchController
 from champi_brain.action_executor.action_executor import ActionExecutor
@@ -262,7 +259,7 @@ class StateMachineNode(Node):
         """Handle odometry updates."""
         # Convert quaternion to euler
         theta_rad = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
-        theta_deg = theta_rad * 180.0 / pi
+        theta_deg = degrees(theta_rad)
         
         self.current_pose = (
             msg.pose.pose.position.x,
@@ -320,7 +317,7 @@ class StateMachineNode(Node):
         if self.last_platform_distance is not None and self.last_platform_distance > 0 and self.last_platform_distance < 0.6:
             # Compute platform pose from robot pose
             x_robot, y_robot, theta_deg = self.current_pose
-            theta_rad = theta_deg * pi / 180.0
+            theta_rad = radians(theta_deg)
             
             # Platform is at distance in front of robot
             half_platform = 0.05
@@ -480,7 +477,7 @@ class StateMachineNode(Node):
         request.pose.pose.pose.position.z = 0.0
         
         # Convert theta to quaternion
-        theta_rad = pose[2] * pi / 180.0
+        theta_rad = radians(pose[2])
         from math import sin, cos
         request.pose.pose.pose.orientation.z = sin(theta_rad / 2.0)
         request.pose.pose.pose.orientation.w = cos(theta_rad / 2.0)

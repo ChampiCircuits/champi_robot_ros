@@ -2,7 +2,7 @@
 
 from __future__ import annotations  # Needed for type hinting in the class itself
 
-from math import atan2, cos, sin, sqrt, pi, acos
+from math import atan2, cos, sin, sqrt, acos
 import numpy as np
 from geometry_msgs.msg import Twist, Pose, Point
 

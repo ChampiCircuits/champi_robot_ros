@@ -14,7 +14,6 @@ init_pose = [1.855, 0.165, 2.6166]
 class TestGoal(Node):
 
     def __init__(self):
-
         super().__init__('test_goal_node')
 
         # call service set_pose (0.145,0.165), theta = 30°

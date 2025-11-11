@@ -4,7 +4,7 @@ Action Executor Interface - Interface for executing robot actions.
 This allows the state machine to be independent of ROS implementation.
 """
 
-import math
+from math import radians, sin, cos
 from geometry_msgs.msg import Pose
 from typing import Protocol, Optional
 from rclpy.action import ActionClient
@@ -113,12 +113,12 @@ class ActionExecutor():
         goal = Navigate.Goal()
         
         # Target pose
-        theta_rad = theta_deg * math.pi / 180.0
+        theta_rad = radians(theta_deg)
         goal.pose = Pose()
         goal.pose.position.x = x
         goal.pose.position.y = y
-        goal.pose.orientation.z = math.sin(theta_rad / 2.0)
-        goal.pose.orientation.w = math.cos(theta_rad / 2.0)
+        goal.pose.orientation.z = sin(theta_rad / 2.0)
+        goal.pose.orientation.w = cos(theta_rad / 2.0)
         
         # Motion parameters
         goal.max_linear_speed = motion_params.speed
