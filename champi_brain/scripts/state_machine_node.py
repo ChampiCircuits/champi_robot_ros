@@ -98,7 +98,11 @@ class StateMachineNode(Node):
         
         # State Machine Config (will be filled when strategy is chosen)
         self.sm_config = None
-        self.state_machine: StateMachine = None
+        # Create state machine
+        self.state_machine = StateMachine( 
+            executor=self.action_executor,
+            match_controller=self.match_controller
+        )
         
         # ============================================================
         # ROS SUBSCRIBERS
@@ -195,7 +199,7 @@ class StateMachineNode(Node):
             self.get_logger().warn(f'🎮 SIM MODE: Auto-loading strategy: {self.default_strategy_file}')
             self._load_strategy(self.default_strategy_file, self.default_sim_color)
         
-        self.get_logger().warn('✅ State Machine ready!\n')
+        self.get_logger().warn('State Machine ready started!\n')
 
     
     def _configure_motion_defaults(self) -> None:
@@ -439,13 +443,7 @@ class StateMachineNode(Node):
                 wait_to_come_home_pose=tuple(wait_home_pose),
                 simulation_mode=self.sim_mode
             )
-            
-            # Create state machine
-            self.state_machine = StateMachine(
-                executor=self.action_executor,
-                match_controller=self.match_controller,
-                config=self.sm_config
-            )
+            self.state_machine.set_config(self.sm_config)
             
             # Set strategy
             self.state_machine.set_strategy(strategy)

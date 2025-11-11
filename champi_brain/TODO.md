@@ -1,7 +1,6 @@
 # TODOs - Package champi_brain
 
 FEATURES
-- dans la strat, ne pas donner les positions brutes, mais plutot les noms des éléments
 - garder detect_platform ? faut plutot faire passer l'info par le world state d'ailleurs et qu'après les movements se basent sur la pos en world state
 - améliorer la verif de ros initialized ? checker par ex que tous les noeuds sont vivants
 - quand une action termine (par ex un actuateur, il faut appeler un callback plutot que d'attendre activement)
@@ -17,3 +16,4 @@ BUGS
 IDEES
 - implémenter un état d'init pose automatique ?
 - le retry avant/arrière devrait plutot être géré dans la sm ?
+- la simu des actionneurs doit être faite dans le node de simu

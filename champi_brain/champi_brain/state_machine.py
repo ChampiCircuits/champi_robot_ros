@@ -43,8 +43,7 @@ class StateMachine:
     def __init__(
         self,
         executor: ActionExecutor,
-        match_controller: MatchController,
-        config: StateMachineConfig
+        match_controller: MatchController
     ):
         """
         Initialize the state machine.
@@ -56,7 +55,6 @@ class StateMachine:
         """
         self.executor = executor
         self.match = match_controller
-        self.config = config
         self.logger = get_logger('state_machine')
         
         # State
@@ -87,7 +85,11 @@ class StateMachine:
     # =================================================================
     # PUBLIC API
     # =================================================================
-    
+    def set_config(self, config: StateMachineConfig) -> None:
+        """Set the state machine configuration."""
+        self.config = config
+        self._check_init_progress()
+
     def set_strategy(self, strategy: List[Action]) -> None:
         """Set the strategy (list of actions) to execute."""
         self.strategy = strategy.copy()
@@ -100,6 +102,7 @@ class StateMachine:
         """
         self.world_state_elements = elements
         self.logger.debug(f"[SM] World state updated: {len(elements)} elements")
+        self._check_init_progress() # TODO regrouper toutes les méthodes qui appellent l'init progress
         
     def start_initialization(self) -> None:
         """Start the initialization sequence."""
@@ -221,13 +224,21 @@ class StateMachine:
         if not self._config_chosen:
             self.logger.info("[SM] Waiting for user to choose configuration...")
             return
+                    
+        if not self.config: # todo config != config_chosen, confusion
+            self.logger.error("[SM] ERROR: Configuration not set!")
+            return
+        
+        if not self.world_state_elements:
+            self.logger.info("[SM] Waiting for first world state to be available...")
+            return
             
         if not self._tirette_released:
             self.logger.info("[SM] Waiting for tirette release...") # TODO better logging [SM]
             return
-            
+        
         # All initialization steps complete - start match
-        self.logger.info("[SM] Initialization complete! Starting match...")
+        self.logger.info("[SM] ✅ Initialization complete! Starting match...")
         self.match.start_match()
         self._transition_to(self.STATE_IDLE)
     
@@ -329,11 +340,11 @@ class StateMachine:
                 self._execute_actuator_action(action)
                 
             else:
-                self.logger.info(f"[SM] ERROR: Unknown action '{action_name}'")
+                self.logger.error(f"[SM] Unknown action '{action_name}'")
                 self.notify_action_completed()
                 
         except Exception as e:
-            self.logger.info(f"[SM] ERROR executing action: {e}")
+            self.logger.error(f"[SM] executing action: {e}")
             self.notify_action_completed()
     
     def _execute_move(self, action: Action) -> None:
@@ -346,7 +357,8 @@ class StateMachine:
             # Get target from world state by name
             target_name = action.named_target
             if target_name not in self.world_state_elements:
-                self.logger.error(f"[SM] ERROR: Element '{target_name}' not found in world state!")
+
+                self.logger.error(f"[SM] Element '{target_name}' not found in world state!")
                 self.notify_action_completed()
                 return
             
@@ -355,7 +367,7 @@ class StateMachine:
             x, y, theta_deg = elem_data[0], elem_data[1], elem_data[2]
             self.logger.info(f"[SM]   Target '{target_name}' found at ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
         else:
-            self.logger.error("[SM] ERROR: No target specified for move action!")
+            self.logger.error("[SM] No target specified for move action!")
             self.notify_action_completed()
             return
 

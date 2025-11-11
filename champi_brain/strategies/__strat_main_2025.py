@@ -16,15 +16,16 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .create_group("elements_3")
         .create_group("come_home")
 
-        # TODO il faudra que les takes et tout on donne pas une position, mais le nom de l'élément dans le world state
+        ## The whole strategy is always given for YELLOW team
         
         ######################### BANNER ###############################################
         .put_banner("banner")
         .move_to(Position(1.18, 0.46, 90.0), group="banner", use_collision_avoidance=False, end_speed=0.2)
 
         ######################### FIRST ELEMENT GROUP ################################
+        # TODO on devrait aussi pouvoir donner un genre de côté par lequel on approche l'élément
         .get_ready("elements_1") # TODO verif that group cancellation still works
-        .take_elements_sequence(Position(1.1, 0.95, 90.0), "elements_1")
+        .take_elements_sequence("elements_1", group="elements_1")
         # Intermediate movement
         .move_to(Position(1.225, 0.6, 180.0), group="elements_1", use_collision_avoidance=True, speed=1.0, accel_linear=1.0, accel_angular=12.0)
         .put_elements_sequence(Position(1.225, 0.1, 270.0), "elements_1")
@@ -32,13 +33,13 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         ######################### SECOND ELEMENT GROUP ###############################
         .get_ready("elements_2")
         .move_to(Position(0.9, 0.75, 90.0), group="elements_2", use_collision_avoidance=True, speed=1.0, accel_linear=1.0, accel_angular=15.0)
-        .take_elements_sequence(Position(0.775, 0.25, 270.0), "elements_2")
+        .take_elements_sequence("elements_2", group="elements_2")
         .put_elements_sequence(Position(1.225, 0.28, 270.0), "elements_2")
 
         ######################### THIRD ELEMENT GROUP ################################
         .get_ready("elements_3")
         .move_to(Position(0.9, 0.6, 90.0), group="elements_3", use_collision_avoidance=True, speed=1.0, accel_linear=1.0, accel_angular=15.0)
-        .take_elements_sequence(Position(0.075, 0.4, 180.0), "elements_3")
+        .take_elements_sequence("elements_3", group="elements_3")
         .put_elements_sequence(Position(0.6, 0.1, 270.0), "elements_3")
         
         ######################### COME HOME ##########################################

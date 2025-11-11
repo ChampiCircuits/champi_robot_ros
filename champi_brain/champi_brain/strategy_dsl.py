@@ -195,7 +195,7 @@ class StrategyBuilder:
         # Determine if target is a Position or a named target string
         if isinstance(target, str):
             named_target = target
-            target = None
+            pos_target = None
         else:
             pos_target = target
             named_target = None
@@ -271,11 +271,11 @@ class StrategyBuilder:
         return self
 
     
-    def take_elements_sequence(self, platform_center: Position, group: str) -> 'StrategyBuilder':
+    def take_elements_sequence(self, platform_center: Union[Position, str], group: str) -> 'StrategyBuilder':
         """Complete sequence for taking elements
         
         Args:
-            platform_center: Position object for the center of the platform
+            platform_center: Union[Position, str] object for the center of the platform or named target
             group: Group name for these actions
             
         """
@@ -303,11 +303,11 @@ class StrategyBuilder:
         
         return self
     
-    def put_elements_sequence(self, target_position: Position, group: str) -> 'StrategyBuilder':
+    def put_elements_sequence(self, target_position: Union[Position, str], group: str) -> 'StrategyBuilder':
         """Complete sequence for placing elements
         
         Args:
-            target_position: Position object where to place elements (target)
+            target_position: Union[Position, str] object where to place elements or named target
             group: Group name for these actions            
         """
         self.set_current_group(group)
