@@ -362,9 +362,10 @@ class StrategyBuilder:
             for action in self.actions:
                 transformed_target = action.pos_target.transform_for_blue() if action.pos_target else None
                 
-                new_action = Action(
+                new_action = Action( # TODO test for blue team
                     action=action.action,
-                    target=transformed_target,
+                    named_target=action.named_target, # TODO Also, how to handle named targets for blue team?
+                    pos_target=transformed_target,
                     offset=action.offset,  # Offsets stay relative, not transformed
                     group=action.group,
                     motion=action.motion,

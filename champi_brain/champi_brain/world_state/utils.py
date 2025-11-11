@@ -55,10 +55,10 @@ def print_all_zones_with_rich(world: WorldState, title: str="") -> None:
     for z in world.zones:
         color_str = z.color.value if z.color else "N/A"
         color_style = z.color.value.lower() if z.color else "white"
-        zone_style = "red" if z.type in [ZoneType.SECURE_ZONE, ZoneType.NOT_IN_A_ZONE] else "green" if z.type == ZoneType.PLACEMENT_ZONE else "white"
+        zone_style = "red" if z.zone_type in [ZoneType.SECURE_ZONE, ZoneType.NOT_IN_A_ZONE] else "green" if z.zone_type == ZoneType.PLACEMENT_ZONE else "white"
 
         colored_cell = Text(color_str, style=color_style)
-        zone_cell = Text(z.type.name, style=zone_style)
+        zone_cell = Text(z.zone_type.name, style=zone_style)
 
         table.add_row(
             str(z.id),

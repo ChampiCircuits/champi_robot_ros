@@ -84,7 +84,7 @@ class MatchController:
         remaining = self.get_remaining_time()
         return remaining <= (estimated_time_to_home + self.return_home_safety_margin)
     
-    def add_points(self, points: int, reason: str = "") -> None:
+    def add_points(self, points: int) -> None:
         """
         Add points to the current score.
         

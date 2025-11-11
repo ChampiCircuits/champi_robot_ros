@@ -141,6 +141,7 @@ class WorldState:
 
 
 if __name__ == "__main__":
+    # TODO useful ?
     from champi_brain.world_state.utils import print_all_elements_with_rich, print_all_zones_with_rich
 
     init_elements, init_zones = WorldState.from_yaml(get_package_share_directory('champi_brain') + "/config/initial_world_state.yaml")

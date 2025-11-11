@@ -7,7 +7,7 @@ from rclpy.logging import get_logger
 
 from champi_brain.action_executor.action_executor import ActionExecutor
 from champi_brain.match_controller import MatchController
-from champi_brain.strategy_dsl import Action, MotionParams, Position
+from champi_brain.strategy_dsl import Action, MotionParams, Offset
 from champi_interfaces.msg import GameElement
 from champi_libraries_py.utils.angles import get_yaw
 
@@ -413,7 +413,7 @@ class StateMachine:
         return None
     
     def _apply_offset(self, x: float, y: float, theta_deg: float, 
-                      offset: Position) -> Tuple[float, float, float]:
+                      offset: Offset) -> Tuple[float, float, float]:
         """Apply offset to position in robot's reference frame.
         
         Args:
@@ -441,18 +441,20 @@ class StateMachine:
     
     def _execute_wait(self, action: Action) -> None:
         """Execute wait action."""
-        duration = action.extra_params.get('duration', 1.0)
+        duration = action.extra_params['duration']
         self.logger.info(f"[SM]   Waiting {duration}s...")
         self.executor.wait(duration)
         # Note: Executor should call notify_action_completed when done # TODO?
     
     def _execute_add_points(self, action: Action) -> None:
         """Execute add points action."""
-        reason = action.reason or "Points added"
-        self.logger.info(f"[SM]   Added {action.points} points: \"{reason}\"")
-        self.match.add_points(action.points, reason)
-        
-        # Points are added immediately, no waiting
+        if not action.points:
+            self.logger.error(f"[SM] No points specified for add_points action!")
+            self.notify_action_completed()
+            return
+
+        self.logger.info(f"[SM]   Added {action.points} points: \"{action.reason}\"")
+        self.match.add_points(action.points)
         self.notify_action_completed()
     
     def _execute_actuator_action(self, action: Action) -> None:
