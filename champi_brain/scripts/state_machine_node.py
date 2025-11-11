@@ -345,12 +345,10 @@ class StateMachineNode(Node):
         """Handle world state updates."""
         self.get_logger().debug(f'🌍 World state received: {len(msg.detected_game_elements)} elements')
         
-        # Convert TableObservation to dict for state machine
+        # Convert TableObservation to dict of GameElement messages
         elements = {}
         for elem in msg.detected_game_elements:
-            elements[elem.id] = (elem.pose.position.x, elem.pose.position.y, 
-                                 quat_to_rad(elem.pose.orientation.z, elem.pose.orientation.w)*180.0/pi,
-                                 elem.state, elem.color)
+            elements[elem.id] = elem
         
         # Update state machine world state
         self.state_machine.update_world_state(elements)

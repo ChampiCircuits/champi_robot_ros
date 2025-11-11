@@ -12,7 +12,7 @@ def normalize_angle(angle: float) -> float:
     return angle
 
 def get_yaw(pose: Pose) -> float:
-    """Get the yaw angle from a Pose message."""
+    """Get the yaw angle in radians from a Pose message."""
     return quat_to_rad(pose.orientation.z, pose.orientation.w)
 
 

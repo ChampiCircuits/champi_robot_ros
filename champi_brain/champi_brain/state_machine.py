@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
-"""
-New State Machine - Pure Business Logic
-No ROS dependencies - uses ActionExecutor interface
-"""
 
 import math
-import time
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, Dict, Tuple
 from dataclasses import dataclass
+from rclpy.logging import get_logger
 
 from champi_brain.action_executor.action_executor import ActionExecutor
 from champi_brain.match_controller import MatchController
 from champi_brain.strategy_dsl import Action, MotionParams, Position
-from rclpy.logging import get_logger
+from champi_interfaces.msg import GameElement
+from champi_libraries_py.utils.angles import get_yaw
 
 
 @dataclass
@@ -40,6 +37,16 @@ class StateMachine:
     STATE_COME_HOME = 'come_home'
     STATE_END_OF_MATCH = 'end_of_match'
     
+    # Actuator action definitions
+    ACTUATOR_ACTIONS = frozenset([
+        'PUT_BANNER',
+        'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
+        'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
+        'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
+        'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2',
+        'RESET_ACTUATORS', 'GET_READY'
+    ])
+    
     def __init__(
         self,
         executor: ActionExecutor,
@@ -57,6 +64,9 @@ class StateMachine:
         self.match = match_controller
         self.logger = get_logger('state_machine')
         
+        # Configuration (set later via set_config)
+        self.config: Optional[StateMachineConfig] = None
+        
         # State
         self.state = self.STATE_STOP
         self.strategy: List[Action] = []
@@ -65,7 +75,7 @@ class StateMachine:
         self.canceled_tags: set[str] = set()
         
         # World state (updated by ROS node)
-        self.world_state_elements: dict = {}  # Dict of {id: (x, y, theta_deg, state, color)}
+        self.world_state_elements: Dict[str, GameElement] = {}
         
         # Flags for state transitions
         self._stop_requested = False
@@ -81,32 +91,29 @@ class StateMachine:
         # Callbacks for external events
         self.on_state_changed: Optional[Callable[[str], None]] = None
         self.on_strategy_completed: Optional[Callable[[], None]] = None
-        
+
     # =================================================================
-    # PUBLIC API
+    # INITIALIZATION METHODS
     # =================================================================
+    
+    def start_initialization(self) -> None:
+        """Start the initialization sequence."""
+        self._transition_to(self.STATE_INIT)
+    
     def set_config(self, config: StateMachineConfig) -> None:
         """Set the state machine configuration."""
         self.config = config
         self._check_init_progress()
 
-    def set_strategy(self, strategy: List[Action]) -> None:
-        """Set the strategy (list of actions) to execute."""
-        self.strategy = strategy.copy()
-    
-    def update_world_state(self, elements: dict) -> None:
+    def update_world_state(self, elements: Dict[str, GameElement]) -> None:
         """Update the world state with new element positions.
         
         Args:
-            elements: Dict of {element_id: (x, y, theta_deg, state, color)}
+            elements: Dict of {element_id: GameElement (ROS message)}
         """
         self.world_state_elements = elements
         self.logger.debug(f"[SM] World state updated: {len(elements)} elements")
-        self._check_init_progress() # TODO regrouper toutes les méthodes qui appellent l'init progress
-        
-    def start_initialization(self) -> None:
-        """Start the initialization sequence."""
-        self._transition_to(self.STATE_INIT)
+        self._check_init_progress()
         
     def notify_ros_initialized(self) -> None:
         """Notify that ROS is ready."""
@@ -122,7 +129,15 @@ class StateMachine:
         """Notify that start button/tirette is released."""
         self._tirette_released = True
         self._check_init_progress()
+
+    # =================================================================
+    # PUBLIC API METHODS
+    # =================================================================
         
+    def set_strategy(self, strategy: List[Action]) -> None:
+        """Set the strategy (list of actions) to execute."""
+        self.strategy = strategy.copy()
+
     def request_stop(self) -> None:
         """Request emergency stop."""
         self._stop_requested = True
@@ -183,9 +198,7 @@ class StateMachine:
                     self.request_come_home()
                     return
         
-        # Handle state-specific logic
-        if self.state == self.STATE_IDLE:
-            self._handle_idle_state()
+
     
     # =================================================================
     # INTERNAL STATE MACHINE LOGIC
@@ -217,6 +230,7 @@ class StateMachine:
     
     def _check_init_progress(self) -> None:
         """Check initialization progress and advance if ready."""
+        # Check each initialization step in order
         if not self._ros_initialized:
             self.logger.info("[SM] Waiting for ROS initialization...")
             return
@@ -225,7 +239,7 @@ class StateMachine:
             self.logger.info("[SM] Waiting for user to choose configuration...")
             return
                     
-        if not self.config: # todo config != config_chosen, confusion
+        if not self.config: # TODO config != config_chosen, confusion
             self.logger.error("[SM] ERROR: Configuration not set!")
             return
         
@@ -253,7 +267,11 @@ class StateMachine:
     
     def _on_enter_come_home(self) -> None:
         """Handle entry into come home state."""
-        x, y, theta_deg = self.config.home_pose # TODO come home params should be specified in strategy 
+        if not self.config:
+            self.logger.error("[SM] Cannot come home: no configuration set!")
+            return # TODO better error handling
+            
+        x, y, theta_deg = self.config.home_pose
         motion = MotionParams(
             speed=1.0,
             end_speed=0.0,
@@ -268,6 +286,10 @@ class StateMachine:
     
     def _on_enter_wait_to_come_home(self) -> None:
         """Handle entry into wait to come home state."""
+        if not self.config:
+            self.logger.error("[SM] Cannot go to wait position: no configuration set!")
+            return # TODO better error handling
+            
         x, y, theta_deg = self.config.wait_to_come_home_pose
         motion = MotionParams(
             speed=1.0,
@@ -286,9 +308,7 @@ class StateMachine:
         self.logger.info(f"[SM] Match ended! Final score: {self.match.get_score()}")
         self.executor.cancel_current_action()
     
-    def _handle_idle_state(self) -> None:
-        """Handle updates while in idle state."""
-        pass
+
     
     def _find_next_action(self) -> None:
         """Find and execute the next action from strategy."""
@@ -336,7 +356,7 @@ class StateMachine:
             elif action_name == 'add_points':
                 self._execute_add_points(action)
                 
-            elif action_name in self._get_actuator_actions():
+            elif action_name in self.ACTUATOR_ACTIONS:
                 self._execute_actuator_action(action)
                 
             else:
@@ -349,37 +369,70 @@ class StateMachine:
     
     def _execute_move(self, action: Action) -> None:
         """Execute a move action."""
-        # Determine if target is a Position or a named target string
-        if action.pos_target is not None:
-            # Absolute position specified
-            x, y, theta_deg = action.pos_target.x, action.pos_target.y, action.pos_target.theta_deg
-        elif action.named_target is not None:
-            # Get target from world state by name
-            target_name = action.named_target
-            if target_name not in self.world_state_elements:
-
-                self.logger.error(f"[SM] Element '{target_name}' not found in world state!")
-                self.notify_action_completed()
-                return
-            
-            # Get element position from world state
-            elem_data = self.world_state_elements[target_name]
-            x, y, theta_deg = elem_data[0], elem_data[1], elem_data[2]
-            self.logger.info(f"[SM]   Target '{target_name}' found at ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
-        else:
-            self.logger.error("[SM] No target specified for move action!")
+        # Get target position
+        target_position = self._get_target_position(action)
+        if target_position is None:
             self.notify_action_completed()
             return
-
+        
+        x, y, theta_deg = target_position
+        
         # Apply offset if present
         if action.offset:
-            theta_rad = theta_deg * math.pi / 180.0
-            x += action.offset.x * math.cos(theta_rad) - action.offset.y * math.sin(theta_rad)
-            y += action.offset.x * math.sin(theta_rad) + action.offset.y * math.cos(theta_rad)
-            theta_deg += action.offset.theta_deg
+            x, y, theta_deg = self._apply_offset(x, y, theta_deg, action.offset)
         
         self.logger.info(f"[SM]   Move to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
         self.executor.move_to(x, y, theta_deg, action.motion)
+    
+    def _get_target_position(self, action: Action) -> Optional[Tuple[float, float, float]]:
+        """Get target position from action.
+        
+        Returns:
+            Tuple of (x, y, theta_deg) or None if target not found
+        """
+        if action.pos_target is not None:
+            # Absolute position specified
+            return (action.pos_target.x, action.pos_target.y, action.pos_target.theta_deg)
+            
+        if action.named_target is not None:
+            # Get target from world state by name
+            target_name = action.named_target
+            if target_name not in self.world_state_elements:
+                self.logger.error(f"[SM] Element '{target_name}' not found in world state!")
+                return None
+            
+            # Get element position from world state (ROS GameElement message)
+            element = self.world_state_elements[target_name]
+            x = element.pose.position.x
+            y = element.pose.position.y
+            theta_deg = get_yaw(element.pose) * 180.0 / math.pi
+            self.logger.info(f"[SM]   Target '{target_name}' found at ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
+            return (x, y, theta_deg)
+        
+        self.logger.error("[SM] No target specified for move action!")
+        return None
+    
+    def _apply_offset(self, x: float, y: float, theta_deg: float, 
+                      offset: Position) -> Tuple[float, float, float]:
+        """Apply offset to position in robot's reference frame.
+        
+        Args:
+            x, y, theta_deg: Base position
+            offset: Offset to apply (in robot frame)
+            
+        Returns:
+            Tuple of (x, y, theta_deg) with offset applied
+        """
+        theta_rad = math.radians(theta_deg)
+        cos_theta = math.cos(theta_rad)
+        sin_theta = math.sin(theta_rad)
+        
+        # Rotate offset by robot's orientation
+        new_x = x + offset.x * cos_theta - offset.y * sin_theta
+        new_y = y + offset.x * sin_theta + offset.y * cos_theta
+        new_theta_deg = theta_deg + offset.theta_deg
+        
+        return (new_x, new_y, new_theta_deg)
     
     def _execute_detect_platform(self, action: Action) -> None:
         """Execute platform detection."""
@@ -391,7 +444,7 @@ class StateMachine:
         duration = action.extra_params.get('duration', 1.0)
         self.logger.info(f"[SM]   Waiting {duration}s...")
         self.executor.wait(duration)
-        # Note: Executor should call notify_action_completed when done
+        # Note: Executor should call notify_action_completed when done # TODO?
     
     def _execute_add_points(self, action: Action) -> None:
         """Execute add points action."""
@@ -416,17 +469,6 @@ class StateMachine:
         
         self.current_action = None
         self._action_completed = True
-    
-    def _get_actuator_actions(self) -> list[str]:
-        """Get list of valid actuator action names."""
-        return [
-            'PUT_BANNER',
-            'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
-            'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
-            'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
-            'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2',
-            'RESET_ACTUATORS', 'GET_READY'
-        ]
     
     # =================================================================
     # UTILITY METHODS
