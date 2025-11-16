@@ -96,7 +96,7 @@ class StateMachineNode(Node):
         else:
             self.action_executor = ROSActionExecutor(self)
         self.action_executor.on_goal_reached = self._on_action_completed
-        self.action_executor.on_goal_failed = self._on_action_failed
+        self.action_executor.on_goal_failed = self._on_action_failed # TODO utiliser les 4 callbacks 
         
         # State Machine Config (will be filled when strategy is chosen)
         self.sm_strategy_config = None
@@ -368,9 +368,8 @@ class StateMachineNode(Node):
         """Called when action executor fails."""
         self.get_logger().error(f'❌ Action failed: {error_msg}')
         
-        # For now, treat as completion (could implement retry logic)
         if self.state_machine:
-            self.state_machine.notify_action_completed()
+            self.state_machine.cancel_current_group()
     
     def _on_score_changed(self, new_score: int) -> None:
         """Called when score changes."""
@@ -471,8 +470,7 @@ class StateMachineNode(Node):
         self.get_logger().warn(f'📍 Setting initial pose via /set_pose service: ({pose[0]:.2f}, {pose[1]:.2f}, {pose[2]:.1f}°)')
         # Wait for service to be available
         if not self.set_pose_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error('⚠️ /set_pose service not available, pose not set')
-            exit(1) # TODO better error handling
+            raise RuntimeError('/set_pose service not available, pose not set')
         
         # Create request
         request = SetPose.Request()

@@ -10,7 +10,7 @@ FEATURES
 BUGS
 - des fois le brain crashe au démarrage, je crois s'il n'a pas encore recu d'odom
 - end_speed est pas bien supportée par le path control
-- le probleme de la pose init qui est toujours pas réglé
+- le probleme de la pose init qui est toujours pas réglé, on dirait que quand ca marche, le robot spawn en 2.0,0.5? un truc comme ca et sinon il spawn aléatoirement
 
 
 IDEES

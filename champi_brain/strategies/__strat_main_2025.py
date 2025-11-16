@@ -18,7 +18,6 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
 
         ## The whole strategy is always given for YELLOW team
         ## Position() coordinates are automatically transformed for BLUE team via central symmetry
-        ## Named elements can be mapped via SYMMETRY_MAP # TODO
         
         ######################### BANNER ###############################################
         .put_banner("banner")
@@ -26,7 +25,7 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
 
         ######################### FIRST ELEMENT GROUP ################################
         # TODO on devrait aussi pouvoir donner un genre de côté par lequel on approche l'élément
-        .get_ready("elements_1") # TODO verif that group cancellation still works
+        .get_ready("elements_1")
         .take_elements_sequence("elements_1", group="elements_1")
         # Intermediate movement
         .move_to(Position(1.225, 0.6, 180.0), group="elements_1", use_collision_avoidance=True, speed=1.0, accel_linear=1.0, accel_angular=12.0)

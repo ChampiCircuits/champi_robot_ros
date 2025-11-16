@@ -80,6 +80,7 @@ class MotionParams:
     accel_linear: Optional[float] = None   # m/s²
     accel_angular: Optional[float] = None  # rad/s²
     use_collision_avoidance: Optional[bool] = None # without collision avoidance, we do straight lines
+    # TODO target position tolerances should be added
     
     def __post_init__(self):
         """Initialize instance variables with class defaults if not provided
@@ -369,9 +370,9 @@ class StrategyBuilder:
             for action in self.actions:
                 transformed_target = action.pos_target.transform_for_blue() if action.pos_target else None
                 
-                new_action = Action( # TODO test for blue team
+                new_action = Action(
                     action=action.action,
-                    named_target=action.named_target, # TODO Also, how to handle named targets for blue team?
+                    named_target=action.named_target,
                     pos_target=transformed_target,
                     offset=action.offset,  # Offsets stay relative, not transformed
                     group=action.group,

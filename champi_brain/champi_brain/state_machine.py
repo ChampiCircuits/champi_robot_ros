@@ -74,8 +74,8 @@ class StateMachine:
         self.state = self.STATE_STOP
         self.strategy: List[Action] = []
         self.current_action: Optional[Action] = None
-        self.current_tag: Optional[str] = None
-        self.canceled_tags: set[str] = set()
+        self.current_group: Optional[str] = None
+        self.canceled_groups: set[str] = set()
         
         # World state (updated by ROS node)
         self.world_state_elements: Dict[str, GameElement] = {}
@@ -167,10 +167,10 @@ class StateMachine:
         self._platform_detected = True
         self.notify_action_completed()
         
-    def cancel_current_tag(self) -> None:
-        """Cancel all actions with the current tag."""
-        if self.current_tag:
-            self.canceled_tags.add(self.current_tag)
+    def cancel_current_group(self) -> None:
+        """Cancel all actions with the current group."""
+        if self.current_group:
+            self.canceled_groups.add(self.current_group)
         self._cancel_current_action()
         # Transition back to idle after canceling
         if self.state == self.STATE_EXECUTING_ACTION:
@@ -319,16 +319,16 @@ class StateMachine:
         # Get next action
         action = self.strategy[0]
         
-        # Check if action's tag was canceled
-        if action.group and action.group in self.canceled_tags:
-            self.logger.info(f"Skipping action with canceled tag '{action.group}'")
+        # Check if action's group was canceled
+        if action.group and action.group in self.canceled_groups:
+            self.logger.info(f"Skipping action {action.action} with canceled group '{action.group}'")
             self.strategy.pop(0)
             self._find_next_action()  # Try next action
             return
         
         # Execute action
         self.current_action = action
-        self.current_tag = action.group
+        self.current_group = action.group
         self.strategy.pop(0)
 
         self.logger.info(f"Will now execute action: {action.action}" + (f" (group: {action.group})" if action.group else ""))
@@ -490,8 +490,8 @@ class StateMachine:
         """Reset the state machine."""
         self._cancel_current_action()
         self.strategy = []
-        self.current_tag = None
-        self.canceled_tags.clear()
+        self.current_group = None
+        self.canceled_groups.clear()
         self.platform_center = None
         
         self._stop_requested = False
