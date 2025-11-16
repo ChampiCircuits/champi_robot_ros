@@ -468,9 +468,26 @@ class StateMachineNode(Node):
     def _set_initial_pose(self, pose: list) -> None:
         """Set initial robot pose in localization via SetPose service."""
         self.get_logger().warn(f'📍 Setting initial pose via /set_pose service: ({pose[0]:.2f}, {pose[1]:.2f}, {pose[2]:.1f}°)')
+        
         # Wait for service to be available
-        if not self.set_pose_client.wait_for_service(timeout_sec=1.0):
-            raise RuntimeError('/set_pose service not available, pose not set')
+        if not self.set_pose_client.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('⚠️ /set_pose service not available after 5s timeout')
+            raise RuntimeError('/set_pose service not available')
+        
+        # Wait for first odometry message to ensure localization system is ready
+        # This prevents the pose from being overwritten by initialization values from loc_node
+        if self.current_pose is None:
+            self.get_logger().info('⏱️ Waiting for first odometry message...')
+            timeout = 5.0  # seconds
+            start_time = time.time()
+            while self.current_pose is None and (time.time() - start_time) < timeout:
+                rclpy.spin_once(self, timeout_sec=0.1)
+            
+            if self.current_pose is None:
+                self.get_logger().error('⚠️ No odometry received after 5s timeout')
+                raise RuntimeError('No odometry received, cannot set initial pose')
+            
+            self.get_logger().info(f'✅ First odometry received: ({self.current_pose[0]:.2f}, {self.current_pose[1]:.2f}, {self.current_pose[2]:.1f}°)')
         
         # Create request
         request = SetPose.Request()
@@ -491,8 +508,25 @@ class StateMachineNode(Node):
         request.pose.pose.covariance[7] = 1e-5   # y variance
         request.pose.pose.covariance[35] = 1e-5  # yaw variance
         
-        # Call service asynchronously
+        # Call service and wait for response
         future = self.set_pose_client.call_async(request)
+        
+        # Wait for the service call to complete (with timeout)
+        timeout_sec = 2.0
+        start_time = self.get_clock().now()
+        
+        while not future.done():
+            rclpy.spin_once(self, timeout_sec=0.1)
+            if (self.get_clock().now() - start_time).nanoseconds / 1e9 > timeout_sec:
+                raise RuntimeError('/set_pose service call timed out')
+        
+        # Check result
+        try:
+            response = future.result()
+            # SetPose service has an empty response, just check that it completed without exception
+            self.get_logger().info(f'✅ Initial pose set successfully')
+        except Exception as e:
+            raise RuntimeError(f'/set_pose service call failed: {e}')
         
     
     def _on_state_changed(self, new_state: str) -> None:
