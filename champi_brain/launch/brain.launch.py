@@ -26,7 +26,7 @@ def generate_launch_description():
     sm_node = Node(
         package='champi_brain',
         executable='state_machine_node.py',
-        name='state_machine',
+        name='state_machine_node',
         output='screen',
         respawn=True,
         parameters=[config_file_path, {'sim': sim_config}],

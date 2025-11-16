@@ -128,7 +128,7 @@ path_planner:
     enemy_detect_angle: 60. # degrees from x+ axis
     backoff_distance: 0.1 # m. Distance to back off from the enemy robot when it is too close after the timeout
 
-state_machine:
+state_machine_node:
   ros__parameters:
     # Strategy parameters
     use_default_strategy_and_color_in_sim: true       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose

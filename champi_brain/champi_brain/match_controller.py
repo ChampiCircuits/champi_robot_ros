@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-Match Controller - Orchestrates match execution
-Handles timing, scoring, and high-level match logic.
-NO ROS dependencies - pure business logic.
-"""
 
 from typing import Callable, Optional, Tuple
 import time

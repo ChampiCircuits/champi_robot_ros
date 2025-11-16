@@ -17,6 +17,8 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .create_group("come_home")
 
         ## The whole strategy is always given for YELLOW team
+        ## Position() coordinates are automatically transformed for BLUE team via central symmetry
+        ## Named elements can be mapped via SYMMETRY_MAP # TODO
         
         ######################### BANNER ###############################################
         .put_banner("banner")

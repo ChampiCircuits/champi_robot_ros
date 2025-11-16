@@ -20,7 +20,7 @@ import time
 from math import atan2, degrees, radians
 # champi_brain imports
 from champi_brain.strategy_dsl import MotionParams
-from champi_brain.state_machine import StateMachine, StateMachineConfig
+from champi_brain.state_machine import StateMachine, StrategyConfig
 from champi_brain.match_controller import MatchController
 from champi_brain.action_executor.action_executor import ActionExecutor
 from champi_brain.action_executor.ros_action_executor import ROSActionExecutor
@@ -38,7 +38,7 @@ class StateMachineNode(Node):
     """
     
     def __init__(self):
-        super().__init__('state_machine')
+        super().__init__('state_machine_node')
         self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
         self.get_logger().info('🚀 Launching State Machine...')
         
@@ -94,7 +94,7 @@ class StateMachineNode(Node):
         self.action_executor.on_goal_failed = self._on_action_failed
         
         # State Machine Config (will be filled when strategy is chosen)
-        self.sm_config = None
+        self.sm_strategy_config = None
         # Create state machine
         self.state_machine = StateMachine( 
             executor=self.action_executor,
@@ -214,7 +214,7 @@ class StateMachineNode(Node):
             self.declare_parameter(name, param_type)
             param = self.get_parameter(name)
             if param.type_ == rclpy.Parameter.Type.NOT_SET:
-                raise RuntimeError(f"Required parameter '{name}' not found in config under 'state_machine'")
+                raise RuntimeError(f"Required parameter '{name}' not found in config under 'state_machine_node'")
             values[name] = param.value
         
         MotionParams.set_defaults(
@@ -431,17 +431,15 @@ class StateMachineNode(Node):
                 self.action_executor.set_time_per_action(time_per_action)
             
             # Create config
-            self.sm_config = StateMachineConfig(
+            self.sm_strategy_config = StrategyConfig(
                 color=color,
                 init_pose=tuple(init_pose),
                 home_pose=tuple(home_pose),
                 wait_to_come_home_pose=tuple(wait_home_pose),
                 simulation_mode=self.sim_mode
             )
-            self.state_machine.set_config(self.sm_config)
-            
             # Set strategy
-            self.state_machine.set_strategy(strategy)
+            self.state_machine.set_strategy(strategy, self.sm_strategy_config)
             
             # Set callbacks
             self.state_machine.on_state_changed = self._on_state_changed

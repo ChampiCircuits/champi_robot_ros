@@ -141,7 +141,6 @@ class WorldState:
 
 
 if __name__ == "__main__":
-    # TODO useful ?
     from champi_brain.world_state.utils import print_all_elements_with_rich, print_all_zones_with_rich
 
     init_elements, init_zones = WorldState.from_yaml(get_package_share_directory('champi_brain') + "/config/initial_world_state.yaml")
@@ -152,7 +151,7 @@ if __name__ == "__main__":
 
     # Simulate observations
     observations = [
-        NutsBox(id="det1", x=1.0, y=0.5, theta_deg=0, state=ElementState.ON_TABLE, color=Color.BLUE),
+        NutsBox(id="det1", x=1.10, y=0.1, theta_deg=0, state=ElementState.ON_TABLE, color=Color.BLUE),
         NutsBox(id="det2", x=1.5, y=0.8, theta_deg=0, state=ElementState.ON_TABLE, color=Color.BLUE),
         NutsBox(id="det3", x=2.0, y=2.0, theta_deg=0, state=ElementState.ON_TABLE, color=Color.YELLOW)   # new unknown
     ]
