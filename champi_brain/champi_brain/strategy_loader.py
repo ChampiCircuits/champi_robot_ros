@@ -1,11 +1,22 @@
 #!/usr/bin/env python3
 
 import importlib.util
-import sys
-import os
+import sys, os, yaml
 from pathlib import Path
-import yaml
 from ament_index_python.packages import get_package_share_directory
+from champi_brain.world_state.symmetry import init_symmetry_mapper
+
+def initialize_symmetry_mapper(logger, initial_world_state_path: str):
+    """Initialize the symmetry mapper from the world state config file."""
+
+    with open(initial_world_state_path, 'r') as f:
+        data = yaml.safe_load(f)
+    
+    raw_elements = data.get('elements', [])
+    raw_zones = data.get('zones', [])
+    
+    init_symmetry_mapper(raw_elements, raw_zones)
+    logger.info('✅ Symmetry mapper initialized from initial_world_state_2025.yaml')
 
 
 def load_points_per_action():
@@ -26,8 +37,11 @@ def load_time_per_action():
 
     return data.get('time_per_action', {})
 
-def load_strategy_dsl(strategy_file_path, color, logger):
+def load_strategy_dsl(strategy_file_path, color, logger, initial_world_state_path):
     """Load a strategy from a Python DSL file - returns typed objects"""
+    
+    # Initialize symmetry mapper if not already done
+    initialize_symmetry_mapper(logger, initial_world_state_path)
     
     # Import the strategy module
     spec = importlib.util.spec_from_file_location("strategy_module", strategy_file_path)
@@ -79,8 +93,14 @@ def load_strategy_dsl(strategy_file_path, color, logger):
     
     return actions, init_pose, home_pose, wait_to_come_home_pose, time_per_action
 
-def load_strategy(file_path, color, logger):
+def load_strategy(file_path, color, logger, initial_world_state_path):
     """Main entry point to load a strategy
+    
+    Args:
+        file_path: Path to the strategy file
+        color: Team color ('YELLOW' or 'BLUE')
+        logger: Logger instance
+        initial_world_state_path: Path to the initial world state YAML file
     
     Returns:
         tuple: (actions, init_pose, home_pose, wait_to_come_home_pose, time_per_action)
@@ -91,7 +111,6 @@ def load_strategy(file_path, color, logger):
     if file_ext == '.py':
         # Python DSL format
         logger.info(f"Loading Python DSL strategy: {file_path}")
-        return load_strategy_dsl(file_path, color, logger)
-    
+        return load_strategy_dsl(file_path, color, logger, initial_world_state_path)
     else:
         raise ValueError(f"Unsupported file format: {file_ext}. Use .py only")

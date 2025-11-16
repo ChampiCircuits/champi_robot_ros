@@ -17,14 +17,16 @@ class WorldStateNode(Node):
         Receives observations as TableObservation messages, updates the world state,
         and publishes the updated world state.
         """
-        super().__init__('world_state_node')
+        super().__init__('world_state_node', namespace='champi_brain')
         self.get_logger().info(f'Initializing WorldStateNode...')
 
         # ============================================================
         # PARAMETERS
         # ============================================================   
+        # Node-specific parameters (from champi_brain/world_state_node config section)
         self.declare_parameter('matching_distance_threshold', rclpy.Parameter.Type.DOUBLE)
         self.declare_parameter('max_missing', rclpy.Parameter.Type.INTEGER)
+        # Parent namespace parameter (from champi_brain config section)
         self.declare_parameter('initial_world_state_file', rclpy.Parameter.Type.STRING)
 
         matching_distance_threshold = self.get_parameter('matching_distance_threshold').value

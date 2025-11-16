@@ -9,6 +9,8 @@ import rclpy
 from champi_brain.action_executor.action_executor import ActionExecutor
 from champi_brain.match_controller import MatchController
 from champi_brain.strategy_dsl import Action, MotionParams, Offset
+from champi_brain.world_state.symmetry import get_element_id_for_color
+from champi_brain.enums import Color
 from champi_interfaces.msg import GameElement
 from champi_libraries_py.utils.angles import get_yaw
 
@@ -266,8 +268,7 @@ class StateMachine:
     def _on_enter_come_home(self) -> None:
         """Handle entry into come home state."""
         if not self.strategy_config:
-            self.logger.error("Cannot come home: no strategy configuration set!")
-            return # TODO better error handling
+            raise ValueError("Cannot come home: no strategy configuration set!")
 
         x, y, theta_deg = self.strategy_config.home_pose
         motion = MotionParams(
@@ -285,8 +286,7 @@ class StateMachine:
     def _on_enter_wait_to_come_home(self) -> None:
         """Handle entry into wait to come home state."""
         if not self.strategy_config:
-            self.logger.error("Cannot go to wait position: no strategy configuration set!")
-            return # TODO better error handling
+            raise ValueError("Cannot go to wait position: no strategy configuration set!")
 
         x, y, theta_deg = self.strategy_config.wait_to_come_home_pose
         motion = MotionParams(
@@ -357,8 +357,7 @@ class StateMachine:
             self._execute_actuator_action(action)
             
         else:
-            self.logger.error(f"Unknown action '{action_name}'")
-            self.notify_action_completed() # TODO better error handling
+            raise ValueError(f"Unknown action '{action_name}'")
 
     
     def _execute_move(self, action: Action) -> None:
@@ -389,11 +388,17 @@ class StateMachine:
             return (action.pos_target.x, action.pos_target.y, action.pos_target.theta_deg)
             
         if action.named_target is not None:
+            if not self.strategy_config:
+                raise ValueError("Cannot resolve named target: no strategy configuration set!")
+            
             # Get target from world state by name
-            target_name = action.named_target
+            base_target_name = action.named_target
+            # Apply symmetry mapping based on team color            
+            team_color = Color.BLUE if self.strategy_config.color.upper() == 'BLUE' else Color.YELLOW
+            target_name = get_element_id_for_color(base_target_name, team_color)
+            
             if target_name not in self.world_state_elements:
-                self.logger.error(f"Element '{target_name}' not found in world state!")
-                return None
+                raise ValueError(f"Element '{target_name}' (from '{base_target_name}' for {team_color}) not found in world state!")
             
             # Get element position from world state (ROS GameElement message)
             element = self.world_state_elements[target_name]
@@ -403,8 +408,7 @@ class StateMachine:
             self.logger.info(f"Target '{target_name}' found at ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
             return (x, y, theta_deg)
 
-        self.logger.error("No target specified for move action!")
-        return None
+        raise ValueError("No target specified for move action!")
     
     def _apply_offset(self, x: float, y: float, theta_deg: float, 
                       offset: Offset) -> Tuple[float, float, float]:

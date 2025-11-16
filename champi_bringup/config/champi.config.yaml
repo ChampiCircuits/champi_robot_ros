@@ -128,7 +128,12 @@ path_planner:
     enemy_detect_angle: 60. # degrees from x+ axis
     backoff_distance: 0.1 # m. Distance to back off from the enemy robot when it is too close after the timeout
 
-state_machine_node:
+# Champi Brain nodes
+/champi_brain/**:
+  ros__parameters:
+    initial_world_state_file: 'initial_world_state_2025.yaml'  # Initial world state configuration file (shared by both nodes)
+
+/champi_brain/state_machine_node:
   ros__parameters:
     # Strategy parameters
     use_default_strategy_and_color_in_sim: true       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
@@ -141,9 +146,8 @@ state_machine_node:
     return_home_safety_margin: 2.0                    # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left
     simulate_actuators_delays: false                   # If false, actuators commands will be applied instantly (no delay simulation)
 
-world_state_node:
+/champi_brain/world_state_node:
   ros__parameters:
     update_rate: 5.0 # Hz
     matching_distance_threshold: 0.1                  # meters. The maximum distance to consider that an observed object matches a known object
     max_missing: 10                                   # number of consecutive misses before an object is considered gone
-    initial_world_state_file: 'initial_world_state_2025.yaml'

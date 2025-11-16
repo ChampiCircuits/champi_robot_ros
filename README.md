@@ -10,6 +10,8 @@
 
 * [How to ? And Traps !](docs/HowToREADME.md)
 * [marker_helper library](champi_libraries_py/champi_libraries_py/marker_helper/README.md)
+* **[Champi Brain Documentation](champi_brain/docs/README.md)** - Strategy system and state machine
+  * [Table Symmetry Management](champi_brain/docs/table_symmetry.md)
 
 ## Setup the project on your computer
 

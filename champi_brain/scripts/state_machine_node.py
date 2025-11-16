@@ -38,20 +38,24 @@ class StateMachineNode(Node):
     """
     
     def __init__(self):
-        super().__init__('state_machine_node')
+        super().__init__('state_machine_node', namespace='champi_brain')
         self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
         self.get_logger().info('🚀 Launching State Machine...')
         
         # ============================================================
         # PARAMETERS
         # ============================================================     
+        # Declare node-specific parameters (from champi_brain/state_machine_node config section)
         self.declare_parameter('default_strategy_file', rclpy.Parameter.Type.STRING)
         self.declare_parameter('use_default_strategy_and_color_in_sim', rclpy.Parameter.Type.BOOL)
-        self.declare_parameter('sim', rclpy.Parameter.Type.BOOL)
         self.declare_parameter('default_sim_color', rclpy.Parameter.Type.STRING)
         self.declare_parameter('match_total_time', rclpy.Parameter.Type.DOUBLE)
         self.declare_parameter('return_home_safety_margin', rclpy.Parameter.Type.DOUBLE)
         self.declare_parameter('simulate_actuators_delays', rclpy.Parameter.Type.BOOL)
+        # Declare shared parameter (from champi_brain namespace)
+        self.declare_parameter('initial_world_state_file', rclpy.Parameter.Type.STRING)
+        # Declare general parameters (from /** or top-level config)
+        self.declare_parameter('sim', rclpy.Parameter.Type.BOOL)
 
         self.default_strategy_file = self.get_parameter('default_strategy_file').value
         self.use_default_strategy_and_color_in_sim = self.get_parameter('use_default_strategy_and_color_in_sim').value
@@ -60,6 +64,7 @@ class StateMachineNode(Node):
         match_total_time = self.get_parameter('match_total_time').value
         return_home_safety_margin = self.get_parameter('return_home_safety_margin').value
         simulate_actuators_delays = self.get_parameter('simulate_actuators_delays').value
+        self.initial_world_state_file = self.get_parameter('initial_world_state_file').value
 
         self.get_logger().info(f'Parameters:')
         self.get_logger().info(f'\tsim_mode: {self.sim_mode}')
@@ -414,10 +419,13 @@ class StateMachineNode(Node):
         try:
             # Load strategy from file
             strategy_path = get_package_share_directory('champi_brain') + '/strategies/' + strategy_file
+            world_state_path = get_package_share_directory('champi_brain') + '/config/' + self.initial_world_state_file
+            
             strategy, init_pose, home_pose, wait_home_pose, time_per_action = load_strategy(
                 strategy_path,
                 color,
-                self.get_logger()
+                self.get_logger(),
+                world_state_path
             )
             
             self.get_logger().info(f'✅ Strategy loaded:')

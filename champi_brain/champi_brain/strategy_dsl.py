@@ -34,11 +34,18 @@ class Position:
         return {"x": self.x, "y": self.y, "theta_deg": self.theta_deg}
     
     def transform_for_blue(self) -> 'Position':
-        """Transforms the position for when we are on the blue team"""
+        """Transforms the position for when we are on the blue team
+        
+        Applies vertical axis symmetry (left-right inversion):
+        - X coordinate is mirrored: x_blue = TABLE_WIDTH - x_yellow
+        - Y coordinate stays the same
+        - Angle is inverted horizontally: theta_blue = (180 - theta_yellow) % 360
+          This keeps up/down directions but inverts left/right
+        """
         return Position(
             x=TABLE_WIDTH - self.x,
             y=self.y,
-            theta_deg=(360 - self.theta_deg) % 360
+            theta_deg=(180 - self.theta_deg) % 360
         )
 
 @dataclass
