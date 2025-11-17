@@ -21,9 +21,18 @@ build() {
     type-check
 }
 
+# Function to visualize strategy with optional strategy file parameter
+visualize_strategy() {
+    local strategy_file="${1:-__strat_main_2026.py}"
+    local config_file="$HOME/champi_ws/src/champi_robot_ros/champi_bringup/config/champi.config.yaml"
+    echo "📊 Visualizing strategy: $strategy_file"
+    ros2 run champi_brain strat_displayer_node.py "$strategy_file" --ros-args --params-file "$config_file"
+}
+
 # Simple aliases
 alias clean='echo "🧹 Cleaning workspace..." && rm -R ~/champi_ws/log ~/champi_ws/build ~/champi_ws/install && echo "✅ Workspace cleaned!"'
 alias kill_nodes='~/champi_ws/src/champi_robot_ros/scripts/cmds/kill_nodes.bash'
+
 export RCUTILS_COLORIZED_OUTPUT=1
 
 

@@ -9,6 +9,7 @@ import sys
 import os
 from champi_brain.strategy_loader import load_strategy
 from champi_brain.strategy_dsl import Action
+from champi_brain.motion_config import configure_motion_defaults
 from champi_libraries_py.utils.angles import rad_to_quat
 
 from geometry_msgs.msg import PoseStamped, Point
@@ -22,15 +23,26 @@ class StrategyPublisher(Node):
     def __init__(self, strategy_file):
         super().__init__('strategy_publisher')
         
+        # Parameters
+        self.declare_parameter('initial_world_state_file', 'initial_world_state_2025.yaml')
+        initial_world_state_file = self.get_parameter('initial_world_state_file').value
+        
+        # Configure motion defaults (required before loading strategy)
+        configure_motion_defaults(self)
+        
         # Publishers
         self.markers_publisher = self.create_publisher(MarkerArray, '/strategy_markers', 10)
 
         self.get_logger().info('>> Loading strategy...')
-        strategy_path = os.path.join(
-            get_package_share_directory('champi_brain'), 'scripts', 'strategies', strategy_file
-        )
+        strategy_path = get_package_share_directory('champi_brain') + '/strategies/' + strategy_file
+        world_state_path = get_package_share_directory('champi_brain') + '/config/' + initial_world_state_file
 
-        self.actions, self.init_pose, self.home_pose, self.wait_to_come_home_pose = load_strategy(strategy_path, "YELLOW", self.get_logger())
+        self.actions, self.init_pose, self.home_pose, self.wait_to_come_home_pose, _ = load_strategy(
+            strategy_path, 
+            "YELLOW", 
+            self.get_logger(),
+            world_state_path
+        )
         self.get_logger().info(f'<< Strategy {strategy_file} loaded with YELLOW!')
         self.get_logger().info(f'   Total actions: {len(self.actions)}')
 
@@ -41,8 +53,8 @@ class StrategyPublisher(Node):
         
         for i, action in enumerate(self.actions):
             self.get_logger().info(f'   Action {i}: {action.action}')
-            if action.target:
-                self.get_logger().info(f' -> ({action.target.x:.2f}, {action.target.y:.2f}, {action.target.theta_deg:.0f}°)')
+            if action.pos_target:
+                self.get_logger().info(f' -> ({action.pos_target.x:.2f}, {action.pos_target.y:.2f}, {action.pos_target.theta_deg:.0f}°)')
             else:
                 self.get_logger().info('')
 
@@ -240,14 +252,14 @@ class StrategyPublisher(Node):
                 continue
             
             # Determine if action has target/offset
-            has_target = action.target is not None
+            has_target = action.pos_target is not None
             has_offset = action.offset is not None
             
             # Get position
             if has_target:
                 # Use target as reference position
-                x, y = action.target.x, action.target.y
-                theta_deg = action.target.theta_deg
+                x, y = action.pos_target.x, action.pos_target.y
+                theta_deg = action.pos_target.theta_deg
                 
                 if has_offset:
                     # Has both target (reference) and offset - display at reference, stack vertically
@@ -354,6 +366,7 @@ class StrategyPublisher(Node):
             marker_array.markers.append(line_marker)
         
         self.markers_publisher.publish(marker_array)
+        self.get_logger().info('Published strategy markers.')
 
 
 def main(args=None):

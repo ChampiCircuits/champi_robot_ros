@@ -22,7 +22,7 @@ def initialize_symmetry_mapper(logger, initial_world_state_path: str):
 def load_points_per_action():
     """Load points per action from a YAML file"""
 
-    points_yaml_file = get_package_share_directory('champi_brain') + '/strategies/points_per_action.yaml'
+    points_yaml_file = get_package_share_directory('champi_brain') + '/config/points_per_action.yaml'
     with open(points_yaml_file, 'r') as f:
         data = yaml.safe_load(f)
 
@@ -31,7 +31,7 @@ def load_points_per_action():
 def load_time_per_action():
     """Load time per action from a YAML file"""
 
-    time_yaml_file = get_package_share_directory('champi_brain') + '/strategies/time_per_action.yaml'
+    time_yaml_file = get_package_share_directory('champi_brain') + '/config/time_per_action.yaml'
     with open(time_yaml_file, 'r') as f:
         data = yaml.safe_load(f)
 

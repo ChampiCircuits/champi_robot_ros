@@ -19,13 +19,13 @@ from champi_interfaces.srv import SetPose
 import time
 from math import atan2, degrees, radians
 # champi_brain imports
-from champi_brain.strategy_dsl import MotionParams
 from champi_brain.state_machine import StateMachine, StrategyConfig
 from champi_brain.match_controller import MatchController
 from champi_brain.action_executor.action_executor import ActionExecutor
 from champi_brain.action_executor.ros_action_executor import ROSActionExecutor
 from champi_brain.action_executor.sim_action_executor import SIMActionExecutor
 from champi_brain.strategy_loader import load_strategy
+from champi_brain.motion_config import configure_motion_defaults
 
 
 class StateMachineNode(Node):
@@ -79,7 +79,7 @@ class StateMachineNode(Node):
         # ============================================================
         # CONFIGURE MOTION DEFAULTS FROM POSE CONTROLLER PARAMS
         # ============================================================
-        self._configure_motion_defaults()
+        configure_motion_defaults(self)
         
         # ============================================================
         # CREATE CORE COMPONENTS
@@ -204,40 +204,6 @@ class StateMachineNode(Node):
         self.get_logger().warn('State Machine ready started!\n')
 
     
-    def _configure_motion_defaults(self) -> None:
-        """Configure default motion parameters from ROS parameters."""
-        params = {
-            'default_motion_speed': rclpy.Parameter.Type.DOUBLE,
-            'default_motion_end_speed': rclpy.Parameter.Type.DOUBLE,
-            'default_motion_accel_linear': rclpy.Parameter.Type.DOUBLE,
-            'default_motion_accel_angular': rclpy.Parameter.Type.DOUBLE,
-            'default_motion_use_collision_avoidance': rclpy.Parameter.Type.BOOL
-        }
-        
-        values = {}
-        for name, param_type in params.items():
-            self.declare_parameter(name, param_type)
-            param = self.get_parameter(name)
-            if param.type_ == rclpy.Parameter.Type.NOT_SET:
-                raise RuntimeError(f"Required parameter '{name}' not found in config under 'state_machine_node'")
-            values[name] = param.value
-        
-        MotionParams.set_defaults(
-            speed=values['default_motion_speed'],
-            end_speed=values['default_motion_end_speed'],
-            accel_linear=values['default_motion_accel_linear'],
-            accel_angular=values['default_motion_accel_angular'],
-            use_collision_avoidance=values['default_motion_use_collision_avoidance']
-        )
-        
-        self.get_logger().info(
-            f"Motion defaults: speed={values['default_motion_speed']}, "
-            f"end_speed={values['default_motion_end_speed']}, "
-            f"accel_linear={values['default_motion_accel_linear']}, "
-            f"accel_angular={values['default_motion_accel_angular']}, "
-            f"use_collision_avoidance={values['default_motion_use_collision_avoidance']}"
-        )
-
     # ================================================================
     # ROS CALLBACKS
     # ================================================================

@@ -18,13 +18,14 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
 
         ## The whole strategy is always given for YELLOW team
         ## Position() coordinates are automatically transformed for BLUE team via central symmetry
+        ## Elements IDs are automatically transformed via mirror_id mapping
         
         ######################### BANNER ###############################################
         .put_banner("banner")
         .move_to(Position(1.18, 0.46, 90.0), group="banner", use_collision_avoidance=False, end_speed=0.2)
 
         ######################### FIRST ELEMENT GROUP ################################
-        # TODO on devrait aussi pouvoir donner un genre de côté par lequel on approche l'élément
+        # TODO on devrait aussi pouvoir donner un genre de côté par lequel on approche l'élément, pareil pour les déposer on donne la zone et un offset
         .get_ready("elements_1")
         .take_elements_sequence("elements_1", group="elements_1")
         # Intermediate movement
@@ -44,8 +45,8 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .put_elements_sequence(Position(0.6, 0.1, 270.0), "elements_3")
         
         ######################### COME HOME ##########################################
+        # movement before coming home to keep some distance from the table elements
         .move_to(Position(0.45, 0.9, 90.0), group="come_home", use_collision_avoidance=True, speed=1.0, accel_linear=1.0, accel_angular=15.0)
-
         # .come_home() # done automatically at the end by the planner
     )
     
