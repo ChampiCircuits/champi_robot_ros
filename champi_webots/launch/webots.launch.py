@@ -37,7 +37,7 @@ def generate_launch_description():
 
     robot_description_path = os.path.join(package_dir, 'urdf', 'watchtower.urdf')
     controller = WebotsController(
-        robot_name='robot',
+        robot_name='watchtower',
         parameters=[
             {'robot_description': robot_description_path,
              'use_sim_time': False,
