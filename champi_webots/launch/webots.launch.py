@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 
 import os
+import launch
+import launch.actions
+import launch.event_handlers
+import launch.events
 from launch import LaunchDescription
 from ament_index_python.packages import get_package_share_directory
 from webots_ros2_driver.webots_launcher import WebotsLauncher
 from webots_ros2_driver.webots_controller import WebotsController
-from webots_ros2_driver.wait_for_controller_connection import WaitForControllerConnection
-from webots_ros2_driver.urdf_spawner import URDFSpawner
-from launch_ros.actions import Node
+
 
 
 def generate_launch_description():
@@ -23,29 +25,31 @@ def generate_launch_description():
         ros2_supervisor=True
     )
 
+    # This action will kill all nodes once the Webots simulation has exited
+    kill_nodes = launch.actions.RegisterEventHandler(
+            event_handler=launch.event_handlers.OnProcessExit(
+                target_action=webots,
+                on_exit=[
+                    launch.actions.EmitEvent(event=launch.events.Shutdown())
+                ],
+            )
+        )
+
     robot_description_path = os.path.join(package_dir, 'urdf', 'watchtower.urdf')
     controller = WebotsController(
-        robot_name='watchtower_1',
+        robot_name='robot',
         parameters=[
             {'robot_description': robot_description_path,
              'use_sim_time': False,
-             'set_robot_state_publisher': True},
+             'set_robot_state_publisher': False},
         ],
         respawn=True
     )
 
 
-    # spawn_URDF_robot = URDFSpawner(
-    #     name='Table',
-    #     urdf_path=robot_description_path,
-    #     translation='0 0 1',
-    #     rotation='0 0 1 -1.5708',
-    # )
-
-
     return LaunchDescription([
-        # webots,
-        webots._supervisor,
+        webots,
+        #webots._supervisor, # Provides additional topics to interact with webots ; not strictly needed, let's uncomment only if we need because I'm scared it's gonna bring problems
+        kill_nodes,
         controller,
-        # spawn_URDF_robot,
     ])

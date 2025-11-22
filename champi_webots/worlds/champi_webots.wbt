@@ -7,8 +7,8 @@ EXTERNPROTO "../protos/table/Eurobot2026.proto"
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.5694775353419402 0.5805171462865306 0.5819752396865453 2.0714720981472765
-  position -0.05883904182951982 -0.262968806385919 5.943859043114789
+  orientation -0.10442489829775929 0.13782272568111703 0.9849367172064052 1.4944791189855855
+  position 0.10040888496287967 -3.744752782838006 1.1578072988379358
 }
 TexturedBackground {
 }
@@ -17,75 +17,44 @@ TexturedBackgroundLight {
 Eurobot2026 {
 }
 Robot {
-  translation 5 0 0
+  translation 0 1.12 0.08
   children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.7 0.7 0.7
-        roughness 0.3
-        metalness 0
-      }
-      geometry Cylinder {
-        height 0.2
-        radius 0.3
-      }
+    Camera {
+      translation 0 0 0.91
+      rotation 0.3574058934544597 0.35740389345505597 -0.8628577427752423 1.71777
+      width 640
+      height 480
     }
     Pose {
-      translation 0 0 1
+      translation 0 -0.01 0.39
       children [
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.5 0.5 0.5
-            roughness 0.3
-            metalness 0
-          }
           geometry Cylinder {
+            height 0.8
             radius 0.05
           }
-        }
-      ]
-    }
-    Pose {
-      translation 0 0 3
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0.2 0.2 0.2
-            roughness 0.4
-            metalness 0
-          }
-          geometry Box {
-            size 0.2 0.2 0.1
-          }
-        }
-        Camera {
-          translation 0 0.1 0
-          name "watchtower_camera"
-          fieldOfView 0.7854
-          width 1280
-          height 720
-          near 0.1
-          far 100
         }
       ]
     }
   ]
-  name "watchtower_1"
-  boundingObject Group {
-    children [
-      Cylinder {
-        height 0.2
-        radius 0.3
-      }
-      Pose {
-        translation 0 0 1
-        children [
-          Cylinder {
+  name "watchtower"
+  controller "<extern>"
+}
+Robot {
+  children [
+    Pose {
+      translation 0 0 0.55
+      children [
+        Shape {
+          geometry Cylinder {
+            height 0.9
             radius 0.05
           }
-        ]
-      }
-    ]
-  }
+        }
+      ]
+    }
+    Camera {
+    }
+  ]
   controller "<extern>"
 }
