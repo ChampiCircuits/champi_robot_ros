@@ -22,7 +22,7 @@ def generate_launch_description():
     webots = WebotsLauncher(
         world=world_path,
         mode=mode,
-        ros2_supervisor=True
+        ros2_supervisor=False
     )
 
     # This action will kill all nodes once the Webots simulation has exited
@@ -35,21 +35,22 @@ def generate_launch_description():
             )
         )
 
+    # Contrôleur Webots ROS2 pour publier les données caméra
     robot_description_path = os.path.join(package_dir, 'urdf', 'watchtower.urdf')
-    controller = WebotsController(
+    watchtower_controller = WebotsController(
         robot_name='watchtower',
         parameters=[
             {'robot_description': robot_description_path,
              'use_sim_time': False,
-             'set_robot_state_publisher': False},
+             'set_robot_state_publisher': False,
+             'publish_tf': False},
         ],
         respawn=True
     )
-
 
     return LaunchDescription([
         webots,
         #webots._supervisor, # Provides additional topics to interact with webots ; not strictly needed, let's uncomment only if we need because I'm scared it's gonna bring problems
         kill_nodes,
-        controller,
+        watchtower_controller,
     ])

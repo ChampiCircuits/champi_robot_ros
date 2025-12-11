@@ -7,8 +7,8 @@ EXTERNPROTO "../protos/table/Eurobot2026.proto"
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.10442489829775929 0.13782272568111703 0.9849367172064052 1.4944791189855855
-  position 0.10040888496287967 -3.744752782838006 1.1578072988379358
+  orientation -0.0833156583531161 0.16472359183520685 0.9828146515829397 1.1636170971554065
+  position -1.0545746793861883 -3.2498656129109387 1.0813334330101307
 }
 TexturedBackground {
 }
@@ -22,25 +22,16 @@ Robot {
     Camera {
       translation 0 0 0.91
       rotation 0.3574058934544597 0.35740389345505597 -0.8628577427752423 1.71777
+      name "watchtower_camera"
       width 640
       height 480
-    }
-    Pose {
-      translation 0 -0.01 0.39
-      children [
-        Shape {
-          geometry Cylinder {
-            height 0.8
-            radius 0.05
-          }
-        }
-      ]
     }
   ]
   name "watchtower"
   controller "<extern>"
 }
 Robot {
+  translation 1.5 0.5 0.08
   children [
     Pose {
       translation 0 0 0.55
@@ -53,8 +44,7 @@ Robot {
         }
       ]
     }
-    Camera {
-    }
   ]
-  controller "<extern>"
+  name "champi_robot"
+  controller "<none>"
 }

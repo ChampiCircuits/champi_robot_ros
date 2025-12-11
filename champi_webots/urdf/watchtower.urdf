@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
-<robot name="my_robot">
+<robot name="watchtower">
     <webots>
         <device reference="watchtower_camera" type="Camera">
             <ros>
                 <!-- If `False`, disable the device. By default the device will be enabled. -->
-                <enabled>False</enabled>
+                <enabled>True</enabled>
 
                 <!-- Set the main topic name of the device. By default it will be `/robotName/referenceName`. -->
                 <!-- If a device publishes several topics, the secondary topics names are relative to the main topic name. -->
