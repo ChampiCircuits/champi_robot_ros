@@ -13,6 +13,10 @@
 * **[Champi Brain Documentation](champi_brain/docs/README.md)** - Strategy system and state machine
   * [Table Symmetry Management](champi_brain/docs/table_symmetry.md)
 
+### 📹 **Simulation et Vision**
+* [**Champi Webots**](champi_webots/README.md) - Configuration of webots simulation and simulated camera
+* [**Champi Watchtower**](champi_watchtower/README.md) - External camera code
+
 ## Setup the project on your computer
 
 Requirements :
