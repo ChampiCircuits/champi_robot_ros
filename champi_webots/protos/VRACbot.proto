@@ -1,0 +1,358 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+# template language: javascript
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Rubber.proto"
+EXTERNPROTO "ArucoTag.proto"
+EXTERNPROTO "RPLidarA2M8.proto"
+
+PROTO VRACbot [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString name "VRACbot"
+  field SFString {"yellow", "blue"} color "blue"
+  field SFInt32 {1, 2, 3, 4, 5, 6, 7, 8, 9, 10} aruco_id 1
+  field SFString {"GamepadRobot", "VRACbotController", "<extern>", "<none>"} controller "<none>"
+
+  hiddenField SFColor yellow_color 0.969 0.71 0
+  hiddenField SFColor blue_color 0 0.357 0.549
+]
+
+{
+%< var color_vec = fields.color.value == "yellow" ? fields.yellow_color.value : fields.blue_color.value; >%
+
+  DEF VRACbot Robot {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    controller IS controller
+    supervisor TRUE
+
+    children [
+      DEF body Group {
+        children [
+          Transform {
+            translation 0 0 0.006
+            rotation 0 0 0 0
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.666 0.666 0.666
+                  roughness 1
+                  metalness 0
+                }
+                geometry Box {
+                  size 0.188 0.291 0.006
+                }
+              }
+            ]
+          }
+          Transform {
+            translation 0 0 0.1795
+            rotation 0 0 0 0
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor %<= color_vec.r >% %<= color_vec.g >% %<= color_vec.b >%
+                  roughness 1
+                  metalness 0
+                }
+                geometry Box {
+                  size 0.1 0.291 0.341
+                }
+              }
+            ]
+          }
+        ]
+      }
+
+      DEF motorwheels Transform {
+        rotation 0 0 1 1.5707963268
+        children [
+          #===============LEFT MOTOR WHEEL===============
+          Transform {
+            translation 0.0945 0 0.037
+            rotation 0 1 0 1.5707963268
+            children [
+              DEF left-wheel HingeJoint {
+                jointParameters HingeJointParameters {
+                  axis 0 0 1
+                }
+                device [
+                  RotationalMotor {
+                    name "left-wheel-motor"
+                    acceleration 5214
+                    maxVelocity 32
+                    controlPID 1 0 0
+                  }
+                  PositionSensor {
+                    name "left-wheel-encoder"
+                  }
+                ]
+                endPoint Solid {
+                  children [
+                    DEF MotorWheelShape Shape {
+                      appearance Rubber {
+                      }
+                      geometry Cylinder {
+                        height 0.044
+                        radius 0.037
+                        subdivision 12
+                      }
+                    }
+                  ]
+                  name "left-wheel"
+                  boundingObject USE MotorWheelShape
+                  physics DEF MotorWheelPhysics Physics {
+                    density -1
+                    mass 0.5
+                  }
+                }
+              }
+            ]
+          }
+
+          #===============RIGHT MOTOR WHEEL===============
+          Transform {
+            translation -0.0945 0 0.037
+            rotation 0 1 0 1.5707963268
+            children [
+              DEF right-wheel HingeJoint {
+                jointParameters HingeJointParameters {
+                  axis 0 0 1
+                }
+                device [
+                  RotationalMotor {
+                    name "right-wheel-motor"
+                    acceleration 5214
+                    maxVelocity 32
+                    controlPID 1 0 0
+                  }
+                  PositionSensor {
+                    name "right-wheel-encoder"
+                  }
+                ]
+                endPoint Solid {
+                  children [
+                    USE MotorWheelShape
+                  ]
+                  name "right-wheel"
+                  boundingObject USE MotorWheelShape
+                  physics USE MotorWheelPhysics
+                }
+              }
+            ]
+          }
+        ]
+      }
+
+      DEF odometrywheels Transform {
+        rotation 0 0 1 1.5707963268
+        children [
+          #===============LEFT ODOMETRY WHEEL===============
+          Transform {
+            translation 0.125 0 0.024
+            rotation 0 1 0 1.5707963268
+            children [
+              SliderJoint {
+                jointParameters JointParameters {
+                  axis 1 0 0
+                  maxStop 0.01
+                }
+                endPoint Solid {
+                  name "left-odometry-holder"
+                  translation 0 0 0
+                  children [
+                    HingeJoint {
+                      jointParameters HingeJointParameters {
+                        axis 0 0 1
+                      }
+                      device [
+                        PositionSensor {
+                          name "left-odometry-encoder"
+                          resolution 0.000383495196971 # (2*pi)/(2^14) for 14 bit encoder
+                        }
+                      ]
+                      endPoint Solid {
+                        children [
+                          DEF OdometryWheelShape Shape {
+                            appearance Rubber {
+                            }
+                            geometry Cylinder {
+                              height 0.001
+                              radius 0.024
+                              subdivision 24
+                            }
+                          }
+                        ]
+                        name "left-odometry"
+                        boundingObject USE OdometryWheelShape
+                        physics DEF OdometryWheelPhysics Physics {
+                          density -1
+                          mass 0.05
+                        }
+                      }
+                    }
+                  ]
+                  boundingObject Box {
+                      size 0.01 0.01 0.01
+                  }
+                  physics USE OdometryWheelPhysics
+                }
+              }
+            ]
+          }
+
+          #===============RIGHT ODOMETRY WHEEL===============
+          Transform {
+            translation -0.125 0 0.024
+            rotation 0 1 0 1.5707963268
+            children [
+              SliderJoint {
+                jointParameters JointParameters {
+                  axis 1 0 0
+                  maxStop 0.01
+                }
+                endPoint Solid {
+                  name "right-odometry-holder"
+                  translation 0 0 0
+                  children [
+                    HingeJoint {
+                      jointParameters HingeJointParameters {
+                        axis 0 0 1
+                      }
+                      device [
+                        PositionSensor {
+                          name "right-odometry-encoder"
+                          resolution 0.000383495196971 # (2*pi)/(2^14) for 14 bit encoder
+                        }
+                      ]
+                      endPoint Solid {
+                        children [
+                          USE OdometryWheelShape
+                        ]
+                        name "right-odometry"
+                        boundingObject USE OdometryWheelShape
+                        physics USE OdometryWheelPhysics
+                      }
+                    }
+                  ]
+                  boundingObject Box {
+                      size 0.01 0.01 0.01
+                  }
+                  physics USE OdometryWheelPhysics
+                }
+              }
+            ]
+          }
+        ]
+      }
+
+      ArucoTag {
+        translation 0 0 0.43
+        id %<= fields.aruco_id.value >%
+        color IS color
+      }
+
+      RPLidarA2M8 {
+        translation 0 0 0.35
+      }
+
+      Display {
+        name "lidar-display"
+        width 300
+        height 300
+      }
+
+      Camera {
+        translation 0.1 0 0.2
+        rotation 0 1 0 0.5
+        width 600
+        height 400
+        fieldOfView 1.8
+        name "camera"
+      }
+
+      DEF ServoVacuum Transform {
+        translation 0.06 0 0.133
+        children [
+          HingeJoint {
+            jointParameters HingeJointParameters {
+              axis 0 1 0
+            }
+            device [
+              RotationalMotor {
+                name "servo"
+                acceleration 2000
+                maxTorque 3
+                controlPID 20 0 0
+                maxVelocity 3.14156
+                minPosition -3.14156
+                maxPosition 3.14156
+              }
+            ]
+            endPoint Solid {
+              children [
+                DEF VacuumHolderShape Transform {
+                  translation 0 0 0.06
+                  children [
+                     Shape {
+                      appearance PBRAppearance {
+                        baseColor 0 0 0
+                        roughness 1
+                        metalness 0
+                      }
+                      geometry Box {
+                        size 0.01 0.05 0.12
+                      }
+                    }
+                  ]
+                }
+
+                VacuumGripper {
+                  translation 0.011 0 0.09
+                  rotation 0 1 0 1.5707963268
+                  children [
+                    Solid {
+                      children [
+                        DEF VacuumGripperShape Shape {
+                          appearance PBRAppearance {
+                            baseColor 1 1 1
+                            roughness 1
+                            metalness 0
+                          }
+                          geometry Cylinder {
+                            radius 0.02
+                            height 0.01
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                  name "vacuum-gripper"
+                  boundingObject USE VacuumGripperShape
+                  physics Physics {
+                  }
+                }
+              ]
+              name "vacuum-holder"
+              boundingObject USE VacuumHolderShape
+              physics Physics {
+              }
+            }
+          }
+        ]
+      }
+
+    ]
+    boundingObject USE body
+    physics Physics {
+      density -1
+      mass 10
+      centerOfMass 0 0 0.035
+    }
+    controller IS controller
+    name IS name
+  }
+}

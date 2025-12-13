@@ -1,0 +1,74 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+# template language: javascript
+
+PROTO ArucoTag [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString {"yellow", "blue"} color "blue"
+  field SFInt32 {1, 2, 3, 4, 5, 6, 7, 8, 9, 10} id 1
+
+  hiddenField SFColor yellow_color 0.969 0.71 0
+  hiddenField SFColor blue_color 0 0.357 0.549
+]
+
+{
+%< let url = '"aruco/4x4_1000-' + fields.id.value.toString() + '.png"'; >%
+%< var color_vec = fields.color.value == "yellow" ? fields.yellow_color.value : fields.blue_color.value; >%
+  Transform {
+    translation IS translation
+    rotation IS rotation
+    children [
+      Transform {
+        translation 0.0 0.0 0.01
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor %<= color_vec.r >% %<= color_vec.g >% %<= color_vec.b >%
+              roughness 1
+              metalness 0
+            }
+            geometry Box {
+              size 0.1 0.1 0.02
+            }
+          }
+          Transform {
+            translation 0 0 0.0101
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 1 1 1
+                  roughness 1
+                  metalness 0
+                }
+                geometry Plane {
+                  size 0.09 0.09
+                }
+              }
+            ]
+          }
+          Transform {
+            translation 0 0 0.0102
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColorMap ImageTexture {
+                    url [ %<= url >%]
+                  }
+                  roughness 1
+                  metalness 0
+                }
+                geometry Plane {
+                  size 0.07 0.07
+                }
+              }
+            ]
+          }
+        ]
+      }
+
+
+    ]
+  }
+}

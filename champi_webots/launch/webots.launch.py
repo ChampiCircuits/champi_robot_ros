@@ -13,7 +13,6 @@ from webots_ros2_driver.webots_controller import WebotsController
 
 
 def generate_launch_description():
-    package_dir = get_package_share_directory('champi_webots')
     mode = "realtime"
 
     # TODO It would be cleaner to copy files in share/ ...
@@ -35,8 +34,8 @@ def generate_launch_description():
             )
         )
 
-    # Contrôleur Webots ROS2 pour publier les données caméra
-    robot_description_path = os.path.join(package_dir, 'urdf', 'watchtower.urdf')
+    # Webots ROS2 controller to publish camera data
+    robot_description_path = os.path.expanduser("~/champi_ws/src/champi_robot_ros/champi_webots/urdf/watchtower.urdf")
     watchtower_controller = WebotsController(
         robot_name='watchtower',
         parameters=[

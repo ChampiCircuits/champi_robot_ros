@@ -2,13 +2,16 @@
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
-EXTERNPROTO "../protos/table/Eurobot2026.proto"
+EXTERNPROTO "/home/etienne/champi_ws/src/champi_robot_ros/champi_webots/protos/table/Eurobot2026.proto"
+EXTERNPROTO "/home/etienne/champi_ws/src/champi_robot_ros/champi_webots/protos/DummyRobot.proto"
+EXTERNPROTO "/home/etienne/champi_ws/src/champi_robot_ros/champi_webots/protos/VRACbot.proto"
+EXTERNPROTO "/home/etienne/champi_ws/src/champi_robot_ros/champi_webots/protos/HolonomicRobot.proto"
 
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.0833156583531161 0.16472359183520685 0.9828146515829397 1.1636170971554065
-  position -1.0545746793861883 -3.2498656129109387 1.0813334330101307
+  orientation -0.36932103402394406 0.5322043428042661 0.7618139611005854 1.5335444794254942
+  position -1.0087394332375714 -3.25066494537624 4.346978303745753
 }
 TexturedBackground {
 }
@@ -23,6 +26,7 @@ Robot {
       translation 0 0 0.91
       rotation 0.3574058934544597 0.35740389345505597 -0.8628577427752423 1.71777
       name "watchtower_camera"
+      fieldOfView 1
       width 640
       height 480
     }
@@ -47,4 +51,21 @@ Robot {
   ]
   name "champi_robot"
   controller "<none>"
+}
+DummyRobot {
+  translation -0.26 -0.73 0
+  rotation 0 0 1 1.5707953071795862
+  color "yellow"
+  aruco_id 6
+}
+DEF OPPONENT VRACbot {
+  translation -1.24 -0.14 0
+  controller "GamepadRobot"
+}
+HolonomicRobot {
+  translation 1.25 -0.13 0
+  rotation 0 0 1 -3.1415853071795863
+  color "yellow"
+  aruco_id 7
+  controller "AutonomousHolonomic"
 }
