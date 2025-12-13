@@ -2,10 +2,10 @@
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
-EXTERNPROTO "/home/etienne/champi_ws/src/champi_robot_ros/champi_webots/protos/table/Eurobot2026.proto"
-EXTERNPROTO "/home/etienne/champi_ws/src/champi_robot_ros/champi_webots/protos/DummyRobot.proto"
-EXTERNPROTO "/home/etienne/champi_ws/src/champi_robot_ros/champi_webots/protos/VRACbot.proto"
-EXTERNPROTO "/home/etienne/champi_ws/src/champi_robot_ros/champi_webots/protos/HolonomicRobot.proto"
+EXTERNPROTO "../protos/table/Eurobot2026.proto"
+EXTERNPROTO "../protos/DummyRobot.proto"
+EXTERNPROTO "../protos/VRACbot.proto"
+EXTERNPROTO "../protos/HolonomicRobot.proto"
 
 WorldInfo {
 }
