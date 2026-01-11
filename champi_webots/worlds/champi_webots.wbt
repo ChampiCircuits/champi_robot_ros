@@ -25,9 +25,10 @@ Robot {
   children [
     Camera {
       translation 0 0 0.91
-      rotation 0.3574058934544597 0.35740389345505597 -0.8628577427752423 1.71777
+      rotation 0.333672 0.333669 -0.881662 1.69641
+      rotationStep  0.1
       name "watchtower_camera"
-      fieldOfView 0.85
+      fieldOfView 1.22173
       width 1280
       height 720
     }
