@@ -20,15 +20,16 @@ TexturedBackgroundLight {
 Eurobot2026 {
 }
 Robot {
-  translation 0 1.12 0.08
+  translation -0.22 1.12 0.08
+  rotation 0 0 1 -0.523595
   children [
     Camera {
       translation 0 0 0.91
       rotation 0.3574058934544597 0.35740389345505597 -0.8628577427752423 1.71777
       name "watchtower_camera"
-      fieldOfView 1
-      width 640
-      height 480
+      fieldOfView 0.85
+      width 1280
+      height 720
     }
   ]
   name "watchtower"
