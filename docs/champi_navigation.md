@@ -1,3 +1,8 @@
+Wheel convention along with robot axis
+
+![](/docs/ressources/wheel_convention.drawio.png).
+
+
 ```mermaid
 ---
 title: PlannerNode & PathPlanner interactions

@@ -8,8 +8,13 @@
 #define PI 3.14159265359
 #define SQRT_2_OVER_2 0.70710678118
 #define SQRT_3_OVER_2 0.86602540378
-
 #define SQRT_3_OVER_3 0.5773502692
+
+// Hardcoded wheel configuration
+// wheel order: 0=left, 1=right, 2=back
+
+const double WHEEL_ANGLES[3] = {2.051466667*2, 2.051466667, 0.0}; // angle between each wheel in radians
+const double WHEEL_DISTANCES[3] = {0.197048, 0.197048, 0.1405}; // distance wheel to robot center in m
 
 Vector3 sub(Vector3 vel1, Vector3 vel2) {
   return {vel1.x - vel2.x, vel1.y - vel2.y, vel1.theta - vel2.theta};
@@ -58,12 +63,21 @@ HoloDrive::HoloDrive() = default;
 
 void HoloDrive::set_cmd_vel(Vector3 cmd) { this->cmd_vel = cmd; }
 
-void HoloDrive::compute_wheels_speeds(Vector3 cmd_vel, double *ret_speeds_rps) const {
-  double wheel0_mps = -0.5 * cmd_vel.y + SQRT_3_OVER_2 * cmd_vel.x -
-                      config_.base_radius * cmd_vel.theta;
-  double wheel1_mps = -0.5 * cmd_vel.y - SQRT_3_OVER_2 * cmd_vel.x -
-                      config_.base_radius * cmd_vel.theta;
-  double wheel2_mps = cmd_vel.y - this->config_.base_radius * cmd_vel.theta;
+void HoloDrive::compute_wheels_speeds(Vector3 cmd_vel, double *ret_speeds_rps) const 
+{
+  // wheel order: 0=left, 1=right, 2=back
+
+  double cos0 = cos(WHEEL_ANGLES[0]);
+  double sin0 = sin(WHEEL_ANGLES[0]);
+  double cos1 = cos(WHEEL_ANGLES[1]);
+  double sin1 = sin(WHEEL_ANGLES[1]);
+  double cos2 = cos(WHEEL_ANGLES[2]);
+  double sin2 = sin(WHEEL_ANGLES[2]);
+
+  double wheel0_mps = sin0 * cmd_vel.x + cos0 * cmd_vel.y - WHEEL_DISTANCES[0] * cmd_vel.theta;
+  double wheel1_mps = sin1 * cmd_vel.x + cos1 * cmd_vel.y - WHEEL_DISTANCES[1] * cmd_vel.theta;
+  double wheel2_mps = sin2 * cmd_vel.x + cos2 * cmd_vel.y - WHEEL_DISTANCES[2] * cmd_vel.theta;
+
   // wheel mps -> wheel rps
   double wheel_circumference = this->config_.wheel_radius * 2.0 * PI;
   ret_speeds_rps[0] = wheel0_mps / wheel_circumference;
@@ -147,16 +161,49 @@ void HoloDrive::spin_once_motors_control() {
 Vector3 HoloDrive::get_current_vel() { return this->current_vel; }
 
 void HoloDrive::update_current_vel(const double *speeds_rps) {
+  // Inverse kinematics for general wheel positions:
+  // A * [vx; vy; omega] = b  where
+  // A(i,:) = [cos(angle_i), sin(angle_i), -dist_i]
   double wheel_circumference = this->config_.wheel_radius * 2.0 * PI;
-  double wheel0_mps = speeds_rps[0] * wheel_circumference;
-  double wheel1_mps = speeds_rps[1] * wheel_circumference;
-  double wheel2_mps = speeds_rps[2] * wheel_circumference;
+  double b0 = speeds_rps[0] * wheel_circumference;
+  double b1 = speeds_rps[1] * wheel_circumference;
+  double b2 = speeds_rps[2] * wheel_circumference;
 
-  this->current_vel.x = SQRT_3_OVER_3 * (wheel0_mps - wheel1_mps);
-  this->current_vel.y =
-      -(1. / 3.) * (wheel0_mps + wheel1_mps) + (2. / 3.) * wheel2_mps;
-  this->current_vel.theta = -(1. / (3. * config_.base_radius)) *
-                            (wheel0_mps + wheel1_mps + wheel2_mps);
+  double a00 = sin(WHEEL_ANGLES[0]);
+  double a01 = cos(WHEEL_ANGLES[0]);
+  double a02 = -WHEEL_DISTANCES[0];
+
+  double a10 = sin(WHEEL_ANGLES[1]);
+  double a11 = cos(WHEEL_ANGLES[1]);
+  double a12 = -WHEEL_DISTANCES[1];
+
+  double a20 = sin(WHEEL_ANGLES[2]);
+  double a21 = cos(WHEEL_ANGLES[2]);
+  double a22 = -WHEEL_DISTANCES[2];
+
+  // Determinant of A
+  double detA = a00 * (a11 * a22 - a12 * a21) - a01 * (a10 * a22 - a12 * a20) +
+                a02 * (a10 * a21 - a11 * a20);
+
+  if (fabs(detA) < 1e-9) {
+    // Degenerate configuration; avoid division by zero
+    this->current_vel.x = 0;
+    this->current_vel.y = 0;
+    this->current_vel.theta = 0;
+    return;
+  }
+
+  // Cramer's rule
+  double detX = b0 * (a11 * a22 - a12 * a21) - a01 * (b1 * a22 - a12 * b2) +
+                a02 * (b1 * a21 - a11 * b2);
+  double detY = a00 * (b1 * a22 - a12 * b2) - b0 * (a10 * a22 - a12 * a20) +
+                a02 * (a10 * b2 - b1 * a20);
+  double detW = a00 * (a11 * b2 - b1 * a21) - a01 * (a10 * b2 - b1 * a20) +
+                b0 * (a10 * a21 - a11 * a20);
+
+  this->current_vel.x = detX / detA;
+  this->current_vel.y = detY / detA;
+  this->current_vel.theta = detW / detA;
 }
 
 void HoloDrive::set_config(HoloDriveConfig config) {

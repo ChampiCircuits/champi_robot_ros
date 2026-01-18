@@ -35,7 +35,6 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     stm_config_.holo_drive_config.max_decel_angular = this->declare_parameter<double>("stm_config.holo_drive_config.max_deceleration_angular");
     stm_config_.otos_config.linear_scalar = this->declare_parameter<double>("stm_config.otos_config.linear_scalar");
     stm_config_.otos_config.angular_scalar = this->declare_parameter<double>("stm_config.otos_config.angular_scalar");
-
     stm_config_.cmd_vel_timeout = this->declare_parameter<double>("stm_config.cmd_vel_timeout");
 
     cov_pose_odom_otos_ = this->declare_parameter<std::vector<double>>("covariances.pose_otos");
@@ -180,6 +179,11 @@ void HardwareInterfaceNode::loop() {
         mod_reg::cmd->cmd_vel.x = latest_twist_.linear.x;
         mod_reg::cmd->cmd_vel.y = latest_twist_.linear.y;
         mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
+
+        // RCLCPP_INFO(this->get_logger(), "New cmd_vel to send: x: %.2f, y: %.2f, theta: %.2f",
+        //              mod_reg::cmd->cmd_vel.x,
+        //              mod_reg::cmd->cmd_vel.y,
+        //              mod_reg::cmd->cmd_vel.theta);
 
         write(mod_reg::reg_cmd);
     }

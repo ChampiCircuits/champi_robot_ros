@@ -29,12 +29,17 @@ source ~/champi_ws/src/champi_robot_ros/setup/env/champi_env_dev_pc.sh # on your
 # or
 source ~/champi_ws/src/champi_robot_ros/setup/env/champi_env_robot.sh # on the robot 
 ```
-4) Then source the workspace. If you're using zsh, replace with `setup.zsh`
+4) Then add also this line to your `.bashrc` or `.zshrc`. If you're using zsh, replace with `setup.zsh`
 ```shell
 source ~/champi_ws/install/setup.bash
 ```
 
-5) Optional. Link the default rviz config file to the one we customized so that it opens by default:
+5) Make sure to source the file `.bashrc` or `.zshrc`
+```shell
+source ~/.bashrc
+```
+
+6) Optional. Link the default rviz config file to the one we customized so that it opens by default:
 ```shell
 ln -s ~/champi_ws/src/champi_robot_ros/champi_bringup/config/rviz/config.rviz ~/.rviz2/default.rviz
 ```
@@ -73,7 +78,7 @@ ssh champi@10.0.0.1  # With direct ethernet
 
 4. If you have trooble with nodes that you can't kill. Use the script `kill_nodes` on the robot. This script has hardcoded nodes names, so if you created a new one add it in it. Otherwise you can simply open htop on the robot via ssh and find all nodes and kill them there.
 
-5. If you want to program the STM32 remotly via the connection to the robot you can ! This is a super useful script that cross-compile the STM32 firmware on your computer, sends the compiled binary to the robot mini-pc and then flash it to the STM board via USB.
+5. If you want to program the STM32 remotly via the connection to the robot you can ! This is a super useful script that cross-compile the STM32 firmware on your computer, sends the compiled binary to the robot mini-pc and then flash it to the STM board via USB. (STM32 CLI must be installed first)
 ```shell
 ./scripts/cmds/rsync_main_STM.bash
 ```

@@ -267,32 +267,32 @@ void HandleRequest(ActuatorCommand cmd) {
 void ActuatorsTask(void *argument) {
     LOG_INFO("act", "Begining actuators init...");
     osDelay(3000);
-    SCServosApp_Init(); // Reminder: blocking until the servos are found
+    //SCServosApp_Init(); // Reminder: blocking until the servos are found
     osDelay(1000);
-    InitEverything();
+    //InitEverything();
 
     LOG_INFO("act", "Starting loop.");
 
     while (true)
     {
-        for (int i=0; i < ACTUATORS_COUNT; i++)
-        {
-            xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-            ActuatorState actuator_request = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
-            xSemaphoreGive(ModbusH.ModBusSphrHandle);
+        // for (int i=0; i < ACTUATORS_COUNT; i++)
+        // {
+        //     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+        //     ActuatorState actuator_request = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
+        //     xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
-            if (actuator_request == ActuatorState::REQUESTED)
-            {
-                ActuatorCommand actuator = static_cast<ActuatorCommand>(i);
-                LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(actuator_request).c_str());
-                HandleRequest(actuator);
-                xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-                mod_reg::actuators->requests[i] = static_cast<uint8_t>(ActuatorState::DONE);
-                xSemaphoreGive(ModbusH.ModBusSphrHandle);
-                LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(static_cast<ActuatorState>(mod_reg::actuators->requests[i])).c_str());
-            }
-        }
-        // LOG_INFO("act", "Actuator requested is %s to state %s", to_string(static_cast<ActuatorCommand>(2)).c_str(), to_string(mod_reg::requests->actuators_state[2]).c_str());
+        //     if (actuator_request == ActuatorState::REQUESTED)
+        //     {
+        //         ActuatorCommand actuator = static_cast<ActuatorCommand>(i);
+        //         LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(actuator_request).c_str());
+        //         HandleRequest(actuator);
+        //         xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+        //         mod_reg::actuators->requests[i] = static_cast<uint8_t>(ActuatorState::DONE);
+        //         xSemaphoreGive(ModbusH.ModBusSphrHandle);
+        //         LOG_INFO("act", "Actuator requested is %s to state %s", to_string(actuator).c_str(), to_string(static_cast<ActuatorState>(mod_reg::actuators->requests[i])).c_str());
+        //     }
+        // }
+        // // LOG_INFO("act", "Actuator requested is %s to state %s", to_string(static_cast<ActuatorCommand>(2)).c_str(), to_string(mod_reg::requests->actuators_state[2]).c_str());
 
         osDelay(100);
     }

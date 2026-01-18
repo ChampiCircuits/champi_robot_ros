@@ -4,6 +4,9 @@ set -e
 
 cd ~/champi_ws
 
+# install graphviz for visualization (needed before installing pygraphviz python package)
+sudo apt install -y graphviz graphviz-dev pkg-config
+
 # Install python dependencies
 echo "Installing python dependencies..."
 sudo apt install -y python3-pip

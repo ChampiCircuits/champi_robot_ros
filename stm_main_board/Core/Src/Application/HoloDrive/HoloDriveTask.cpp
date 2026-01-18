@@ -77,6 +77,8 @@ void HoloDriveTask(void *argument) {
       Vector3 cmd = mod_reg::cmd->cmd_vel;
       holoDrive.set_config(mod_reg::config->holo_drive_config); // Update config, Not ideal to do it all the time but it works :)
       holoDrive.set_cmd_vel(cmd);
+      // LOG_INFO("holo", "received cmd vel : x: %.2f, y: %.2f, theta: %.2f", cmd.x, cmd.y, cmd.theta);
+
       mod_reg::cmd->is_read = true;
       xSemaphoreGive(ModbusH.ModBusSphrHandle);
       t_last_read = osKernelGetTickCount();
