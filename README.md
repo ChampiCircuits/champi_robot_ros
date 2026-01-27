@@ -130,3 +130,8 @@ sudo systemctl restart isc-dhcp-server
 ### setup.py deprecation warning
 
 No solution currently for the warning : https://github.com/ament/ament_cmake/issues/382
+
+
+### install stm32cubeide
+- version 1.18
+- make sure to login to your st account on the IDE

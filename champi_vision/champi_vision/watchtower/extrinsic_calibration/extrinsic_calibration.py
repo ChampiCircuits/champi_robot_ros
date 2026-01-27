@@ -227,6 +227,16 @@ def estimate_square_poses(
             useExtrinsicGuess=False,
             flags=cv2.SOLVEPNP_ITERATIVE
         )
+
+        # 180-degree rotation correction on z-axis
+        # R, _ = cv2.Rodrigues(rvec)
+        # R_z180 = np.array([
+        #     [-1, 0, 0],
+        #     [0, -1, 0],
+        #     [0, 0, 1]
+        # ])
+        # R_corrected = R_z180 @ R
+        # rvec, _ = cv2.Rodrigues(R_corrected)
         
         if success:
             poses.append({
