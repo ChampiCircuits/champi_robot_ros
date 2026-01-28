@@ -10,6 +10,7 @@ from sensor_msgs.msg import Image, CameraInfo
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
+from aruco_localizer import ArucoDetector
 
 
 class WatchtowerImageProcessor(Node):
@@ -52,12 +53,14 @@ class WatchtowerImageProcessor(Node):
             self.camera_info_callback,
             10
         )
-        
+        self.arucos_poses_pub = self.create_publisher(ArucoPoses, '/watchtower/aruco_poses', 10)
+
         # Timer for periodic processing
         self.processing_timer = self.create_timer(
             1.0 / self.processing_rate,
             self.process_latest_image
         )
+        self.detector = ArucoDetector()
         
         # Counters for statistics
         self.frame_count = 0
@@ -138,52 +141,17 @@ class WatchtowerImageProcessor(Node):
         
         # Convert to HSV for better color detection
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        
-        # Example: colored zone detection 
-        # Range to detect blue 
-        lower_blue = np.array([100, 100, 70])
-        upper_blue = np.array([130, 255, 255])
-        
-        # Create masks
-        mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
-        
-        # Clean up masks
-        kernel = np.ones((5,5), np.uint8)
-        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, kernel)
-        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, kernel)
-        
-        # Contour detection
-        contours_blue, _ = cv2.findContours(mask_blue, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
+        poses, ids = self.detector.detect_arucos()
+        message = ArucoPoses()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.header.frame_id = "camera_frame"
+        for pose, marker_id in zip(poses, ids):
+            marker = ArucoPose()
+            marker.id = int(marker_id)
+            marker.pose = pose
+            message.markers.append(marker)
 
-        #####################################################################################################################
-        #####################################################################################################################
-        #####################################################################################################################
-
-        # Create result image for visualization only
-        result_image = image.copy()
-
-        for contour in contours_blue:
-            if cv2.contourArea(contour) > 100:  # Filter by minimum size
-                # Bounding rectangle
-                x, y, w, h = cv2.boundingRect(contour)
-                cv2.rectangle(result_image, (x, y), (x+w, y+h), (255, 0, 0), 2)
-                
-                # Center of mass
-                M = cv2.moments(contour)
-                if M["m00"] != 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
-                    cv2.circle(result_image, (cx, cy), 5, (255, 0, 0), -1)
-                    cv2.putText(result_image, 'blue!', (x, y-10), 
-                              cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
         
-        # Add debug information
-        cv2.putText(result_image, f'Blue objects: {len([c for c in contours_blue if cv2.contourArea(c) > 500])}', 
-                   (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
-        
-        
-        return result_image
 
     def display_images(self, original, processed):
         """

@@ -16,6 +16,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/STMState.msg"
   "msg/GameElement.msg"
   "msg/TableObservation.msg"
+  "msg/ArucoPose.msg"
+  "msg/ArucoPoses.msg"
   "msg/NutBoxesDetection.msg"
   "action/Navigate.action"
   "srv/SetPose.srv"
