@@ -19,6 +19,8 @@ is_reachable() {
     return $?
 }
 
+set -e
+
 echo "🍄 Launching script to compile and send STM firmware to the robot (stm32h7x) through the mini pc..."
 
 
