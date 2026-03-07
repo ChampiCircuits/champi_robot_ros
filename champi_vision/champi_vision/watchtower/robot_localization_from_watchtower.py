@@ -57,6 +57,19 @@ class WatchtowerRobotLocalizer:
             tf_trans.quaternion_matrix(camera_quat)
         )
         
+        # Store camera pose as dictionary for easy access
+        self.camera_pose = {
+            'position': np.array(camera_pos),
+            'quaternion': np.array(camera_quat)
+        }
+        
+        print(f"[CALIBRATION] Camera position in world: {camera_pos}")
+        print(f"[CALIBRATION] Camera quaternion (xyzw): {camera_quat}")
+        
+        from scipy.spatial.transform import Rotation
+        cam_euler = Rotation.from_quat(camera_quat).as_euler('xyz', degrees=True)
+        print(f"[CALIBRATION] Camera Euler XYZ (degrees): roll={cam_euler[0]:.2f}°, pitch={cam_euler[1]:.2f}°, yaw={cam_euler[2]:.2f}°")
+        
     def set_camera_pose_from_transforms(self, support_pos: np.ndarray, support_quat: np.ndarray,
                                        camera_in_support_pos: np.ndarray, 
                                        camera_in_support_quat: np.ndarray):
@@ -131,15 +144,47 @@ class WatchtowerRobotLocalizer:
         # Convert rotation vector to rotation matrix
         R_marker_camera_opencv, _ = cv2.Rodrigues(rvec)
         t_marker_camera_opencv = tvec.flatten()
-        
+        print(f"Marker pose in camera frame (OpenCV): R=\n{R_marker_camera_opencv}, t={t_marker_camera_opencv}")
+
         # Build transformation matrix in OpenCV frame
         T_camera_opencv_marker = np.eye(4)
         T_camera_opencv_marker[:3, :3] = R_marker_camera_opencv
         T_camera_opencv_marker[:3, 3] = t_marker_camera_opencv
         
+        print(f"T_camera_opencv_marker:\n{T_camera_opencv_marker}")
+        print(f"T_webots_opencv:\n{self.T_webots_opencv}")
+        
         # Transform to Webots frame then to world frame
-        T_camera_webots_marker = self.T_webots_opencv @ T_camera_opencv_marker
+        # T_webots_opencv transforms FROM OpenCV TO Webots, so we use its inverse
+        T_camera_opencv_to_webots = np.linalg.inv(self.T_webots_opencv)
+        print(f"T_camera_opencv_to_webots (inv):\n{T_camera_opencv_to_webots}")
+        
+        T_camera_webots_marker = T_camera_opencv_to_webots @ T_camera_opencv_marker
+        print(f"T_camera_webots_marker:\n{T_camera_webots_marker}")
+        print(f"T_world_camera:\n{self.T_world_camera}")
+        
         T_world_marker = self.T_world_camera @ T_camera_webots_marker
+        print(f"T_world_marker:\n{T_world_marker}")
+        
+        # Log camera/world rotation as quaternion (xyzw and wxyz)
+        cam_quat_xyzw = tf_trans.quaternion_from_matrix(self.T_world_camera)
+        cam_quat_wxyz = np.array([cam_quat_xyzw[3], cam_quat_xyzw[0], cam_quat_xyzw[1], cam_quat_xyzw[2]])
+        print(f"Camera pose quat xyzw: {cam_quat_xyzw}")
+        print(f"Camera pose quat wxyz: {cam_quat_wxyz}")
+        
+        # Log marker/world rotation as quaternion (xyzw and wxyz)
+        marker_quat_xyzw = tf_trans.quaternion_from_matrix(T_world_marker)
+        marker_quat_wxyz = np.array([marker_quat_xyzw[3], marker_quat_xyzw[0], marker_quat_xyzw[1], marker_quat_xyzw[2]])
+        print(f"Marker pose quat xyzw: {marker_quat_xyzw}")
+        print(f"Marker pose quat wxyz: {marker_quat_wxyz}")
+        
+        # Convert to Euler angles (roll, pitch, yaw)
+        from scipy.spatial.transform import Rotation
+        marker_R = T_world_marker[:3, :3]
+        marker_euler = Rotation.from_matrix(marker_R).as_euler('xyz', degrees=True)
+        print(f"Marker pose Euler XYZ (degrees): roll={marker_euler[0]:.2f}°, pitch={marker_euler[1]:.2f}°, yaw={marker_euler[2]:.2f}°")
+        # exit(0)
+        # quat in world (w, x, y, z): ( 0.6006984361430138, 0.21927176258168785, 0.26362575691152335, -0.7222068562693683)
         
         # Extract position and orientation
         position = tf_trans.translation_from_matrix(T_world_marker)
@@ -147,8 +192,7 @@ class WatchtowerRobotLocalizer:
         
         return position, quaternion
         
-    def localize_robots(self, image: np.ndarray, 
-                       id_filter: Optional[Tuple[int, int]] = (0, 10)) -> Dict[int, Dict]:
+    def localize_robots(self, image: np.ndarray, id_filter: Optional[Tuple[int, int]] = (0, 10)) -> Dict[int, Dict]:
         """
         Detect and localize all robots in the image.
         

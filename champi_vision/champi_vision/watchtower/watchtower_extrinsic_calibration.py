@@ -2,13 +2,9 @@ import cv2
 import numpy as np
 import transforms3d.quaternions as quat
 from typing import Tuple, Optional
+import time 
 
-# tf_transformations is optional (ROS dependency)
-try:
-    import tf_transformations as tf_trans
-    HAS_TF_TRANSFORMATIONS = True
-except ImportError:
-    HAS_TF_TRANSFORMATIONS = False
+import tf_transformations as tf_trans
 
 
 class WatchtowerExtrinsicCalibrator:
@@ -88,8 +84,7 @@ class WatchtowerExtrinsicCalibrator:
         
         return inlier_src, inlier_dst, len(inlier_src)
     
-    def convert_pixels_to_world_coords(self, pixel_points: np.ndarray, 
-                                      img_width: int, img_height: int) -> np.ndarray:
+    def convert_pixels_to_world_coords(self, pixel_points: np.ndarray, img_width: int, img_height: int) -> np.ndarray:
         """
         Convert pixel coordinates from table image to real-world 3D coordinates.
         
@@ -101,11 +96,11 @@ class WatchtowerExtrinsicCalibrator:
         Returns:
             Nx3 array of world coordinates (x, y, z=0)
         """
-        # Convert pixels to meters (origin at center)
-        # Invert X to compensate for observed inversion
-        x_m = -(pixel_points[:, 0] - img_width / 2) * (self.table_width / img_width)
-        y_m = (pixel_points[:, 1] - img_height / 2) * (self.table_height / img_height)
-        
+        # Convert pixels to meters        
+        # Put origin at bottom-left corner. X points right, Y points up
+        x_m = (img_width - pixel_points[:, 0]) * (self.table_width / img_width)
+        y_m = (pixel_points[:, 1]) * (self.table_height / img_height)
+
         # Z coordinate is 0 (table plane)
         object_points = np.column_stack((x_m, y_m, np.zeros_like(x_m))).astype(np.float32)
         
@@ -152,7 +147,8 @@ class WatchtowerExtrinsicCalibrator:
         # Transform rotation to Webots convention
         # R_opencv is the rotation from world to camera in OpenCV frame
         # We want camera orientation in world frame with Webots axes
-        R_webots = R_opencv.T @ self.R_opencv_to_webots
+        # Correct composition: transform axes first, then invert rotation
+        R_webots = self.R_opencv_to_webots @ R_opencv.T
         
         # Convert to quaternion (w, x, y, z) then reorder to (x, y, z, w)
         quat_wxyz = quat.mat2quat(R_webots)
@@ -246,17 +242,9 @@ def compute_calibration_error(estimated_pos: np.ndarray, true_pos: np.ndarray,
     position_error = np.linalg.norm(estimated_pos - true_pos)
     
     # Orientation error (angle between quaternions)
-    if HAS_TF_TRANSFORMATIONS:
-        q_true_inv = tf_trans.quaternion_inverse(true_quat)
-        q_error = tf_trans.quaternion_multiply(q_true_inv, estimated_quat)
-        angle_error = 2 * np.arccos(np.clip(abs(q_error[3]), 0, 1))
-    else:
-        # Use transforms3d - convert (x,y,z,w) to (w,x,y,z)
-        q_est_wxyz = np.array([estimated_quat[3], estimated_quat[0], estimated_quat[1], estimated_quat[2]])
-        q_true_wxyz = np.array([true_quat[3], true_quat[0], true_quat[1], true_quat[2]])
-        q_true_inv_wxyz = quat.qinverse(q_true_wxyz)
-        q_error_wxyz = quat.qmult(q_true_inv_wxyz, q_est_wxyz)
-        angle_error = 2 * np.arccos(np.clip(abs(q_error_wxyz[0]), 0, 1))
+    q_true_inv = tf_trans.quaternion_inverse(true_quat)
+    q_error = tf_trans.quaternion_multiply(q_true_inv, estimated_quat)
+    angle_error = 2 * np.arccos(np.clip(abs(q_error[3]), 0, 1))
     
     angle_error_deg = np.degrees(angle_error)
     

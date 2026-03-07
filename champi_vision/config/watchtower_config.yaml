@@ -1,0 +1,30 @@
+# Example configuration for watchtower node
+# Copy and modify this file for your specific setup
+
+watchtower_node:
+  ros__parameters:
+    # Camera calibration file (YAML format with camera_matrix and distortion_coefficients)
+    camera_info_file: "/path/to/camera_calibration.yaml"
+    
+    # Table reference image (top-down view of playing field)
+    table_reference_image: "/path/to/table_reference.png"
+    
+    # ArUco marker configuration
+    marker_length: 0.07  # Size of markers in meters (7cm)
+    marker_id_min: 0     # Minimum marker ID to detect
+    marker_id_max: 10    # Maximum marker ID to detect
+    
+    # Publishing configuration
+    publish_rate: 30.0   # Hz - rate for publishing robot poses
+    
+    # Topic names
+    image_topic: "/watchtower/image_raw"
+    camera_info_topic: "/watchtower/camera_info"
+    
+    # Simulation mode (set to true if using Webots)
+    is_simu_with_webots: false
+    
+    # Calibration parameters (advanced)
+    # These are used by the WatchtowerExtrinsicCalibrator
+    # sift_ratio_threshold: 0.75
+    # ransac_threshold: 5.0
