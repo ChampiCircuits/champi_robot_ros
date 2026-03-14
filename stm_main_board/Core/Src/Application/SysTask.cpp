@@ -2,7 +2,7 @@
 
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Modbus/ModbusTask.h"
-#include "Application/ActuatorsTask.h"
+#include "Application/Actuators/ActuatorsTask.h"
 #include "Application/SCServosApp.h"
 #include "Application/OtosTask.h"
 #include "Config/Config.h"

@@ -1,9 +1,10 @@
-#include "Application/ActuatorsTask.h"
+#include "Application/Actuators/ActuatorsTask.h"
 
 #include "usart.h"
 
 #include "Application/Modbus/DataStructures.h"
 #include "Application/Modbus/ModbusRegister.h"
+#include "Application/Actuators/LiftAndClamp.h"
 #include "Application/PosSteppersTask.h"
 #include "Application/SCServosApp.h"
 #include "Application/Modbus/ModbusTask.h"

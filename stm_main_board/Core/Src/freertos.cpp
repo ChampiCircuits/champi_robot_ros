@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "Application/ActuatorsTask.h"
+#include "Application/Actuators/ActuatorsTask.h"
 #include "Application/HoloDrive/HoloDriveTask.h"
 #include "Application/Leds/LedTask.h"
 #include "Application/Modbus/ModbusTask.h"
