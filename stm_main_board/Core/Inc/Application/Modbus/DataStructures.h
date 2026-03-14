@@ -59,7 +59,7 @@ struct Actuators
 {
   // list of actuators commands.
   double dummy; // to not be multiple of 32
-  uint8_t requests[ACTUATORS_COUNT];
+  uint8_t requests[static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT)];
 };
 
 }

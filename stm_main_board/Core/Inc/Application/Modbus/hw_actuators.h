@@ -4,24 +4,25 @@
 #include <string>
 
 
-#define ACTUATORS_COUNT 13
 /*
   Enum for actuator commands.
 */
-enum class ActuatorCommand {
-  PUT_BANNER = 0,
-  TAKE_LOWER_PLANK = 1,
-  TAKE_UPPER_PLANK = 2,
-  PUT_LOWER_PLANK_LAYER_1 = 3,
-  PUT_UPPER_PLANK_LAYER_2 = 4,
-  TAKE_CANS_RIGHT = 5,
-  TAKE_CANS_LEFT = 6,
-  PUT_CANS_RIGHT_LAYER_2 = 7,
-  PUT_CANS_LEFT_LAYER_1 = 8,
-  RESET_ACTUATORS = 9,
-  STOP_ALL_MOTORS = 10,
-  ENABLE_ALL_MOTORS = 11,
-  GET_READY = 12,
+enum class ActuatorCommand : int
+{
+  RESET_ACTUATORS,
+  STOP_ALL_MOTORS,
+  ENABLE_ALL_MOTORS,
+  GET_READY,
+
+  THERMOMETER_LOWER_SERVO,
+  THERMOMETER_RAISE_SERVO,
+
+  TAKE_2_BOXES,
+  BRING_2_BOXES_ON_TOP,
+  PUT_2_LAST_BOXES_ON_THE_GROUND,
+
+
+  ACTUATORS_COUNT // only to count the number of available commands
 };
 
 /*
@@ -33,26 +34,10 @@ enum class ActuatorCommand {
 */
 enum class ActuatorState { NOTHING = 0, REQUESTED = 1, DONE = 2 };
 
-inline std::string to_string(ActuatorCommand command) {
-  switch (command) {
-  case ActuatorCommand::PUT_BANNER:
-    return "PUT_BANNER";
-  case ActuatorCommand::TAKE_LOWER_PLANK:
-    return "TAKE_LOWER_PLANK";
-  case ActuatorCommand::TAKE_UPPER_PLANK:
-    return "TAKE_UPPER_PLANK";
-  case ActuatorCommand::PUT_LOWER_PLANK_LAYER_1:
-    return "PUT_LOWER_PLANK_LAYER_1";
-  case ActuatorCommand::PUT_UPPER_PLANK_LAYER_2:
-    return "PUT_UPPER_PLANK_LAYER_2";
-  case ActuatorCommand::TAKE_CANS_RIGHT:
-    return "TAKE_CANS_RIGHT";
-  case ActuatorCommand::TAKE_CANS_LEFT:
-    return "TAKE_CANS_LEFT";
-  case ActuatorCommand::PUT_CANS_RIGHT_LAYER_2:
-    return "PUT_CANS_RIGHT_LAYER_2";
-  case ActuatorCommand::PUT_CANS_LEFT_LAYER_1:
-    return "PUT_CANS_LEFT_LAYER_1";
+inline std::string to_string(const ActuatorCommand command)
+{
+  switch (command)
+  {
   case ActuatorCommand::RESET_ACTUATORS:
     return "RESET_ACTUATORS";
   case ActuatorCommand::STOP_ALL_MOTORS:
@@ -61,13 +46,26 @@ inline std::string to_string(ActuatorCommand command) {
     return "ENABLE_ALL_MOTORS";
   case ActuatorCommand::GET_READY:
     return "GET_READY";
+  case ActuatorCommand::THERMOMETER_LOWER_SERVO:
+    return "THERMOMETER_LOWER_SERVO";
+  case ActuatorCommand::THERMOMETER_RAISE_SERVO:
+    return "THERMOMETER_RAISE_SERVO";
+  case ActuatorCommand::TAKE_2_BOXES:
+    return "TAKE_2_BOXES";
+  case ActuatorCommand::BRING_2_BOXES_ON_TOP:
+    return "BRING_2_BOXES_ON_TOP";
+  case ActuatorCommand::PUT_2_LAST_BOXES_ON_THE_GROUND:
+    return "PUT_2_LAST_BOXES_ON_THE_GROUND";
+
   default:
     return "UNKNOWN_COMMAND";
   }
 }
 
-inline std::string to_string(ActuatorState state) {
-  switch (state) {
+inline std::string to_string(const ActuatorState state)
+{
+  switch (state)
+  {
     case ActuatorState::NOTHING:
       return "NOTHING";
     case ActuatorState::REQUESTED:

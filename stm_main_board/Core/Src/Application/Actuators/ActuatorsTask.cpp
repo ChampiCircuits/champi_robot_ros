@@ -49,11 +49,11 @@ void initEveryThing()
     LOG_INFO("act", "Actuators have been initialized !");
 }
 
-void HandleRequest(ActuatorCommand cmd)
+void HandleRequest(const ActuatorCommand cmd)
 {
     switch (cmd)
     {
-        // TODO
+
     case ActuatorCommand::RESET_ACTUATORS:
         initEveryThing();
         break;
@@ -62,6 +62,29 @@ void HandleRequest(ActuatorCommand cmd)
         break;
     case ActuatorCommand::ENABLE_ALL_MOTORS:
         stop_all_actuators_requested = false;
+        break;
+
+    case ActuatorCommand::GET_READY:
+        break; // TODO needed ?
+
+    case ActuatorCommand::THERMOMETER_LOWER_SERVO:
+        lowerThermometerServo();
+        break;
+    case ActuatorCommand::THERMOMETER_RAISE_SERVO:
+        raiseThermometerServo();
+        break;
+    case ActuatorCommand::TAKE_2_BOXES:
+        liftAndClamp.take2Boxes();
+        break;
+    case ActuatorCommand::BRING_2_BOXES_ON_TOP:
+        liftAndClamp.bring2BoxesToTop();
+        break;
+    case ActuatorCommand::PUT_2_LAST_BOXES_ON_THE_GROUND:
+        liftAndClamp.put2LastBoxesOnTheGround();
+        break;
+
+    default:
+        LOG_ERROR("act", "Unknown Actuator command %d in HandleRequest()", cmd);
         break;
     }
 }

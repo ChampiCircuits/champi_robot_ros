@@ -23,17 +23,28 @@ void LiftAndClamp::take2Boxes()
 
     // Always go 1.5 increment higher to avoid dragging boxes on the ground
     // AND avoid hitting other boxes on the floor
-    _liftGoToPosition(LIFT_BOTTOM_POSITION + BOX_HEIGHT * 1.5);
+    _liftGoToPosition(LIFT_BOTTOM_POSITION + BOX_HEIGHT * 1.5f);
 
     boxesCount += 2;
     LOG_INFO("liftClamp", "Took 2 boxes !");
+}
+
+void LiftAndClamp::bring2BoxesToTop()
+{
+    _closeClamp();
+
+    // !! Must have already 4 boxes
+    // The 2 boxes on top of the stack which are not clamped will then be taken
+    // Then we can go just underneath
+    const float heightOfStackInLift = BOX_HEIGHT * (boxesCount / 2.0f);
+    _liftGoToPosition(LIFT_TOP_POSITION - heightOfStackInLift + BOX_HEIGHT);
 }
 
 void LiftAndClamp::put2LastBoxesOnTheGround()
 {
     _liftGoToBottom();
     _releaseClamp();
-    _liftGoToPosition(LIFT_BOTTOM_POSITION + BOX_HEIGHT * 1.5);
+    _liftGoToPosition(LIFT_BOTTOM_POSITION + BOX_HEIGHT * 1.5f);
 }
 
 void LiftAndClamp::initialization()
