@@ -14,7 +14,7 @@ void BoxesSorter::grabAndSort2BoxesFromLift()
     if (teamColor == com_types::TeamColor::UNKNOWN)
     {
         LOG_ERROR("act", "Team color has not been set when trying to sort colors");
-        // return; // TODO put back
+        return; // TODO put back
     }
 
     // prepareTopPusher() must have been called beforehand because here, lift shall be up with 2 boxes ready
@@ -62,6 +62,11 @@ void BoxesSorter::push2BoxesOut()
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY);
 }
 
+void BoxesSorter::openExitRamp()
+{
+    devices::scs_servos::set_angle_async(EXIT_RAMP_SERVO_ID, EXIT_RAMP_SERVO_RELEASED, 300);
+}
+
 void BoxesSorter::initialize()
 {
     // Move top pusher out
@@ -70,6 +75,8 @@ void BoxesSorter::initialize()
     devices::scs_servos::homingByStall(BOTTOM_PUSHER_SERVO_ID, 300, 300);
     // Close first hole trapdoor
     _closeTrapdoor();
+    // Close exit ramp servo
+    devices::scs_servos::set_angle_async(EXIT_RAMP_SERVO_ID, EXIT_RAMP_SERVO_IDLE, 300);
 }
 
 void BoxesSorter::_closeTrapdoor()

@@ -11,7 +11,7 @@
  * - 2 holes : 1 for each color
  *      - straight hole
  *      - toboggan hole -> inverse color
- * -
+ * - 1 servo to release EXIT RAMP
  */
 
 // TODO the STM SHALL RECEIVE the color of the team
@@ -22,6 +22,7 @@ public:
     void prepareTopPusher();
     void grabAndSort2BoxesFromLift();
     void push2BoxesOut();
+    void openExitRamp();
     void initialize();
     void setTeamColor(com_types::TeamColor color) { teamColor = color; }
     void moveTopPusherToPosition(float target);
@@ -55,6 +56,12 @@ private:
     static constexpr int TRAPDOOR_SERVO_OPEN   = 0;     // ° [0,270] // TODO
     static constexpr int TRAPDOOR_SERVO_CLOSED = 90;    // ° [0,270] // TODO
 
+    // EXIT RAMP SERVO (NORMAL POSITION SERVO)
+    static constexpr int EXIT_RAMP_SERVO_ID = 5; // TODO
+    static constexpr int EXIT_RAMP_SERVO_IDLE   = 0;     // ° [0,270] // TODO
+    static constexpr int EXIT_RAMP_SERVO_RELEASED = 90;    // ° [0,270] // TODO
+
+    // COLOR SENSOR
     static constexpr bool IS_COLOR_SENSOR_UNDERNEATH_BOXES = true; // in this case we must inverse the color seen
     com_types::TeamColor teamColor = com_types::TeamColor::UNKNOWN;
     ColorSensorTCS34725 colorSensor;
