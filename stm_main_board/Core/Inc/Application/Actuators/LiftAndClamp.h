@@ -33,7 +33,7 @@ private:
     static constexpr float BOX_HEIGHT = 30.0; // mm --> lift height increment
 
     // END SWITCH
-    static const inline GPIO_TypeDef* END_SWITCH_GPIO_Port = D6_GPIO_Port; // TODO
+    GPIO_TypeDef* END_SWITCH_GPIO_Port = D6_GPIO_Port; // TODO
     static constexpr auto END_SWITCH_GPIO_Pin = D6_Pin;      // TODO
 
     // CLAMP SERVO

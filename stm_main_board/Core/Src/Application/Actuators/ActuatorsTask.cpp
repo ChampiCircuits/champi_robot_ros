@@ -54,45 +54,28 @@ void HandleRequest(const ActuatorCommand cmd)
 {
     switch (cmd)
     {
-
-    case ActuatorCommand::RESET_ACTUATORS:
-        initEveryThing();
-        break;
-    case ActuatorCommand::STOP_ALL_MOTORS:
-        stop_all_actuators_requested = true;
-        break;
-    case ActuatorCommand::ENABLE_ALL_MOTORS:
-        stop_all_actuators_requested = false;
-        break;
-
-    case ActuatorCommand::GET_READY:
-        break; // TODO needed ?
-
-    case ActuatorCommand::THERMOMETER_LOWER_SERVO:
-        lowerThermometerServo();
-        break;
-    case ActuatorCommand::THERMOMETER_RAISE_SERVO:
-        raiseThermometerServo();
-        break;
-    case ActuatorCommand::TAKE_2_BOXES:
-        liftAndClamp.take2Boxes();
-        break;
-    case ActuatorCommand::BRING_2_BOXES_ON_TOP:
-        liftAndClamp.bring2BoxesToTop();
-        break;
-    case ActuatorCommand::PUT_2_LAST_BOXES_ON_THE_GROUND:
-        liftAndClamp.put2LastBoxesOnTheGround();
-        break;
+    case ActuatorCommand::RESET_ACTUATORS:                  initEveryThing(); break;
+    case ActuatorCommand::STOP_ALL_MOTORS:                  stop_all_actuators_requested = true; break;
+    case ActuatorCommand::ENABLE_ALL_MOTORS:                stop_all_actuators_requested = false; break;
+    case ActuatorCommand::THERMOMETER_LOWER_SERVO:          lowerThermometerServo(); break;
+    case ActuatorCommand::THERMOMETER_RAISE_SERVO:          raiseThermometerServo(); break;
+    case ActuatorCommand::TAKE_2_BOXES:                     liftAndClamp.take2Boxes(); break;
+    case ActuatorCommand::BRING_2_BOXES_ON_TOP:             liftAndClamp.bring2BoxesToTop(); break;
+    case ActuatorCommand::PUT_2_LAST_BOXES_ON_THE_GROUND:   liftAndClamp.put2LastBoxesOnTheGround(); break;
+    case ActuatorCommand::PREPARE_TOP_PUSHER:               boxesSorter.prepareTopPusher(); break;
+    case ActuatorCommand::GRAB_AND_SORT_2_BOXES_FROM_LIFT:  boxesSorter.grabAndSort2BoxesFromLift(); break;
+    case ActuatorCommand::PUSH_2_BOXES_OUT:                 boxesSorter.push2BoxesOut(); break;
+    case ActuatorCommand::OPEN_EXIT_RAMP:                   boxesSorter.openExitRamp(); break;
 
     default:
-        LOG_ERROR("act", "Unknown Actuator command %d in HandleRequest()", cmd);
+        LOG_ERROR("act", "Unknown Actuator command %s in HandleRequest()", to_c_str(cmd));
         break;
     }
 }
 
 void handleManualRequests()
 {
-    for (int i=0; i < static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT); i++)
+    for (size_t i=0; i < static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT); i++)
     {
         xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
         ActuatorState actuator_request = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
@@ -101,12 +84,12 @@ void handleManualRequests()
         if (actuator_request == ActuatorState::REQUESTED)
         {
             ActuatorCommand actuator = static_cast<ActuatorCommand>(i);
-            LOG_INFO("act", "[MANUAL] Requested actuator %s to state %s", to_string(actuator).c_str(), to_string(actuator_request).c_str());
+            LOG_INFO("act", "[MANUAL] Requested actuator %s to state %s", to_c_str(actuator), to_c_str(actuator_request));
             HandleRequest(actuator);
             xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
             mod_reg::actuators->requests[i] = static_cast<uint8_t>(ActuatorState::DONE);
             xSemaphoreGive(ModbusH.ModBusSphrHandle);
-            LOG_INFO("act", "[MANUAL] Requested actuator %s to state %s", to_string(actuator).c_str(), to_string(static_cast<ActuatorState>(mod_reg::actuators->requests[i])).c_str());
+            LOG_INFO("act", "[MANUAL] Requested actuator %s to state %s", to_c_str(actuator), to_c_str(static_cast<ActuatorState>(mod_reg::actuators->requests[i])));
         }
     }
 }
