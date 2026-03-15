@@ -4,11 +4,6 @@
 #include "cmsis_os2.h"
 #include "Util/logging.h"
 
-/**
- * Lift and CLAMP actuators :
- * - LIFT = 1 stepper + 1 limit switch to init position
- * - CLAMP = 1 servo to clamp the NutBox
- */
 
 void LiftAndClamp::take2Boxes()
 {
@@ -25,7 +20,7 @@ void LiftAndClamp::take2Boxes()
     // AND avoid hitting other boxes on the floor
     _liftGoToPosition(LIFT_BOTTOM_POSITION + BOX_HEIGHT * 1.5f);
 
-    boxesCount += 2;
+    boxesInLiftCount += 2;
     LOG_INFO("liftClamp", "Took 2 boxes !");
 }
 
@@ -36,8 +31,10 @@ void LiftAndClamp::bring2BoxesToTop()
     // !! Must have already 4 boxes
     // The 2 boxes on top of the stack which are not clamped will then be taken
     // Then we can go just underneath
-    const float heightOfStackInLift = BOX_HEIGHT * (boxesCount / 2.0f);
+    const float heightOfStackInLift = BOX_HEIGHT * (boxesInLiftCount / 2.0f);
     _liftGoToPosition(LIFT_TOP_POSITION - heightOfStackInLift + BOX_HEIGHT);
+
+    boxesInLiftCount -= 2;
 }
 
 void LiftAndClamp::put2LastBoxesOnTheGround()
@@ -45,9 +42,11 @@ void LiftAndClamp::put2LastBoxesOnTheGround()
     _liftGoToBottom();
     _releaseClamp();
     _liftGoToPosition(LIFT_BOTTOM_POSITION + BOX_HEIGHT * 1.5f);
+
+    boxesInLiftCount -= 2;
 }
 
-void LiftAndClamp::initialization()
+void LiftAndClamp::initialize()
 {
     LOG_INFO("liftClamp", "Initializing lift and clamp...");
     _initLift();

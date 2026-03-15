@@ -26,12 +26,14 @@ public:
     int WriteBaund(uint8_t ID, uint8_t Baund, uint8_t ReturnLevel=1);
     int WriteDeadBand(uint8_t ID, uint8_t CWDB, uint8_t CCWDB, uint8_t ReturnLevel=1);
     int WritePID(uint8_t ID, uint8_t P, uint8_t I, uint8_t D, uint8_t ReturnLevel=1);
-    int WriteSpe(uint8_t ID, int velocity, uint8_t ReturnLevel=1);
+    int WriteSpeed(uint8_t ID, int velocity, uint8_t ReturnLevel=1);
     int LockEprom(uint8_t ID, uint8_t Enable, uint8_t ReturnLevel=1);
     int WriteIMax(uint8_t ID, int IMax, uint8_t ReturnLevel=1);
     void RotateClockwise();
     void RotateCounterClockwise();
     void scan_ids(uint8_t id_start,  uint8_t id_stop);
+    bool FreeRotationHomingByStall(uint8_t ID, int speed, uint16_t timeoutMs);
+
 private:
     int	ReadBuf(uint16_t len, uint8_t *buf=nullptr) const;
     void fflushRevBuf() const;

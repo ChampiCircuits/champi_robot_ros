@@ -364,7 +364,7 @@ int SCServos::WritePID(uint8_t ID, uint8_t P, uint8_t I, uint8_t D, uint8_t Retu
     return 0;
 }
 
-int SCServos::WriteSpe(uint8_t ID, int velocity, uint8_t ReturnLevel)
+int SCServos::WriteSpeed(uint8_t ID, int velocity, uint8_t ReturnLevel)
 {
     int messageLength = 5;
 

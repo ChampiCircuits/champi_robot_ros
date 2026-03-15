@@ -7,6 +7,13 @@
 
 namespace com_types {
 
+enum class TeamColor
+{
+  UNKNOW,
+  YELLOW,
+  BLUE
+};
+
 struct Vector3 {
   double x;
   double y;

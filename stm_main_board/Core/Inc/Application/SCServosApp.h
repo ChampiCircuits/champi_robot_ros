@@ -32,6 +32,10 @@ namespace devices
         void set_angle(uint8_t id, float angle, int ms);
         void set_angle_async(uint8_t id, float angle, int ms);
         void test_angle(uint8_t id, float angle); // Tests a given angle, then reverts it to original angle.
+        // for free rotation servos only
+        void set_speed(uint8_t ID, int speed);
+        // for free rotation servos only
+        bool homingByStall(uint8_t ID, int speed, uint16_t timeoutMs);
     }
 }
 

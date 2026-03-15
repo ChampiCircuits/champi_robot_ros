@@ -4,6 +4,12 @@
 #include "main.h"
 #include "Application/PosSteppersTask.h"
 
+/**
+ * Lift and CLAMP actuators :
+ * - LIFT = 1 stepper + 1 limit switch to init position
+ * - CLAMP = 1 servo to clamp the NutBox
+ */
+
 
 class LiftAndClamp
 {
@@ -11,9 +17,9 @@ public:
     void take2Boxes();
     void bring2BoxesToTop();
     void put2LastBoxesOnTheGround();
-    void initialization();
+    void initialize();
 
-    int boxesCount = 0; // always an even number (clamp takes boxes 2 by 2)
+    int boxesInLiftCount = 0; // always an even number (clamp takes boxes 2 by 2)
 
 private:
     // LIFT STEPPER
@@ -24,7 +30,7 @@ private:
 
     static constexpr float LIFT_BOTTOM_POSITION = 0.0;
     static constexpr float LIFT_TOP_POSITION    = 150.0; // TODO
-    static constexpr float BOX_HEIGHT = 150.0; // --> lift height increment // TODO
+    static constexpr float BOX_HEIGHT = 30.0; // mm --> lift height increment
 
     // END SWITCH
     static const inline GPIO_TypeDef* END_SWITCH_GPIO_Port = D6_GPIO_Port; // TODO

@@ -5,6 +5,7 @@
 #include "Application/Modbus/DataStructures.h"
 #include "Application/Modbus/ModbusRegister.h"
 #include "Application/Actuators/LiftAndClamp.h"
+#include "Application/Actuators/BoxesSorter.h"
 #include "Application/SCServosApp.h"
 #include "Application/Modbus/ModbusTask.h"
 #include "Application/Modbus/hw_actuators.h"
@@ -14,6 +15,9 @@
 #include "cmsis_os2.h"
 #include "semphr.h"
 
+bool stop_all_actuators_requested = false;
+LiftAndClamp liftAndClamp;
+BoxesSorter boxesSorter;
 
 osThreadId_t ActuatorsTaskHandle;
 const osThreadAttr_t actuatorsTask_attributes = {
@@ -22,9 +26,6 @@ const osThreadAttr_t actuatorsTask_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
-bool stop_all_actuators_requested = false;
-LiftAndClamp liftAndClamp;
-
 void lowerThermometerServo()
 {
     devices::scs_servos::set_angle(THERMO_SERVO_ID, THERMO_SERVO_CLOSED, 300);
@@ -32,9 +33,8 @@ void lowerThermometerServo()
 
 void raiseThermometerServo()
 {
-    devices::scs_servos::set_angle(THERMO_SERVO_ID, THERMO_SERVO_OPEN, 300);
+    devices::scs_servos::set_angle_async(THERMO_SERVO_ID, THERMO_SERVO_OPEN, 300);
 }
-
 
 void initEveryThing()
 {
@@ -43,8 +43,9 @@ void initEveryThing()
     SCServosApp_Init(); // Reminder: blocking until the servos are found
     osDelay(1000);
 
-    liftAndClamp.initialization();
-    // TODO others
+    raiseThermometerServo();
+    liftAndClamp.initialize();
+    boxesSorter.initialize();
 
     LOG_INFO("act", "Actuators have been initialized !");
 }
