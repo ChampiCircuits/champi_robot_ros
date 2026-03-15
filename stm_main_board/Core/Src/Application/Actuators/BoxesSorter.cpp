@@ -11,7 +11,7 @@ void BoxesSorter::prepareTopPusher()
 
 void BoxesSorter::grabAndSort2BoxesFromLift()
 {
-    if (teamColor == com_types::TeamColor::UNKNOW)
+    if (teamColor == com_types::TeamColor::UNKNOWN)
     {
         LOG_ERROR("act", "Team color has not been set when trying to sort colors");
         // return; // TODO put back
@@ -19,11 +19,17 @@ void BoxesSorter::grabAndSort2BoxesFromLift()
 
     // prepareTopPusher() must have been called beforehand because here, lift shall be up with 2 boxes ready
     moveTopPusherToPosition(TOP_PUSHER_SERVO_POSITION_COLOR_SENSOR_FIRST_BOX);
-    const com_types::TeamColor firstBoxColor = colorSensor.getColor(IS_COLOR_SENSOR_UNDERNEATH_BOXES);
+    com_types::TeamColor firstBoxColor = colorSensor.detectColor();
     moveTopPusherToPosition(TOP_PUSHER_SERVO_POSITION_COLOR_SENSOR_FIRST_BOX + BOX_WIDTH);
-    const com_types::TeamColor secondBoxColor = colorSensor.getColor(IS_COLOR_SENSOR_UNDERNEATH_BOXES);
+    com_types::TeamColor secondBoxColor = colorSensor.detectColor();
 
-    if (firstBoxColor == com_types::TeamColor::UNKNOW or secondBoxColor == com_types::TeamColor::UNKNOW)
+    if (IS_COLOR_SENSOR_UNDERNEATH_BOXES)
+    {
+        firstBoxColor = colorSensor.inverseColors(firstBoxColor);
+        secondBoxColor = colorSensor.inverseColors(secondBoxColor);
+    }
+
+    if (firstBoxColor == com_types::TeamColor::UNKNOWN or secondBoxColor == com_types::TeamColor::UNKNOWN)
     {
         LOG_ERROR("act", "Could not find the color of a box: 1=%d, 2=%d", firstBoxColor, secondBoxColor);
         return;

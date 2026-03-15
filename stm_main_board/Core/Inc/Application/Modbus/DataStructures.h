@@ -9,7 +9,7 @@ namespace com_types {
 
 enum class TeamColor
 {
-  UNKNOW,
+  UNKNOWN,
   YELLOW,
   BLUE
 };

@@ -2,7 +2,7 @@
 #define STM_MAIN_BOARD_BOXESSORTER_H
 
 #include "Application/Modbus/DataStructures.h"
-#include "Devices/ColorSensor.h"
+#include "Devices/ColorSensorTCS34725.h"
 
 /**
  * BOXES SORTER actuators :
@@ -56,8 +56,8 @@ private:
     static constexpr int TRAPDOOR_SERVO_CLOSED = 90;    // ° [0,270] // TODO
 
     static constexpr bool IS_COLOR_SENSOR_UNDERNEATH_BOXES = true; // in this case we must inverse the color seen
-    com_types::TeamColor teamColor = com_types::TeamColor::UNKNOW;
-    ColorSensor colorSensor;
+    com_types::TeamColor teamColor = com_types::TeamColor::UNKNOWN;
+    ColorSensorTCS34725 colorSensor;
 
     void _closeTrapdoor();
     void _openTrapdoor();
