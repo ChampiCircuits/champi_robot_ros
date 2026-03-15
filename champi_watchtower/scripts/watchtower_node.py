@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import transforms3d.quaternions
 
 import rclpy
 from rclpy.node import Node
@@ -7,12 +8,15 @@ from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 from std_msgs.msg import String
 from cv_bridge import CvBridge
-import tf_transformations as tf_trans
 
+import tf_transformations as tf_trans
 import cv2, math, numpy as np, yaml, os
 from pathlib import Path
 import threading
 from typing import Optional
+import transforms3d.quaternions as quat
+import transforms3d.affines as affines
+from scipy.spatial.transform import Rotation as R
 
 from champi_libraries_py.utils import angles
 from champi_watchtower.watchtower_extrinsic_calibration import WatchtowerExtrinsicCalibrator, compute_calibration_error
@@ -21,24 +25,32 @@ from champi_watchtower.WatchTowerState import WatchtowerState
 from champi_watchtower.WatchtowerGUI import WatchtowerGUI
 
 
-def get_team_color(marker_id: int) -> tuple:
+def get_true_simulation_camera_transform():
     """
-    Get team color based on marker ID.
-    
-    Args:
-        marker_id: ArUco marker ID
-        
-    Returns:
-        Tuple of (color_name, color_code, emoji)
-        - IDs 1-5: Blue team
-        - IDs 6-10: Yellow team
+    Returns true position set in the webots world
     """
-    if 1 <= marker_id <= 5:
-        return ("Blue", "#2196F3", "🔵")
-    elif 6 <= marker_id <= 10:
-        return ("Yellow", "#FFC107", "🟡")
-    else:
-        return ("Unknown", "#9E9E9E", "⚪")
+
+    # True values
+    M_t_world_to_support = np.array([1.5 + 0.225, 1 - 1.12, 0.08])  # TODO le +/-0.225 dépend de couleur jaune ou bleu
+    quat_world_to_support_xyzw = np.array([0, 0, -0.707105, 0.707105])  # quaternion (x, y, z, w)
+    M_t_support_to_camera = np.array([0.0, 0.0, 0.91])
+    quat_support_to_camera_xyzw = np.array([-0.031363, 0.34146, -0.0859194, 0.935435])  # quaternion (x, y, z, w)
+
+    # XYZW -> WXYZ
+    quat_world_to_support_wxyz = [quat_world_to_support_xyzw[3], *quat_world_to_support_xyzw[:3]]
+    quat_support_to_camera_wxyz = [quat_support_to_camera_xyzw[3], *quat_support_to_camera_xyzw[:3]]
+
+    # Get Rotation matrices
+    M_R_world_to_support = transforms3d.quaternions.quat2mat(quat_world_to_support_wxyz)
+    M_R_support_to_camera = transforms3d.quaternions.quat2mat(quat_support_to_camera_wxyz)
+
+    # Compose Transformations
+    M_Z_neutral = np.ones_like(M_t_world_to_support) # just to pass this arg
+    M_T_world_to_support = affines.compose(M_t_world_to_support, M_R_world_to_support, M_Z_neutral)
+    M_T_support_to_camera = affines.compose(M_t_support_to_camera, M_R_support_to_camera, M_Z_neutral)
+    M_T_world_to_camera = M_T_world_to_support @ M_T_support_to_camera
+
+    return M_T_world_to_camera
 
 
 class WatchtowerNode(Node):
@@ -71,7 +83,7 @@ class WatchtowerNode(Node):
         self.publish_rate = self.get_parameter('publish_rate').value
         self.image_topic = self.get_parameter('image_topic').value
         self.camera_info_topic = self.get_parameter('camera_info_topic').value
-        self.is_simu = self.get_parameter('is_simu_with_webots').value
+        self.is_simu_with_webots = self.get_parameter('is_simu_with_webots').value
         self.marker_id_min = self.get_parameter('marker_id_min').value
         self.marker_id_max = self.get_parameter('marker_id_max').value
         self.table_ref_image_path = self.get_parameter('table_reference_image').value
@@ -129,6 +141,7 @@ class WatchtowerNode(Node):
         self.calibrator = WatchtowerExtrinsicCalibrator(
             camera_matrix=self.camera_matrix,
             dist_coeffs=self.dist_coeffs,
+            is_simu_with_webots=self.is_simu_with_webots,
             table_width=self.table_width,
             table_height=self.table_height
         )
@@ -138,7 +151,7 @@ class WatchtowerNode(Node):
             camera_matrix=self.camera_matrix,
             dist_coeffs=self.dist_coeffs,
             marker_length=self.marker_length,
-            is_simu_with_webots=self.is_simu
+            is_simu_with_webots=self.is_simu_with_webots
         )
         
         # Create GUI
@@ -272,7 +285,7 @@ class WatchtowerNode(Node):
                 self.gui.update_status(f"Calibration failed: {e}")
                 self.gui.update_state(WatchtowerState.INIT)
             self.state = WatchtowerState.INIT
-            
+
     def _perform_calibration(self, camera_image: np.ndarray):
         """Perform the extrinsic calibration."""
         log_msg = "Performing extrinsic calibration..."
@@ -294,63 +307,54 @@ class WatchtowerNode(Node):
                 self.state = WatchtowerState.INIT
                 return
 
-                
+
             # Extract calibration results
-            position = result['position']
-            quaternion = result['quaternion']
             num_inliers = result['num_inliers']
             repr_error = result['reprojection_error']
+            M_T_camera_to_world = result['M_T_camera_to_world']
+            M_t_camera_to_world, M_R_camera_to_world, _, _ = affines.decompose(M_T_camera_to_world)
+            quat_camera_to_world_xyzw = R.from_matrix(M_R_camera_to_world).as_quat()
 
-            # TRUE POSITION
-            # # Position/orientation vraie de la caméra (simu) # TODO BETTER
-            camera_support_in_world_pos = np.array([1.5+0.225, 1-1.12, 0.08]) # TODO le +/-0.225 dépend de couleur jaune ou bleu
-            camera_support_in_world_quat = np.array([0, 0, -0.707105, 0.707105]) # quaternion (x, y, z, w)
-            camera_in_support_pos = np.array([0.0, 0.0, 0.91])
-            camera_in_support_quat = np.array([-0.031363, 0.34146, -0.0859194, 0.935435]) # quaternion (x, y, z, w) 
+            # Get true simulation position for automated comparison and compute error
+            M_T_world_to_camera_true = get_true_simulation_camera_transform()
+            M_t_camera_to_world_true, _, _, _ = affines.decompose(M_T_world_to_camera_true)
+            position_error, angle_error_deg = compute_calibration_error(M_T_camera_to_world, M_T_world_to_camera_true)
 
-            T_world_support = tf_trans.concatenate_matrices(
-                tf_trans.translation_matrix(camera_support_in_world_pos),
-                tf_trans.quaternion_matrix(camera_support_in_world_quat)
-            )
-            T_support_camera = tf_trans.concatenate_matrices(
-                tf_trans.translation_matrix(camera_in_support_pos),
-                tf_trans.quaternion_matrix(camera_in_support_quat)
-            )
-            T_world_camera_true = T_world_support @ T_support_camera
-            R_true = T_world_camera_true[:3, :3]
-            t_vector_true = T_world_camera_true[:3, 3]
 
-            camera_pos_in_world = tf_trans.translation_from_matrix(T_world_camera_true)
-            camera_quat_in_world = tf_trans.quaternion_from_matrix(T_world_camera_true)
+            self.get_logger().info(f"Is Simu? {'Yes' if self.is_simu_with_webots else 'No'}\n")
+            self.get_logger().info(f"M_T_world_to_camera_true ")
+            self.get_logger().info(f"{M_T_world_to_camera_true}")
+            self.get_logger().info(f"M_T_camera_to_world")
+            self.get_logger().info(f"{M_T_camera_to_world}")
+            self.get_logger().info(f"  Orientation error: {angle_error_deg:.2f} degrees")
+            # exit()
 
-            position_error, angle_error_deg = compute_calibration_error(
-                position, t_vector_true, quaternion, camera_quat_in_world
-            )
-                        
+
+            self.get_logger().info(f"Is Simu? {'Yes' if self.is_simu_with_webots else 'No'}\n")
             self.get_logger().info(f"Calibration successful!")
-            self.get_logger().info(f"  Position: [{position[0]:.3f}, {position[1]:.3f}, {position[2]:.3f}]")
-            self.get_logger().info(f"  Quaternion: [{quaternion[0]:.3f}, {quaternion[1]:.3f}, {quaternion[2]:.3f}, {quaternion[3]:.3f}]")
+            self.get_logger().info(f"  Est° Position: [{M_t_camera_to_world[0]:.3f}, {M_t_camera_to_world[1]:.3f}, {M_t_camera_to_world[2]:.3f}]")
+            self.get_logger().info(f"  Est° Quaternion: [x={quat_camera_to_world_xyzw[0]:.3f}, y={quat_camera_to_world_xyzw[1]:.3f}, z={quat_camera_to_world_xyzw[2]:.3f}, w={quat_camera_to_world_xyzw[3]:.3f}]")
             self.get_logger().info(f"  Inliers: {num_inliers}")
             self.get_logger().info(f"  Reprojection error: {repr_error:.2f} px")
             self.get_logger().info(f"  Position error: {position_error:.3f} m")
             self.get_logger().info(f"  Orientation error: {angle_error_deg:.2f} degrees")
-            
+
             # Set camera pose in localizer
-            self.localizer.set_camera_pose(position, quaternion)
+            self.localizer.set_camera_pose(M_t_camera_to_world, quat_camera_to_world_xyzw)
             
             # Update GUI
             if self.gui:
                 info_str = (f"Calibration successful!\n"
-                          f"Is Simu? {'Yes' if self.is_simu else 'No'}\n"
-                          f"Cam Position: [{position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f}]\n"
-                          f"Cam true Position: [{camera_pos_in_world[0]:.2f}, {camera_pos_in_world[1]:.2f}, {camera_pos_in_world[2]:.2f}]\n"
+                          f"Is Simu? {'Yes' if self.is_simu_with_webots else 'No'}\n"
+                          f"Cam est° Position: [{M_t_camera_to_world[0]:.2f}, {M_t_camera_to_world[1]:.2f}, {M_t_camera_to_world[2]:.2f}]\n"
+                          f"Cam true Position: [{M_t_camera_to_world_true[0]:.2f}, {M_t_camera_to_world_true[1]:.2f}, {M_t_camera_to_world_true[2]:.2f}]\n"
                           f"Inliers: {num_inliers} --- Repr. error: {repr_error:.2f} px\n"
                           f"Pos. error: {position_error:.3f} m\n"
                           f"Orient. error: {angle_error_deg:.2f}°")
                 self.gui.update_info(info_str)
                 self.gui.update_status("Calibration complete. Starting robot localization...")
                 self.gui.add_log("✓ Calibration successful!")
-                self.gui.add_log(f"Camera position: {position}")
+                self.gui.add_log(f"Camera position: {M_t_camera_to_world}")
                 self.gui.add_log(f"Reprojection error: {repr_error:.2f} px")
                 self.gui.add_log(f"Position error: {position_error:.3f} m")
                 self.gui.add_log(f"Orientation error: {angle_error_deg:.2f} degrees")
@@ -404,7 +408,26 @@ class WatchtowerNode(Node):
                 
         except Exception as e:
             self.get_logger().error(f"Error in image callback: {e}")
-    
+
+    def _get_team_color(self, marker_id: int) -> tuple:
+        """
+        Get team color based on marker ID.
+
+        Args:
+            marker_id: ArUco marker ID
+
+        Returns:
+            Tuple of (color_name, color_code, emoji)
+            - IDs 1-5: Blue team
+            - IDs 6-10: Yellow team
+        """
+        if 1 <= marker_id <= 5:
+            return ("Blue", "#2196F3", "🔵")
+        elif 6 <= marker_id <= 10:
+            return ("Yellow", "#FFC107", "🟡")
+        else:
+            return ("Unknown", "#9E9E9E", "⚪")
+
     def _visualize_table_with_robots(self, detections_dict: dict, target_width: int = None, target_height: int = None) -> np.ndarray:
         """
         Create a visualization of the table with detected robot positions.
@@ -479,7 +502,7 @@ class WatchtowerNode(Node):
             
             # Draw robots on the table
             for marker_id, data in detections_dict.items():
-                team_name, team_color_hex, emoji = get_team_color(marker_id)
+                team_name, team_color_hex, emoji = self._get_team_color(marker_id)
                 
                 # Convert hex to BGR for OpenCV
                 team_color_bgr = tuple(int(team_color_hex[i:i+2], 16) for i in (5, 3, 1))
@@ -551,7 +574,7 @@ class WatchtowerNode(Node):
                 if results:
                     detection_log = f"Detected {len(results)} robot(s):"
                     for marker_id in sorted(results.keys()):
-                        team_name, _, emoji = get_team_color(marker_id)
+                        team_name, _, emoji = self._get_team_color(marker_id)
                         detection_log += f" {emoji}ID{marker_id}"
                     self.gui.add_log(detection_log)
                 else:
