@@ -4,6 +4,16 @@
 #include "main.h"
 #include "i2c.h"
 
+inline const char* to_c_str(const com_types::TeamColor color)
+{
+    switch (color)
+    {
+    case com_types::TeamColor::YELLOW:  return "YELLOW";
+    case com_types::TeamColor::BLUE:    return "BLUE";
+    case com_types::TeamColor::UNKNOWN: default : return "UNKNOWN";
+    }
+}
+
 class ColorSensorTCS34725
 {
 public:

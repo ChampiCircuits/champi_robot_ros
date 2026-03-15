@@ -3,6 +3,8 @@
 
 #include "tf2/impl/utils.h"
 
+#include <cctype>
+
 
 #define THRESHOLD_REJECT_DIST 0.03
 
@@ -63,6 +65,8 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     latest_twist_ = geometry_msgs::msg::Twist();
     subscriber_twist_ = this->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 10, std::bind(
         &HardwareInterfaceNode::twist_callback, this, std::placeholders::_1));
+    subscriber_strategy = this->create_subscription<std_msgs::msg::String>("/chosen_strategy", 10, std::bind(
+        &HardwareInterfaceNode::strategy_callback, this, std::placeholders::_1));
 
     pub_odom_otos_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom_otos", 10);
 
@@ -71,6 +75,37 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
         &HardwareInterfaceNode::actuators_control_callback, this, std::placeholders::_1));
     pub_ctrl_actuators_ = this->create_publisher<std_msgs::msg::Int8MultiArray>("/actuators_finished", 10);
     pub_stm_state = this->create_publisher<champi_interfaces::msg::STMState>("/STM_state", 10);
+}
+
+void HardwareInterfaceNode::strategy_callback(const std_msgs::msg::String::SharedPtr msg)
+{
+    const auto hash_pos = msg->data.find('#');
+    if (hash_pos == std::string::npos || hash_pos + 1 >= msg->data.size()) {
+        RCLCPP_WARN(this->get_logger(), "Received malformed /chosen_strategy message: '%s'", msg->data.c_str());
+        return;
+    }
+
+    std::string color = msg->data.substr(hash_pos + 1);
+    for (char &c : color) {
+        c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    }
+
+    TeamColor parsed_color = TeamColor::UNKNOWN;
+    if (color == "YELLOW") {
+        parsed_color = TeamColor::YELLOW;
+    } else if (color == "BLUE") {
+        parsed_color = TeamColor::BLUE;
+    }
+
+    if (parsed_color == TeamColor::UNKNOWN) {
+        RCLCPP_WARN(this->get_logger(), "Received unknown team color '%s' on /chosen_strategy", color.c_str());
+        return;
+    }
+
+    if (mod_reg::requests->team_color != parsed_color) {
+        mod_reg::requests->team_color = parsed_color;
+        RCLCPP_INFO(this->get_logger(), "Set Team color to STM from /chosen_strategy: %s", color.c_str());
+    }
 }
 
 HardwareInterfaceNode::~HardwareInterfaceNode()
@@ -240,27 +275,28 @@ void HardwareInterfaceNode::check_for_actuators_state() const // TODO mettre a 5
 {
     std::string states_string;
     read(mod_reg::reg_actuators);
-    for (int i=0; i<ACTUATORS_COUNT; i++)
+    for (size_t i=0; i < static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT); i++)
     {
         const ActuatorState state = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
-        states_string += to_string(state) + " ";
+        states_string += to_c_str(state);
+        states_string += " ";
 
         if (state == ActuatorState::DONE)
         {
             // set state to NOTHING
             mod_reg::actuators->requests[i] = static_cast<uint8_t>(ActuatorState::NOTHING);
             this->write(mod_reg::reg_actuators);
-            RCLCPP_INFO(this->get_logger(), "Actuator %s is done", to_string(static_cast<ActuatorCommand>(i)).c_str());
+            RCLCPP_INFO(this->get_logger(), "Actuator %s is done", to_c_str(static_cast<ActuatorCommand>(i)));
 
             // pub to topic
             auto msg = std_msgs::msg::Int8MultiArray();
             // 1. Initialiser les données
-            msg.data.resize(ACTUATORS_COUNT);
+            msg.data.resize(static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT));
 
             // 2. Définir la structure (layout) du tableau
             msg.layout.dim.resize(1);             // 1 dimension (1D array)
             msg.layout.dim[0].label = "actuator_states";  // facultatif, pour info
-            msg.layout.dim[0].size = ACTUATORS_COUNT;     // taille totale du tableau
+            msg.layout.dim[0].size = static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT);     // taille totale du tableau
             msg.layout.dim[0].stride = 7;                 // stride = nb d’éléments pour "sauter" une ligne (comme en matrice)
 
             // 3. offset à 0 (début du tableau)

@@ -7,7 +7,7 @@
 
 namespace com_types {
 
-enum class TeamColor
+enum class TeamColor : uint8_t
 {
   UNKNOWN,
   YELLOW,
@@ -60,6 +60,7 @@ struct Cmd {
 struct Requests {
   bool request_reset_otos;
   bool request_reset_stm;
+  TeamColor team_color;
 };
 
 struct Actuators

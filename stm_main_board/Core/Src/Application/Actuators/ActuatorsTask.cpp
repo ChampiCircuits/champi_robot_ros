@@ -102,6 +102,10 @@ void ActuatorsTask(void *argument)
     while (true)
     {
         handleManualRequests();
+
+        if (mod_reg::requests->team_color != boxesSorter.getTeamColor())
+            boxesSorter.setTeamColor(mod_reg::requests->team_color);
+
         osDelay(100);
     }
 }

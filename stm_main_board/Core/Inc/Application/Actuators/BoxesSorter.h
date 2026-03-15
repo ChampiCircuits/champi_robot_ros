@@ -24,7 +24,8 @@ public:
     void push2BoxesOut();
     void openExitRamp();
     void initialize();
-    void setTeamColor(com_types::TeamColor color) { teamColor = color; }
+    void setTeamColor(com_types::TeamColor color);
+    com_types::TeamColor getTeamColor() const { return teamColor; }
     void moveTopPusherToPosition(float target);
     void moveBottomPusherToPosition(float target);
 

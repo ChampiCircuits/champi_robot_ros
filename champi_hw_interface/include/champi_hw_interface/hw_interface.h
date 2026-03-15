@@ -21,6 +21,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "std_msgs/msg/int8.hpp"
 #include "std_msgs/msg/int8_multi_array.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "util/ros_geometry.h"
 #include <tf2/utils.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -67,6 +68,7 @@ private:
     void publish_transform();
 
     void twist_callback(geometry_msgs::msg::Twist::SharedPtr msg);
+    void strategy_callback(const std_msgs::msg::String::SharedPtr msg);
 
     void actuators_control_callback(const std_msgs::msg::Int8 msg) const;
     void check_for_actuators_state() const;
@@ -86,6 +88,7 @@ private:
 
     geometry_msgs::msg::Twist latest_twist_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscriber_twist_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscriber_strategy;
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_otos_;
     std::vector<double> cov_pose_odom_otos_;

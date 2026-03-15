@@ -14,7 +14,7 @@ void BoxesSorter::grabAndSort2BoxesFromLift()
     if (teamColor == com_types::TeamColor::UNKNOWN)
     {
         LOG_ERROR("act", "Team color has not been set when trying to sort colors");
-        return; // TODO put back
+        return;
     }
 
     // prepareTopPusher() must have been called beforehand because here, lift shall be up with 2 boxes ready
@@ -25,13 +25,13 @@ void BoxesSorter::grabAndSort2BoxesFromLift()
 
     if (IS_COLOR_SENSOR_UNDERNEATH_BOXES)
     {
-        firstBoxColor = colorSensor.inverseColors(firstBoxColor);
-        secondBoxColor = colorSensor.inverseColors(secondBoxColor);
+        firstBoxColor = ColorSensorTCS34725::inverseColors(firstBoxColor);
+        secondBoxColor = ColorSensorTCS34725::inverseColors(secondBoxColor);
     }
 
     if (firstBoxColor == com_types::TeamColor::UNKNOWN or secondBoxColor == com_types::TeamColor::UNKNOWN)
     {
-        LOG_ERROR("act", "Could not find the color of a box: 1=%d, 2=%d", firstBoxColor, secondBoxColor);
+        LOG_ERROR("act", "Could not find the color of a box: 1=%s, 2=%s", to_c_str(firstBoxColor), to_c_str(secondBoxColor));
         return;
     }
 
@@ -79,6 +79,12 @@ void BoxesSorter::initialize()
     devices::scs_servos::set_angle_async(EXIT_RAMP_SERVO_ID, EXIT_RAMP_SERVO_IDLE, 300);
 }
 
+void BoxesSorter::setTeamColor(const com_types::TeamColor color)
+{
+    teamColor = color;
+    LOG_INFO("act", "Received team color : %s", to_c_str(teamColor));
+}
+
 void BoxesSorter::_closeTrapdoor()
 {
     devices::scs_servos::set_angle(TRAPDOOR_SERVO_ID, TRAPDOOR_SERVO_CLOSED, 300);
@@ -88,8 +94,6 @@ void BoxesSorter::_openTrapdoor()
 {
     devices::scs_servos::set_angle(TRAPDOOR_SERVO_ID, TRAPDOOR_SERVO_OPEN, 300);
 }
-
-
 
 void BoxesSorter::_movePusherToPosition(int servoID, int speed, float target, float currentPosition)
 {
