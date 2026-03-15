@@ -17,8 +17,8 @@ INDICE_AXIS_R = 2
 
 class XboxButton(IntEnum):
     A = 0
-    B = 1 # CANS_RIGHT
-    X = 3 # CANS_LEFT
+    B = 1
+    X = 3
     Y = 4
     R2 = 9
     R1 = 7
@@ -30,17 +30,38 @@ class XboxButton(IntEnum):
 class DPadAxis(IntEnum):
     LEFT_RIGHT = 6
     UP_DOWN = 7
+class ActuatorCommand(IntEnum):
+    RESET_ACTUATORS = 0
+    STOP_ALL_MOTORS = 1
+    ENABLE_ALL_MOTORS = 2
+    GET_READY = 3
+
+    THERMOMETER_LOWER_SERVO = 4
+    THERMOMETER_RAISE_SERVO = 5
+
+    TAKE_2_BOXES = 6
+    BRING_2_BOXES_ON_TOP = 7
+    PUT_2_LAST_BOXES_ON_THE_GROUND = 8
+
+    PREPARE_TOP_PUSHER = 9
+    GRAB_AND_SORT_2_BOXES_FROM_LIFT = 10
+    PUSH_2_BOXES_OUT = 11
+    OPEN_EXIT_RAMP = 12
+
 """
-  PUT_BANNER = 0, = R1
-  TAKE_LOWER_PLANK = 1, = haut + A
-  TAKE_UPPER_PLANK = 2, = haut + Y
-  PUT_LOWER_PLANK_LAYER_1 = 3, = bas + A
-  PUT_UPPER_PLANK_LAYER_2 = 4, = bas + Y
-  TAKE_CANS_RIGHT = 5, = haut + B
-  TAKE_CANS_LEFT = 6, = haut + X
-  PUT_CANS_RIGHT_LAYER_2 = 7, = bas + B 
-  PUT_CANS_LEFT_LAYER_1 = 8 = bas + X
-  RESET_ACTUATORS = 9, = SELECT
+  RESET_ACTUATORS = SELECT
+
+  THERMOMETER_LOWER_SERVO = L2
+  THERMOMETER_RAISE_SERVO = L1
+
+  TAKE_2_BOXES = A
+  BRING_2_BOXES_ON_TOP = A + UP
+  PUT_2_LAST_BOXES_ON_THE_GROUND = A + DOWN
+
+  PREPARE_TOP_PUSHER = Y
+  GRAB_AND_SORT_2_BOXES_FROM_LIFT = Y + LEFT
+  PUSH_2_BOXES_OUT = X
+  OPEN_EXIT_RAMP = B
 """
 
 class HoloTeleopJoy(Node):
@@ -77,60 +98,62 @@ class HoloTeleopJoy(Node):
         if not self.prev_buttons:
             self.prev_buttons = list(joy_msg.buttons)
 
+        # Helper flags for D-Pad
         up = joy_msg.axes[DPadAxis.UP_DOWN] == 1.0
         down = joy_msg.axes[DPadAxis.UP_DOWN] == -1.0
+        left = joy_msg.axes[DPadAxis.LEFT_RIGHT] == 1.0
 
         for i, (prev, current) in enumerate(zip(self.prev_buttons, joy_msg.buttons)):
+            # Detect rising edge (button press)
             if current == 1 and prev == 0:
                 msg = Int8()
                 action = None
 
-                # R1 → PUT_BANNER
-                if i == XboxButton.R1:
-                    msg.data = 0
-                    action = 'PUT_BANNER (via R1)'
+                # RESET_ACTUATORS = SELECT
+                if i == XboxButton.SELECT:
+                    msg.data = int(ActuatorCommand.RESET_ACTUATORS)
+                    action = 'RESET_ACTUATORS'
 
-                # Y button combinations
-                elif i == XboxButton.Y:
-                    if up:
-                        msg.data = 2  # TAKE_UPPER_PLANK
-                        action = 'TAKE_UPPER_PLANK'
-                    elif down:
-                        msg.data = 4  # PUT_UPPER_PLANK_LAYER_2
-                        action = 'PUT_UPPER_PLANK_LAYER_2'
+                # THERMOMETER_LOWER_SERVO = L2 / THERMOMETER_RAISE_SERVO = L1
+                elif i == XboxButton.L2:
+                    msg.data = int(ActuatorCommand.THERMOMETER_LOWER_SERVO)
+                    action = 'THERMOMETER_LOWER_SERVO'
+                elif i == XboxButton.L1:
+                    msg.data = int(ActuatorCommand.THERMOMETER_RAISE_SERVO)
+                    action = 'THERMOMETER_RAISE_SERVO'
 
-                # A button combinations
+                # A Button combinations (Lift & Clamp)
                 elif i == XboxButton.A:
                     if up:
-                        msg.data = 1  # TAKE_LOWER_PLANK
-                        action = 'TAKE_LOWER_PLANK'
+                        msg.data = int(ActuatorCommand.BRING_2_BOXES_ON_TOP)
+                        action = 'BRING_2_BOXES_ON_TOP'
                     elif down:
-                        msg.data = 3  # PUT_LOWER_PLANK_LAYER_1
-                        action = 'PUT_LOWER_PLANK_LAYER_1'
+                        msg.data = int(ActuatorCommand.PUT_2_LAST_BOXES_ON_THE_GROUND)
+                        action = 'PUT_2_LAST_BOXES_ON_THE_GROUND'
+                    else:
+                        msg.data = int(ActuatorCommand.TAKE_2_BOXES)
+                        action = 'TAKE_2_BOXES'
 
-                # B button combinations
-                elif i == XboxButton.B:
-                    if up:
-                        msg.data = 5  # TAKE_CANS_RIGHT
-                        action = 'TAKE_CANS_RIGHT'
-                    elif down:
-                        msg.data = 7  # PUT_CANS_RIGHT_LAYER_2
-                        action = 'PUT_CANS_RIGHT_LAYER_2'
+                # Y Button combinations (Top Pusher & Sorting)
+                elif i == XboxButton.Y:
+                    if left:
+                        msg.data = int(ActuatorCommand.GRAB_AND_SORT_2_BOXES_FROM_LIFT)
+                        action = 'GRAB_AND_SORT_2_BOXES_FROM_LIFT'
+                    else:
+                        msg.data = int(ActuatorCommand.PREPARE_TOP_PUSHER)
+                        action = 'PREPARE_TOP_PUSHER'
 
-                # X button combinations
+                # PUSH_2_BOXES_OUT = X
                 elif i == XboxButton.X:
-                    if up:
-                        msg.data = 6  # TAKE_CANS_LEFT
-                        action = 'TAKE_CANS_LEFT'
-                    elif down:
-                        msg.data = 8  # PUT_CANS_LEFT_LAYER_1
-                        action = 'PUT_CANS_LEFT_LAYER_1'
+                    msg.data = int(ActuatorCommand.PUSH_2_BOXES_OUT)
+                    action = 'PUSH_2_BOXES_OUT'
 
-                # SELECT button for RESET_ACTUATORS
-                elif i == XboxButton.SELECT:
-                    msg.data = 9  # RESET_ACTUATORS
-                    action = 'RESET_ACTUATORS (via SELECT)'
+                # OPEN_EXIT_RAMP = B
+                elif i == XboxButton.B:
+                    msg.data = int(ActuatorCommand.OPEN_EXIT_RAMP)
+                    action = 'OPEN_EXIT_RAMP'
 
+                # Publish if an action was identified
                 if action is not None:
                     self.publisher.publish(msg)
                     self.get_logger().info(f'{action} → publishing {msg.data}')

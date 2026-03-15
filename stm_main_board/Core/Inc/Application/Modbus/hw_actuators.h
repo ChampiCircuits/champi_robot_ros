@@ -8,7 +8,7 @@
   Enum for actuator commands.
 */
 enum class ActuatorCommand : int
-{
+{ // be careful, if thee holo_ order is changed, you must change also holo_teleop_joy_node.py
   RESET_ACTUATORS,
   STOP_ALL_MOTORS,
   ENABLE_ALL_MOTORS,
