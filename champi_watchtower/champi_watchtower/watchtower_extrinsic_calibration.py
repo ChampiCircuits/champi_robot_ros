@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
 import transforms3d.quaternions as quat
-from typing import Tuple, Optional
-import time 
+from typing import Tuple
 
 import tf_transformations as tf_trans
 
@@ -13,7 +12,7 @@ class WatchtowerExtrinsicCalibrator:
     def __init__(self, camera_matrix: np.ndarray, dist_coeffs: np.ndarray,
                  table_width: float = 3.0, table_height: float = 2.0,
                  sift_ratio_threshold: float = 0.75,
-                 ransac_threshold: float = 5.0):
+                 ransac_threshold: float = 5.0, using_webots: bool = False):
         """
         Initialize the extrinsic calibrator.
         
@@ -31,6 +30,7 @@ class WatchtowerExtrinsicCalibrator:
         self.table_height = table_height
         self.sift_ratio_threshold = sift_ratio_threshold
         self.ransac_threshold = ransac_threshold
+        self.using_webots = using_webots
         
         # Initialize SIFT detector
         self.sift = cv2.SIFT_create()

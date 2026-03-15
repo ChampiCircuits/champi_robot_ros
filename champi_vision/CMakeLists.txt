@@ -47,7 +47,6 @@ install(PROGRAMS
         scripts/cv2_camera_publisher_node.py
         scripts/enemy_tracker_node.py
         scripts/platform_detection_node.py
-        scripts/watchtower_node.py
         DESTINATION lib/${PROJECT_NAME}
 )
 

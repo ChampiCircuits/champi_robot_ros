@@ -13,13 +13,6 @@ find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 
-# Install Python scripts
-install(
-  PROGRAMS
-    scripts/watchtower_image_processor.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -31,5 +24,30 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+# Allow lauch files to be found when calling them with ros2 launch
+install(DIRECTORY
+        launch
+#        config
+#        ressources
+        DESTINATION share/${PROJECT_NAME}
+)
+
+# Install Python modules
+ament_python_install_package(${PROJECT_NAME})
+
+# Install Python scripts
+install(
+  PROGRAMS
+    scripts/watchtower_image_processor.py
+    scripts/watchtower_node.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install C++ executables
+install(TARGETS
+        # enemy_detection_node
+        DESTINATION lib/${PROJECT_NAME}
+)
 
 ament_package()

@@ -62,7 +62,7 @@ def generate_launch_description():
     
     # Watchtower node
     watchtower_node = Node(
-        package='champi_vision',
+        package='champi_watchtower',
         executable='watchtower_node.py',
         name='watchtower_node',
         output='screen',
