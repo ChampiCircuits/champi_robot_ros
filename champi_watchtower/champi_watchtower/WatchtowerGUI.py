@@ -8,6 +8,26 @@ from datetime import datetime
 import numpy as np
 import cv2
 
+def get_team_color(marker_id: int) -> tuple:
+    """
+    Get team color based on marker ID.
+
+    Args:
+        marker_id: ArUco marker ID
+
+    Returns:
+        Tuple of (color_name, color_code, emoji)
+        - IDs 1-5: Blue team
+        - IDs 6-10: Yellow team
+    """
+    if 1 <= marker_id <= 5:
+        return "Blue", "#2196F3", "🔵"
+    elif 6 <= marker_id <= 10:
+        return "Yellow", "#FFC107", "🟡"
+    else:
+        return "Unknown", "#9E9E9E", "⚪"
+
+
 class WatchtowerGUI:
     """GUI to control watchtower calibration and display robot detections."""
 
@@ -95,7 +115,7 @@ class WatchtowerGUI:
         info_frame = tk.LabelFrame(right_frame, text="Calibration Info", padx=5, pady=5)
         info_frame.pack(fill=tk.X, pady=(0, 10))
 
-        self.info_text = tk.Text(info_frame, height=6, width=50, state=tk.DISABLED,
+        self.info_text = tk.Text(info_frame, height=8, width=50, state=tk.DISABLED,
                                  font=("Courier", 9))
         info_text_scroll = tk.Scrollbar(info_frame, command=self.info_text.yview)
         self.info_text.config(yscrollcommand=info_text_scroll.set)

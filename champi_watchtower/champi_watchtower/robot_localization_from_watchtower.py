@@ -3,7 +3,10 @@ import numpy as np
 import cv2.aruco as aruco
 import tf_transformations as tf_trans
 from typing import Tuple, List, Optional, Dict
+from rclpy.logging import get_logger, LoggingSeverity
 
+logger = get_logger("robot_loc")
+logger.set_level(LoggingSeverity.DEBUG)
 
 class WatchtowerRobotLocalizer:
     """Localize robots using ArUco markers detected by a watchtower camera."""
@@ -32,17 +35,18 @@ class WatchtowerRobotLocalizer:
         
         # Transformation from OpenCV camera frame to Webots camera frame (or identity for real camera)
         if is_simu_with_webots:
-            # OpenCV: Z+ forward, X+ right, Y+ down
-            # Webots: X+ forward, Y+ left, Z+ up
-            self.T_webots_opencv = np.array([
-                [0, 0, 1, 0],
-                [-1, 0, 0, 0],
-                [0, -1, 0, 0],
+            # Transformation from Webots camera frame to OpenCV camera frame
+            # OpenCV: Z+ forward (optical axis), X+ right, Y+ down
+            # Webots: X+ forward (optical axis), Y+ left, Z+ up
+            self.T_webots_to_opencv = np.array([
+                [0, -1, 0, 0],   # X_opencv = -Y_webots
+                [0, 0, -1, 0],   # Y_opencv = -Z_webots
+                [1, 0, 0, 0],     # Z_opencv = X_webots
                 [0, 0, 0, 1]
             ])
         else:
             # No transformation needed - axes are already aligned
-            self.T_webots_opencv = np.eye(4)
+            self.T_webots_to_opencv = np.eye(4)
         
     def set_camera_pose(self, camera_pos: np.ndarray, camera_quat: np.ndarray):
         """
@@ -52,7 +56,7 @@ class WatchtowerRobotLocalizer:
             camera_pos: Camera position in world frame (x, y, z)
             camera_quat: Camera orientation as quaternion (x, y, z, w)
         """
-        self.T_world_camera = tf_trans.concatenate_matrices(
+        self.M_T_world_to_camera = tf_trans.concatenate_matrices(
             tf_trans.translation_matrix(camera_pos),
             tf_trans.quaternion_matrix(camera_quat)
         )
@@ -63,12 +67,12 @@ class WatchtowerRobotLocalizer:
             'quaternion': np.array(camera_quat)
         }
         
-        print(f"[CALIBRATION] Camera position in world: {camera_pos}")
-        print(f"[CALIBRATION] Camera quaternion (xyzw): {camera_quat}")
+        logger.debug(f"[CALIBRATION] Camera position in world: {camera_pos}")
+        logger.debug(f"[CALIBRATION] Camera quaternion (xyzw): {camera_quat}")
         
         from scipy.spatial.transform import Rotation
         cam_euler = Rotation.from_quat(camera_quat).as_euler('xyz', degrees=True)
-        print(f"[CALIBRATION] Camera Euler XYZ (degrees): roll={cam_euler[0]:.2f}°, pitch={cam_euler[1]:.2f}°, yaw={cam_euler[2]:.2f}°")
+        logger.debug(f"[CALIBRATION] Camera Euler XYZ (degrees): roll={cam_euler[0]:.2f}°, pitch={cam_euler[1]:.2f}°, yaw={cam_euler[2]:.2f}°")
         
     def set_camera_pose_from_transforms(self, support_pos: np.ndarray, support_quat: np.ndarray,
                                        camera_in_support_pos: np.ndarray, 
@@ -90,7 +94,7 @@ class WatchtowerRobotLocalizer:
             tf_trans.translation_matrix(camera_in_support_pos),
             tf_trans.quaternion_matrix(camera_in_support_quat)
         )
-        self.T_world_camera = T_world_support @ T_support_camera
+        self.M_T_world_to_camera = T_world_support @ T_support_camera
         
     def detect_markers(self, image: np.ndarray, 
                       id_filter: Optional[Tuple[int, int]] = None) -> Tuple[List, np.ndarray, List]:
@@ -142,54 +146,59 @@ class WatchtowerRobotLocalizer:
             Tuple of (position, quaternion) in world frame
         """
         # Convert rotation vector to rotation matrix
-        R_marker_camera_opencv, _ = cv2.Rodrigues(rvec)
-        t_marker_camera_opencv = tvec.flatten()
-        print(f"Marker pose in camera frame (OpenCV): R=\n{R_marker_camera_opencv}, t={t_marker_camera_opencv}")
+        M_R_camera_opencv_to_marker, _ = cv2.Rodrigues(rvec)
+        M_t_camera_opencv_to_marker = tvec.flatten()
 
         # Build transformation matrix in OpenCV frame
-        T_camera_opencv_marker = np.eye(4)
-        T_camera_opencv_marker[:3, :3] = R_marker_camera_opencv
-        T_camera_opencv_marker[:3, 3] = t_marker_camera_opencv
-        
-        print(f"T_camera_opencv_marker:\n{T_camera_opencv_marker}")
-        print(f"T_webots_opencv:\n{self.T_webots_opencv}")
-        
-        # Transform to Webots frame then to world frame
-        # T_webots_opencv transforms FROM OpenCV TO Webots, so we use its inverse
-        T_camera_opencv_to_webots = np.linalg.inv(self.T_webots_opencv)
-        print(f"T_camera_opencv_to_webots (inv):\n{T_camera_opencv_to_webots}")
-        
-        T_camera_webots_marker = T_camera_opencv_to_webots @ T_camera_opencv_marker
-        print(f"T_camera_webots_marker:\n{T_camera_webots_marker}")
-        print(f"T_world_camera:\n{self.T_world_camera}")
-        
-        T_world_marker = self.T_world_camera @ T_camera_webots_marker
-        print(f"T_world_marker:\n{T_world_marker}")
+        M_T_camera_opencv_to_marker = np.eye(4)
+        M_T_camera_opencv_to_marker[:3, :3] = M_R_camera_opencv_to_marker
+        M_T_camera_opencv_to_marker[:3, 3] = M_t_camera_opencv_to_marker
+
+        logger.debug(f"M_T_camera_opencv_to_marker:\n{M_T_camera_opencv_to_marker}")
+
+
+        T_opencv_to_webots = np.linalg.inv(self.T_webots_to_opencv)
+        # logger.debug(f"Matrice de passage T_webots_opencv:\n{self.T_webots_to_opencv}")
+        logger.debug(f"Matrice de passage T_opencv_to_webots:\n{T_opencv_to_webots}")
+
+        # 3. On passe le marqueur du repère OpenCV au repère Webots
+        M_T_camera_webots_to_marker = T_opencv_to_webots @ M_T_camera_opencv_to_marker
+
+        # 4. On passe enfin le marqueur du repère Webots au repère World
+        M_T_world_to_marker = self.M_T_world_to_camera @ M_T_camera_webots_to_marker
+        logger.debug(f"M_T_world_to_marker:\n{M_T_world_to_marker}")
+        logger.debug(f"M_T_world_to_camera:\n{self.M_T_world_to_camera}")
+
+        # M_T_camera_webots_to_marker = T_opencv_to_webots @ M_T_camera_opencv_to_marker
+        # logger.debug(f"M_T_camera_webots_to_marker:\n{M_T_camera_webots_to_marker}")
+        # logger.debug(f"T_world_to_camera:\n{self.M_T_world_to_camera}")
+
+        # M_T_world_to_marker = self.M_T_world_to_camera @ M_T_camera_opencv_to_marker
+        # logger.debug(f"M_T_world_to_marker:\n{M_T_world_to_marker}")
         
         # Log camera/world rotation as quaternion (xyzw and wxyz)
-        cam_quat_xyzw = tf_trans.quaternion_from_matrix(self.T_world_camera)
-        cam_quat_wxyz = np.array([cam_quat_xyzw[3], cam_quat_xyzw[0], cam_quat_xyzw[1], cam_quat_xyzw[2]])
-        print(f"Camera pose quat xyzw: {cam_quat_xyzw}")
-        print(f"Camera pose quat wxyz: {cam_quat_wxyz}")
-        
-        # Log marker/world rotation as quaternion (xyzw and wxyz)
-        marker_quat_xyzw = tf_trans.quaternion_from_matrix(T_world_marker)
-        marker_quat_wxyz = np.array([marker_quat_xyzw[3], marker_quat_xyzw[0], marker_quat_xyzw[1], marker_quat_xyzw[2]])
-        print(f"Marker pose quat xyzw: {marker_quat_xyzw}")
-        print(f"Marker pose quat wxyz: {marker_quat_wxyz}")
+        # cam_quat_xyzw = tf_trans.quaternion_from_matrix(self.M_T_world_to_camera)
+        # cam_quat_wxyz = np.array([cam_quat_xyzw[3], cam_quat_xyzw[0], cam_quat_xyzw[1], cam_quat_xyzw[2]])
+        # logger.debug(f"Camera pose quat xyzw: {cam_quat_xyzw}")
+        # logger.debug(f"Camera pose quat wxyz: {cam_quat_wxyz}")
+        #
+        # # Log marker/world rotation as quaternion (xyzw and wxyz)
+        # marker_quat_xyzw = tf_trans.quaternion_from_matrix(M_T_world_to_marker)
+        # marker_quat_wxyz = np.array([marker_quat_xyzw[3], marker_quat_xyzw[0], marker_quat_xyzw[1], marker_quat_xyzw[2]])
+        # logger.debug(f"Marker pose quat xyzw: {marker_quat_xyzw}")
+        # logger.debug(f"Marker pose quat wxyz: {marker_quat_wxyz}")
         
         # Convert to Euler angles (roll, pitch, yaw)
         from scipy.spatial.transform import Rotation
-        marker_R = T_world_marker[:3, :3]
+        marker_R = M_T_world_to_marker[:3, :3]
         marker_euler = Rotation.from_matrix(marker_R).as_euler('xyz', degrees=True)
-        print(f"Marker pose Euler XYZ (degrees): roll={marker_euler[0]:.2f}°, pitch={marker_euler[1]:.2f}°, yaw={marker_euler[2]:.2f}°")
-        # exit(0)
-        # quat in world (w, x, y, z): ( 0.6006984361430138, 0.21927176258168785, 0.26362575691152335, -0.7222068562693683)
-        
+        logger.debug(f"Marker pose Euler XYZ (degrees): roll={marker_euler[0]:.2f}°, pitch={marker_euler[1]:.2f}°, yaw={marker_euler[2]:.2f}°")
+
         # Extract position and orientation
-        position = tf_trans.translation_from_matrix(T_world_marker)
-        quaternion = tf_trans.quaternion_from_matrix(T_world_marker)
-        
+        position = tf_trans.translation_from_matrix(M_T_world_to_marker)
+        quaternion = tf_trans.quaternion_from_matrix(M_T_world_to_marker)
+        logger.debug(f"Marker position {position}")
+        # exit()
         return position, quaternion
         
     def localize_robots(self, image: np.ndarray, id_filter: Optional[Tuple[int, int]] = (0, 10)) -> Dict[int, Dict]:

@@ -1,0 +1,18 @@
+watchtower_node:
+  ros__parameters:
+    # Camera calibration file (YAML format with camera_matrix and distortion_coefficients)
+    camera_calib_file: "/config/calib/innomaker-OV9281.yaml"
+    
+    # Table reference image (top-down view of playing field)
+    table_reference_image: "/ressources/images/table_reference_2026.png"
+    
+    # ArUco marker configuration
+    marker_length: 0.07  # Size of markers in meters (7cm)
+    marker_id_min: 0     # Minimum marker ID to detect
+    marker_id_max: 10    # Maximum marker ID to detect
+    
+    # Publishing configuration
+    publish_rate: 10.0   # Hz - rate for publishing robot poses
+    
+    # Topic names
+    image_topic: "/watchtower/camera/image_color"

@@ -28,7 +28,7 @@ endif()
 # Allow lauch files to be found when calling them with ros2 launch
 install(DIRECTORY
         launch
-#        config
+        config
 #        ressources
         DESTINATION share/${PROJECT_NAME}
 )

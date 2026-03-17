@@ -8,6 +8,7 @@ from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 from std_msgs.msg import String
 from cv_bridge import CvBridge
+from ament_index_python.packages import get_package_share_directory
 
 import tf_transformations as tf_trans
 import cv2, math, numpy as np, yaml, os
@@ -22,12 +23,13 @@ from champi_libraries_py.utils import angles
 from champi_watchtower.watchtower_extrinsic_calibration import WatchtowerExtrinsicCalibrator, compute_calibration_error
 from champi_watchtower.robot_localization_from_watchtower import WatchtowerRobotLocalizer
 from champi_watchtower.WatchTowerState import WatchtowerState
-from champi_watchtower.WatchtowerGUI import WatchtowerGUI
+from champi_watchtower.WatchtowerGUI import WatchtowerGUI, get_team_color
 
 
 def get_true_simulation_camera_transform():
     """
     Returns true position set in the webots world
+    This coords are in the frame that is located in the bottom-left corner of the table (not webots frame at table center)
     """
 
     # True values
@@ -67,30 +69,32 @@ class WatchtowerNode(Node):
         super().__init__('watchtower_node')
         
         # Declare parameters
-        self.declare_parameter('camera_info_file', '')
+        self.declare_parameter('camera_calib_file', '')
         self.declare_parameter('table_reference_image', '')
         self.declare_parameter('marker_length', 0.07)  # 7cm
-        self.declare_parameter('publish_rate', 30.0)  # Hz
-        self.declare_parameter('image_topic', '/watchtower/camera/image_color')
-        self.declare_parameter('camera_info_topic', '/watchtower/camera/camera_info')
-        self.declare_parameter('is_simu_with_webots', False)
         self.declare_parameter('marker_id_min', 0)
         self.declare_parameter('marker_id_max', 10)
-        
+        self.declare_parameter('publish_rate', 10.0)  # Hz
+        self.declare_parameter('image_topic', '/watchtower/camera/image_color')
+        self.declare_parameter('is_simu_with_webots', False)
+
         # Get parameters
-        self.camera_info_file = self.get_parameter('camera_info_file').value
+        self.table_ref_image_path = get_package_share_directory('champi_vision') + self.get_parameter('table_reference_image').value
         self.marker_length = self.get_parameter('marker_length').value
-        self.publish_rate = self.get_parameter('publish_rate').value
-        self.image_topic = self.get_parameter('image_topic').value
-        self.camera_info_topic = self.get_parameter('camera_info_topic').value
-        self.is_simu_with_webots = self.get_parameter('is_simu_with_webots').value
         self.marker_id_min = self.get_parameter('marker_id_min').value
         self.marker_id_max = self.get_parameter('marker_id_max').value
-        self.table_ref_image_path = self.get_parameter('table_reference_image').value
+        self.publish_rate = self.get_parameter('publish_rate').value
+        self.image_topic = self.get_parameter('image_topic').value
+        self.is_simu_with_webots = self.get_parameter('is_simu_with_webots').value
         self.table_width = 3.0
         self.table_height = 2.0
-        
-        # State machine
+        if self.is_simu_with_webots:
+            self.camera_calib_file = get_package_share_directory('champi_vision') + '/config/calib/simu_cam.yaml'
+        else:
+            self.camera_calib_file = get_package_share_directory('champi_vision') + self.get_parameter('camera_calib_file').value
+
+
+# State machine
         self.state = WatchtowerState.INIT
         
         # Camera parameters
@@ -124,12 +128,12 @@ class WatchtowerNode(Node):
         
     def _initialize(self):
         """Initialize state: Load camera parameters and create GUI."""
-        log_msg = "Initializing watchtower node..."
+        log_msg = f"Initializing watchtower node (is_simu_with_webots={self.is_simu_with_webots})..."
         self.get_logger().info(log_msg)
         
         # Load camera calibration
         if not self._load_camera_calibration():
-            self.get_logger().error("Failed to load camera calibration!")
+            self.get_logger().error(f"Failed to load camera calibration {Path(self.camera_calib_file)}!")
             return
             
         # Load table reference image
@@ -159,19 +163,19 @@ class WatchtowerNode(Node):
         
         if self.gui:
             self.gui.add_log("Node initialized successfully")
-            self.gui.add_log(f"Camera calibration loaded: {Path(self.camera_info_file).name}")
+            self.gui.add_log(f"Camera calibration loaded: {Path(self.camera_calib_file).name}")
             self.gui.add_log(f"Table reference image loaded: {self.table_ref_image.shape}")
         
         self.get_logger().info("Initialization complete. Ready for calibration.")
         
     def _load_camera_calibration(self) -> bool:
         """Load camera intrinsic parameters from file."""
-        if not self.camera_info_file or not os.path.exists(self.camera_info_file):
-            self.get_logger().error(f"Camera info file not found: {self.camera_info_file}")
+        if not self.camera_calib_file or not os.path.exists(self.camera_calib_file):
+            self.get_logger().error(f"Camera info file not found: {self.camera_calib_file}")
             return False
             
         try:
-            with open(self.camera_info_file, 'r') as f:
+            with open(self.camera_calib_file, 'r') as f:
                 calib_data = yaml.safe_load(f)
                 
             # Extract camera matrix
@@ -182,7 +186,7 @@ class WatchtowerNode(Node):
             D = calib_data['distortion_coefficients']['data']
             self.dist_coeffs = np.array(D)
             
-            self.get_logger().info(f"Loaded camera calibration from {self.camera_info_file}")
+            self.get_logger().info(f"Loaded camera calibration from {self.camera_calib_file}")
             return True
             
         except Exception as e:
@@ -225,7 +229,7 @@ class WatchtowerNode(Node):
         
         self.gui.update_state(self.state)
         self.gui.update_status("Node initialized. Click 'Start Calibration' when ready.")
-        self.gui.update_info(f"Camera: {Path(self.camera_info_file).name}\n"
+        self.gui.update_info(f"Camera: {Path(self.camera_calib_file).name}\n"
                            f"Table: {self.table_width}x{self.table_height}m\n"
                            f"Marker size: {self.marker_length}m")
         
@@ -268,6 +272,7 @@ class WatchtowerNode(Node):
         """Callback to receive image for calibration (one-shot)."""
         try:
             self.get_logger().info("Received image for calibration")
+            self.gui.add_log("Received image for calibration")
             # Convert ROS image to OpenCV
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
             gray_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
@@ -327,7 +332,6 @@ class WatchtowerNode(Node):
             self.get_logger().info(f"M_T_camera_to_world")
             self.get_logger().info(f"{M_T_camera_to_world}")
             self.get_logger().info(f"  Orientation error: {angle_error_deg:.2f} degrees")
-            # exit()
 
 
             self.get_logger().info(f"Is Simu? {'Yes' if self.is_simu_with_webots else 'No'}\n")
@@ -338,6 +342,10 @@ class WatchtowerNode(Node):
             self.get_logger().info(f"  Reprojection error: {repr_error:.2f} px")
             self.get_logger().info(f"  Position error: {position_error:.3f} m")
             self.get_logger().info(f"  Orientation error: {angle_error_deg:.2f} degrees")
+            self.get_logger().info("DONE with calibration !")
+            self.get_logger().info("")
+            self.get_logger().info("")
+            self.get_logger().info("")
 
             # Set camera pose in localizer
             self.localizer.set_camera_pose(M_t_camera_to_world, quat_camera_to_world_xyzw)
@@ -358,7 +366,7 @@ class WatchtowerNode(Node):
                 self.gui.add_log(f"Reprojection error: {repr_error:.2f} px")
                 self.gui.add_log(f"Position error: {position_error:.3f} m")
                 self.gui.add_log(f"Orientation error: {angle_error_deg:.2f} degrees")
-                
+
             # Transition to running state
             self._transition_to_running()
             
@@ -409,25 +417,6 @@ class WatchtowerNode(Node):
         except Exception as e:
             self.get_logger().error(f"Error in image callback: {e}")
 
-    def _get_team_color(self, marker_id: int) -> tuple:
-        """
-        Get team color based on marker ID.
-
-        Args:
-            marker_id: ArUco marker ID
-
-        Returns:
-            Tuple of (color_name, color_code, emoji)
-            - IDs 1-5: Blue team
-            - IDs 6-10: Yellow team
-        """
-        if 1 <= marker_id <= 5:
-            return ("Blue", "#2196F3", "🔵")
-        elif 6 <= marker_id <= 10:
-            return ("Yellow", "#FFC107", "🟡")
-        else:
-            return ("Unknown", "#9E9E9E", "⚪")
-
     def _visualize_table_with_robots(self, detections_dict: dict, target_width: int = None, target_height: int = None) -> np.ndarray:
         """
         Create a visualization of the table with detected robot positions.
@@ -474,7 +463,8 @@ class WatchtowerNode(Node):
             if hasattr(self.localizer, 'camera_pose') and self.localizer.camera_pose is not None:
                 cam_pos = np.array(self.localizer.camera_pose['position'])
                 table_w, table_h = self.table_width, self.table_height
-                
+
+                # TODO just to see the reference point (0,0) of the image
                 cv2.circle(viz_image, (20, 20), 50, (0, 0, 0), 10)  # Black outline
 
                 # Normalize to 0-1 range
@@ -485,7 +475,7 @@ class WatchtowerNode(Node):
                 cam_img_x = int(norm_cam_x * w)
                 cam_img_y = int(norm_cam_y * h) + 30 # TODO MARGIN TO SEE IT
                 
-                self.get_logger().info(f"Camera position in table frame: {cam_pos}, normalized: ({norm_cam_x:.3f}, {norm_cam_y:.3f}), pixel: ({cam_img_x}, {cam_img_y})")
+                # self.get_logger().info(f"Camera position in table frame: {cam_pos}, normalized: ({norm_cam_x:.3f}, {norm_cam_y:.3f}), pixel: ({cam_img_x}, {cam_img_y})")
                 
                 # Draw camera as a square (cyan color)
                 size = max(10, int(min(w, h) / 30)) # Proportional to image size
@@ -496,13 +486,13 @@ class WatchtowerNode(Node):
 
                 cam_quat = self.localizer.camera_pose['quaternion']
                 cam_yaw = angles.quat_to_rad(w=cam_quat[3], z=cam_quat[2])
-                self.get_logger().debug(f"Camera yaw angle: {math.degrees(cam_yaw):.1f} degrees")
+                # self.get_logger().debug(f"Camera yaw angle: {math.degrees(cam_yaw):.1f} degrees")
             else:
                 self.get_logger().warning(f"Cannot draw camera: hasattr={hasattr(self.localizer, 'camera_pose')}, value={getattr(self.localizer, 'camera_pose', None)}")
             
             # Draw robots on the table
             for marker_id, data in detections_dict.items():
-                team_name, team_color_hex, emoji = self._get_team_color(marker_id)
+                team_name, team_color_hex, emoji = get_team_color(marker_id)
                 
                 # Convert hex to BGR for OpenCV
                 team_color_bgr = tuple(int(team_color_hex[i:i+2], 16) for i in (5, 3, 1))
@@ -510,19 +500,18 @@ class WatchtowerNode(Node):
                 # data['position'] is in world/table frame
                 pos_table = np.array(data['position'])
                 self.get_logger().info(f"Robot {marker_id} position in table frame: {pos_table}")
-                
+
                 # Project to image coordinates
                 table_w, table_h = self.table_width, self.table_height
-                
+
                 # Normalize to 0-1 range (center of table at 0.5, 0.5)
-                norm_x = ((table_w - pos_table[1]) / table_w)
-                norm_y = (pos_table[0] / table_h)
-                
+                norm_x = ((table_w - pos_table[0]) / table_w)
+                norm_y = (pos_table[1] / table_h)
+
                 # Convert to pixel coordinates
                 img_x = int(norm_x * w)
-                img_y = int((1.0 - norm_y) * h)
-                
-                self.get_logger().info(f"Robot {marker_id} normalized: ({norm_x:.3f}, {norm_y:.3f}) -> pixel ({img_x}, {img_y})")
+                img_y = int((norm_y) * h)
+                self.get_logger().info(f"Robot {marker_id} normalized: ({norm_x:.3f}, {norm_y:.3f}) -> pixel ({img_x}/{table_w}, {img_y}/{table_h})")
                 
                 # Clamp to image bounds with small margin
                 # img_x = max(30, min(img_x, w - 30))
@@ -545,7 +534,9 @@ class WatchtowerNode(Node):
                            cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
                 
                 self.get_logger().debug(f"Drew robot {marker_id} at ({img_x}, {img_y})")
-            
+
+            # Rotate viz_image by 180° for easier viz
+            viz_image = cv2.rotate(viz_image, cv2.ROTATE_180)
             return viz_image
             
         except Exception as e:
@@ -553,6 +544,8 @@ class WatchtowerNode(Node):
             import traceback
             traceback.print_exc()
             return self.table_ref_image_color if self.table_ref_image_color is not None else None
+
+        exit()
             
     def _process_and_publish(self):
         """Process latest image and publish robot poses."""
@@ -561,84 +554,85 @@ class WatchtowerNode(Node):
                 return
             image = self.latest_image.copy()
             
-        try:
-            # Convert to grayscale for processing
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            
-            # Localize robots
-            id_filter = (self.marker_id_min, self.marker_id_max)
-            results = self.localizer.localize_robots(gray, id_filter=id_filter)
-            
-            if self.gui:
-                # Log detection with team colors
-                if results:
-                    detection_log = f"Detected {len(results)} robot(s):"
-                    for marker_id in sorted(results.keys()):
-                        team_name, _, emoji = self._get_team_color(marker_id)
-                        detection_log += f" {emoji}ID{marker_id}"
-                    self.gui.add_log(detection_log)
-                else:
-                    self.gui.add_log("No robots detected in this frame")
-            
-            # Publish pose array
+        # try:
+        # Convert to grayscale for processing
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Localize robots
+        id_filter = (self.marker_id_min, self.marker_id_max)
+        results = self.localizer.localize_robots(gray, id_filter=id_filter)
+
+        if self.gui:
+            # Log detection with team colors
             if results:
-                pose_array = PoseArray()
-                pose_array.header.stamp = self.get_clock().now().to_msg()
-                pose_array.header.frame_id = 'world'
-                
-                for marker_id, data in results.items():
-                    pose = Pose()
-                    pose.position.x = float(data['position'][0])
-                    pose.position.y = float(data['position'][1])
-                    pose.position.z = float(data['position'][2])
-                    pose.orientation.x = float(data['quaternion'][0])
-                    pose.orientation.y = float(data['quaternion'][1])
-                    pose.orientation.z = float(data['quaternion'][2])
-                    pose.orientation.w = float(data['quaternion'][3])
-                    pose_array.poses.append(pose)
-                    
-                self.pose_array_pub.publish(pose_array)
-            
-            # Create visualization image
-            viz_image = self.localizer.visualize_detections(
-                image, 
-                id_filter=id_filter,
-                draw_axes=True
-            )
-            
-            # Create table visualization with robot positions
-            # Get target size for visualization
-            canvas_width = 600
-            canvas_height = 400
-            if self.gui:
-                self.gui.table_canvas.update()
-                canvas_width = self.gui.table_canvas.winfo_width()
-                canvas_height = self.gui.table_canvas.winfo_height()
-                if canvas_width <= 1:
-                    canvas_width = 600
-                if canvas_height <= 1:
-                    canvas_height = 400
-            
-            table_viz = self._visualize_table_with_robots(results if results else {}, 
-                                                          target_width=canvas_width,
-                                                          target_height=canvas_height)
-            
-            # Update GUI with visualizations
-            if self.gui:
-                self.gui.update_image(viz_image)
-                if table_viz is not None:
-                    self.gui.update_table_image(table_viz)
-                self.gui.update_detections(results if results else {})
-            
-            # Publish visualization
-            viz_msg = self.bridge.cv2_to_imgmsg(viz_image, encoding='bgr8')
-            self.viz_image_pub.publish(viz_msg)
-            
-        except Exception as e:
-            error_msg = f"Error processing image: {e}"
-            self.get_logger().error(error_msg)
-            if self.gui:
-                self.gui.add_log(f"ERROR: {error_msg}")
+                detection_log = f"Detected {len(results)} robot(s):"
+                for marker_id in sorted(results.keys()):
+                    self.get_logger().warning(f"Robot {marker_id} detected.")
+                    team_name, _, emoji = get_team_color(marker_id)
+                    detection_log += f" {emoji}ID{marker_id}"
+                self.gui.add_log(detection_log)
+            else:
+                self.gui.add_log("No robots detected in this frame")
+
+        # Publish pose array
+        if results:
+            pose_array = PoseArray()
+            pose_array.header.stamp = self.get_clock().now().to_msg()
+            pose_array.header.frame_id = 'world'
+
+            for marker_id, data in results.items():
+                pose = Pose()
+                pose.position.x = float(data['position'][0])
+                pose.position.y = float(data['position'][1])
+                pose.position.z = float(data['position'][2])
+                pose.orientation.x = float(data['quaternion'][0])
+                pose.orientation.y = float(data['quaternion'][1])
+                pose.orientation.z = float(data['quaternion'][2])
+                pose.orientation.w = float(data['quaternion'][3])
+                pose_array.poses.append(pose)
+
+            self.pose_array_pub.publish(pose_array)
+
+        # Create visualization image
+        viz_image = self.localizer.visualize_detections(
+            image,
+            id_filter=id_filter,
+            draw_axes=True
+        )
+
+        # Create table visualization with robot positions
+        # Get target size for visualization
+        canvas_width = 600
+        canvas_height = 400
+        if self.gui:
+            self.gui.table_canvas.update()
+            canvas_width = self.gui.table_canvas.winfo_width()
+            canvas_height = self.gui.table_canvas.winfo_height()
+            if canvas_width <= 1:
+                canvas_width = 600
+            if canvas_height <= 1:
+                canvas_height = 400
+
+        table_viz = self._visualize_table_with_robots(results if results else {},
+                                                      target_width=canvas_width,
+                                                      target_height=canvas_height)
+
+        # Update GUI with visualizations
+        if self.gui:
+            self.gui.update_image(viz_image)
+            if table_viz is not None:
+                self.gui.update_table_image(table_viz)
+            self.gui.update_detections(results if results else {})
+
+        # Publish visualization
+        viz_msg = self.bridge.cv2_to_imgmsg(viz_image, encoding='bgr8')
+        self.viz_image_pub.publish(viz_msg)
+
+        # except Exception as e:
+        #     error_msg = f"Error processing image: {e}"
+        #     self.get_logger().error(error_msg)
+        #     if self.gui:
+        #         self.gui.add_log(f"ERROR: {error_msg}")
             
     def spin(self):
         """Custom spin to handle GUI updates and ROS callbacks."""

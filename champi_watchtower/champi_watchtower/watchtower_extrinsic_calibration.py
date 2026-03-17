@@ -46,7 +46,7 @@ class WatchtowerExtrinsicCalibrator:
             [0, -1, 0],   # X_opencv = -Y_webots
             [0, 0, -1],   # Y_opencv = -Z_webots
             [1, 0, 0]     # Z_opencv = X_webots
-        ])
+        ]) # TODO duplicate with robot_localization_from_watchtower
         
     def detect_and_match_features(self, img_table: np.ndarray, img_camera: np.ndarray) -> Tuple[np.ndarray, np.ndarray, int]:
         """
@@ -169,7 +169,7 @@ class WatchtowerExtrinsicCalibrator:
         ])
 
         # Apply correction to the computed camera orientation
-        M_R_camera_to_world = R_z_180 @ M_R_camera_to_world
+        # M_R_camera_to_world = R_z_180 @ M_R_camera_to_world # TODO should not stay
 
         M_Z_neutral = np.ones_like(M_t_camera_to_world) # just to pass this arg
         M_T_camera_to_world = affines.compose(M_t_camera_to_world, M_R_camera_to_world, M_Z_neutral)
@@ -209,6 +209,7 @@ class WatchtowerExtrinsicCalibrator:
         image_points = inlier_dst.astype(np.float32)
         
         # Step 3: Solve PnP
+        # Here tvec is already in the frame (bottom-left) of the table (same as we use on the robot), as we compare the images. It is not related to webots frame.
         success, rvec, tvec = self.solve_pnp(object_points, image_points)
         
         if not success:
