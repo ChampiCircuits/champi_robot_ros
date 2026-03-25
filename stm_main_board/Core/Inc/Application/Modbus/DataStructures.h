@@ -23,9 +23,6 @@ struct __attribute__((packed)) Vector3 {
 struct __attribute__((packed)) HoloDriveConfig {
   double wheel_radius;
   double base_radius;
-  // per-wheel angles (rad) and distances (m) - wheel order: 0,1,2
-  double wheel_angles[3];
-  double wheel_distances[3];
   double max_accel_wheel;
   double max_accel_linear;
   double max_decel_linear;

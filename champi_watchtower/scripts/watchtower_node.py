@@ -32,11 +32,11 @@ def get_true_simulation_camera_transform():
     This coords are in the frame that is located in the bottom-left corner of the table (not webots frame at table center)
     """
 
-    # True values
-    M_t_world_to_support = np.array([1.5 + 0.225, 1 - 1.12, 0.08])  # TODO le +/-0.225 dépend de couleur jaune ou bleu
-    quat_world_to_support_xyzw = np.array([0, 0, -0.707105, 0.707105])  # quaternion (x, y, z, w)
-    M_t_support_to_camera = np.array([0.0, 0.0, 0.91])
-    quat_support_to_camera_xyzw = np.array([-0.031363, 0.34146, -0.0859194, 0.935435])  # quaternion (x, y, z, w)
+    # True values ((1.5;1) come from the webots frame which on the center of the table)
+    M_t_world_to_support = np.array([1.5 + 0.225, 1 - 1.022, 0.07])  # TODO le +/-0.225 dépend de couleur jaune ou bleu
+    quat_world_to_support_xyzw = np.array([0.0, 0.0, -0.707108, 0.707105])  # quaternion (x, y, z, w)
+    M_t_support_to_camera = np.array([-0.025808, 0.0, 0.7]) #z=1.13051
+    quat_support_to_camera_xyzw = np.array([0.0, 0.522687, 0.0, 0.852525])  # quaternion (x, y, z, w)
 
     # XYZW -> WXYZ
     quat_world_to_support_wxyz = [quat_world_to_support_xyzw[3], *quat_world_to_support_xyzw[:3]]
@@ -53,6 +53,8 @@ def get_true_simulation_camera_transform():
     M_T_world_to_camera = M_T_world_to_support @ M_T_support_to_camera
 
     return M_T_world_to_camera
+
+# TODO get values from .wbt directly ?
 
 
 class WatchtowerNode(Node):
@@ -337,6 +339,7 @@ class WatchtowerNode(Node):
             self.get_logger().info(f"Is Simu? {'Yes' if self.is_simu_with_webots else 'No'}\n")
             self.get_logger().info(f"Calibration successful!")
             self.get_logger().info(f"  Est° Position: [{M_t_camera_to_world[0]:.3f}, {M_t_camera_to_world[1]:.3f}, {M_t_camera_to_world[2]:.3f}]")
+            self.get_logger().info(f"  True Position: [{M_t_camera_to_world_true[0]:.3f}, {M_t_camera_to_world_true[1]:.3f}, {M_t_camera_to_world_true[2]:.3f}]")
             self.get_logger().info(f"  Est° Quaternion: [x={quat_camera_to_world_xyzw[0]:.3f}, y={quat_camera_to_world_xyzw[1]:.3f}, z={quat_camera_to_world_xyzw[2]:.3f}, w={quat_camera_to_world_xyzw[3]:.3f}]")
             self.get_logger().info(f"  Inliers: {num_inliers}")
             self.get_logger().info(f"  Reprojection error: {repr_error:.2f} px")
@@ -346,6 +349,7 @@ class WatchtowerNode(Node):
             self.get_logger().info("")
             self.get_logger().info("")
             self.get_logger().info("")
+            exit()
 
             # Set camera pose in localizer
             self.localizer.set_camera_pose(M_t_camera_to_world, quat_camera_to_world_xyzw)
