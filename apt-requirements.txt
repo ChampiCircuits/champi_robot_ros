@@ -8,4 +8,7 @@ graphviz-dev
 ros-jazzy-librealsense2
 ros-jazzy-realsense2-*
 dos2unix
+# For the web server, we use
 openocd
+nodejs
+npm
