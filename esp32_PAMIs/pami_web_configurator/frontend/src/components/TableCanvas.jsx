@@ -1,0 +1,333 @@
+import React, { useRef, useEffect, useState } from 'react';
+
+const PAMI_COLORS = {
+    1: '#FF0000', // Rouge
+    2: '#0000FF', // Bleu
+    3: '#008000', // Vert
+    4: '#FFA500', // Orange
+    5: '#800080', // Violet
+    6: '#FF00FF'  // Magenta
+};
+
+const PAMI_LENGTH_MM = 150; // Rectangle 15cm x 8cm
+const PAMI_WIDTH_MM = 80;
+
+const TABLE_WIDTH_MM = 3000;
+const TABLE_HEIGHT_MM = 2000;
+const CANVAS_WIDTH = 900;
+const CANVAS_HEIGHT = 600;
+
+// Fonctions de conversions Pixels <-> Millimètres avec repère en bas à gauche
+const mmToPxX = (x_mm) => (x_mm / TABLE_WIDTH_MM) * CANVAS_WIDTH;
+const mmToPxY = (y_mm) => CANVAS_HEIGHT - ((y_mm / TABLE_HEIGHT_MM) * CANVAS_HEIGHT); // Inversion Y
+const pxToMmX = (x_px) => Math.round((x_px / CANVAS_WIDTH) * TABLE_WIDTH_MM);
+const pxToMmY = (y_px) => Math.round(((CANVAS_HEIGHT - y_px) / CANVAS_HEIGHT) * TABLE_HEIGHT_MM);
+
+// Helpers pour la détection de collision via le théorème des axes séparateurs (SAT)
+const getOBBCorners = (x, y, w, h, angle) => {
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+    const hw = w / 2, hh = h / 2;
+    // Les 4 coins d'un rectangle centré en 0,0 avant rotation
+    return [
+        { lx: -hw, ly: -hh },
+        { lx: hw, ly: -hh },
+        { lx: hw, ly: hh },
+        { lx: -hw, ly: hh }
+    ].map(c => ({
+        x: x + c.lx * cosA - c.ly * sinA,
+        y: y + c.lx * sinA + c.ly * cosA
+    }));
+};
+
+const projectOBB = (corners, axis) => {
+    let min = corners[0].x * axis.x + corners[0].y * axis.y;
+    let max = min;
+    for (let i = 1; i < corners.length; i++) {
+        const projected = corners[i].x * axis.x + corners[i].y * axis.y;
+        if (projected < min) min = projected;
+        if (projected > max) max = projected;
+    }
+    return { min, max };
+};
+
+const checkOBBCollision = (rect1, rect2) => {
+    const c1 = getOBBCorners(rect1.x, rect1.y, rect1.w, rect1.h, rect1.angle);
+    const c2 = getOBBCorners(rect2.x, rect2.y, rect2.w, rect2.h, rect2.angle);
+
+    // Récupérer les axes normaux à explorer (les arrêtes de chaque rectangle)
+    const axes = [
+        { x: c1[1].x - c1[0].x, y: c1[1].y - c1[0].y },
+        { x: c1[2].x - c1[1].x, y: c1[2].y - c1[1].y },
+        { x: c2[1].x - c2[0].x, y: c2[1].y - c2[0].y },
+        { x: c2[2].x - c2[1].x, y: c2[2].y - c2[1].y }
+    ];
+
+    for (let axis of axes) {
+        const len = Math.hypot(axis.x, axis.y);
+        if (len === 0) continue;
+        const normAxis = { x: axis.x / len, y: axis.y / len };
+        
+        const p1 = projectOBB(c1, normAxis);
+        const p2 = projectOBB(c2, normAxis);
+
+        // Si intervalles de projection séparés -> pas de collision
+        if (p1.max < p2.min || p2.max < p1.min) return false;
+    }
+    return true; // Tous les axes se superposent -> on touche !
+};
+
+// Helper : trouve la position exacte à une certaine distance parcourue et calcule l'angle (orientation)
+const getPositionAtDistance = (pts, targetDist) => {
+    if (!pts || pts.length === 0) return null;
+    if (pts.length === 1) return { ...pts[0], angle: 0 };
+    
+    let currentD = 0;
+    for (let i = 1; i < pts.length; i++) {
+        const dx = pts[i].x - pts[i - 1].x;
+        const dy = pts[i].y - pts[i - 1].y;
+        const segDist = Math.hypot(dx, dy);
+        
+        if (currentD + segDist >= targetDist) {
+            const ratio = (targetDist - currentD) / segDist;
+            return {
+                x: pts[i - 1].x + dx * ratio,
+                y: pts[i - 1].y + dy * ratio,
+                angle: Math.atan2(dy, dx)
+            };
+        }
+        currentD += segDist;
+    }
+    // Si on dépasse, on reste sur le dernier point et on garde l'angle du dernier segment
+    const dx = pts[pts.length - 1].x - pts[pts.length - 2].x;
+    const dy = pts[pts.length - 1].y - pts[pts.length - 2].y;
+    return { ...pts[pts.length - 1], angle: Math.atan2(dy, dx) };
+};
+
+const TableCanvas = ({ selectedPami, waypoints, setWaypoints, allTrajectories, elapsedTime, isPlaying, speedMmPerS }) => {
+    const canvasRef = useRef(null);
+    const [redoStack, setRedoStack] = useState([]);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // En millimètres réels
+    
+    // Clear redo history when changing PAMI context
+    useEffect(() => {
+        setRedoStack([]);
+    }, [selectedPami]);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.src = '/table_map.png';
+        
+        img.onload = () => {
+            // Config de l'animation pour les re-renders
+            const render = () => {
+                ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                ctx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                const botPositions = {};
+
+                // 1. Dessiner les trajectoires
+                Object.keys(allTrajectories).forEach(pamiId => {
+                    const pts = allTrajectories[pamiId];
+                    if (!pts || pts.length === 0) return;
+                    
+                    const isSelected = parseInt(pamiId) === selectedPami;
+                    
+                    // Si on est en mode édition pure, on grise les autres trajectoires
+                    const isAnimActive = isPlaying || elapsedTime > 0;
+                    ctx.globalAlpha = (!isAnimActive && !isSelected) ? 0.2 : 0.7;
+
+                    ctx.beginPath();
+                    ctx.moveTo(mmToPxX(pts[0].x), mmToPxY(pts[0].y));
+                    for (let i = 1; i < pts.length; i++) {
+                        ctx.lineTo(mmToPxX(pts[i].x), mmToPxY(pts[i].y));
+                    }
+                    ctx.strokeStyle = PAMI_COLORS[pamiId];
+                    ctx.lineWidth = isSelected ? 3 : 2;
+                    ctx.stroke();
+
+                    // Points de passage
+                    pts.forEach((wp, index) => {
+                        ctx.beginPath();
+                        ctx.arc(mmToPxX(wp.x), mmToPxY(wp.y), isSelected ? 6 : 4, 0, 2 * Math.PI);
+                        ctx.fillStyle = index === 0 ? '#ffffff' : PAMI_COLORS[pamiId];
+                        ctx.fill();
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    });
+                    
+                    ctx.globalAlpha = 1.0;
+
+                    // 2. Calcul des positions courantes pour la simulation temporelle
+                    if (isAnimActive) {
+                        const targetDist = elapsedTime * speedMmPerS;
+                        const pos = getPositionAtDistance(pts, targetDist);
+                        if (pos) {
+                            botPositions[pamiId] = pos;
+                        }
+                    }
+                });
+
+                // 3. Dessiner les robots animés et vérifier les collisions
+                if (isPlaying || elapsedTime > 0) {
+                    const idsKey = Object.keys(botPositions);
+                    const collisions = new Set();
+
+                    // Détection quadratique précise avec OBB (Oriented Bounding Boxes)
+                    for (let i = 0; i < idsKey.length; i++) {
+                        for (let j = i + 1; j < idsKey.length; j++) {
+                            const p1 = botPositions[idsKey[i]];
+                            const p2 = botPositions[idsKey[j]];
+                            
+                            const rect1 = { x: p1.x, y: p1.y, w: PAMI_LENGTH_MM, h: PAMI_WIDTH_MM, angle: p1.angle };
+                            const rect2 = { x: p2.x, y: p2.y, w: PAMI_LENGTH_MM, h: PAMI_WIDTH_MM, angle: p2.angle };
+
+                            if (checkOBBCollision(rect1, rect2)) {
+                                collisions.add(idsKey[i]);
+                                collisions.add(idsKey[j]);
+                                
+                                // Indicateur visuel du choc (un lien rouge épais entre les centres impliqués)
+                                ctx.beginPath();
+                                ctx.moveTo(mmToPxX(p1.x), mmToPxY(p1.y));
+                                ctx.lineTo(mmToPxX(p2.x), mmToPxY(p2.y));
+                                ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+                                ctx.lineWidth = 4;
+                                ctx.stroke();
+                            }
+                        }
+                    }
+
+                    // Dessin des robots (Rectangles)
+                    idsKey.forEach(id => {
+                        const pos = botPositions[id];
+                        const pxX = mmToPxX(pos.x);
+                        const pxY = mmToPxY(pos.y);
+                        
+                        const wPx = (PAMI_LENGTH_MM / TABLE_WIDTH_MM) * CANVAS_WIDTH;
+                        const hPx = (PAMI_WIDTH_MM / TABLE_HEIGHT_MM) * CANVAS_HEIGHT;
+
+                        ctx.save();
+                        ctx.translate(pxX, pxY);
+                        // Attention: angle mathématique = Y vers le haut. Notre Canvas = Y vers le bas.
+                        ctx.rotate(-pos.angle);
+
+                        // Rectangle du PAMI centré
+                        ctx.fillStyle = collisions.has(id) ? '#FF0000' : PAMI_COLORS[id];
+                        ctx.fillRect(-wPx/2, -hPx/2, wPx, hPx);
+                        ctx.strokeStyle = '#000';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(-wPx/2, -hPx/2, wPx, hPx);
+
+                        // Indicateur de la face avant (Un petit bloc à l'avant du rectangle)
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(wPx/2 - 6, -hPx/4, 6, hPx/2);
+                        
+                        ctx.restore();
+                        
+                        // Numéro du PAMI
+                        ctx.fillStyle = '#FFF';
+                        ctx.font = '14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(id, pxX, pxY);
+                    });
+                }
+            };
+            
+            render();
+        };
+    }, [waypoints, allTrajectories, selectedPami, elapsedTime, isPlaying, speedMmPerS]);
+
+    const handleMouseMove = (e) => {
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x_px = e.clientX - rect.left;
+        const y_px = e.clientY - rect.top;
+        
+        setMousePos({
+            x: pxToMmX(x_px),
+            y: pxToMmY(y_px)
+        });
+    };
+
+    const handleCanvasClick = (e) => {
+        // Interdire le dessin pendant la lecture de l'animation
+        if (isPlaying || elapsedTime > 0) return;
+
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x_px = e.clientX - rect.left;
+        const y_px = e.clientY - rect.top;
+        
+        const x_mm = pxToMmX(x_px);
+        const y_mm = pxToMmY(y_px);
+
+        const currentWaypoints = waypoints || [];
+        setWaypoints([...currentWaypoints, { x: x_mm, y: y_mm }]);
+        setRedoStack([]); 
+    };
+
+    const handleUndo = () => {
+        if (isPlaying || elapsedTime > 0) return;
+        if (waypoints && waypoints.length > 0) {
+            const currentWaypoints = [...waypoints];
+            const undone = currentWaypoints.pop();
+            setWaypoints(currentWaypoints);
+            setRedoStack([...redoStack, undone]);
+        }
+    };
+
+    const handleRedo = () => {
+        if (isPlaying || elapsedTime > 0) return;
+        if (redoStack.length > 0) {
+            const currentRedoStack = [...redoStack];
+            const redone = currentRedoStack.pop();
+            setWaypoints([...(waypoints || []), redone]);
+            setRedoStack(currentRedoStack);
+        }
+    };
+
+    const handleClear = () => {
+        if (isPlaying || elapsedTime > 0) return;
+        setWaypoints([]);
+        setRedoStack([]);
+    };
+
+    return (
+        <div>
+            <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={handleUndo} disabled={!waypoints || waypoints.length === 0 || isPlaying || elapsedTime > 0}>Undo</button>
+                    <button onClick={handleRedo} disabled={redoStack.length === 0 || isPlaying || elapsedTime > 0}>Redo</button>
+                    <button onClick={handleClear} disabled={!waypoints || waypoints.length === 0 || isPlaying || elapsedTime > 0}>Clear Trajectory</button>
+                </div>
+                <div style={{ fontFamily: 'monospace', fontSize: '15px', backgroundColor: '#eef', padding: '5px 10px', borderRadius: '5px', border: '1px solid #ccd' }}>
+                    <strong>X:</strong> {mousePos.x} mm | <strong>Y:</strong> {mousePos.y} mm
+                </div>
+            </div>
+            
+            <div style={{ marginBottom: '5px' }}>
+                <strong>Édition de la trajectoire pour le PAMI {selectedPami}</strong> 
+                {(isPlaying || elapsedTime > 0) && <span style={{ color: 'red', marginLeft: '10px' }}>(Mode Visualisation - Édition bloquée)</span>}
+            </div>
+            <canvas 
+                ref={canvasRef} 
+                width={CANVAS_WIDTH} 
+                height={CANVAS_HEIGHT} 
+                style={{ 
+                    border: '1px solid black', 
+                    cursor: (isPlaying || elapsedTime > 0) ? 'not-allowed' : 'crosshair' 
+                }}
+                onClick={handleCanvasClick}
+                onMouseMove={handleMouseMove}
+            />
+            <div style={{ display: 'flex', gap: '15px', marginTop: '5px' }}>
+                <p>Mouvements PAMI {selectedPami} : {waypoints ? waypoints.length : 0}</p>
+                <p>Détection : {Object.keys(allTrajectories).length > 0 && elapsedTime > 0 ? <span style={{color: 'green'}}>Activée</span> : "En attente"}</p>
+            </div>
+        </div>
+    );
+};
+
+export default TableCanvas;
+
