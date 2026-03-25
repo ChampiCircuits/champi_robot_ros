@@ -1,11 +1,13 @@
 #include <Arduino.h>
-#include "generated_trajectory.h"
+
+#include "motion.h"
 
 void setup() {
     Serial.begin(115200);
     Serial.println("PAMI Booting...");
+    motionInit();
 }
 
 void loop() {
-    delay(1000);
+    motionTick(micros());
 }

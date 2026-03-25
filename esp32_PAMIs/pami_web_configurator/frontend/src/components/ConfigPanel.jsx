@@ -1,6 +1,16 @@
 import React from 'react';
 
-const ConfigPanel = ({ selectedPami, setSelectedPami, globalSpeed, setGlobalSpeed, onSave, onCompileFlash, isSaving }) => {
+const ConfigPanel = ({
+    selectedPami,
+    setSelectedPami,
+    globalSpeed,
+    setGlobalSpeed,
+    startAfterDelayS,
+    setStartAfterDelayS,
+    onSave,
+    onCompileFlash,
+    isSaving,
+}) => {
     return (
         <div style={{ padding: '20px', border: '1px solid #ccc', minWidth: '300px', backgroundColor: '#fafafa' }}>
             <h2 style={{marginTop: '0'}}>Configuration</h2>
@@ -14,6 +24,18 @@ const ConfigPanel = ({ selectedPami, setSelectedPami, globalSpeed, setGlobalSpee
                     min="1"
                     style={{ width: '80px', padding: '5px', fontSize: '16px' }}
                 /> <span style={{ marginLeft: '5px' }}>cm/s</span>
+            </div>
+
+            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#fff', border: '1px solid #eee', borderRadius: '5px' }}>
+                <label style={{ marginRight: '10px' }}><strong>Delai avant depart :</strong></label>
+                <input
+                    type="number"
+                    value={startAfterDelayS}
+                    onChange={(e) => setStartAfterDelayS(Number(e.target.value))}
+                    min="0"
+                    step="0.1"
+                    style={{ width: '80px', padding: '5px', fontSize: '16px' }}
+                /> <span style={{ marginLeft: '5px' }}>s</span>
             </div>
             
             <div style={{ marginBottom: '30px' }}>

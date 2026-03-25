@@ -22,6 +22,7 @@ function App() {
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
   const [isPlaying, setIsPlaying] = useState(false);
   const [globalSpeed, setGlobalSpeed] = useState(10); // in cm/s
+  const [startAfterDelayS, setStartAfterDelayS] = useState(10); // in seconds
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -29,7 +30,8 @@ function App() {
       .then(res => res.json())
       .then(data => {
         if (data.trajectories) setTrajectories(data.trajectories);
-        if (data.globalSpeed) setGlobalSpeed(data.globalSpeed);
+        if (data.globalSpeed !== undefined) setGlobalSpeed(data.globalSpeed);
+        if (data.startAfterDelayS !== undefined) setStartAfterDelayS(data.startAfterDelayS);
       })
       .catch(err => console.error("Could not load backend config", err));
   }, []);
@@ -39,7 +41,7 @@ function App() {
     fetch(`${API_URL}/config`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trajectories, globalSpeed })
+      body: JSON.stringify({ trajectories, globalSpeed, startAfterDelayS })
     })
     .then(res => res.json())
     .then(() => {
@@ -110,6 +112,8 @@ function App() {
           setSelectedPami={setSelectedPami}
           globalSpeed={globalSpeed}
           setGlobalSpeed={setGlobalSpeed}
+          startAfterDelayS={startAfterDelayS}
+          setStartAfterDelayS={setStartAfterDelayS}
           onSave={handleSaveConfig}
           onCompileFlash={() => handleCompileFlash(selectedPami)}
           isSaving={isSaving}

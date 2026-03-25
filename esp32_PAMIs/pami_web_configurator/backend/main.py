@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, List, Any
+from typing import Dict, List
 import json
 import os
 from generator import generate_cpp_code
@@ -23,20 +23,29 @@ class Waypoint(BaseModel):
 class ConfigData(BaseModel):
     trajectories: Dict[str, List[Waypoint]]
     globalSpeed: float
+    startAfterDelayS: float
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "data", "config.json")
 
 @app.get("/api/config")
 def load_config():
+    default_config = {
+        "trajectories": {str(i): [] for i in range(1, 7)},
+        "globalSpeed": 10,
+        "startAfterDelayS": 10,
+    }
+
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    return {"trajectories": {str(i): [] for i in range(1, 7)}, "globalSpeed": 10}
+            loaded = json.load(f)
+            return {**default_config, **loaded}
+
+    return default_config
 
 @app.post("/api/config")
-def save_config(config: dict):
+def save_config(config: ConfigData):
     with open(DATA_FILE, "w") as f:
-         json.dump(config, f)
+         json.dump(config.model_dump(), f)
     return {"status": "ok"}
 
 @app.post("/api/flash/{pami_id}")
