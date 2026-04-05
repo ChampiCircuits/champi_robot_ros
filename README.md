@@ -61,6 +61,15 @@ You can also add options to this command. Those options are the same that for th
 build --packages-up-to my_package
 ```
 
+## Launching locally in simulation
+
+Open Rviz2 and load the config file `champi_ws/src/champi_robot_ros/champi_bringup/config/rviz/config.rviz` to visualize the robot in simulation. Then launch the following command to launch the robot in simulation with Gazebo and Rviz2:
+```shell
+rviz2 -d ~/champi_ws/src/champi_robot_ros/champi_bringup/config/rviz/config.rviz
+```
+```shell
+ ros2 launch champi_bringup bringup.launch.py sim:=true nav:=true brain:=true
+```
 
 
 ## Useful scripts

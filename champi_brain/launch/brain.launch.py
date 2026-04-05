@@ -25,7 +25,7 @@ def generate_launch_description():
 
     sm = Node(
         package='champi_brain',
-        executable='state_machine_itf.py',
+        executable='state_machine_node.py',
         name='sm_ros_itf',
         output='screen',
         respawn=True,
