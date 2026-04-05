@@ -267,16 +267,26 @@ class StrategyBuilder:
         return self
     
     # Reusable functions for common sub-actions
-    def put_banner(self, group: str) -> 'StrategyBuilder':
+    def move_thermometer(self, group: str) -> 'StrategyBuilder':
         """Complete sequence for placing the banner
         
         Args:
-            target_position: Position object where to place the banner
+            target_position: Position object
             group: Group name for these actions
         """
         self.set_current_group(group)
-        # TODO: PUT_BANNER does not exists anymore. use thermometer instead
-        points = self.points_per_action["PUT_BANNER"]
+
+        # thermometer initial position is on the rightmost of its slider.
+        # we have to move it in the center of the slider
+        thermometer_initial_position = Position(1.4, 0.0, 180.0)
+        thermometer_target_position = Position(0.7, 0.0, 180.0)
+
+        self.move_relative_to(thermometer_initial_position, Offset(0.05, -0.1, 0.0), use_collision_avoidance=True)
+        self.custom_action(ActuatorCommand.THERMOMETER_LOWER_SERVO)
+        self.move_relative_to(thermometer_target_position, Offset(0.05, -0.1, 0.0), use_collision_avoidance=True)
+        self.custom_action(ActuatorCommand.THERMOMETER_RAISE_SERVO)
+
+        points = self.points_per_action["THERMOMETER"]
         self.add_points(points, f"put_banner finished. {points} points for putting the banner", group=group)
         return self
 
@@ -292,14 +302,14 @@ class StrategyBuilder:
         self.set_current_group(group)
 
         # Approach movement
-        self.move_relative_to(elements_center, Offset(-0.35, 0.0, 0.0), use_collision_avoidance=True)
+        self.move_relative_to(elements_center, Offset(-0.2, 0.0, 0.0), use_collision_avoidance=True)
 
         # Platform detection - offset from platform center
         # self.custom_action("detectPlatform")
 
         # Taking first 2 boxes
         self.custom_action(ActuatorCommand.TAKE_2_BOXES)
-        self.move_relative_to(elements_center, Offset(-0.15, 0.0, 0.0))
+        self.move_relative_to(elements_center, Offset(-0.1, 0.0, 0.0))
         self.custom_action(ActuatorCommand.TAKE_2_BOXES)
         
         return self
@@ -313,26 +323,15 @@ class StrategyBuilder:
         """
         self.set_current_group(group)
         
-        # First positioning - offset from target center
-        self.move_relative_to(target_position, Offset(-0.21, 0.0, -60.0), use_collision_avoidance=True)
-
-        # TODO: PUT_CANS_LEFT_LAYER_1 not yet added to ActuatorCommand enum
-        # TODO: PUT_LOWER_PLANK_LAYER_1 not yet added to ActuatorCommand enum
-        # TODO: TAKE_UPPER_PLANK not yet added to ActuatorCommand enum
-
-        # Turn with RIGHT side facing - offset from target center
-        self.move_relative_to(target_position, Offset(-0.21, 0.0, 60.0))
-        
-        # TODO: PUT_CANS_RIGHT_LAYER_2 not yet added to ActuatorCommand enum
-
-        # Turn with LEFT side facing - offset from target center
-        self.move_relative_to(target_position, Offset(-0.21, 0.0, -60.0))
-        
-        # TODO: PUT_UPPER_PLANK_LAYER_2 not yet added to ActuatorCommand enum
+        # On dépose les caisses par l'arrière du robot
+        self.move_relative_to(target_position, Offset(0.1, 0.0, 0.0), use_collision_avoidance=True)
+        self.custom_action(ActuatorCommand.PUSH_2_BOXES_OUT)
+        self.move_relative_to(target_position, Offset(0.2, 0.0, 0.0), use_collision_avoidance=True)
+        self.custom_action(ActuatorCommand.PUSH_2_BOXES_OUT)
 
         # Add points
-        points = self.points_per_action["2_LAYERS_STRUCTURE"]
-        self.add_points(points, f"put_elements finished. {points} points for 2 layers structure", group=group)
+        points = self.points_per_action["PUSH_2_BOXES_OUT"] # TODO changer les points
+        self.add_points(points, f"put_elements finished. {points} points", group=group)
 
         return self
     

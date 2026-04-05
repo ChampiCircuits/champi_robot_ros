@@ -9,6 +9,9 @@ from rclpy.node import Node
 from champi_brain.action_executor.action_executor import ActionExecutor
 from std_msgs.msg import Int8
 
+from champi_brain.actuator_commands import ActuatorCommand
+
+
 class SIMActionExecutor(ActionExecutor):
     """
     Simulation implementation of the ActionExecutor interface.
@@ -27,24 +30,26 @@ class SIMActionExecutor(ActionExecutor):
         self.simulate_actuators_delays = simulate_actuators_delays
         self.time_per_action: dict = {}
     
-    def execute_actuator_action(self, action_name: str) -> None:
+    def execute_actuator_action(self, actuator_command: ActuatorCommand) -> None:
         """
         Send actuator command to the robot.
         
         Args:
-            action_name: Name of actuator action (PUT_BANNER, TAKE_CANS, etc.)
+            actuator_command: Name of actuator action (PUT_BANNER, TAKE_CANS, etc.)
         """
         if not self.simulate_actuators_delays:
-            self.logger.info(f'Executing actuator action: {action_name} in sim, no delay simulated')
+            self.logger.info(f'Executing actuator action: {actuator_command.name} in sim, no delay simulated')
             return
         
         # Get delay from configuration
-        delay = self.time_per_action[action_name]
-        if delay is None:
-            raise ValueError(f'No time_per_action entry for action: {action_name}')
-        self.logger.info(f'Executing actuator action: {action_name} in sim, waiting {delay}s')
+        try:
+            delay = self.time_per_action[actuator_command.name]
+        except KeyError:
+            raise ValueError(f'No time_per_action entry for action: {actuator_command.name}, possible values: {list(self.time_per_action.keys())}')
+
+        self.logger.info(f'Executing actuator action: {actuator_command.name} in sim, waiting {delay}s')
         time.sleep(delay)  # TODO: make non-blocking with timer callback?
-        self.logger.info(f'Executing actuator action: {action_name} done!')
+        self.logger.info(f'Executing actuator action: {actuator_command.name} done!')
 
     def set_time_per_action(self, time_per_action: dict) -> None:
         """

@@ -149,7 +149,7 @@ path_planner:
     # Match timing parameters
     match_total_time: 100.0                           # seconds - Total match duration
     return_home_safety_margin: 2.0                    # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left
-    simulate_actuators_delays: false                   # If false, actuators commands will be applied instantly (no delay simulation)
+    simulate_actuators_delays: true                   # If false, actuators commands will be applied instantly (no delay simulation)
 
 /champi_brain/world_state_node:
   ros__parameters:

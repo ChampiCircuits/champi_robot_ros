@@ -290,7 +290,7 @@ class StateMachine:
         
         self.logger.info(f"Moving to wait position ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
         self.executor.move_to(x, y, theta_deg, motion)
-        self.executor.execute_actuator_action('RESET_ACTUATORS')
+        self.executor.execute_actuator_action(ActuatorCommand.RESET_ACTUATOR)
     
     def _on_enter_end_of_match(self) -> None:
         """Handle end of match."""

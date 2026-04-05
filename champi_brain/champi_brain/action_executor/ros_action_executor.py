@@ -8,6 +8,9 @@ from rclpy.node import Node
 from champi_brain.action_executor.action_executor import ActionExecutor
 from std_msgs.msg import Int8
 
+from champi_brain.actuator_commands import ActuatorCommand
+
+
 class ROSActionExecutor(ActionExecutor):
     """
     ROS2 implementation of the ActionExecutor interface.
@@ -35,22 +38,17 @@ class ROSActionExecutor(ActionExecutor):
         self.logger.info('Platform detection triggered')
         
     
-    def execute_actuator_action(self, action_name: str) -> None:
+    def execute_actuator_action(self, actuator_command: ActuatorCommand) -> None:
         """
         Send actuator command to the robot.
         
         Args:
-            action_name: Name of actuator action (PUT_BANNER, TAKE_CANS, etc.)
+            actuator_command: Name of actuator action (PUT_BANNER, TAKE_CANS, etc.)
         """
-        self.logger.info(f'Executing actuator action: {action_name}')
-        
-        action_id = self._action_name_to_id(action_name)
-        if action_id is None:
-            self.logger.error(f'Unknown actuator action: {action_name}')
-            return
-        
+        self.logger.info(f'Executing actuator action: {actuator_command}')
+
         msg = Int8()
-        msg.data = action_id
+        msg.data = int(actuator_command)
         self.actuator_pub.publish(msg)
         # TODO there should be feedback when action is done
         # also we should be able to tell if we want to wait for completion or not

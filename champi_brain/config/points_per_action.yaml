@@ -1,7 +1,9 @@
 # Describes the points awarded per action in the game
-# CDR 2025
+# CDR 2026
 
 points_per_action:
-  PUT_BANNER: 20
+  THERMOMETER: 10
+  PUT_2_LAST_BOXES_ON_THE_GROUND: 4 # 2x2 dans le nid
+  PUSH_2_BOXES_OUT: 6 # 2x3 dans un garde-manger
   COME_HOME: 10
-  2_LAYERS_STRUCTURE: 12 # 4 points per layer of level 1 + 8 points per layer of level 2
+# TODO estimate the points for bonuses

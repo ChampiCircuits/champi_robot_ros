@@ -5,21 +5,16 @@
 # - Plan action sequences with accurate timing estimates
 
 time_per_action:
-  # Banner placement
-  PUT_BANNER: 2.0
-  
-  # Plank manipulation
-  TAKE_LOWER_PLANK: 1.5
-  TAKE_UPPER_PLANK: 1.5
-  PUT_LOWER_PLANK_LAYER_1: 2.0
-  PUT_UPPER_PLANK_LAYER_2: 2.0
-  
-  # Cans manipulation
-  TAKE_CANS_RIGHT: 1.5
-  TAKE_CANS_LEFT: 1.5
-  PUT_CANS_RIGHT_LAYER_2: 2.0
-  PUT_CANS_LEFT_LAYER_1: 2.0
-  
+  THERMOMETER_LOWER_SERVO: 0.5
+  THERMOMETER_RAISE_SERVO: 0.5
+  TAKE_2_BOXES: 1.5
+  BRING_2_BOXES_ON_TOP: 0.0 # not blocking
+  PUT_2_LAST_BOXES_ON_THE_GROUND: 1.0
+  PREPARE_TOP_PUSHER: 0.0 # not blocking
+  GRAB_AND_SORT_2_BOXES_FROM_LIFT: 0.0 # not blocking
+  PUSH_2_BOXES_OUT: 1.5
+  OPEN_EXIT_RAMP: 0.0 # not blocking
+
   # System commands
   RESET_ACTUATORS: 3.0
   STOP_ALL_MOTORS: 0.0

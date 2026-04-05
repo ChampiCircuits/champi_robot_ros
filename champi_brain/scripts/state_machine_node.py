@@ -13,6 +13,7 @@ from ament_index_python.packages import get_package_share_directory
 from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32
 from nav_msgs.msg import Odometry
 from rclpy.duration import Duration
+
 from champi_interfaces.msg import STMState, TableObservation
 from champi_interfaces.srv import SetPose
 # Other imports
@@ -26,6 +27,7 @@ from champi_brain.action_executor.ros_action_executor import ROSActionExecutor
 from champi_brain.action_executor.sim_action_executor import SIMActionExecutor
 from champi_brain.strategy_loader import load_strategy
 from champi_brain.motion_config import configure_motion_defaults
+from champi_brain.actuator_commands import ActuatorCommand
 
 
 class StateMachineNode(Node):
@@ -267,9 +269,9 @@ class StateMachineNode(Node):
         # Reset actuators
         if not self.sim_mode:
             time.sleep(0.5)
-            self.action_executor.execute_actuator_action('ENABLE_ALL_MOTORS')
+            self.action_executor.execute_actuator_action(ActuatorCommand.ENABLE_ALL_MOTORS)
             time.sleep(1.0)
-            self.action_executor.execute_actuator_action('RESET_ACTUATORS')
+            self.action_executor.execute_actuator_action(ActuatorCommand.RESET_ACTUATORS)
         
         self.get_logger().warn('✅ State machine reset complete')
     

@@ -78,7 +78,7 @@ class ActionExecutor():
         # TODO delete ?
     
     @abstractmethod
-    def execute_actuator_action(self, action_name: str) -> None:
+    def execute_actuator_action(self, action_name: ActuatorCommand) -> None:
         """
         Send actuator command to the robot.
         
