@@ -11,6 +11,7 @@ from champi_brain.match_controller import MatchController
 from champi_brain.strategy_dsl import Action, MotionParams, Offset
 from champi_brain.world_state.symmetry import get_element_id_for_color
 from champi_brain.enums import Color
+from champi_brain.actuator_commands import ActuatorCommand
 from champi_interfaces.msg import GameElement
 from champi_libraries_py.utils.angles import get_yaw
 
@@ -39,17 +40,7 @@ class StateMachine:
     STATE_WAIT_TO_COME_HOME = 'wait_to_come_home'
     STATE_COME_HOME = 'come_home'
     STATE_END_OF_MATCH = 'end_of_match'
-    
-    # Actuator action definitions
-    ACTUATOR_ACTIONS = frozenset([
-        'PUT_BANNER',
-        'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
-        'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
-        'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
-        'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2',
-        'RESET_ACTUATORS', 'GET_READY'
-    ])
-    
+
     def __init__(
         self,
         executor: ActionExecutor,
@@ -332,32 +323,28 @@ class StateMachine:
         self.strategy.pop(0)
 
         self.logger.info(f"Will now execute action: {action.action}" + (f" (group: {action.group})" if action.group else ""))
-        
+
         self._execute_action(action)
     
     def _execute_action(self, action: Action) -> None:
         """Execute a single action."""
         self._transition_to(self.STATE_EXECUTING_ACTION)
-        
-        action_name = action.action
+
+        actuator_command: ActuatorCommand = action.action
     
-        if action_name == 'move':
+        if actuator_command == ActuatorCommand.MOVE:
             self._execute_move(action)
-            
-        elif action_name == 'detectPlatform':
+        elif actuator_command == ActuatorCommand.DETECT_PLATFORM:
             self._execute_detect_platform(action)
-            
-        elif action_name == 'wait':
+        elif actuator_command == ActuatorCommand.WAIT:
             self._execute_wait(action)
-            
-        elif action_name == 'add_points':
+        elif actuator_command == ActuatorCommand.ADD_POINTS:
             self._execute_add_points(action)
-            
-        elif action_name in self.ACTUATOR_ACTIONS:
+
+        elif actuator_command in ActuatorCommand.__members__.values():
             self._execute_actuator_action(action)
-            
         else:
-            raise ValueError(f"Unknown action '{action_name}'")
+            raise ValueError(f"Unknown action={actuator_command}. Possible actions are: {list(ActuatorCommand.__members__.keys())}")
 
     
     def _execute_move(self, action: Action) -> None:

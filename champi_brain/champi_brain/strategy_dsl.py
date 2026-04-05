@@ -5,6 +5,8 @@ from typing import List, Dict, Any, Optional, Union
 from enum import Enum
 import math
 
+from champi_brain.actuator_commands import ActuatorCommand
+
 """
 Default team color is YELLOW.
 When converting for BLUE team, positions and angles are transformed accordingly.
@@ -124,7 +126,7 @@ class MotionParams:
 @dataclass
 class Action:
     """Base action with all possible parameters"""
-    action: str
+    action: ActuatorCommand
     named_target: Optional[str] = None # Target by name in world state instead of target position
     pos_target: Optional[Position] = None
     offset: Optional[Offset] = None
@@ -209,7 +211,7 @@ class StrategyBuilder:
             named_target = None
 
         action = Action(
-            action="move",
+            action=ActuatorCommand.MOVE,
             pos_target=pos_target,
             named_target=named_target,
             offset=offset,
@@ -234,7 +236,7 @@ class StrategyBuilder:
     
     def get_ready(self, group: Optional[str] = None) -> 'StrategyBuilder':
         """Add a GET_READY action"""
-        action = Action(action="GET_READY", group=group or self.current_group)
+        action = Action(action=ActuatorCommand.GET_READY, group=group or self.current_group)
         self.actions.append(action)
         if action.group and action.group in self.groups:
             self.groups[action.group].actions.append(action)
@@ -242,7 +244,7 @@ class StrategyBuilder:
     
     def add_points(self, points: int, reason: str, group: Optional[str] = None) -> 'StrategyBuilder':
         """Add points"""
-        action = Action(action="add_points", points=points, reason=reason, group=group or self.current_group)
+        action = Action(action=ActuatorCommand.ADD_POINTS, points=points, reason=reason, group=group or self.current_group)
         self.actions.append(action)
         if action.group and action.group in self.groups:
             self.groups[action.group].actions.append(action)
@@ -250,13 +252,13 @@ class StrategyBuilder:
     
     def wait(self, duration: float, group: Optional[str] = None) -> 'StrategyBuilder':
         """Add a wait action"""
-        action = Action(action="wait", group=group or self.current_group, extra_params={"duration": duration})
+        action = Action(action=ActuatorCommand.WAIT, group=group or self.current_group, extra_params={"duration": duration})
         self.actions.append(action)
         if action.group and action.group in self.groups:
             self.groups[action.group].actions.append(action)
         return self
     
-    def custom_action(self, action_name: str, group: Optional[str] = None, **kwargs) -> 'StrategyBuilder':
+    def custom_action(self, action_name: ActuatorCommand, group: Optional[str] = None, **kwargs) -> 'StrategyBuilder':
         """Add a custom action"""
         action = Action(action=action_name, group=group or self.current_group, extra_params=kwargs)
         self.actions.append(action)
@@ -273,40 +275,32 @@ class StrategyBuilder:
             group: Group name for these actions
         """
         self.set_current_group(group)
-        self.custom_action("PUT_BANNER")
+        # TODO: PUT_BANNER does not exists anymore. use thermometer instead
         points = self.points_per_action["PUT_BANNER"]
         self.add_points(points, f"put_banner finished. {points} points for putting the banner", group=group)
         return self
 
     
-    def take_elements_sequence(self, platform_center: Union[Position, str], group: str) -> 'StrategyBuilder':
+    def take_elements_sequence(self, elements_center: Union[Position, str], group: str) -> 'StrategyBuilder':
         """Complete sequence for taking elements
         
         Args:
-            platform_center: Union[Position, str] object for the center of the platform or named target
+            elements_center: Union[Position, str] object for the center of the platform or named target
             group: Group name for these actions
             
         """
         self.set_current_group(group)
 
         # Approach movement
-        self.move_relative_to(platform_center, Offset(-0.35, 0.0, 0.0), use_collision_avoidance=True)
-        
+        self.move_relative_to(elements_center, Offset(-0.35, 0.0, 0.0), use_collision_avoidance=True)
+
         # Platform detection - offset from platform center
         # self.custom_action("detectPlatform")
-        
+
         # Taking first 2 boxes
-        self.custom_action("TAKE_LOWER_PLANK") # TODO
-        
-        # Take left cans - offsets from platform center
-        self.move_relative_to(platform_center, Offset(-0.25, -0.1, -60.0))
-        self.move_relative_to(platform_center, Offset(-0.205, -0.1, -60.0))
-        self.custom_action("TAKE_CANS_LEFT")
-        
-        # Take right cans - offsets from platform center
-        self.move_relative_to(platform_center, Offset(-0.25, 0.1, 60.0))
-        self.move_relative_to(platform_center, Offset(-0.205, 0.1, 60.0))
-        self.custom_action("TAKE_CANS_RIGHT")
+        self.custom_action(ActuatorCommand.TAKE_2_BOXES)
+        self.move_relative_to(elements_center, Offset(-0.15, 0.0, 0.0))
+        self.custom_action(ActuatorCommand.TAKE_2_BOXES)
         
         return self
     
@@ -322,20 +316,20 @@ class StrategyBuilder:
         # First positioning - offset from target center
         self.move_relative_to(target_position, Offset(-0.21, 0.0, -60.0), use_collision_avoidance=True)
 
-        self.custom_action("PUT_CANS_LEFT_LAYER_1")
-        self.custom_action("PUT_LOWER_PLANK_LAYER_1")
-        self.custom_action("TAKE_UPPER_PLANK")
-        
+        # TODO: PUT_CANS_LEFT_LAYER_1 not yet added to ActuatorCommand enum
+        # TODO: PUT_LOWER_PLANK_LAYER_1 not yet added to ActuatorCommand enum
+        # TODO: TAKE_UPPER_PLANK not yet added to ActuatorCommand enum
+
         # Turn with RIGHT side facing - offset from target center
         self.move_relative_to(target_position, Offset(-0.21, 0.0, 60.0))
         
-        self.custom_action("PUT_CANS_RIGHT_LAYER_2")
-        
+        # TODO: PUT_CANS_RIGHT_LAYER_2 not yet added to ActuatorCommand enum
+
         # Turn with LEFT side facing - offset from target center
         self.move_relative_to(target_position, Offset(-0.21, 0.0, -60.0))
         
-        self.custom_action("PUT_UPPER_PLANK_LAYER_2")
-        
+        # TODO: PUT_UPPER_PLANK_LAYER_2 not yet added to ActuatorCommand enum
+
         # Add points
         points = self.points_per_action["2_LAYERS_STRUCTURE"]
         self.add_points(points, f"put_elements finished. {points} points for 2 layers structure", group=group)

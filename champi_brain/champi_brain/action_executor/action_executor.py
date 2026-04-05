@@ -12,6 +12,7 @@ from champi_brain.strategy_dsl import MotionParams
 from champi_interfaces.action import Navigate
 from std_msgs.msg import Int8, Bool
 from rclpy.node import Node
+from champi_brain.actuator_commands import ActuatorCommand, actuator_name_to_id
 from abc import abstractmethod
 
 class ActionExecutor():
@@ -140,26 +141,7 @@ class ActionExecutor():
         goal.timeout = 20.0
         
         return goal
-    
-    def _action_name_to_id(self, action_name: str) -> Optional[int]:
-        """Convert action name to actuator ID."""
-        action_map = {
-            'PUT_BANNER': 0,
-            'TAKE_LOWER_PLANK': 1,
-            'TAKE_UPPER_PLANK': 2,
-            'PUT_LOWER_PLANK_LAYER_1': 3,
-            'PUT_UPPER_PLANK_LAYER_2': 4,
-            'TAKE_CANS_RIGHT': 5,
-            'TAKE_CANS_LEFT': 6,
-            'PUT_CANS_RIGHT_LAYER_2': 7,
-            'PUT_CANS_LEFT_LAYER_1': 8,
-            'RESET_ACTUATORS': 9,
-            'STOP_ALL_MOTORS': 10,
-            'ENABLE_ALL_MOTORS': 11,
-            'GET_READY': 12,
-        }
-        return action_map.get(action_name)
-    
+
     # ====================== Callbacks ======================
     
     def _goal_response_callback(self, future):

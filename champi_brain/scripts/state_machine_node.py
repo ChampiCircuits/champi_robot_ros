@@ -421,9 +421,6 @@ class StateMachineNode(Node):
             # Initialize robot pose
             self._set_initial_pose(init_pose)
 
-            time.sleep(5)
-            self.get_logger().debug("just after set_initial_pose")
-
             # Start initialization
             self.state_machine.start_initialization()
             self.state_machine.notify_ros_initialized()
