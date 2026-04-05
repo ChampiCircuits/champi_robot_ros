@@ -295,9 +295,8 @@ class StrategyBuilder:
         # Platform detection - offset from platform center
         # self.custom_action("detectPlatform")
         
-        # Taking sequence - offsets from detected platform center
-        self.move_relative_to(platform_center, Offset(-0.215, 0.0, -60.0))
-        self.custom_action("TAKE_LOWER_PLANK")
+        # Taking first 2 boxes
+        self.custom_action("TAKE_LOWER_PLANK") # TODO
         
         # Take left cans - offsets from platform center
         self.move_relative_to(platform_center, Offset(-0.25, -0.1, -60.0))

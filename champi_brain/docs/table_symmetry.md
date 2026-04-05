@@ -63,7 +63,7 @@ elements:
 **Always write the strategy for the yellow team!** Automatic transformation happens via `Position.transform_for_blue()`.
 
 ```python
-# In strategies/__strat_main_2025.py
+# In strategies/__strat_*.py
 def create_main_strategy(points_per_action):
     return (
         Strategy()
