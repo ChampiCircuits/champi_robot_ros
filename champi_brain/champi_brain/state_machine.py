@@ -1,243 +1,501 @@
 #!/usr/bin/env python3
 
-import rclpy, math
+from math import degrees, radians, sin, cos
+from typing import List, Optional, Callable, Dict, Tuple
+from dataclasses import dataclass
 from rclpy.logging import get_logger
-import logging
-from ament_index_python.packages import get_package_share_directory
+import rclpy
 
-from champi_brain.state_machine_custom_classes import CustomHierarchicalGraphMachine
-from champi_brain.states import *
+from champi_brain.action_executor.action_executor import ActionExecutor
+from champi_brain.match_controller import MatchController
+from champi_brain.strategy_dsl import Action, MotionParams, Offset
+from champi_brain.world_state.symmetry import get_element_id_for_color
+from champi_brain.enums import Color
+from champi_interfaces.msg import GameElement
+from champi_libraries_py.utils.angles import get_yaw
 
-DEFAULT_SPEED = 0.3 # max speed is defined in itf
+
+@dataclass
+class StrategyConfig:
+    """Configuration for the state machine."""
+    color: str  # 'blue' or 'yellow'
+    init_pose: tuple[float, float, float]  # (x, y, theta_deg)
+    home_pose: tuple[float, float, float]  # (x, y, theta_deg)
+    wait_to_come_home_pose: tuple[float, float, float]  # (x, y, theta_deg)
+    simulation_mode: bool = False
 
 
-class ChampiStateMachine(object):
-    def set_itf(self, itf): self.itf = itf
-    def match_has_ended(self): return self.match_ended and self.state != 'endOfMatch'
+class StateMachine:
+    """
+    Pure state machine logic without ROS dependencies.
+    Uses ActionExecutor interface for actions.
+    """
+    
+    # State definitions
+    STATE_STOP = 'stop'
+    STATE_INIT = 'init'
+    STATE_IDLE = 'idle'
+    STATE_EXECUTING_ACTION = 'executing_action'
+    STATE_WAIT_TO_COME_HOME = 'wait_to_come_home'
+    STATE_COME_HOME = 'come_home'
+    STATE_END_OF_MATCH = 'end_of_match'
+    
+    # Actuator action definitions
+    ACTUATOR_ACTIONS = frozenset([
+        'PUT_BANNER',
+        'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
+        'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
+        'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
+        'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2',
+        'RESET_ACTUATORS', 'GET_READY'
+    ])
+    
+    def __init__(
+        self,
+        executor: ActionExecutor,
+        match_controller: MatchController
+    ):
+        """
+        Initialize the state machine.
+        
+        Args:
+            executor: ActionExecutor implementation for robot actions
+            match_controller: MatchController for timing and scoring
+        """
+        self.executor = executor
+        self.match = match_controller
+        self.logger = get_logger('SM')
+        self.logger.set_level(rclpy.logging.LoggingSeverity.DEBUG)
 
-    def __init__(self):
-        self.name = 'SM'
-        get_logger(self.name).info('Launching SM...')
-        get_logger(self.name).set_level(rclpy.logging.LoggingSeverity.DEBUG)
-        # logging.basicConfig(level=logging.DEBUG)
+        # Configuration (set later via set_config)
+        self.strategy_config: Optional[StrategyConfig] = None
+        
+        # State
+        self.state = self.STATE_STOP
+        self.strategy: List[Action] = []
+        self.current_action: Optional[Action] = None
+        self.current_group: Optional[str] = None
+        self.canceled_groups: set[str] = set()
+        
+        # World state (updated by ROS node)
+        self.world_state_elements: Dict[str, GameElement] = {}
+        
+        # Flags for state transitions
+        self._stop_requested = False
+        self._action_completed = False
+        self._platform_detected = False
+        self.platform_center: Optional[tuple[float, float, float]] = None
+        
+        # Initialization flags
+        self._ros_initialized = False
+        self._config_chosen = False
+        self._tirette_released = False
+        
+        # Callbacks for external events
+        self.on_state_changed: Optional[Callable[[str], None]] = None
+        self.on_strategy_completed: Optional[Callable[[], None]] = None
 
-        self.sm = CustomHierarchicalGraphMachine(parent = self,
-                                                 name = 'Champi State Machine',
-                                                 initial = StopState(name = 'stop', sm = self),
-                                                 model = self,
-                                                 graph_engine = 'graphviz',
-                                                 queued = True,
-                                                 auto_transitions = False,
-                                                 before_state_change = 'draw_graph',
-                                                 after_state_change = 'draw_graph')
+    # =================================================================
+    # INITIALIZATION METHODS
+    # =================================================================
+    
+    def start_initialization(self) -> None:
+        """Start the initialization sequence."""
+        self._transition_to(self.STATE_INIT)
+    
+    def set_strategy(self, strategy: List[Action], config: StrategyConfig) -> None:
+        """Set the strategy (list of actions) to execute."""
+        self.strategy = strategy.copy()
+        self.strategy_config = config
+        self._check_init_progress()
 
-        # STATES
-        # !! States names must not contain underscores _ as they are used for substates naming
-        self.sm.add_state(InitState(name='init', sm=self))
-        self.sm.add_state(ChampiState(name='idle', sm=self))
-        self.sm.add_state(WaitState(name='wait', sm=self))
-        self.sm.add_state(MoveState(name='move', sm=self))
-        self.sm.add_state(MoveForPlatformState(name='moveForPlatform', sm=self))
-        self.sm.add_state(DetectPlatformState(name='detectPlatform', sm=self))
-        self.sm.add_state(ChampiState(name='endOfMatch', sm=self))
-        self.sm.add_state(ComeHomeState(name='comeHome', sm=self))
-        self.sm.add_state(WaitToComeHomeState(name='waitToComeHome', sm=self))
-        # self.sm.add_state(ChampiState(name='stop', sm=self)) # automatically created, bc it's the initial state
+    def update_world_state(self, elements: Dict[str, GameElement]) -> None:
+        """Update the world state with new element positions.
+        
+        Args:
+            elements: Dict of {element_id: GameElement (ROS message)}
+        """
+        self.world_state_elements = elements
+        self.logger.debug(f"World state updated: {len(elements)} elements")
+        self._check_init_progress()
+        
+    def notify_ros_initialized(self) -> None:
+        """Notify that ROS is ready."""
+        self._ros_initialized = True
+        self._check_init_progress()
+        
+    def notify_config_chosen(self) -> None:
+        """Notify that user has chosen configuration."""
+        self._config_chosen = True
+        self._check_init_progress()
+        
+    def notify_tirette_released(self) -> None:
+        """Notify that start button/tirette is released."""
+        self._tirette_released = True
+        self._check_init_progress()
 
-        self.sm.add_state(ActuatorState(name='action', sm=self))
+    # =================================================================
+    # PUBLIC API METHODS
+    # =================================================================
 
-        self.sm.get_state('init').add_substate(state=ChampiState(name='waitForRosInit', sm=self))
-        # self.sm.get_state('init').add_substate(state=InitPoseState(name='moveToInitPose', sm=self))
-        self.sm.get_state('init').add_substate(ChampiState(name='waitForUserChooseConfig', sm=self))
-        self.sm.get_state('init').add_substate(ChampiState(name='waitForTirette', sm=self))
-
-        # TRANSITIONS
-        self.sm.add_transition('please_stop', ['init','idle','wait','move', 'moveForPlatform', 'detectPlatform','endOfMatch','action','comeHome','waitToComeHome'], 'stop', conditions='stop_requested')
-        self.sm.add_transition('please_wait_to_come_home', ['init','idle','wait','move', 'moveForPlatform', 'detectPlatform', 'action'], 'waitToComeHome', conditions='wait_to_come_home_requested')
-        self.sm.add_transition('please_come_home', 'waitToComeHome', 'comeHome', conditions='come_home_requested')
-        ## INIT
-        self.sm.add_transition('init', 'stop', 'init_waitForRosInit')
-        self.sm.add_transition('init_next', 'init_waitForRosInit', 'init_waitForUserChooseConfig', conditions='ros_initialized')
-        self.sm.add_transition('init_next', 'init_waitForUserChooseConfig', 'init_waitForTirette', conditions='user_has_chosen_config')
-        # self.sm.add_transition('init_next', 'init_moveToInitPose', 'init_waitForTirette', conditions='goal_reached') # TODO
-        self.sm.add_transition('init_end', 'init_waitForTirette', 'idle', conditions='tirette_released')
-        ## BASIC ACTIONS
-        self.sm.add_transition('start_move', 'idle', 'move', conditions='can_start_moving')
-        self.sm.add_transition('start_detect_platform', 'idle', 'detectPlatform', conditions='can_start_detecting_platform')
-        self.sm.add_transition('start_move_for_platform', 'idle', 'moveForPlatform', conditions='can_start_moving_for_platform')
-        self.sm.add_transition('start_wait', 'idle', 'wait', conditions='can_start_waiting')
-        self.sm.add_transition('back_to_idle', 'detectPlatform', 'idle', conditions='platformDetected')
-        self.sm.add_transition('back_to_idle', ['move', 'moveForPlatform'], 'idle', conditions='goal_reached')
-        self.sm.add_transition('back_to_idle', 'action', 'idle', conditions='end_of_actuator_state')
-        self.sm.add_transition('back_to_idle', 'wait', 'idle', conditions='end_of_wait')
-        self.sm.add_transition('end_of_match', '*', 'endOfMatch', conditions='match_has_ended')
-        self.sm.add_transition('cancel_current_action', '*', 'idle', conditions='can_cancel_current_action')
-
-        ## ACTIONS
-        self.sm.add_transition('start_action', 'idle', 'action', conditions='can_start_action')
-        ## POINTS
-        self.sm.add_transition('add_points_done', 'idle', 'idle', conditions='add_points_is_done')
-
-        # ADDITIONALS CALLBACKS (declared after ros_initialized so that they are not called before)
-        self.sm.get_state('idle').add_callback('enter', 'find_next_state')
-
-        # FLAGS (TO BE UPDATED BY ROS MSG CALLBACKS)
-        self.reset_flags()
-        self.ros_initialized = False # this one is never reset
-        self.match_ended = False
-        self.in_match = False
-        self.come_home_requested = False
-        self.wait_to_come_home_requested = False
-
-        # STRATEGY (TO BE INIT BY THE NODE)
-        self.strategy = None
-        self.color = None
-        self.init_pose = None
-        self.home_pose = None
-
-        # OTHERS
-        self.itf:ChampiStateMachineITF = None
-
-        self.action_list = ['PUT_BANNER',
-                            'TAKE_LOWER_PLANK', 'TAKE_UPPER_PLANK',
-                            'PUT_LOWER_PLANK_LAYER_1', 'PUT_UPPER_PLANK_LAYER_2',
-                            'TAKE_CANS_RIGHT', 'TAKE_CANS_LEFT',
-                            'PUT_CANS_LEFT_LAYER_1', 'PUT_CANS_RIGHT_LAYER_2', 'RESET_ACTUATORS', 'GET_READY']
-        self.latest_canceled_tag = None # contains all the tags of the actions that have been canceled
-        self.current_tag = None
-
-        path = get_package_share_directory('champi_brain') + '/SM_diagram.png'
-        get_logger(self.name).warn(f'PATH: {path}')
-
-        self.sm.get_graph().draw(path, prog='dot')
-
-        self.draw_graph()
-
-        get_logger(self.name).warn('Launched SM !')
-        get_logger(self.name).warn(f'Starting in state [{self.state}].')
-
-    def reset(self):
-        self.reset_flags()
-        self.stop_requested = True # TODO why true ???
-        self.come_home_requested = False
-        self.wait_to_come_home_requested = False
-
-        self.match_ended = False
-        self.in_match = False
-
-        self.latest_canceled_tag = None
-        self.please_stop() # trigger stop state
-
-    def reset_flags(self):
-        get_logger(self.name).debug('reset flags')
-        # basic flags
-        self.stop_requested = False
-        self.can_start_moving = False
-        self.can_start_detecting_platform = False
-        self.can_start_moving_for_platform = False
-        self.can_start_waiting = False
-        self.platformDetected = False
-        self.goal_reached = False
-        self.end_of_wait = False
-        self.end_of_actuator_state = False
-        self.add_points_is_done = False
-        self.can_cancel_current_action = False
-
-        # action flags
-        self.can_start_action = False
-
-        # msg callbacks
-        # self.ros_initialized = False # in fact we don't reset it, bc once it's done it's gonna be ok
-        self.user_has_chosen_config = False
-        self.tirette_released = False
-
-    def draw_graph(self, *args, **kwargs):
-        #self.sm.get_combined_graph().draw(get_package_share_directory('champi_brain')+'SM_diagram.png', prog='dot')
-        pass
-
-    def cancel_current_tag(self):
-        get_logger(self.name).warn(f'Canceling current action...')
-        if self.current_tag is not None:
-            self.latest_canceled_tag = self.current_tag
-            get_logger(self.name).warn(f'All actions with tag {self.current_tag} has been canceled.')
-        self.reset_flags()
-        self.can_cancel_current_action = True
-        self.cancel_current_action() # trigger the transition to idle state
-
-    def find_next_state(self):
-        get_logger(self.name).info(f'SM in [{self.state}], searching next action...')
-        self.reset_flags()
-        self.current_tag = None
-
-        if len(self.strategy) == 0:
-            get_logger(self.name).warn(f'End of actions ! Staying in [{self.state}] waiting to go home...')
-            get_logger(self.name).info(f'All actions in {(100.-self.itf.time_left):.1f} seconds.')
-        else:
-            action = self.strategy[0]
-            get_logger(self.name).info(f'Next action is {action}')
-
-            action_name = action['action']
-            get_logger(self.name).info(f' name: {action_name} & tag: {action.get('tag')}')
-            if action.get('tag') is not None:
-                self.current_tag = action['tag']
-                if self.current_tag == self.latest_canceled_tag:
-                    get_logger(self.name).warn(f'Action {action_name} with tag {self.current_tag} was previously canceled.')
-                    self.strategy.pop(0)
-                    self.reset_flags()
-                    self.can_cancel_current_action = True
-                    self.cancel_current_action() # trigger the transition to idle state
+    def request_stop(self) -> None:
+        """Request emergency stop."""
+        self._stop_requested = True
+        self._transition_to(self.STATE_STOP)
+        
+    def request_come_home(self) -> None:
+        """Request to return home immediately."""
+        if self.state != self.STATE_STOP and self.state != self.STATE_END_OF_MATCH:
+            self._cancel_current_action()
+            self._transition_to(self.STATE_COME_HOME)
+            
+    def request_wait_to_come_home(self) -> None:
+        """Request to move to waiting position before coming home."""
+        if self.state == self.STATE_EXECUTING_ACTION or self.state == self.STATE_IDLE:
+            self._cancel_current_action()
+            self._transition_to(self.STATE_WAIT_TO_COME_HOME)
+            
+    def notify_action_completed(self) -> None:
+        """Notify that current action is completed."""
+        self._action_completed = True
+        if self.state == self.STATE_EXECUTING_ACTION:
+            self._transition_to(self.STATE_IDLE)
+            
+    def notify_platform_detected(self, platform_pose: tuple[float, float, float]) -> None:
+        """Notify that platform has been detected."""
+        self.platform_center = platform_pose
+        self._platform_detected = True
+        self.notify_action_completed()
+        
+    def cancel_current_group(self) -> None:
+        """Cancel all actions with the current group."""
+        if self.current_group:
+            self.canceled_groups.add(self.current_group)
+        self._cancel_current_action()
+        # Transition back to idle after canceling
+        if self.state == self.STATE_EXECUTING_ACTION:
+            self._transition_to(self.STATE_IDLE)
+        
+    def update(self) -> None:
+        """
+        Main update loop - call periodically.
+        Handles state transitions and action execution.
+        """
+        # Check if match has ended
+        if self.match.is_match_started() and self.match.get_remaining_time() <= 0:
+            if self.state != self.STATE_END_OF_MATCH:
+                self._cancel_current_action()
+                self._transition_to(self.STATE_END_OF_MATCH)
+                return
+        
+        # Check if we should return home (in any state except already coming home or ended)
+        if self.match.is_match_started():
+            if self.state not in [self.STATE_COME_HOME, self.STATE_END_OF_MATCH, self.STATE_STOP]:
+                # TODO: Ask path planner for real estimated time to home based on current position
+                estimated_time_to_home = 5.0
+                if self.match.should_return_home(estimated_time_to_home):
+                    self.logger.warn(f"Time to return home! (remaining: {self.match.get_remaining_time():.1f}s)")
+                    self.request_come_home()
                     return
-                else:
-                    get_logger(self.name).debug(f'Action {action_name} with tag {self.current_tag} is valid.')
+        
 
-            if action_name == 'move':
-                x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
-                speed = action['speed'] if 'speed' in action else DEFAULT_SPEED
-                if 'use_dynamic_layer' in action:
-                    use_dynamic_layer = action['use_dynamic_layer']
-                else:
-                    use_dynamic_layer = False
-                if 'end_speed' in action:
-                    end_speed = action['end_speed']
-                else:
-                    end_speed = 0.
-                if 'accel_linear' in action:
-                    accel_linear = action['accel_linear']
-                else:
-                    accel_linear = 0.5 # default value
-                if 'accel_angular' in action:
-                    accel_angular = action['accel_angular']
-                else:
-                    accel_angular = 6.0 # default value
-                self.can_start_moving = True
-                self.start_move(x=x, y=y, theta_deg=theta_deg+90.0, use_dynamic_layer=use_dynamic_layer, speed=speed, end_speed=end_speed, 
-                                accel_linear=accel_linear, accel_angular=accel_angular)  # +90° to align with the coordinate system
+    
+    # =================================================================
+    # INTERNAL STATE MACHINE LOGIC
+    # =================================================================
+    
+    def _transition_to(self, new_state: str) -> None:
+        """Transition to a new state."""
+        if self.state == new_state:
+            return
+            
+        old_state = self.state
+        self.state = new_state
+        
+        self.logger.debug(f"Transition: {old_state} -> {new_state} \t time left: {self.match.get_remaining_time():.1f}s\n")
+        
+        # State entry actions
+        if new_state == self.STATE_IDLE:
+            self._on_enter_idle()
+        elif new_state == self.STATE_COME_HOME:
+            self._on_enter_come_home()
+        elif new_state == self.STATE_WAIT_TO_COME_HOME:
+            self._on_enter_wait_to_come_home()
+        elif new_state == self.STATE_END_OF_MATCH:
+            self._on_enter_end_of_match()
+            
+        # Notify observers
+        if self.on_state_changed:
+            self.on_state_changed(new_state)
 
-            elif action_name == 'moveForPlatform':
-                x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
-                self.can_start_moving_for_platform = True
-                self.start_move_for_platform(x=x, y=y, theta_deg=theta_deg)  # +90° to align with the coordinate system --> is done in the state after computations
+    def _check_init_progress(self) -> None:
+        """Check initialization progress and advance if ready."""
+        # Check each initialization step in order
+        if not self._ros_initialized:
+            self.logger.info("Waiting for ROS initialization...")
+            return
+            
+        if not self._config_chosen:
+            self.logger.info("Waiting for user to choose configuration...")
+            return
+                    
+        if not self.strategy_config:
+            self.logger.error("Strategy configuration not set!")
+            return
+        
+        if not self.world_state_elements:
+            self.logger.info("Waiting for first world state to be available...")
+            return
+            
+        if not self._tirette_released:
+            self.logger.info("Waiting for tirette release...")
+            return
+        
+        # All initialization steps complete - start match
+        self.logger.info("✅ Initialization complete! Starting match...")
+        self.match.start_match()
+        self._transition_to(self.STATE_IDLE)
+    
+    def _on_enter_idle(self) -> None:
+        """Handle entry into idle state - find next action."""
+        self.current_action = None
+        self._action_completed = False
+        self._platform_detected = False
+        
+        # Process next action from strategy
+        self._find_next_action()
+    
+    def _on_enter_come_home(self) -> None:
+        """Handle entry into come home state."""
+        if not self.strategy_config:
+            raise ValueError("Cannot come home: no strategy configuration set!")
 
-            elif action_name == 'detectPlatform':
-                x, y, theta_deg = action['target']['x'], action['target']['y'], action['target']['theta_deg']
-                self.can_start_detecting_platform = True
-                self.start_detect_platform(x_robot=x, y_robot=y, theta_deg_robot=theta_deg)
+        x, y, theta_deg = self.strategy_config.home_pose
+        motion = MotionParams(
+            speed=1.0,
+            end_speed=0.0,
+            accel_linear=0.5,
+            accel_angular=6.0,
+            use_collision_avoidance=False
+        )
+        
+        self.logger.info(f"Coming home to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
+        self.executor.move_to(x, y, theta_deg, motion)
+        # TODO: sometimes logs are strange when canceling nav goals (cancel and then re asked again same goal...)
+    
+    def _on_enter_wait_to_come_home(self) -> None:
+        """Handle entry into wait to come home state."""
+        if not self.strategy_config:
+            raise ValueError("Cannot go to wait position: no strategy configuration set!")
 
-            elif action_name in self.action_list:
-                self.can_start_action = True
-                self.start_action(action=action_name)
+        x, y, theta_deg = self.strategy_config.wait_to_come_home_pose
+        motion = MotionParams(
+            speed=1.0,
+            end_speed=0.0,
+            accel_linear=0.5,
+            accel_angular=6.0,
+            use_collision_avoidance=True
+        )
+        
+        self.logger.info(f"Moving to wait position ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
+        self.executor.move_to(x, y, theta_deg, motion)
+        self.executor.execute_actuator_action('RESET_ACTUATORS')
+    
+    def _on_enter_end_of_match(self) -> None:
+        """Handle end of match."""
+        self.logger.info(f"Match ended! Final score: {self.match.get_score()}")
+        self.executor.cancel_current_action()
+    
 
-            elif action_name == 'wait':
-                self.can_start_waiting = True
-                self.start_wait(duration=action['duration'])
-
-            elif action_name == 'add_points':
-                self.itf.add_points(int(action['points']))
-                self.add_points_is_done = True
-                self.add_points_done()
-
-            else:
-                get_logger(self.name).error('UNKNOWN ACTION')
-                exit()
-
+    
+    def _find_next_action(self) -> None:
+        """Find and execute the next action from strategy."""
+        if not self.strategy:
+            self.logger.info("Strategy complete - no more actions")
+            if self.on_strategy_completed:
+                self.on_strategy_completed()
+            return
+        
+        # Get next action
+        action = self.strategy[0]
+        
+        # Check if action's group was canceled
+        if action.group and action.group in self.canceled_groups:
+            self.logger.info(f"Skipping action {action.action} with canceled group '{action.group}'")
             self.strategy.pop(0)
+            self._find_next_action()  # Try next action
+            return
+        
+        # Execute action
+        self.current_action = action
+        self.current_group = action.group
+        self.strategy.pop(0)
+
+        self.logger.info(f"Will now execute action: {action.action}" + (f" (group: {action.group})" if action.group else ""))
+        
+        self._execute_action(action)
+    
+    def _execute_action(self, action: Action) -> None:
+        """Execute a single action."""
+        self._transition_to(self.STATE_EXECUTING_ACTION)
+        
+        action_name = action.action
+    
+        if action_name == 'move':
+            self._execute_move(action)
+            
+        elif action_name == 'detectPlatform':
+            self._execute_detect_platform(action)
+            
+        elif action_name == 'wait':
+            self._execute_wait(action)
+            
+        elif action_name == 'add_points':
+            self._execute_add_points(action)
+            
+        elif action_name in self.ACTUATOR_ACTIONS:
+            self._execute_actuator_action(action)
+            
+        else:
+            raise ValueError(f"Unknown action '{action_name}'")
+
+    
+    def _execute_move(self, action: Action) -> None:
+        """Execute a move action."""
+        # Get target position
+        target_position = self._get_target_position(action)
+        if target_position is None:
+            self.notify_action_completed()
+            return
+        
+        x, y, theta_deg = target_position
+        
+        # Apply offset if present
+        if action.offset:
+            x, y, theta_deg = self._apply_offset(x, y, theta_deg, action.offset)
+
+        self.logger.info(f"Move to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
+        self.executor.move_to(x, y, theta_deg, action.motion)
+    
+    def _get_target_position(self, action: Action) -> Optional[Tuple[float, float, float]]:
+        """Get target position from action.
+        
+        Returns:
+            Tuple of (x, y, theta_deg) or None if target not found
+        """
+        if action.pos_target is not None:
+            # Absolute position specified
+            return (action.pos_target.x, action.pos_target.y, action.pos_target.theta_deg)
+            
+        if action.named_target is not None:
+            if not self.strategy_config:
+                raise ValueError("Cannot resolve named target: no strategy configuration set!")
+            
+            # Get target from world state by name
+            base_target_name = action.named_target
+            # Apply symmetry mapping based on team color            
+            team_color = Color.BLUE if self.strategy_config.color.upper() == 'BLUE' else Color.YELLOW
+            target_name = get_element_id_for_color(base_target_name, team_color)
+            
+            if target_name not in self.world_state_elements:
+                raise ValueError(f"Element '{target_name}' (from '{base_target_name}' for {team_color}) not found in world state!")
+            
+            # Get element position from world state (ROS GameElement message)
+            element = self.world_state_elements[target_name]
+            x = element.pose.position.x
+            y = element.pose.position.y
+            theta_deg = degrees(get_yaw(element.pose))
+            self.logger.info(f"Target '{target_name}' found at ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")
+            return (x, y, theta_deg)
+
+        raise ValueError("No target specified for move action!")
+    
+    def _apply_offset(self, x: float, y: float, theta_deg: float, 
+                      offset: Offset) -> Tuple[float, float, float]:
+        """Apply offset to position in robot's reference frame.
+        
+        Args:
+            x, y, theta_deg: Base position
+            offset: Offset to apply (in robot frame)
+            
+        Returns:
+            Tuple of (x, y, theta_deg) with offset applied
+        """
+        theta_rad = radians(theta_deg)
+        cos_theta = cos(theta_rad)
+        sin_theta = sin(theta_rad)
+        
+        # Rotate offset by robot's orientation
+        new_x = x + offset.x * cos_theta - offset.y * sin_theta
+        new_y = y + offset.x * sin_theta + offset.y * cos_theta
+        new_theta_deg = theta_deg + offset.theta_deg
+        
+        return (new_x, new_y, new_theta_deg)
+    
+    def _execute_detect_platform(self, action: Action) -> None:
+        """Execute platform detection."""
+        self.logger.info("Detecting platform...")
+        self.executor.detect_platform()
+    
+    def _execute_wait(self, action: Action) -> None:
+        """Execute wait action."""
+        duration = action.extra_params['duration']
+        self.logger.info(f"Waiting {duration}s...")
+        self.executor.wait(duration)
+        # Note: Executor should call notify_action_completed when done # TODO?
+    
+    def _execute_add_points(self, action: Action) -> None:
+        """Execute add points action."""
+        if not action.points:
+            self.logger.error(f"No points specified for add_points action!")
+            self.notify_action_completed()
+            return
+
+        self.logger.info(f"Added {action.points} points: \"{action.reason}\"")
+        self.match.add_points(action.points)
+        self.notify_action_completed()
+    
+    def _execute_actuator_action(self, action: Action) -> None:
+        """Execute actuator action."""
+        self.logger.info(f"Executing actuator: {action.action}")
+        self.executor.execute_actuator_action(action.action)
+        self.notify_action_completed()
+    
+    def _cancel_current_action(self) -> None:
+        """Cancel the current action."""
+        if self.state == self.STATE_EXECUTING_ACTION:
+            self.logger.warn("Cancelling current action")
+            self.executor.cancel_current_action()
+        
+        self.current_action = None
+        self._action_completed = True
+    
+    # =================================================================
+    # UTILITY METHODS
+    # =================================================================
+    
+    def get_state(self) -> str:
+        """Get current state."""
+        return self.state
+    
+    def get_remaining_actions_count(self) -> int:
+        """Get number of remaining actions in strategy."""
+        return len(self.strategy)
+    
+    def is_executing(self) -> bool:
+        """Check if currently executing an action."""
+        return self.state == self.STATE_EXECUTING_ACTION
+    
+    def reset(self) -> None:
+        """Reset the state machine."""
+        self._cancel_current_action()
+        self.strategy = []
+        self.current_group = None
+        self.canceled_groups.clear()
+        self.platform_center = None
+        
+        self._stop_requested = False
+        self._action_completed = False
+        self._platform_detected = False
+        
+        self._transition_to(self.STATE_STOP)

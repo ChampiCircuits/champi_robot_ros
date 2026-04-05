@@ -107,11 +107,21 @@ pose_controller:
     max_linear_acceleration: 0.5 # m/s^2
     max_angular_acceleration: 6.0 # rad/s^2
 
-    max_linear_deceleration: 4.0 # m/s^2 # TODO NOT USED
+    max_linear_deceleration: 4.0 # m/s^2 # TODO NOT USED --> on dirait que si non?
     max_angular_deceleration: 20.0 # rad/s^2 # TODO NOT USED
     # When the ctrl_goal is reached and end_speed!=0 (we expect a new goal to be sent right away),
     # the robot will emergency stop once the timeout is elapsed.
     timeout_wait_next_goal: 0.5 # s.
+
+/**:
+  ros__parameters:
+    # Default motion parameters for strategy actions when not overriden in strategy files
+    default_motion_speed: 0.5 # m/s # TODO also for angular
+    default_motion_end_speed: 0.0 # m/s # TODO a bit duplicated with pose_controller
+    default_motion_accel_linear: 0.5 # m/s²
+    default_motion_accel_angular: 6.0 # rad/s²
+    default_motion_use_collision_avoidance: true
+
 
 path_planner:
   ros__parameters:
@@ -123,14 +133,26 @@ path_planner:
     enemy_detect_angle: 60. # degrees from x+ axis
     backoff_distance: 0.1 # m. Distance to back off from the enemy robot when it is too close after the timeout
 
-sm_ros_itf:
+# Champi Brain nodes
+/champi_brain/**:
   ros__parameters:
-    strategy_file: 'test_strat.yaml'
-    use_above_default_strategy: true # works only in sim mode
+    initial_world_state_file: 'initial_world_state_2025.yaml'  # Initial world state configuration file (shared by both nodes)
 
-world_state_node:
+/champi_brain/state_machine_node:
+  ros__parameters:
+    # Strategy parameters
+    use_default_strategy_and_color_in_sim: true       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
+    # default_strategy_file: '__strat_test_square.py' # Default strategy file for simulation
+    default_strategy_file: '__strat_main_2026.py'     # Default strategy file for simulation
+    default_sim_color: 'YELLOW'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
+    
+    # Match timing parameters
+    match_total_time: 100.0                           # seconds - Total match duration
+    return_home_safety_margin: 2.0                    # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left
+    simulate_actuators_delays: false                   # If false, actuators commands will be applied instantly (no delay simulation)
+
+/champi_brain/world_state_node:
   ros__parameters:
     update_rate: 5.0 # Hz
-    matching_distance_threshold: 0.1 # meters. The maximum distance to consider that an observed object matches a known object
-    max_missing: 10 # number of consecutive misses before an object is considered gone
-    initial_world_state_file: 'initial_world_state.yaml'
+    matching_distance_threshold: 0.1                  # meters. The maximum distance to consider that an observed object matches a known object
+    max_missing: 10                                   # number of consecutive misses before an object is considered gone

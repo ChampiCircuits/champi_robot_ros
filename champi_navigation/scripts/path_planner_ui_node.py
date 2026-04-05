@@ -42,7 +42,7 @@ class PathPlannerUINode(Node):
 
         # Cancel current if self.future_navigate_result not None
         if self.goal_handle_navigate is not None:
-            self.get_logger().info('Cancelling current goal...')
+            self.get_logger().warn('Cancelling current goal...')
 
             future = self.goal_handle_navigate.cancel_goal_async()
             future.add_done_callback(self.cancel_done_callback)

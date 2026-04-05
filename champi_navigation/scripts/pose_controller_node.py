@@ -12,11 +12,10 @@ from champi_navigation.path_follow_params import PathFollowParams
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from champi_interfaces.msg import CtrlGoal
-
-from rclpy.executors import ExternalShutdownException
 
 import diagnostic_msgs
 import diagnostic_updater

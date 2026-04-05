@@ -1,29 +1,59 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
 from ament_index_python.packages import get_package_share_directory
-from champi_brain.worldState import WorldState, NutsBox
+from geometry_msgs.msg import Pose
+from champi_brain.world_state.worldState import WorldState, NutsBox
 from champi_interfaces.msg import TableObservation, GameElement
+from math import radians
+from champi_libraries_py.utils.angles import rad_to_quat
 
 class WorldStateNode(Node):
     def __init__(self):
-        super().__init__('world_state_node')
+        """
+        Node that maintains and updates the world state based on observations.
+        Receives observations as TableObservation messages, updates the world state,
+        and publishes the updated world state.
+        """
+        super().__init__('world_state_node', namespace='champi_brain')
         self.get_logger().info(f'Initializing WorldStateNode...')
 
-        ## Retrieve parameters
-        self.declare_parameter('matching_distance_threshold', 0.3)
-        self.declare_parameter('max_missing', 2)
-        self.declare_parameter('initial_world_state_file', 'initial_world_state.yaml')
-        matching_distance_threshold = self.get_parameter('matching_distance_threshold').get_parameter_value().double_value
-        max_missing = self.get_parameter('max_missing').get_parameter_value().integer_value
-        initial_world_state_file = self.get_parameter('initial_world_state_file').get_parameter_value().string_value
+        # ============================================================
+        # PARAMETERS
+        # ============================================================   
+        # Node-specific parameters (from champi_brain/world_state_node config section)
+        self.declare_parameter('matching_distance_threshold', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('max_missing', rclpy.Parameter.Type.INTEGER)
+        # Parent namespace parameter (from champi_brain config section)
+        self.declare_parameter('initial_world_state_file', rclpy.Parameter.Type.STRING)
 
-        ## Subscriber and publisher
+        matching_distance_threshold = self.get_parameter('matching_distance_threshold').value
+        max_missing = self.get_parameter('max_missing').value
+        initial_world_state_file = self.get_parameter('initial_world_state_file').value
+
+        self.get_logger().info(f'Parameters:')
+        self.get_logger().info(f'\tmatching_distance_threshold: {matching_distance_threshold}')
+        self.get_logger().info(f'\tmax_missing: {max_missing}')
+        self.get_logger().info(f'\tinitial_world_state_file: {initial_world_state_file}')
+
+        # ============================================================
+        # ROS
+        # ============================================================
         self.create_subscription(
             TableObservation,
             '/new_table_observation',
             self.observation_callback,
             10)
-        self.publisher = self.create_publisher(TableObservation, '/world_state', 10)
+        
+        # TRANSIENT_LOCAL QoS to keep last message for late subscribers
+        latched_qos = QoSProfile(
+            depth=1,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=ReliabilityPolicy.RELIABLE
+        )
+        self.publisher = self.create_publisher(TableObservation, '/world_state', latched_qos)
 
         # Load initial world state from YAML using WorldState.from_yaml
         config_path = get_package_share_directory('champi_brain') + '/config/' + initial_world_state_file
@@ -34,17 +64,19 @@ class WorldStateNode(Node):
             matching_distance_threshold=matching_distance_threshold,
             max_missing=max_missing
         )
-        self.get_logger().info(f'WorldStateNode started with initial state from YAML: {config_path}')
+        # publish initial world state
+        self.publish_world_state()
+        self.get_logger().info(f'WorldStateNode started !')
 
     def observation_callback(self, msg):
         # Convert TableObservation message to list of NutsBox
         detections = []
-        for elem in msg.elements:
+        for i, elem in enumerate(msg.elements):
             detection = NutsBox(
-                id=elem.id,
+                id=f'detection_{i}',  # Temporary ID for detections
                 x=elem.x,
                 y=elem.y,
-                orientation=elem.orientation,
+                theta_deg=elem.orientation,
                 state=elem.state,
                 color=elem.color
             )
@@ -53,20 +85,26 @@ class WorldStateNode(Node):
         self.get_logger().info('World state updated with new observations.')
         self.publish_world_state()
 
-    def publish_world_state(self):
-        self.get_logger().info('Publishing current world state...')
-        # Retrieve current world state and publish as TableObservation message
+    def constructTableObservationMsg(self):
+        # Retrieve current world state and create a TableObservation message
         msg = TableObservation()
         for elem in self.world_state.elements.values():
             game_elem = GameElement()
             game_elem.id = elem.id
-            game_elem.x = elem.x
-            game_elem.y = elem.y
-            game_elem.orientation = elem.orientation
-            game_elem.state = elem.state
-            game_elem.color = elem.color
-            msg.elements.append(game_elem)
-        self.publisher.publish(msg)
+            game_elem.type = 'nut_box'  # All elements are nut boxes for now
+            pose = Pose()
+            pose.position.x = elem.x
+            pose.position.y = elem.y
+            pose.orientation.z, pose.orientation.w = rad_to_quat(radians(elem.theta_deg))
+            game_elem.pose = pose
+            game_elem.state = elem.state.value
+            game_elem.color = elem.color.value
+            msg.detected_game_elements.append(game_elem)
+        return msg
+        
+    def publish_world_state(self):
+        self.get_logger().info('Publishing current world state...')
+        self.publisher.publish(self.constructTableObservationMsg())
 
 
 def main(args=None):

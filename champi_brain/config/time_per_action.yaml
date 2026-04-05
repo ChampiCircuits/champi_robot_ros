@@ -1,0 +1,27 @@
+# Describes the execution time (in seconds) per actuator action
+# CDR 2025
+# These values are used to:
+# - Simulate realistic delays when executing actuator actions in simulation
+# - Plan action sequences with accurate timing estimates
+
+time_per_action:
+  # Banner placement
+  PUT_BANNER: 2.0
+  
+  # Plank manipulation
+  TAKE_LOWER_PLANK: 1.5
+  TAKE_UPPER_PLANK: 1.5
+  PUT_LOWER_PLANK_LAYER_1: 2.0
+  PUT_UPPER_PLANK_LAYER_2: 2.0
+  
+  # Cans manipulation
+  TAKE_CANS_RIGHT: 1.5
+  TAKE_CANS_LEFT: 1.5
+  PUT_CANS_RIGHT_LAYER_2: 2.0
+  PUT_CANS_LEFT_LAYER_1: 2.0
+  
+  # System commands
+  RESET_ACTUATORS: 3.0
+  STOP_ALL_MOTORS: 0.0
+  ENABLE_ALL_MOTORS: 0.0
+  GET_READY: 0.0 # not blocking

@@ -2,13 +2,13 @@
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from nav_msgs.msg import OccupancyGrid, Odometry
 from std_msgs.msg import Bool
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
 import time
-from rclpy.executors import ExternalShutdownException
 
 
 class CostmapUpdaterNode(Node):
@@ -29,7 +29,8 @@ class CostmapUpdaterNode(Node):
 
         self.enemy_prediction_time = self.declare_parameter('enemy_pos_prediction_time', rclpy.Parameter.Type.DOUBLE).value
 
-        self.use_dynamic_layer_sub = self.create_subscription(Bool, '/use_dynamic_layer', self.use_dynamic_layer_callback, 10)
+        # TODO should be passed by the nav goal no ??
+        self.use_collision_avoidance_sub = self.create_subscription(Bool, '/use_collision_avoidance', self.use_collision_avoidance_callback, 10)
 
         # Create a black image with the specified width and height
         self.static_layer_img = np.zeros((round(self.grid_height / self.resolution), round(self.grid_width / self.resolution)), np.uint8)
@@ -95,7 +96,7 @@ class CostmapUpdaterNode(Node):
         self.static_layer_img[y_start:y_end, x_start:x_end] = 100
 
         self.dynamic_layer_img = np.zeros((round(self.grid_height / self.resolution), round(self.grid_width / self.resolution)), np.uint8)
-        self.use_dynamic_layer = False
+        self.use_collision_avoidance = False
         robot_radius = self.robot_radius #
         #### all zones
         # yellow down
@@ -163,16 +164,16 @@ class CostmapUpdaterNode(Node):
             self.publisher_.publish(occupancy_grid_msg)
 
 
-    def use_dynamic_layer_callback(self, msg):
+    def use_collision_avoidance_callback(self, msg):
         #self.get_logger().info(f"\n\n {msg.data}")
-        self.use_dynamic_layer = msg.data
+        self.use_collision_avoidance = msg.data
 
     def clear_obstacle_layer(self):
         self.obstacle_layer_img = np.zeros((round(self.grid_height / self.resolution), round(self.grid_width / self.resolution)), np.uint8)
 
     def combine_layers(self):
         # Sum the two layers and clip the values to 100
-        if not self.use_dynamic_layer:
+        if not self.use_collision_avoidance:
             occupancy_img = np.clip(self.static_layer_img + self.obstacle_layer_img, 0, 100)
         else:
             occupancy_img = np.clip(self.static_layer_img + self.obstacle_layer_img + self.dynamic_layer_img, 0, 100)

@@ -1,0 +1,7 @@
+# Describes the points awarded per action in the game
+# CDR 2025
+
+points_per_action:
+  PUT_BANNER: 20
+  COME_HOME: 10
+  2_LAYERS_STRUCTURE: 12 # 4 points per layer of level 1 + 8 points per layer of level 2

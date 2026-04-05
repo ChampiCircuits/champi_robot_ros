@@ -40,6 +40,7 @@ install(DIRECTORY
   scripts
   config
   resources
+  strategies
   DESTINATION share/${PROJECT_NAME}
 )
 

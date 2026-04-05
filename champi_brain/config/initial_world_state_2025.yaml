@@ -1,0 +1,90 @@
+################################################################################
+# The initial world_state.yaml with real measurements from the rules
+# the elements positions are given at their center
+# the zones positions are given at their bottom-left corner
+# the origin of the coordinate system is at the bottom-left corner of the table
+# all measurements are in meters
+# 
+# Symmetry handling:
+# - The table is 3m wide with central symmetry (center at x=1.5)
+# - Elements have a 'mirror_id' field pointing to their symmetric counterpart
+# - Use the element's own ID when playing yellow, use 'mirror_id' when playing blue
+################################################################################
+
+
+#################################################################################
+# Definition of the elements on the table
+#################################################################################
+elements:
+
+  - id: banner
+    type: banner
+    x: 1.18
+    y: 0.46
+    theta_deg: 90.0
+    mirror_id: banner  # Banner is centered, symmetric to itself
+
+  - id: elements_1
+    type: elements
+    x: 1.1
+    y: 0.95
+    theta_deg: 90.0
+    mirror_id: elements_4
+
+  - id: elements_2
+    type: elements
+    x: 0.775
+    y: 0.25
+    theta_deg: 270.0
+    mirror_id: elements_5
+
+  - id: elements_3
+    type: elements
+    x: 0.075
+    y: 0.4
+    theta_deg: 180.0
+    mirror_id: elements_6
+
+  - id: elements_4
+    type: elements
+    x: 1.9
+    y: 0.95
+    theta_deg: 90.0
+    mirror_id: elements_1
+
+  - id: elements_5
+    type: elements
+    x: 2.225
+    y: 0.25
+    theta_deg: 270.0
+    mirror_id: elements_2
+
+  - id: elements_6
+    type: elements
+    x: 2.925
+    y: 0.4
+    theta_deg: 0.0
+    mirror_id: elements_3
+
+#################################################################################
+# Definition of the zones on the table
+#################################################################################
+zones:
+
+  - id: depart_jaune
+    type: secure_zone
+    x: 0
+    y: 1.55
+    width: 0.6
+    height: 0.45
+    color: yellow
+    mirror_id: depart_bleu
+
+  - id: depart_bleu
+    type: secure_zone
+    x: 2.4
+    y: 1.55
+    width: 0.6
+    height: 0.45
+    color: blue
+    mirror_id: depart_jaune

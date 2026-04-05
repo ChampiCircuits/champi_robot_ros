@@ -41,12 +41,12 @@ class HoloBaseControlDummy(Node):
         self.max_deceleration_angular_ = self.get_parameter('max_deceleration_angular').value
         self.max_acceleration_wheel = self.get_parameter('max_acceleration_wheel').value
         # Print parameters
-        get_logger('rclpy').info(f"enable_accel_limits: {self.enable_accel_limits_}")
-        get_logger('rclpy').info(f"max_acceleration_linear: {self.max_acceleration_linear_}")
-        get_logger('rclpy').info(f"max_acceleration_angular: {self.max_acceleration_angular_}")
-        get_logger('rclpy').info(f"max_deceleration_linear: {self.max_deceleration_linear_}")
-        get_logger('rclpy').info(f"max_deceleration_angular: {self.max_deceleration_angular_}")
-        get_logger('rclpy').info(f"max_acceleration_wheel: {self.max_acceleration_wheel}")
+        get_logger('holo_base_control_simu').info(f"enable_accel_limits: {self.enable_accel_limits_}")
+        get_logger('holo_base_control_simu').info(f"max_acceleration_linear: {self.max_acceleration_linear_}")
+        get_logger('holo_base_control_simu').info(f"max_acceleration_angular: {self.max_acceleration_angular_}")
+        get_logger('holo_base_control_simu').info(f"max_deceleration_linear: {self.max_deceleration_linear_}")
+        get_logger('holo_base_control_simu').info(f"max_deceleration_angular: {self.max_deceleration_angular_}")
+        get_logger('holo_base_control_simu').info(f"max_acceleration_wheel: {self.max_acceleration_wheel}")
 
         self.subscription = self.create_subscription(
             Twist,
