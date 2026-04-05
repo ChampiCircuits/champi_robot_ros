@@ -52,15 +52,21 @@ class Position:
 
 @dataclass
 class Offset:
-    """Represents a relative offset (not an absolute position)"""
+    """Represents a relative offset from a target position.
+
+    By default (world_frame=False) x/y are expressed in the **target's local frame**
+    (rotated by target.theta) — useful when you want to approach "behind" or "in
+    front of" an element regardless of where it sits on the table.
+
+    Set world_frame=True when x/y are **absolute world-frame** displacements (not
+    rotated). theta_deg is always *relative* to the target's orientation so the
+    approach angle auto-flips correctly when the target is mirrored for blue.
+    """
     x: float
     y: float
     theta_deg: float = 0.0
-    
-    def to_dict(self) -> Dict[str, Any]:
-        result = {"x": self.x, "y": self.y, "theta_deg": self.theta_deg, "is_offset": True}
-        return result
-    
+    world_frame: bool = False  # If True, x/y are NOT rotated by target.theta
+
     
 @dataclass
 class MotionParams:
@@ -271,19 +277,19 @@ class StrategyBuilder:
         """Complete sequence for placing the banner
         
         Args:
-            target_position: Position object
             group: Group name for these actions
         """
         self.set_current_group(group)
 
         # thermometer initial position is on the rightmost of its slider.
         # we have to move it in the center of the slider
-        thermometer_initial_position = Position(1.4, 0.0, 180.0)
-        thermometer_target_position = Position(0.7, 0.0, 180.0)
+        thermometer_initial_position = Position(1.4, 0.0, 0.0)
+        thermometer_target_position = Position(0.7, 0.0, 0.0)
 
-        self.move_relative_to(thermometer_initial_position, Offset(0.05, -0.1, 0.0), use_collision_avoidance=True)
+        # we use world_frame=True here because we always want to have an offset in the same absolute direction, regardless of color
+        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.1, 180.0, world_frame=True), use_collision_avoidance=True)
         self.custom_action(ActuatorCommand.THERMOMETER_LOWER_SERVO)
-        self.move_relative_to(thermometer_target_position, Offset(0.05, -0.1, 0.0), use_collision_avoidance=True)
+        self.move_relative_to(thermometer_target_position, Offset(0.05, 0.1, 180.0, world_frame=True))
         self.custom_action(ActuatorCommand.THERMOMETER_RAISE_SERVO)
 
         points = self.points_per_action["THERMOMETER"]
@@ -361,7 +367,7 @@ class StrategyBuilder:
             actions = []
             for action in self.actions:
                 transformed_target = action.pos_target.transform_for_blue() if action.pos_target else None
-                
+
                 new_action = Action(
                     action=action.action,
                     named_target=action.named_target,

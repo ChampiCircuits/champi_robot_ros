@@ -58,7 +58,7 @@ Visualization Manager:
       Cell Size: 0.10000000149011612
       Class: rviz_default_plugins/Grid
       Color: 160; 160; 164
-      Enabled: false
+      Enabled: true
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -71,7 +71,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 30
       Reference Frame: <Fixed Frame>
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/TF
       Enabled: true
       Filter (blacklist): ""
@@ -294,7 +294,7 @@ Visualization Manager:
       Color Scheme: costmap
       Draw Behind: false
       Enabled: true
-      Name: Oprimized Path (debug)
+      Name: Optimized Path (debug)
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -336,7 +336,7 @@ Visualization Manager:
     - Class: rviz_static_image_display/StaticImage
       Enabled: true
       Frame: map
-      Height (m): -0.20000000298023224
+      Height (m): -0.4000000059604645
       Image Path: package://champi_bringup/config/rviz/vinyle.png
       Name: StaticImage
       Resolution (px/m): 1000
@@ -532,11 +532,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 332.2532958984375
+      Scale: 365.8072509765625
       Target Frame: map
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 1.5050798654556274
-      Y: 0.9077638983726501
+      X: 1.566313624382019
+      Y: 0.9861288666725159
     Saved: ~
 Window Geometry:
   Displays:

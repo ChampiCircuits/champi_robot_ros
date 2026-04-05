@@ -144,8 +144,9 @@ path_planner:
     use_default_strategy_and_color_in_sim: true       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
     # default_strategy_file: '__strat_test_square.py' # Default strategy file for simulation
     default_strategy_file: '__strat_main_2026.py'     # Default strategy file for simulation
+#    default_sim_color: 'BLUE'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
     default_sim_color: 'YELLOW'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
-    
+
     # Match timing parameters
     match_total_time: 100.0                           # seconds - Total match duration
     return_home_safety_margin: 2.0                    # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left

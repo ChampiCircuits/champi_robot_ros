@@ -397,28 +397,45 @@ class StateMachine:
 
         raise ValueError("No target specified for move action!")
     
-    def _apply_offset(self, x: float, y: float, theta_deg: float, 
+    def _apply_offset(self, x: float, y: float, theta_deg: float,
                       offset: Offset) -> Tuple[float, float, float]:
-        """Apply offset to position in robot's reference frame.
-        
-        Args:
-            x, y, theta_deg: Base position
-            offset: Offset to apply (in robot frame)
-            
-        Returns:
-            Tuple of (x, y, theta_deg) with offset applied
+        """Apply an offset expressed in the target's local frame.
+
+        Coordinate convention (target's local frame):
+          +x  = forward  (direction the target faces)
+          +y  = left     (perpendicular, CCW from +x)
+          theta_deg = added to the target's own orientation
+                      → 0   : robot faces the same direction as the target
+                      → 180 : robot faces opposite to the target
+
+        Examples
+        --------
+        Offset(-0.35, 0, 0)  → 35 cm behind the target, same heading
+                                (robot front points toward the target)
+        Offset( 0.10, 0, 0)  → 10 cm in front of the target, same heading
+                                (robot back points toward the target — useful
+                                 for rear-mounted actuators)
+        Offset( 0.05, 0.1, 180) → 5 cm in front, 10 cm to the left,
+                                   facing opposite to the target
         """
         theta_rad = radians(theta_deg)
-        cos_theta = cos(theta_rad)
-        sin_theta = sin(theta_rad)
-        
-        # Rotate offset by robot's orientation
-        new_x = x + offset.x * cos_theta - offset.y * sin_theta
-        new_y = y + offset.x * sin_theta + offset.y * cos_theta
-        new_theta_deg = theta_deg + offset.theta_deg
-        
-        return (new_x, new_y, new_theta_deg)
-    
+        cos_t = cos(theta_rad)
+        sin_t = sin(theta_rad)
+
+        if offset.world_frame:
+            # x/y are world-frame displacements — no rotation needed.
+            # theta_deg is still relative to the target's orientation so it
+            # auto-flips correctly when the target is mirrored for blue.
+            new_x = x + offset.x
+            new_y = y + offset.y
+        else:
+            # x/y are in the target's local frame — rotate by target theta.
+            new_x = x + offset.x * cos_t - offset.y * sin_t
+            new_y = y + offset.x * sin_t + offset.y * cos_t
+
+        new_theta = theta_deg + offset.theta_deg
+        return new_x, new_y, new_theta
+
     def _execute_detect_platform(self, action: Action) -> None:
         """Execute platform detection."""
         self.logger.info("Detecting platform...")
