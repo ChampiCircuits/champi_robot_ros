@@ -20,7 +20,7 @@ enum class Team : uint8_t {
 void motionInit();
 void motionTick(uint32_t now_us);
 MotionState motionGetState();
-Team motionGetLatchedTeam();
+Team motionGetTeam();
 
 #endif // MOTION_H
 

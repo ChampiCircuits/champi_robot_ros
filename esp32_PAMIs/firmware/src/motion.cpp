@@ -3,13 +3,14 @@
 
 #include "generated_trajectory.h"
 #include "led_status.h"
-#include "motion_config.h"
+#include "config.h"
 #include "motion.h"
 #include "stepper_control.h"
+#include "logging.h"
 
 namespace {
 
-using namespace MotionConfig;
+using namespace Config;
 
 enum class SegmentPhase : uint8_t {
     IDLE = 0,
@@ -25,10 +26,7 @@ struct DebouncedInput {
 
 MotionState g_state = MotionState::WAITING_TIRETTE;
 Team g_candidate_team = Team::BLUE;
-Team g_latched_team = Team::BLUE;
-bool g_team_latched = false;
-bool g_obstacle_blocked = false;
-uint8_t g_us_invalid_streak = 0;
+bool g_blocked_by_obstacle = false;
 int g_segment_index = 0;
 uint32_t g_start_deadline_us = 0;
 uint32_t g_last_telemetry_ms = 0;
@@ -43,7 +41,6 @@ float g_cmd_right_mm_s = 0.0f;
 SegmentPhase g_segment_phase = SegmentPhase::IDLE;
 Waypoint g_working_trajectory[TRAJECTORY_POINTS_COUNT];
 
-DebouncedInput g_team_input{};
 DebouncedInput g_tirette_input{};
 
 bool timeReachedUs(uint32_t now_us, uint32_t deadline_us) {
@@ -51,7 +48,7 @@ bool timeReachedUs(uint32_t now_us, uint32_t deadline_us) {
 }
 
 void applyLedPolicy() {
-    ledStatusApply(g_state, g_latched_team);
+    ledStatusApply(g_state, g_candidate_team);
 }
 
 bool readDigitalActive(int pin, bool pullup_enabled) {
@@ -76,10 +73,10 @@ bool updateDebounced(DebouncedInput &input, bool raw_value, uint32_t now_ms, uin
     return false;
 }
 
-void buildWorkingTrajectory(Team latched_team) {
+void buildWorkingTrajectory(Team team) {
     for (int i = 0; i < TRAJECTORY_POINTS_COUNT; ++i) {
         Waypoint wp = EXPERIMENT_TRAJECTORY[i];
-        if (latched_team == Team::YELLOW) {
+        if (team == Team::YELLOW) {
             wp.x = MAP_WIDTH_MM - wp.x;
         }
         g_working_trajectory[i] = wp;
@@ -106,7 +103,7 @@ float angleBetween(const Waypoint &from, const Waypoint &to) {
     return atan2f(to.y - from.y, to.x - from.x);
 }
 
-bool startNextSegment(uint32_t now_us) {
+bool startNextSegment(const uint32_t now_us) {
     while (g_segment_index < (TRAJECTORY_POINTS_COUNT - 1)) {
         const Waypoint &from = g_working_trajectory[g_segment_index];
         const Waypoint &to = g_working_trajectory[g_segment_index + 1];
@@ -124,7 +121,7 @@ bool startNextSegment(uint32_t now_us) {
         g_pending_drive_duration_us = static_cast<uint32_t>(drive_duration_s * 1000000.0f);
 
         if (abs_delta >= MIN_TURN_RAD) {
-            const float turn_omega_rad_s = (2.0f * TURN_WHEEL_SPEED_MM_S) / TRACK_WIDTH_MM;
+            constexpr float turn_omega_rad_s = (2.0f * TURN_WHEEL_SPEED_MM_S) / ENTRAXE_MM;
             const float turn_duration_s = abs_delta / turn_omega_rad_s;
             g_phase_deadline_us = now_us + static_cast<uint32_t>(turn_duration_s * 1000000.0f);
 
@@ -143,6 +140,8 @@ bool startNextSegment(uint32_t now_us) {
             g_cmd_right_mm_s = g_drive_speed_mm_s;
             g_segment_phase = SegmentPhase::DRIVING;
         }
+        LOG_WARN("Motion", "Starting segment %d -> %d: len=%.1fmm turn=%.1fdeg drive=%.1fs",
+                 g_segment_index, g_segment_index + 1, segment_len_mm, delta_heading*180.0/M_PI, drive_duration_s);
         return true;
     }
     return false;
@@ -177,7 +176,7 @@ float readUltrasonicDistanceMm() {
     }
 
     // HC-SR04: distance_cm = pulse_us / 58.0
-    return (static_cast<float>(pulse_us) / 58.0f) * 10.0f;
+    return (static_cast<float>(pulse_us) / 58.3f) * 10.0f;
 }
 
 void publishTelemetry(uint32_t now_ms, float distance_mm) {
@@ -203,14 +202,13 @@ void publishTelemetry(uint32_t now_ms, float distance_mm) {
         case SegmentPhase::DRIVING: phase = "DRIVE"; break;
     }
 
-    Serial.printf("[motion] state=%s phase=%s team=%s seg=%d dist_mm=%.1f obstacle=%d us_bad=%u t_phase_ms=%lu\n",
+    Serial.printf("[motion] state=%s phase=%s team=%s seg=%d dist_mm=%.1f obstacle=%d t_phase_ms=%lu\n",
                   state,
                   phase,
-                  g_latched_team == Team::YELLOW ? "YELLOW" : "BLUE",
+                  g_candidate_team == Team::YELLOW ? "YELLOW" : "BLUE",
                   g_segment_index,
                   distance_mm,
-                  g_obstacle_blocked ? 1 : 0,
-                  static_cast<unsigned>(g_us_invalid_streak),
+                  g_blocked_by_obstacle ? 1 : 0,
                   static_cast<unsigned long>(g_phase_deadline_us / 1000));
 }
 
@@ -221,41 +219,72 @@ void stopMotors() {
 } // namespace
 
 void motionInit() {
+    LOG_INFO("Motion", "Initializing system...");
     pinMode(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP ? INPUT_PULLUP : INPUT);
     pinMode(TIRETTE_PIN, TIRETTE_PULLUP ? INPUT_PULLUP : INPUT);
     pinMode(US_TRIG_PIN, OUTPUT);
     pinMode(US_ECHO_PIN, INPUT);
+    LOG_INFO("Motion", "Initialized pins...");
     ledStatusInit();
+    LOG_INFO("Motion", "Initialized status LED...");
     stepperControlInit();
+    stopMotors();
+    LOG_INFO("Motion", "Initialized stepperControl...");
+
+    {
+        // TEST US SENSOR
+        // while (true)
+        // {
+        //     const auto distance_mm = readUltrasonicDistanceMm();
+        //     if (distance_mm > 0.0f) {
+        //         if (distance_mm <= OBSTACLE_STOP_MM) {
+        //             g_blocked_by_obstacle = true;
+        //         } else if (distance_mm >= OBSTACLE_RESUME_MM) {
+        //             g_blocked_by_obstacle = false;
+        //         }
+        //     }
+        //     LOG_INFO("Motion", "distance_mm=%.1f, blocked? %d", distance_mm, g_blocked_by_obstacle);
+        // }
+    }
+
+    // TEST CYCLE THROUGH COLORS
+    {
+        // while (true)
+        // {
+        //     setLedRgb(255, 30, 0);
+        //     sleep(2);
+        //     setLedRgb(255, 120, 0);
+        //     sleep(2);
+        // }
+    }
+
+    // TEST TIRETTE
+    {
+        // while (true)
+        // {
+        //     bool team = digitalRead(TEAM_SWITCH_PIN);
+        //     bool tirette = digitalRead(TIRETTE_PIN);
+        //     LOG_INFO("tirette", "tirette %d team %d", tirette, team);
+        //     delay(500);
+        // }
+    }
 
     const bool team_raw = readDigitalActive(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP);
-    g_team_input = DebouncedInput{team_raw, team_raw, millis()};
-
     const bool tirette_raw = readDigitalActive(TIRETTE_PIN, TIRETTE_PULLUP);
     g_tirette_input = DebouncedInput{tirette_raw, tirette_raw, millis()};
 
     g_candidate_team = team_raw ? Team::YELLOW : Team::BLUE;
-    g_latched_team = Team::BLUE;
-    g_team_latched = false;
     g_state = MotionState::WAITING_TIRETTE;
-    g_obstacle_blocked = false;
-    g_us_invalid_streak = 0;
+    g_blocked_by_obstacle = false;
     resetRunProgress();
     g_start_deadline_us = 0;
     g_last_telemetry_ms = 0;
 
-    stopMotors();
     applyLedPolicy();
 }
 
 void motionTick(uint32_t now_us) {
     const uint32_t now_ms = millis();
-
-    const bool team_raw = readDigitalActive(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP);
-    const bool team_changed = updateDebounced(g_team_input, team_raw, now_ms, TEAM_DEBOUNCE_MS);
-    if (!g_team_latched && team_changed) {
-        g_candidate_team = g_team_input.stable_value ? Team::YELLOW : Team::BLUE;
-    }
 
     const bool tirette_raw = readDigitalActive(TIRETTE_PIN, TIRETTE_PULLUP);
     const bool tirette_changed = updateDebounced(g_tirette_input, tirette_raw, now_ms, TIRETTE_DEBOUNCE_MS);
@@ -265,89 +294,87 @@ void motionTick(uint32_t now_us) {
     if (g_state == MotionState::RUNNING || g_state == MotionState::PAUSED_OBSTACLE) {
         distance_mm = readUltrasonicDistanceMm();
         if (distance_mm > 0.0f) {
-            g_us_invalid_streak = 0;
             if (distance_mm <= OBSTACLE_STOP_MM) {
-                g_obstacle_blocked = true;
+                g_blocked_by_obstacle = true;
             } else if (distance_mm >= OBSTACLE_RESUME_MM) {
-                g_obstacle_blocked = false;
-            }
-        } else {
-            if (g_us_invalid_streak < 255) {
-                ++g_us_invalid_streak;
-            }
-            if (g_us_invalid_streak >= MAX_US_INVALID_BEFORE_BLOCK) {
-                // Conservative behavior: hold robot paused when sensor data is stale.
-                g_obstacle_blocked = true;
+                g_blocked_by_obstacle = false;
             }
         }
     }
 
     switch (g_state) {
         case MotionState::WAITING_TIRETTE:
-            stopMotors();
-            if (tirette_start_edge) {
-                g_latched_team = g_candidate_team;
-                g_team_latched = true;
-                buildWorkingTrajectory(g_latched_team);
-                resetRunProgress();
-                g_start_deadline_us = now_us + static_cast<uint32_t>(START_AFTER_DELAY_S * 1000000.0f);
-                g_state = MotionState::START_DELAY;
-            }
-            break;
+            {
+                const bool team_raw = readDigitalActive(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP);
+                g_candidate_team = team_raw ? Team::YELLOW : Team::BLUE;
 
-        case MotionState::START_DELAY:
-            stopMotors();
-            if (timeReachedUs(now_us, g_start_deadline_us)) {
-                if (!startNextSegment(now_us)) {
-                    g_state = MotionState::COMPLETED;
-                    break;
-                }
-                g_state = MotionState::RUNNING;
-            }
-            break;
-
-        case MotionState::RUNNING:
-            if (g_obstacle_blocked) {
                 stopMotors();
-                g_pause_started_us = now_us;
-                g_state = MotionState::PAUSED_OBSTACLE;
-            } else {
-                commandWheelSpeeds(g_cmd_left_mm_s, g_cmd_right_mm_s, now_us);
-                stepperControlTick(now_us);
+                if (tirette_start_edge) {
+                    buildWorkingTrajectory(g_candidate_team);
+                    resetRunProgress();
+                    g_start_deadline_us = now_us + static_cast<uint32_t>(START_AFTER_DELAY_S * 1000000.0f);
+                    g_state = MotionState::START_DELAY;
+                }
+                break;
+            }
+        case MotionState::START_DELAY:
+            {
+                stopMotors();
+                if (timeReachedUs(now_us, g_start_deadline_us)) {
+                    if (!startNextSegment(now_us)) {
+                        g_state = MotionState::COMPLETED;
+                        break;
+                    }
+                    g_state = MotionState::RUNNING;
+                }
+                break;
+            }
+        case MotionState::RUNNING:
+            {
+                if (g_blocked_by_obstacle) {
+                    stopMotors();
+                    g_pause_started_us = now_us;
+                    g_state = MotionState::PAUSED_OBSTACLE;
+                } else {
+                    commandWheelSpeeds(g_cmd_left_mm_s, g_cmd_right_mm_s, now_us);
+                    stepperControlTick(now_us);
 
-                if (timeReachedUs(now_us, g_phase_deadline_us)) {
-                    if (g_segment_phase == SegmentPhase::TURNING) {
-                        g_estimated_heading_rad = g_target_heading_rad;
-                        g_phase_deadline_us = now_us + g_pending_drive_duration_us;
-                        g_cmd_left_mm_s = g_drive_speed_mm_s;
-                        g_cmd_right_mm_s = g_drive_speed_mm_s;
-                        g_segment_phase = SegmentPhase::DRIVING;
-                    } else if (g_segment_phase == SegmentPhase::DRIVING) {
-                        ++g_segment_index;
-                        if (!startNextSegment(now_us)) {
-                            stopMotors();
-                            g_segment_phase = SegmentPhase::IDLE;
-                            g_state = MotionState::COMPLETED;
+                    if (timeReachedUs(now_us, g_phase_deadline_us)) {
+                        if (g_segment_phase == SegmentPhase::TURNING) {
+                            g_estimated_heading_rad = g_target_heading_rad;
+                            g_phase_deadline_us = now_us + g_pending_drive_duration_us;
+                            g_cmd_left_mm_s = g_drive_speed_mm_s;
+                            g_cmd_right_mm_s = g_drive_speed_mm_s;
+                            g_segment_phase = SegmentPhase::DRIVING;
+                        } else if (g_segment_phase == SegmentPhase::DRIVING) {
+                            ++g_segment_index;
+                            if (!startNextSegment(now_us)) {
+                                stopMotors();
+                                g_segment_phase = SegmentPhase::IDLE;
+                                g_state = MotionState::COMPLETED;
+                            }
                         }
                     }
                 }
+                break;
             }
-            break;
-
         case MotionState::PAUSED_OBSTACLE:
-            stopMotors();
-            if (!g_obstacle_blocked) {
-                if (g_pause_started_us != 0) {
-                    g_phase_deadline_us += (now_us - g_pause_started_us);
-                    g_pause_started_us = 0;
+            {
+                stopMotors();
+                if (!g_blocked_by_obstacle) {
+                    if (g_pause_started_us != 0) {
+                        g_phase_deadline_us += (now_us - g_pause_started_us);
+                        g_pause_started_us = 0;
+                    }
+                    g_state = MotionState::RUNNING;
                 }
-                g_state = MotionState::RUNNING;
+                break;
             }
-            break;
-
         case MotionState::COMPLETED:
-            stopMotors();
-            break;
+            {
+                stopMotors();
+                break;
+            }
 
         case MotionState::FAULT:
             stopMotors();
@@ -362,7 +389,7 @@ MotionState motionGetState() {
     return g_state;
 }
 
-Team motionGetLatchedTeam() {
-    return g_latched_team;
+Team motionGetTeam() {
+    return g_candidate_team;
 }
 

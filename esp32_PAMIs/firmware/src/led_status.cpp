@@ -1,45 +1,108 @@
 #include <Arduino.h>
+#include <stdint.h>
 
 #include "led_status.h"
-#include "motion_config.h"
+#include "config.h"
+#include "logging.h"
+
+// namespace {
+
+using namespace Config;
 
 namespace {
 
-using namespace MotionConfig;
+struct Rgb8 {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+};
 
-void setLedRgb(bool r, bool g, bool b) {
-    digitalWrite(LED_R_PIN, r ? HIGH : LOW);
-    digitalWrite(LED_G_PIN, g ? HIGH : LOW);
-    digitalWrite(LED_B_PIN, b ? HIGH : LOW);
+constexpr Rgb8 COLOR_OFF{0, 0, 0};
+constexpr Rgb8 COLOR_BLUE{0, 0, 255};
+constexpr Rgb8 COLOR_YELLOW{255, 120, 0};
+constexpr Rgb8 COLOR_ORANGE{255, 30, 0};
+constexpr Rgb8 COLOR_RED{255, 0, 0};
+constexpr Rgb8 COLOR_GREEN{0, 255, 0};
+
+Rgb8 rgbForColor(const LedColor color) {
+    switch (color) {
+        case LedColor::OFF: return COLOR_OFF;
+        case LedColor::BLUE: return COLOR_BLUE;
+        case LedColor::YELLOW: return COLOR_YELLOW;
+        case LedColor::ORANGE: return COLOR_ORANGE;
+        case LedColor::RED: return COLOR_RED;
+    case LedColor::GREEN: return COLOR_GREEN;
+    }
+    return COLOR_OFF;
 }
 
 } // namespace
+
+namespace {
+
+void setLedRgb(uint8_t r, uint8_t g, uint8_t b) {
+    if (LED_IS_COMMON_ANODE) {
+        r = static_cast<uint8_t>(255u - r);
+        g = static_cast<uint8_t>(255u - g);
+        b = static_cast<uint8_t>(255u - b);
+    }
+    delay(5);
+    analogWrite(LED_R_PIN, r);
+    analogWrite(LED_G_PIN, g);
+    analogWrite(LED_B_PIN, b);
+}
+
+} // namespace
+
+void setLedColor(const LedColor color) {
+    const Rgb8 rgb = rgbForColor(color);
+    setLedRgb(rgb.r, rgb.g, rgb.b);
+}
+
+// } // namespace
 
 void ledStatusInit() {
     pinMode(LED_R_PIN, OUTPUT);
     pinMode(LED_G_PIN, OUTPUT);
     pinMode(LED_B_PIN, OUTPUT);
-    setLedRgb(false, false, false);
+    setLedColor(LedColor::OFF);
 }
 
-void ledStatusApply(MotionState state, Team latched_team) {
+void ledStatusApply(const MotionState state, const Team latched_team) {
     switch (state) {
         case MotionState::WAITING_TIRETTE:
-            // Orange while waiting for a valid start.
-            setLedRgb(true, true, false);
-            break;
-        case MotionState::START_DELAY:
-        case MotionState::RUNNING:
-        case MotionState::PAUSED_OBSTACLE:
-        case MotionState::COMPLETED:
+            // color of team when waiting for start
             if (latched_team == Team::YELLOW) {
-                setLedRgb(true, true, false);
+                setLedColor(LedColor::YELLOW);
             } else {
-                setLedRgb(false, false, true);
+                setLedColor(LedColor::BLUE);
             }
             break;
+        case MotionState::START_DELAY:
+            if ((millis() / 1000u) % 2u == 0u) {
+                if (latched_team == Team::YELLOW) {
+                    setLedColor(LedColor::YELLOW);
+                } else {
+                    setLedColor(LedColor::BLUE);
+                }
+            } else {
+                setLedColor(LedColor::OFF);
+            }
+            break;
+        case MotionState::RUNNING:
+            {
+                setLedColor(LedColor::GREEN);
+            }
+        case MotionState::PAUSED_OBSTACLE:
+            {
+                setLedColor(LedColor::ORANGE);
+                break;
+            }
+        case MotionState::COMPLETED:
+            setLedColor(LedColor::OFF);
+            break;
         case MotionState::FAULT:
-            setLedRgb(true, false, false);
+            setLedColor(LedColor::RED);
             break;
     }
 }

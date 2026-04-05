@@ -1,12 +1,12 @@
 #include <Arduino.h>
 #include <math.h>
 
-#include "motion_config.h"
+#include "config.h"
 #include "stepper_control.h"
 
 namespace {
 
-using namespace MotionConfig;
+using namespace Config;
 
 struct StepperAxis {
     int step_pin;
