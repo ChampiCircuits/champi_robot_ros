@@ -37,8 +37,8 @@ class StrategyPublisher(Node):
         strategy_path = get_package_share_directory('champi_brain') + '/strategies/' + strategy_file
         world_state_path = get_package_share_directory('champi_brain') + '/config/' + initial_world_state_file
 
-        self.actions, self.init_pose, self.home_pose, self.wait_to_come_home_pose, _ = load_strategy(
-            strategy_path, 
+        self.actions, self.init_pose, self.home_pose, self.wait_to_come_home_pose, _, _ = load_strategy(
+            strategy_path,
             "YELLOW", 
             self.get_logger(),
             world_state_path

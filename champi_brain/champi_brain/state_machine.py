@@ -23,6 +23,7 @@ class StrategyConfig:
     init_pose: tuple[float, float, float]  # (x, y, theta_deg)
     home_pose: tuple[float, float, float]  # (x, y, theta_deg)
     wait_to_come_home_pose: tuple[float, float, float]  # (x, y, theta_deg)
+    come_home_points: int = 0  # Points awarded for returning home
     simulation_mode: bool = False
 
 
@@ -66,7 +67,6 @@ class StateMachine:
         self.strategy: List[Action] = []
         self.current_action: Optional[Action] = None
         self.last_dispatched_action: Optional[Action] = None
-        self.current_group: Optional[str] = None
         self.canceled_groups: set[str] = set()
         
         # World state (updated by ROS node)
@@ -152,7 +152,11 @@ class StateMachine:
         self._action_completed = True
         if self.state == self.STATE_EXECUTING_ACTION:
             self._transition_to(self.STATE_IDLE)
-            
+        elif self.state == self.STATE_COME_HOME:
+            if self.strategy_config and self.strategy_config.come_home_points > 0:
+                self.logger.info(f"Added {self.strategy_config.come_home_points} points for coming home")
+                self.match.add_points(self.strategy_config.come_home_points)
+
     def notify_platform_detected(self, platform_pose: tuple[float, float, float]) -> None:
         """Notify that platform has been detected."""
         self.platform_center = platform_pose
@@ -320,8 +324,8 @@ class StateMachine:
         
         # Execute action
         self.current_action = action
-        self.last_dispatched_action = action
         self.current_group = action.group
+        self.last_dispatched_action = action
         self.strategy.pop(0)
 
         self.logger.info(f"Will now execute action: {action.action}" + (f" (group: {action.group})" if action.group else ""))

@@ -310,7 +310,7 @@ class StrategyBuilder:
         self.custom_action(ActuatorCommand.THERMOMETER_RAISE_SERVO)
 
         points = self.points_per_action["THERMOMETER"]
-        self.add_points(points, f"put_banner finished. {points} points for putting the banner", group=group)
+        self.add_points(points, f"move_thermometer finished. {points} points for moving the thermometer", group=group)
         return self
 
     

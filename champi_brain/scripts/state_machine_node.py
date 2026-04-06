@@ -406,7 +406,7 @@ class StateMachineNode(Node):
             strategy_path = get_package_share_directory('champi_brain') + '/strategies/' + strategy_file
             world_state_path = get_package_share_directory('champi_brain') + '/config/' + self.initial_world_state_file
             
-            strategy, init_pose, home_pose, wait_home_pose, time_per_action = load_strategy(
+            strategy, init_pose, home_pose, wait_home_pose, time_per_action, points_per_action = load_strategy(
                 strategy_path,
                 color,
                 self.get_logger(),
@@ -429,6 +429,7 @@ class StateMachineNode(Node):
                 init_pose=tuple(init_pose),
                 home_pose=tuple(home_pose),
                 wait_to_come_home_pose=tuple(wait_home_pose),
+                come_home_points=points_per_action.get("COME_HOME", 10),
                 simulation_mode=self.sim_mode
             )
             # Set strategy
@@ -520,7 +521,6 @@ class StateMachineNode(Node):
         # self.get_logger().debug(f'🔄 New state: {new_state}')
 
         # Display current action as text in RViz
-        pos = self.current_pose if self.current_pose else (0.0, 0.0, 0.0)
         Canva().clear()
         Canva().add(items.Text((1.5, 1.5, 0.0), text=self._get_action_label(), size=0.15, color=presets.BLUE))
         Canva().draw()
@@ -529,7 +529,9 @@ class StateMachineNode(Node):
     def _on_strategy_completed(self) -> None:
         """Called when all strategy actions are complete."""
         self.get_logger().warn('✅ Strategy completed!')
-
+        Canva().clear()
+        Canva().add(items.Text((1.5, 1.5, 0.0), text="Strategy completed!", size=0.15, color=presets.GREEN))
+        Canva().draw()
 
 def main(args=None):
     """Main entry point."""
