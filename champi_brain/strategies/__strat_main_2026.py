@@ -11,6 +11,10 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         
         # Create groups
         .create_group("caisses_3")
+        .create_group("caisses_4")
+        .create_group("caisses_2")
+        .create_group("caisses_1")
+        .create_group("move_thermometer")
 
         ## The whole strategy is always given for YELLOW team
         ## Position() coordinates are automatically transformed for BLUE team via central symmetry

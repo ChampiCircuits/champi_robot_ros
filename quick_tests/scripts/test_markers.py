@@ -70,6 +70,7 @@ class TestNode(Node):
         Canva().add(items.OrientedCubes(self.some_poses, color=presets.GOLD))
         Canva().add(items.Points(self.some_poses, color=presets.BROWN))
         Canva().add(items.Spheres(self.some_poses, color=presets.NAVY), frame_id='odom')
+        Canva().add(items.Text((0.5, 1.0, 0.8), text="Hello RViz!", size=0.15, color=presets.WHITE))
 
         Canva().draw()
 

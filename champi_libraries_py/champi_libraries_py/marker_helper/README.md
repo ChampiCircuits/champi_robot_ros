@@ -32,6 +32,7 @@ Canva().add(items.Cubes(self.some_poses, color=presets.MAGENTA))
 Canva().add(items.OrientedCubes(self.some_poses, color=presets.MAGENTA))
 Canva().add(items.Points(self.some_poses, color=presets.MAGENTA))
         Canva().add(items.Spheres(self.some_poses, color=presets.MAGENTA), frame_id='odom')
+Canva().add(items.Text((1.0, 2.0), text="Hello RViz!", size=0.15, color=presets.WHITE))
 
 
 Canva().draw()

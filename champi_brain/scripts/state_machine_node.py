@@ -28,6 +28,9 @@ from champi_brain.action_executor.sim_action_executor import SIMActionExecutor
 from champi_brain.strategy_loader import load_strategy
 from champi_brain.motion_config import configure_motion_defaults
 from champi_brain.actuator_commands import ActuatorCommand
+from champi_libraries_py.marker_helper.canva import *
+from champi_libraries_py.marker_helper.canva import Canva
+
 
 
 class StateMachineNode(Node):
@@ -43,7 +46,9 @@ class StateMachineNode(Node):
         super().__init__('state_machine_node', namespace='champi_brain')
         self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
         self.get_logger().info('🚀 Launching State Machine...')
-        
+
+        Canva(self, enable=True)
+
         # ============================================================
         # PARAMETERS
         # ============================================================     
@@ -205,7 +210,7 @@ class StateMachineNode(Node):
         
         self.get_logger().warn('State Machine ready started!\n')
 
-    
+
     # ================================================================
     # ROS CALLBACKS
     # ================================================================
@@ -381,7 +386,19 @@ class StateMachineNode(Node):
     # ================================================================
     # HELPER METHODS
     # ================================================================
-    
+
+    def _get_action_label(self) -> str:
+        """Build a human-readable label for the current action being executed."""
+        action = self.state_machine.last_dispatched_action
+        if action is None:
+            return ""
+
+        label = action.action.name  # e.g. "MOVE", "TAKE_2_BOXES"...
+        if action.group:
+            label += f":[{action.group}]"
+
+        return label
+
     def _load_strategy(self, strategy_file: str, color: str) -> None:
         """Load strategy and create state machine."""
         try:
@@ -501,6 +518,12 @@ class StateMachineNode(Node):
     def _on_state_changed(self, new_state: str) -> None:
         """Called when state machine changes state."""
         # self.get_logger().debug(f'🔄 New state: {new_state}')
+
+        # Display current action as text in RViz
+        pos = self.current_pose if self.current_pose else (0.0, 0.0, 0.0)
+        Canva().clear()
+        Canva().add(items.Text((1.5, 1.5, 0.0), text=self._get_action_label(), size=0.15, color=presets.BLUE))
+        Canva().draw()
         pass
     
     def _on_strategy_completed(self) -> None:

@@ -374,3 +374,24 @@ class Points(Item):
         self.set_scale(size)
         self.set_points(poses)
         self.set_color(color)
+
+
+class Text(Item):
+
+    def __init__(self, pose, text: str, size=0.1, color=None):
+        """Display a text label in RViz at the given pose.
+
+        Args:
+            pose: position where the text will be displayed (any supported type).
+            text (str): the string to display.
+            size (float): height of the text in meters.
+            color: color tuple (r, g, b) with values 0-255, or None for auto.
+        """
+        if not shared_variables.visualization_enabled: return
+
+        super().__init__(1)
+        self.set_type(Marker.TEXT_VIEW_FACING)
+        self.markers[0].text = text
+        self.set_scale([0., 0., float(size)])
+        self.set_pose(pose)
+        self.set_color(color)

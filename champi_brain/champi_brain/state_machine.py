@@ -65,6 +65,7 @@ class StateMachine:
         self.state = self.STATE_STOP
         self.strategy: List[Action] = []
         self.current_action: Optional[Action] = None
+        self.last_dispatched_action: Optional[Action] = None
         self.current_group: Optional[str] = None
         self.canceled_groups: set[str] = set()
         
@@ -319,6 +320,7 @@ class StateMachine:
         
         # Execute action
         self.current_action = action
+        self.last_dispatched_action = action
         self.current_group = action.group
         self.strategy.pop(0)
 
