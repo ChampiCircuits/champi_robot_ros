@@ -3,7 +3,7 @@
 
 points_per_action:
   THERMOMETER: 10
-  PUT_2_LAST_BOXES_ON_THE_GROUND: 4 # 2x2 dans le nid
-  PUSH_2_BOXES_OUT: 6 # 2x3 dans un garde-manger
+  PUT_4_LAST_BOXES_ON_THE_GROUND: 4 # 2x2 dans le nid
+  PUSH_4_BOXES_OUT: 6 # 2x3 dans un garde-manger
   COME_HOME: 10
 # TODO estimate the points for bonuses

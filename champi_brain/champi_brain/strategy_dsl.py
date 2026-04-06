@@ -337,8 +337,8 @@ class StrategyBuilder:
         
         return self
     
-    def put_elements_sequence(self, target_position: Union[Position, str], group: str) -> 'StrategyBuilder':
-        """Complete sequence for placing elements
+    def put_4_elements_sequence(self, target_position: Union[Position, str], group: str) -> 'StrategyBuilder':
+        """Complete sequence for placing elements by the sorted back exit of the robot
         
         Args:
             target_position: Union[Position, str] object where to place elements or named target
@@ -353,7 +353,28 @@ class StrategyBuilder:
         self.custom_action(ActuatorCommand.PUSH_2_BOXES_OUT)
 
         # Add points
-        points = self.points_per_action["PUSH_2_BOXES_OUT"] # TODO changer les points
+        points = self.points_per_action["PUSH_4_BOXES_OUT"]
+        self.add_points(points, f"put_elements finished. {points} points", group=group)
+
+        return self
+
+    def put_last_4_elements_sequence(self, target_position: Union[Position, str], group: str) -> 'StrategyBuilder':
+        """Complete sequence for placing the last 4 elements in front of the robot
+
+        Args:
+            target_position: Union[Position, str] object where to place elements or named target
+            group: Group name for these actions
+        """
+        self.set_current_group(group)
+
+        # On dépose les caisses par l'arrière du robot
+        self.move_relative_to(target_position, Offset(-0.1, 0.0, 0.0), use_collision_avoidance=False)
+        self.custom_action(ActuatorCommand.PUT_2_LAST_BOXES_ON_THE_GROUND)
+        self.move_relative_to(target_position, Offset(-0.2, 0.0, 0.0), use_collision_avoidance=False)
+        self.custom_action(ActuatorCommand.PUT_2_LAST_BOXES_ON_THE_GROUND)
+
+        # Add points
+        points = self.points_per_action["PUT_4_LAST_BOXES_ON_THE_GROUND"]
         self.add_points(points, f"put_elements finished. {points} points", group=group)
 
         return self
