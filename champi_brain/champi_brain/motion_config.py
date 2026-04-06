@@ -30,7 +30,10 @@ def configure_motion_defaults(node: Node) -> None:
         'default_motion_end_speed': ParameterType.PARAMETER_DOUBLE,
         'default_motion_accel_linear': ParameterType.PARAMETER_DOUBLE,
         'default_motion_accel_angular': ParameterType.PARAMETER_DOUBLE,
-        'default_motion_use_collision_avoidance': ParameterType.PARAMETER_BOOL
+        'default_motion_use_collision_avoidance': ParameterType.PARAMETER_BOOL,
+        'default_motion_linear_tolerance': ParameterType.PARAMETER_DOUBLE,
+        'default_motion_angular_tolerance': ParameterType.PARAMETER_DOUBLE,
+        'default_motion_max_angular_speed': ParameterType.PARAMETER_DOUBLE,
     }
     
     values = {}
@@ -69,7 +72,10 @@ def configure_motion_defaults(node: Node) -> None:
         end_speed=values['default_motion_end_speed'],
         accel_linear=values['default_motion_accel_linear'],
         accel_angular=values['default_motion_accel_angular'],
-        use_collision_avoidance=values['default_motion_use_collision_avoidance']
+        use_collision_avoidance=values['default_motion_use_collision_avoidance'],
+        linear_tolerance=values['default_motion_linear_tolerance'],
+        angular_tolerance=values['default_motion_angular_tolerance'],
+        max_angular_speed=values['default_motion_max_angular_speed'],
     )
     
     node.get_logger().info(
@@ -77,5 +83,8 @@ def configure_motion_defaults(node: Node) -> None:
         f"end_speed={values['default_motion_end_speed']}, "
         f"accel_linear={values['default_motion_accel_linear']}, "
         f"accel_angular={values['default_motion_accel_angular']}, "
-        f"use_collision_avoidance={values['default_motion_use_collision_avoidance']}"
+        f"use_collision_avoidance={values['default_motion_use_collision_avoidance']}, "
+        f"linear_tolerance={values['default_motion_linear_tolerance']}, "
+        f"angular_tolerance={values['default_motion_angular_tolerance']}, "
+        f"max_angular_speed={values['default_motion_max_angular_speed']}"
     )

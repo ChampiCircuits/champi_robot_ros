@@ -319,6 +319,7 @@ class StateMachineNode(Node):
         elements = {}
         for elem in msg.detected_game_elements:
             elements[elem.id] = elem
+            self.get_logger().debug(f'\t {elem}')
         
         # Update state machine world state
         self.state_machine.update_world_state(elements)

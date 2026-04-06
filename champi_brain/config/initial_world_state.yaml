@@ -16,49 +16,57 @@ elements:
     type: nut_box
     x: 0.175
     y: 1.2
-    theta_deg: 0.0
+    theta_deg: 90.0
+    mirror_id: caisses_7
 
   - id: caisses_2
     type: nut_box
     x: 0.175
     y: 0.4
-    theta_deg: 0.0
+    theta_deg: 90.0
+    mirror_id: caisses_8
 
   - id: caisses_3
     type: nut_box
     x: 1.15
     y: 0.8
-    theta_deg: 180.0
+    theta_deg: 0.0
+    mirror_id: caisses_5
 
   - id: caisses_4
     type: nut_box
     x: 1.1
     y: 0.175
     theta_deg: 0.0
+    mirror_id: caisses_6
 
   - id: caisses_5
     type: nut_box
     x: 1.85
     y: 0.8
-    theta_deg: 180.0
+    theta_deg: 0.0
+    mirror_id: caisses_3
 
   - id: caisses_6
     type: nut_box
     x: 1.9
     y: 0.175
-    theta_deg: 0.0
+    theta_deg: 180.0
+    mirror_id: caisses_4
 
   - id: caisses_7
     type: nut_box
     x: 2.825
     y: 0.4
-    theta_deg: 0.0
+    theta_deg: 90.0
+    mirror_id: caisses_1
 
   - id: caisses_8
     type: nut_box
     x: 2.825
     y: 1.2
-    theta_deg: 0.0
+    theta_deg: 90.0
+    mirror_id: caisses_2
 
 #################################################################################
 # Definition of the zones on the table

@@ -16,7 +16,7 @@ def initialize_symmetry_mapper(logger, initial_world_state_path: str):
     raw_zones = data.get('zones', [])
     
     init_symmetry_mapper(raw_elements, raw_zones)
-    logger.info('✅ Symmetry mapper initialized from initial_world_state_2025.yaml')
+    logger.info(f'✅ Symmetry mapper initialized from {initial_world_state_path}')
 
 
 def load_points_per_action():

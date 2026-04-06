@@ -123,17 +123,16 @@ class ActionExecutor():
         
         # Motion parameters
         goal.max_linear_speed = motion_params.speed
-        goal.max_angular_speed = 3.0
+        goal.max_angular_speed = motion_params.max_angular_speed
         goal.accel_linear = motion_params.accel_linear
         goal.accel_angular = motion_params.accel_angular
         goal.end_speed = motion_params.end_speed
         # TODO send use_collision_avoidance to goal
 
-        
         # Tolerances
-        goal.linear_tolerance = 0.005
-        goal.angular_tolerance = 0.05
-        
+        goal.linear_tolerance = motion_params.linear_tolerance
+        goal.angular_tolerance = motion_params.angular_tolerance
+
         # Look-at-point (disabled by default)
         goal.do_look_at_point = False
         

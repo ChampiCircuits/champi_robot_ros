@@ -532,7 +532,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 365.8072509765625
+      Scale: 337.353515625
       Target Frame: map
       Value: TopDownOrtho (rviz_default_plugins)
       X: 1.566313624382019

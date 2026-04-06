@@ -81,15 +81,20 @@ class MotionParams:
     _default_accel_linear: Optional[float] = None
     _default_accel_angular: Optional[float] = None
     _default_use_collision_avoidance: Optional[bool] = None
-    
+    _default_linear_tolerance: Optional[float] = None
+    _default_angular_tolerance: Optional[float] = None
+    _default_max_angular_speed: Optional[float] = None
+
     # Instance variables - will be set in __post_init__
     speed: Optional[float] = None          # m/s
     end_speed: Optional[float] = None      # m/s
     accel_linear: Optional[float] = None   # m/s²
     accel_angular: Optional[float] = None  # rad/s²
     use_collision_avoidance: Optional[bool] = None # without collision avoidance, we do straight lines
-    # TODO target position tolerances should be added
-    
+    linear_tolerance: Optional[float] = None   # m
+    angular_tolerance: Optional[float] = None  # rad
+    max_angular_speed: Optional[float] = None  # rad/s
+
     def __post_init__(self):
         """Initialize instance variables with class defaults if not provided
         
@@ -111,14 +116,23 @@ class MotionParams:
             self.accel_angular = MotionParams._default_accel_angular
         if self.use_collision_avoidance is None:
             self.use_collision_avoidance = MotionParams._default_use_collision_avoidance
-    
+        if self.linear_tolerance is None:
+            self.linear_tolerance = MotionParams._default_linear_tolerance
+        if self.angular_tolerance is None:
+            self.angular_tolerance = MotionParams._default_angular_tolerance
+        if self.max_angular_speed is None:
+            self.max_angular_speed = MotionParams._default_max_angular_speed
+
     @classmethod
     def set_defaults(cls, 
                      speed: float,
                      end_speed: float,
                      accel_linear: float,
                      accel_angular: float,
-                     use_collision_avoidance: bool) -> None:
+                     use_collision_avoidance: bool,
+                     linear_tolerance: float,
+                     angular_tolerance: float,
+                     max_angular_speed: float) -> None:
         """Configure default values for all MotionParams instances
         
         This MUST be called once at startup with values from ROS parameters.
@@ -128,6 +142,9 @@ class MotionParams:
         cls._default_accel_linear = accel_linear
         cls._default_accel_angular = accel_angular
         cls._default_use_collision_avoidance = use_collision_avoidance
+        cls._default_linear_tolerance = linear_tolerance
+        cls._default_angular_tolerance = angular_tolerance
+        cls._default_max_angular_speed = max_angular_speed
 
 @dataclass
 class Action:
@@ -330,9 +347,9 @@ class StrategyBuilder:
         self.set_current_group(group)
         
         # On dépose les caisses par l'arrière du robot
-        self.move_relative_to(target_position, Offset(0.1, 0.0, 0.0), use_collision_avoidance=True)
+        self.move_relative_to(target_position, Offset(0.1, 0.0, 0.0), use_collision_avoidance=False)
         self.custom_action(ActuatorCommand.PUSH_2_BOXES_OUT)
-        self.move_relative_to(target_position, Offset(0.2, 0.0, 0.0), use_collision_avoidance=True)
+        self.move_relative_to(target_position, Offset(0.2, 0.0, 0.0), use_collision_avoidance=False)
         self.custom_action(ActuatorCommand.PUSH_2_BOXES_OUT)
 
         # Add points

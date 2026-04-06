@@ -17,7 +17,9 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         ## Elements IDs are automatically transformed via mirror_id mapping
 
         # premier mouvement pour éviter le grenier
-        .move_to(Position(0.5, 1.3, -90.0), group="caisses_3", use_collision_avoidance=True, speed=1.0, accel_linear=1.0, accel_angular=15.0)
+        .move_to(Position(0.5, 1.3, -90.0), group="caisses_3",
+                 speed=1.0, accel_linear=1.0,
+                 linear_tolerance=0.1, angular_tolerance=0.3, end_speed=0.7)
 
         .take_elements_sequence(Position(1.15, 0.8, 0.0), group="caisses_3") # TODO use directly positions from world_state
         .take_elements_sequence(Position(1.1, 0.175, 180.0), group="caisses_4")
