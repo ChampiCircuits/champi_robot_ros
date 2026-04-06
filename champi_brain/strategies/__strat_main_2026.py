@@ -25,13 +25,11 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         ## Elements IDs (when used) are automatically transformed via mirror_id mapping
 
         # premier mouvement pour éviter le grenier
-        .move_to(Position(0.4, 0.8, -90.0), group="caisses_3",
-                 speed=1.0, accel_linear=1.0)
+        .move_to(Position(0.4, 0.8, -90.0), group="caisses_3", speed=1.0, accel_linear=1.0)
 
         .take_elements_sequence(Position(1.15, 0.8, 0.0), group="caisses_3")
 
-        .move_to(Position(1.5, 0.175, 180.0), group="caisses_4",
-                 speed=1.0, accel_linear=1.0)
+        .move_to(Position(1.5, 0.175, 180.0), group="caisses_4", speed=1.0, accel_linear=1.0)
         .take_elements_sequence(Position(1.1, 0.175, 180.0), group="caisses_4")
 
         .move_thermometer("move_thermometer")
@@ -45,8 +43,10 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
 
         .take_elements_sequence(Position(0.175, 1.2, 90.0), group="caisses_1")
 
+        .put_2_elements_sequence(Position(1.25, 1.45, 180.0), group="caisses_1") # garde_manger_4
+        .move_to(Position(0.4, 1.45, 90.0), group="caisses_1", speed=1.0, accel_linear=1.0)
 
-        .put_last_4_elements_sequence(Position(0.4, 1.8, 90.0), group="caisses_1") # nid_jaune
+        .put_last_2_elements_in_nest_sequence(Position(0.4, 1.8, 90.0), group="caisses_1")  # nid_jaune
 
         ######################### COME HOME ##########################################
         # movement before coming home to keep some distance from the table elements

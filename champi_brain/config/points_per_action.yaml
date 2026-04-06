@@ -3,7 +3,8 @@
 
 points_per_action:
   THERMOMETER: 10
-  PUT_4_LAST_BOXES_ON_THE_GROUND: 4 # 2x2 dans le nid
-  PUSH_4_BOXES_OUT: 6 # 2x3 dans un garde-manger
+  PUT_LAST_2_BOXES_IN_THE_NEST: 2 # dans le nid
+  PUSH_2_BOXES_OUT_PLUS_BONUS: 8 # 1x3 dans un garde-manger + 5 de bonus de majorité
+  PUSH_4_BOXES_OUT_PLUS_BONUS: 11 # 2x3 dans un garde-manger + 5 de bonus de majorité
   COME_HOME: 10
 # TODO estimate the points for bonuses
