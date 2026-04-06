@@ -21,6 +21,7 @@ void LiftAndClamp::take2Boxes()
     _liftGoToPosition(LIFT_BOTTOM_POSITION + BOX_HEIGHT * 1.5f);
 
     boxesInLiftCount += 2;
+    _boxesReadyAtTop = false;
     LOG_INFO("liftClamp", "Took 2 boxes !");
 }
 
@@ -35,6 +36,7 @@ void LiftAndClamp::bring2BoxesToTop()
     _liftGoToPosition(LIFT_TOP_POSITION - heightOfStackInLift + BOX_HEIGHT);
 
     boxesInLiftCount -= 2;
+    _boxesReadyAtTop = true;
 }
 
 void LiftAndClamp::put2LastBoxesOnTheGround()
@@ -44,11 +46,13 @@ void LiftAndClamp::put2LastBoxesOnTheGround()
     _liftGoToPosition(LIFT_BOTTOM_POSITION + BOX_HEIGHT * 1.5f);
 
     boxesInLiftCount -= 2;
+    _boxesReadyAtTop = false;
 }
 
 void LiftAndClamp::initialize()
 {
     LOG_INFO("liftClamp", "Initializing lift and clamp...");
+    _boxesReadyAtTop = false;
     _initLift();
     _initClamp();
     LOG_INFO("liftClamp", "Initialized lift and clamp !")
@@ -97,6 +101,7 @@ void LiftAndClamp::_initLift()
 
     devices::stepper_opt0.set_max_speed(LIFT_BASE_SPEED);
     devices::stepper_opt0.set_max_accel(LIFT_BASE_ACCEL);
+
     LOG_INFO("liftClamp", "Initialized lift !");
 }
 

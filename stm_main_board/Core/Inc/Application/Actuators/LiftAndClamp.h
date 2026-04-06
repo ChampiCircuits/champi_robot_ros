@@ -19,6 +19,11 @@ public:
     void put2LastBoxesOnTheGround();
     void initialize();
 
+    /** Returns true after bring2BoxesToTop() and until markBoxesGrabbed() is called. */
+    [[nodiscard]] bool hasBoxesReadyAtTop() const { return _boxesReadyAtTop; }
+    /** Call this after grabAndSort2BoxesFromLift() to signal the boxes have been taken. */
+    void markBoxesGrabbed() { _boxesReadyAtTop = false; }
+
     int boxesInLiftCount = 0; // always an even number (clamp takes boxes 2 by 2)
 
 private:
@@ -50,6 +55,8 @@ private:
 
     void _liftGoToPosition(float position, bool async = false);
     void _liftGoToBottom(bool async = false) { _liftGoToPosition(LIFT_BOTTOM_POSITION, async); }
+
+    bool _boxesReadyAtTop = false;
 };
 
 

@@ -60,10 +60,16 @@ void HandleRequest(const ActuatorCommand cmd)
     case ActuatorCommand::THERMOMETER_LOWER_SERVO:          lowerThermometerServo(); break;
     case ActuatorCommand::THERMOMETER_RAISE_SERVO:          raiseThermometerServo(); break;
     case ActuatorCommand::TAKE_2_BOXES:                     liftAndClamp.take2Boxes(); break;
-    case ActuatorCommand::BRING_2_BOXES_ON_TOP:             liftAndClamp.bring2BoxesToTop(); break;
+    case ActuatorCommand::BRING_2_BOXES_ON_TOP:
+        if (!boxesSorter.isPusherReady()) boxesSorter.prepareTopPusher(); // defensive: pusher must be retracted first
+        liftAndClamp.bring2BoxesToTop();
+        break;
     case ActuatorCommand::PUT_2_LAST_BOXES_ON_THE_GROUND:   liftAndClamp.put2LastBoxesOnTheGround(); break;
     case ActuatorCommand::PREPARE_TOP_PUSHER:               boxesSorter.prepareTopPusher(); break;
-    case ActuatorCommand::GRAB_AND_SORT_2_BOXES_FROM_LIFT:  boxesSorter.grabAndSort2BoxesFromLift(); break;
+    case ActuatorCommand::GRAB_AND_SORT_2_BOXES_FROM_LIFT:
+        boxesSorter.grabAndSort2BoxesFromLift();
+        liftAndClamp.markBoxesGrabbed();
+        break;
     case ActuatorCommand::PUSH_2_BOXES_OUT:                 boxesSorter.push2BoxesOut(); break;
     case ActuatorCommand::OPEN_EXIT_RAMP:                   boxesSorter.openExitRamp(); break;
 
@@ -73,8 +79,23 @@ void HandleRequest(const ActuatorCommand cmd)
     }
 }
 
-void handleManualRequests()
+/**
+ * Returns true if any actuator command is currently in REQUESTED state (i.e. a manual ROS request is pending).
+ * Auto-pipeline must not run while manual requests are waiting.
+ */
+bool hasManualRequestPending()
 {
+    for (size_t i = 0; i < static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT); i++)
+    {
+        xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
+        const bool isPending = static_cast<ActuatorState>(mod_reg::actuators->requests[i]) == ActuatorState::REQUESTED;
+        xSemaphoreGive(ModbusH.ModBusSphrHandle);
+        if (isPending) return true;
+    }
+    return false;
+}
+
+void handleManualRequests(){
     for (size_t i=0; i < static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT); i++)
     {
         xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
@@ -94,6 +115,40 @@ void handleManualRequests()
     }
 }
 
+/**
+ * Advances the box pipeline one step forward, starting from the last stage.
+ * Pipeline order: prepareTopPusher → bring2BoxesToTop → grabAndSort2BoxesFromLift
+ * (push2BoxesOut is always triggered manually by ROS)
+ *
+ * Preconditions:
+ *  - At least 4 boxes must be in the lift (2 are always kept clamped at the bottom).
+ *  - prepareTopPusher() must be done before bring2BoxesToTop() (enforced here).
+ *  - This function does nothing if a manual ROS request is pending.
+ */
+void update_elements_pipeline()
+{
+    if (hasManualRequestPending()) return;
+
+    if (liftAndClamp.hasBoxesReadyAtTop())
+    {
+        // Stage 3: 2 boxes are at the top of the lift, ready to be grabbed and sorted.
+        boxesSorter.grabAndSort2BoxesFromLift();
+        liftAndClamp.markBoxesGrabbed();
+        // grabAndSort2BoxesFromLift() returns the pusher to READY position,
+        // so isPusherReady() == true on the next cycle → stage 2 will fire directly.
+    }
+    else if (boxesSorter.isPusherReady() && liftAndClamp.boxesInLiftCount > 2)
+    {
+        // Stage 2: pusher is retracted and there are boxes to move up.
+        liftAndClamp.bring2BoxesToTop();
+    }
+    else if (!boxesSorter.isPusherReady() && liftAndClamp.boxesInLiftCount > 2)
+    {
+        // Stage 1: pusher is not retracted yet — retract it before the lift can rise.
+        boxesSorter.prepareTopPusher();
+    }
+}
+
 void ActuatorsTask(void *argument)
 {
     initEveryThing();
@@ -105,6 +160,8 @@ void ActuatorsTask(void *argument)
 
         if (mod_reg::requests->team_color != boxesSorter.getTeamColor())
             boxesSorter.setTeamColor(mod_reg::requests->team_color);
+
+        update_elements_pipeline();
 
         osDelay(100);
     }

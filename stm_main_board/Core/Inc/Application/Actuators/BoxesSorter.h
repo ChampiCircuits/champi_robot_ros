@@ -14,7 +14,6 @@
  * - 1 servo to release EXIT RAMP
  */
 
-// TODO the STM SHALL RECEIVE the color of the team
 
 class BoxesSorter
 {
@@ -25,7 +24,8 @@ public:
     void openExitRamp();
     void initialize();
     void setTeamColor(com_types::TeamColor color);
-    com_types::TeamColor getTeamColor() const { return teamColor; }
+    [[nodiscard]] com_types::TeamColor getTeamColor() const { return teamColor; }
+    [[nodiscard]] bool isPusherReady() const { return topPusherPosition == TOP_PUSHER_SERVO_POSITION_READY; }
     void moveTopPusherToPosition(float target);
     void moveBottomPusherToPosition(float target);
 
