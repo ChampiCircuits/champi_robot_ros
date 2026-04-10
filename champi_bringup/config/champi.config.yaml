@@ -49,8 +49,8 @@ hardware_interface:
 
 holo_teleop_joy_node:
   ros__parameters:
-    max_linear_speed: 2.0 # m/s
-    max_angular_speed: 20.0 # rad/s
+    max_linear_speed: 0.5 # m/s
+    max_angular_speed: 3.0 # rad/s
 
 twist_mux:
   ros__parameters:
@@ -148,8 +148,8 @@ path_planner:
     default_strategy_file: '__strat_test_square.py'
 #    default_strategy_file: '__strat_test_square_with_rotations.py'
 #    default_strategy_file: '__strat_main_2026.py'     # Default strategy file for simulation
-    default_sim_color: 'BLUE'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
-#    default_sim_color: 'YELLOW'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
+#    default_sim_color: 'BLUE'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
+    default_sim_color: 'YELLOW'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
 
     # Match timing parameters
     match_total_time: 100.0                           # seconds - Total match duration

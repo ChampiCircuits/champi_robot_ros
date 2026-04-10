@@ -430,8 +430,6 @@ class StateMachine:
 
         if offset.world_frame:
             # x/y are world-frame displacements — no rotation needed.
-            # theta_deg is still relative to the target's orientation so it
-            # auto-flips correctly when the target is mirrored for blue.
             new_x = x + offset.x
             new_y = y + offset.y
         else:
@@ -439,7 +437,14 @@ class StateMachine:
             new_x = x + offset.x * cos_t - offset.y * sin_t
             new_y = y + offset.x * sin_t + offset.y * cos_t
 
-        new_theta = theta_deg + offset.theta_deg
+        if offset.theta_world_frame:
+            # theta_deg is an absolute world-frame angle — ignore target orientation.
+            # Use this for asymmetric actuators that must always face the same
+            # direction regardless of team color (e.g. a servo arm on a fixed side).
+            new_theta = offset.theta_deg
+        else:
+            # theta_deg is relative to the target's orientation — auto-flips for blue.
+            new_theta = theta_deg + offset.theta_deg
         return new_x, new_y, new_theta
 
     def _execute_detect_platform(self, action: Action) -> None:

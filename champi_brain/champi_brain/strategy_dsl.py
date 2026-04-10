@@ -58,14 +58,23 @@ class Offset:
     (rotated by target.theta) — useful when you want to approach "behind" or "in
     front of" an element regardless of where it sits on the table.
 
-    Set world_frame=True when x/y are **absolute world-frame** displacements (not
-    rotated). theta_deg is always *relative* to the target's orientation so the
-    approach angle auto-flips correctly when the target is mirrored for blue.
+    Set world_frame=True when x/y are **absolute world-frame** displacements (not rotated).
+
+    theta_deg behaviour:
+    - theta_world_frame=False (default): theta_deg is *relative* to the target's
+      orientation, so the approach angle auto-flips correctly when the target is
+      mirrored for the blue team.
+    - theta_world_frame=True: theta_deg is an **absolute world-frame angle**,
+      ignoring the target's orientation entirely. Use this for asymmetric actuators
+      that must always face the same direction regardless of team color.
+      Example: a servo arm mounted on the left side of the robot always needs
+      theta=180° (facing left) for both yellow and blue teams.
     """
     x: float
     y: float
     theta_deg: float = 0.0
-    world_frame: bool = False  # If True, x/y are NOT rotated by target.theta
+    world_frame: bool = False       # If True, x/y are NOT rotated by target.theta
+    theta_world_frame: bool = False # If True, theta_deg is absolute (NOT added to target theta)
 
     
 @dataclass
@@ -300,13 +309,15 @@ class StrategyBuilder:
 
         # thermometer initial position is on the rightmost of its slider.
         # we have to move it in the center of the slider
-        thermometer_initial_position = Position(1.4, 0.0, 0.0)
-        thermometer_target_position = Position(0.7, 0.0, 0.0)
+        thermometer_initial_position = Position(1.4, 0.0, 0.0) # for Yellow team
+        thermometer_target_position = Position(0.7, 0.0, 0.0)  # for Yellow team
 
-        # we use world_frame=True here because we always want to have an offset in the same absolute direction, regardless of color
-        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.1, 180.0, world_frame=True), use_collision_avoidance=True)
+        # world_frame=True  → x/y offsets are absolute (not rotated by target theta)
+        # theta_world_frame=True → robot always faces 180° (left) regardless of team color,
+        #                          because the servo arm is physically on one fixed side of the robot
+        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.1, 180.0, world_frame=True, theta_world_frame=True), use_collision_avoidance=True)
         self.custom_action(ActuatorCommand.THERMOMETER_LOWER_SERVO)
-        self.move_relative_to(thermometer_target_position, Offset(0.05, 0.1, 180.0, world_frame=True))
+        self.move_relative_to(thermometer_target_position, Offset(0.05, 0.1, 180.0, world_frame=True, theta_world_frame=True))
         self.custom_action(ActuatorCommand.THERMOMETER_RAISE_SERVO)
 
         points = self.points_per_action["THERMOMETER"]
