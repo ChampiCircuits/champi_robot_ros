@@ -17,6 +17,11 @@ while IFS= read -r node; do
         echo "Skipping node: $node_name"
         continue
     fi
+    # Skip foxglove
+    if [[ "$node_name" == *foxglove* ]]; then
+        echo "Skipping node: $node_name"
+        continue
+    fi
     # Skip internal ROS2 entities (e.g. transform_listener_impl_*) — they live
     # inside another node's process and have no standalone PID to kill.
     if [[ "$node_name" == transform_listener_impl* ]]; then

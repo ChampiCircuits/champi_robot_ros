@@ -29,7 +29,6 @@ def generate_launch_description():
         name='state_machine_node',
         namespace='champi_brain',
         output='screen',
-        respawn=True,
         parameters=[config_file_path, {'sim': sim_config}],
     )
 
@@ -39,7 +38,6 @@ def generate_launch_description():
         name='world_state_node',
         namespace='champi_brain',
         output='screen',
-        respawn=True,
         parameters=[config_file_path, {'sim': sim_config}],
     )
 

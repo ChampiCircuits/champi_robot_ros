@@ -225,7 +225,7 @@ class StateMachineNode(Node):
         
         # Handle e-stop
         if self.e_stop_pressed:
-            self.get_logger().error('🛑 E-STOP PRESSED!')
+            self.get_logger().error('🛑 E-STOP PRESSED!', throttle_duration_sec=2.)
             self.state_machine.request_stop()
         
         # Handle tirette in init state

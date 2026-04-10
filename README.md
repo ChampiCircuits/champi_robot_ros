@@ -1,4 +1,4 @@
-# Coupe de France de Robotique 2026 : Code ROS2 + STM32
+# Coupe de France de Robotique 2026 : Code ROS2 + STM32 + PAMI (ESP32)
 
 |2024 robot|2025 robot|
 | -------- | -------- |
@@ -73,6 +73,14 @@ rviz2 -d ~/champi_ws/src/champi_robot_ros/champi_bringup/config/rviz/config.rviz
  ros2 launch champi_bringup bringup.launch.py sim:=true nav:=true brain:=true
 ```
 
+## Launching on the robot
+
+When booting, the mini-PC will automatically launch the `champystem.service` systemd service that launches the ROS2 nodes. So you don't have to do anything to launch the code on the robot.
+
+If you want to stop the code, you can simply stop the service with the alias `champystop`. Then you can restart it with `champystem`.
+This service opens a tmux session that you can attach to with the command `attach`.
+
+See the file [champi_env_robot.sh](setup/env/champi_env_robot.sh) to see all configured aliases.
 
 ## Useful scripts
 
@@ -101,9 +109,9 @@ ssh champi@10.0.0.1  # With direct ethernet
 
 7. You can monitor STM32's logs directly on your computer. First `ssh` on the robot, then find if the STM is connected via USB on `ACM0` or `ACM1` with `ls /dev/ttycACM*`. Then accordingly run:
 ```shell
-pio device monitor -p /dev/ttyACM0 -b 115200 -f direct
+serial_monitor0 # for ACM0
 # or
-pio device monitor -p /dev/ttyACM1 -b 115200 -f direct
+serial_monitor1 # for ACM1
 ```
 
 8. If you encounter problems with the robot's access point/hotspot you can try to restart the dchcp:
