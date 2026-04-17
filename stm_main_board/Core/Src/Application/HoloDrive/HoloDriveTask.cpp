@@ -52,7 +52,15 @@ void HoloDriveTask(void *argument) {
 
   holoDrive.set_config(mod_reg::config->holo_drive_config);
 
-  LOG_INFO("holo", "Config received. Starting loop.");
+  LOG_INFO("holo", "Config is :");
+  LOG_INFO("holo", "wheel_radius=%f", mod_reg::config->holo_drive_config.wheel_radius);
+  LOG_INFO("holo", "base_radius=%f", mod_reg::config->holo_drive_config.base_radius);
+  LOG_INFO("holo", "max_accel_angular=%f", mod_reg::config->holo_drive_config.max_accel_angular);
+  LOG_INFO("holo", "max_accel_linear=%f", mod_reg::config->holo_drive_config.max_accel_linear);
+  LOG_INFO("holo", "max_accel_wheel=%f", mod_reg::config->holo_drive_config.max_accel_wheel);
+  LOG_INFO("holo", "max_decel_angular=%f", mod_reg::config->holo_drive_config.max_decel_angular);
+  LOG_INFO("holo", "max_decel_linear=%f", mod_reg::config->holo_drive_config.max_decel_linear);
+  LOG_INFO("holo", "Config received. Starting loop !");
 
   uint32_t start = osKernelGetTickCount();
   uint32_t t_last_read = start;

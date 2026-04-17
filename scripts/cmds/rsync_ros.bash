@@ -16,6 +16,7 @@ EXCLUDES=(
     "stm_main_board"
     "stm_pamis_board"
     "champi_isaac_simu"
+    "esp32_PAMIs"
 )
 
 # Convert exclude list to rsync --exclude options

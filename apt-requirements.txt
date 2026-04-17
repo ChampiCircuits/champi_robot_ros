@@ -12,3 +12,4 @@ dos2unix
 openocd
 nodejs
 npm
+sshpass

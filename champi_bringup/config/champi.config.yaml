@@ -34,8 +34,9 @@ hardware_interface:
         base_radius: 0.13 # en m
 
         # order: wheel 0, wheel 1, wheel 2
+        # TODO a copier dans HoloDrive.cpp puisque c'est pas pris en compte ??
         wheel_angles: [180.0, 120.0, 240.0] # angles of the wheels in degrees (CCW positive)
-        wheel_distances: [0.12, 0.12, 0.12] # distance wheel to robot center in m
+        wheel_distances: [0.13, 0.13, 0.13] # distance wheel to robot center in m
 
         max_acceleration_linear: 0.5 # m/s^2
         max_acceleration_angular: 0.5 # rad/s^2

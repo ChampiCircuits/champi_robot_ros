@@ -13,8 +13,8 @@
 // Hardcoded wheel configuration
 // wheel order: 0=left, 1=right, 2=back
 
-const double WHEEL_ANGLES[3] = {2.051466667*2, 2.051466667, 0.0}; // angle between each wheel in radians
-const double WHEEL_DISTANCES[3] = {0.197048, 0.197048, 0.1405}; // distance wheel to robot center in m
+constexpr double WHEEL_ANGLES[3] = {60./180.*PI, 300./180.*PI, 180./180.*PI}; // angle between each wheel in radians
+constexpr double WHEEL_DISTANCES[3] = {0.13, 0.13, 0.13}; // distance wheel to robot center in m
 
 Vector3 sub(Vector3 vel1, Vector3 vel2) {
   return {vel1.x - vel2.x, vel1.y - vel2.y, vel1.theta - vel2.theta};
@@ -74,9 +74,9 @@ void HoloDrive::compute_wheels_speeds(Vector3 cmd_vel, double *ret_speeds_rps) c
   double cos2 = cos(WHEEL_ANGLES[2]);
   double sin2 = sin(WHEEL_ANGLES[2]);
 
-  double wheel0_mps = sin0 * cmd_vel.x + cos0 * cmd_vel.y - WHEEL_DISTANCES[0] * cmd_vel.theta;
-  double wheel1_mps = sin1 * cmd_vel.x + cos1 * cmd_vel.y - WHEEL_DISTANCES[1] * cmd_vel.theta;
-  double wheel2_mps = sin2 * cmd_vel.x + cos2 * cmd_vel.y - WHEEL_DISTANCES[2] * cmd_vel.theta;
+  double wheel0_mps = sin0 * cmd_vel.x - cos0 * cmd_vel.y - WHEEL_DISTANCES[0] * cmd_vel.theta;
+  double wheel1_mps = sin1 * cmd_vel.x - cos1 * cmd_vel.y - WHEEL_DISTANCES[1] * cmd_vel.theta;
+  double wheel2_mps = sin2 * cmd_vel.x - cos2 * cmd_vel.y - WHEEL_DISTANCES[2] * cmd_vel.theta;
 
   // wheel mps -> wheel rps
   double wheel_circumference = this->config_.wheel_radius * 2.0 * PI;
@@ -170,15 +170,15 @@ void HoloDrive::update_current_vel(const double *speeds_rps) {
   double b2 = speeds_rps[2] * wheel_circumference;
 
   double a00 = sin(WHEEL_ANGLES[0]);
-  double a01 = cos(WHEEL_ANGLES[0]);
+  double a01 = -cos(WHEEL_ANGLES[0]);
   double a02 = -WHEEL_DISTANCES[0];
 
   double a10 = sin(WHEEL_ANGLES[1]);
-  double a11 = cos(WHEEL_ANGLES[1]);
+  double a11 = -cos(WHEEL_ANGLES[1]);
   double a12 = -WHEEL_DISTANCES[1];
 
   double a20 = sin(WHEEL_ANGLES[2]);
-  double a21 = cos(WHEEL_ANGLES[2]);
+  double a21 = -cos(WHEEL_ANGLES[2]);
   double a22 = -WHEEL_DISTANCES[2];
 
   // Determinant of A

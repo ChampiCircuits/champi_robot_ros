@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Configuration
+SSHPASS="circuits"
+export SSHPASS
 USER="champi"
 DEST_PATH="/home/champi/champi_ws/src/champi_robot_ros"
 LOCAL_PATH="$HOME/champi_ws/src/champi_robot_ros"
@@ -45,14 +47,14 @@ cd -
 
 # Check if the local ELF differs from the one on the robot
 echo "\n🔍 Checking if the firmware ELF changed..."
-rsync -azvn "$STM_ELF_PATH" "$USER@$ROBOT_IP:$REMOTE_ELF_PATH" | grep -q "$STM_ELF_NAME" # dry run
+sshpass -e rsync -azvn "$STM_ELF_PATH" "$USER@$ROBOT_IP:$REMOTE_ELF_PATH" | grep -q "$STM_ELF_NAME" # dry run
 
 if [ $? -eq 0 ]; then
     echo "\n🚚 Firmware changed, syncing ELF to the robot..."
-    rsync -az "$STM_ELF_PATH" "$USER@$ROBOT_IP:$REMOTE_ELF_PATH"
+    sshpass -e rsync -az "$STM_ELF_PATH" "$USER@$ROBOT_IP:$REMOTE_ELF_PATH"
 
     echo "\n🚀 Remotely flashing STM32 firmware on the robot..."
-    ssh "$USER@$ROBOT_IP" << EOF
+    sshpass -e ssh "$USER@$ROBOT_IP" << EOF
       set -e
       cd "$DEST_PATH/stm_main_board/build"
       openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c "program $STM_ELF_NAME verify reset exit"
