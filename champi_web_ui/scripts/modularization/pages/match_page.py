@@ -58,8 +58,8 @@ def zone_chosen(args: events.GenericEventArguments):
 
 
 def get_available_strategies():
-    strategies_path = os.path.expanduser('~/champi_ws/src/champi_robot_ros/champi_brain/scripts/strategies')
-    return [f for f in os.listdir(strategies_path) if f.endswith('.yaml') and os.path.isfile(os.path.join(strategies_path, f))]
+    strategies_path = os.path.expanduser('~/champi_ws/src/champi_robot_ros/champi_brain/strategies')
+    return [f for f in os.listdir(strategies_path) if f.endswith('.py') and os.path.isfile(os.path.join(strategies_path, f))]
 
 
 def create() -> None:
@@ -137,7 +137,7 @@ def create() -> None:
                             with ui.step('Choisir la strategie'):
                                 available_strategies = get_available_strategies()
                                 global radio_strategy_selection
-                                radio_strategy_selection = ui.radio(available_strategies, value='strat.yaml')
+                                radio_strategy_selection = ui.radio(available_strategies, value='__strat_main_2025.py')
                                 with ui.stepper_navigation():
                                     btn_next = ui.button('Prêt !! 😬', on_click=ready_to_launch_match)
                                     btn_next.bind_enabled_from(radio_strategy_selection, 'value')
