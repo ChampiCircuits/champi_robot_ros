@@ -4,7 +4,7 @@
 // Auto-generated configuration for PAMI 1
 const float GLOBAL_SPEED_MM_S = 200.0;
 const float START_AFTER_DELAY_S = 5.0;
-const int TRAJECTORY_POINTS_COUNT = 5;
+const int TRAJECTORY_POINTS_COUNT = 3;
 
 struct Waypoint {
     float x;
@@ -12,11 +12,9 @@ struct Waypoint {
 };
 
 const Waypoint EXPERIMENT_TRAJECTORY[] = {
-    {550.00, 710.00},
-    {927.00, 1060.00},
-    {1370.00, 1400.00},
-    {2057.00, 1437.00},
-    {2340.00, 1110.00},
+    {0.00, 0.00},
+    {1000.00, 0.00},
+    {0.00, 1000.00},
 };
 
 #endif // GENERATED_TRAJECTORY_H

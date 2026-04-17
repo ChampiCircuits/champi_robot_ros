@@ -10,8 +10,8 @@ namespace Config {
 constexpr int TEAM_SWITCH_PIN = 26; //D26
 constexpr int TIRETTE_PIN = 25;     //D25
 // ultrasonic sensor
-constexpr int US_TRIG_PIN = 5;  //D5
-constexpr int US_ECHO_PIN = 18; //D18
+constexpr int US_TRIG_PIN = 18;  //D18 // inversed in schematic with ECHO
+constexpr int US_ECHO_PIN = 5; //D5
 // led rgb
 constexpr bool LED_IS_COMMON_ANODE = true; // common pin is the (+)
 constexpr int LED_R_PIN = 27;   //D27
@@ -22,6 +22,7 @@ constexpr int LEFT_STEP_PIN = 4;    //D4
 constexpr int LEFT_DIR_PIN = 2;     //D2
 constexpr int RIGHT_STEP_PIN = 21;  //D21
 constexpr int RIGHT_DIR_PIN = 19;   //D19
+constexpr int ENABLE_MOTORS = 23;   //D23
 // actuator (12v DC motor)
 constexpr int ACTUATOR_PIN = 13;    //D13
 

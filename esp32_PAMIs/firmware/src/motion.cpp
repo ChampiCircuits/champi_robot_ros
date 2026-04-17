@@ -12,6 +12,10 @@ namespace {
 
 using namespace Config;
 
+// Simple bench test mode: set to true to spin both motors forward at fixed speed.
+bool g_forward_test_mode_enabled = false;
+float g_forward_test_speed_mm_s = -1000.0f;
+
 enum class SegmentPhase : uint8_t {
     IDLE = 0,
     TURNING,
@@ -27,6 +31,7 @@ struct DebouncedInput {
 MotionState g_state = MotionState::WAITING_TIRETTE;
 Team g_candidate_team = Team::BLUE;
 bool g_blocked_by_obstacle = false;
+bool g_forward_test_mode_was_active = false;
 int g_segment_index = 0;
 uint32_t g_start_deadline_us = 0;
 uint32_t g_last_telemetry_ms = 0;
@@ -40,6 +45,12 @@ float g_cmd_left_mm_s = 0.0f;
 float g_cmd_right_mm_s = 0.0f;
 SegmentPhase g_segment_phase = SegmentPhase::IDLE;
 Waypoint g_working_trajectory[TRAJECTORY_POINTS_COUNT];
+
+constexpr int kGeneratedTrajectoryPoints = static_cast<int>(sizeof(EXPERIMENT_TRAJECTORY) / sizeof(EXPERIMENT_TRAJECTORY[0]));
+
+int activeTrajectoryPoints() {
+    return (kGeneratedTrajectoryPoints < TRAJECTORY_POINTS_COUNT) ? kGeneratedTrajectoryPoints : TRAJECTORY_POINTS_COUNT;
+}
 
 DebouncedInput g_tirette_input{};
 
@@ -74,7 +85,8 @@ bool updateDebounced(DebouncedInput &input, bool raw_value, uint32_t now_ms, uin
 }
 
 void buildWorkingTrajectory(Team team) {
-    for (int i = 0; i < TRAJECTORY_POINTS_COUNT; ++i) {
+    const int points = activeTrajectoryPoints();
+    for (int i = 0; i < points; ++i) {
         Waypoint wp = EXPERIMENT_TRAJECTORY[i];
         if (team == Team::YELLOW) {
             wp.x = MAP_WIDTH_MM - wp.x;
@@ -104,7 +116,8 @@ float angleBetween(const Waypoint &from, const Waypoint &to) {
 }
 
 bool startNextSegment(const uint32_t now_us) {
-    while (g_segment_index < (TRAJECTORY_POINTS_COUNT - 1)) {
+    const int points = activeTrajectoryPoints();
+    while (g_segment_index < (points - 1)) {
         const Waypoint &from = g_working_trajectory[g_segment_index];
         const Waypoint &to = g_working_trajectory[g_segment_index + 1];
         const float segment_len_mm = distanceBetween(from, to);
@@ -152,11 +165,19 @@ void resetRunProgress() {
     g_phase_deadline_us = 0;
     g_pending_drive_duration_us = 0;
     g_pause_started_us = 0;
-    g_estimated_heading_rad = 0.0f;
     g_target_heading_rad = 0.0f;
     g_cmd_left_mm_s = 0.0f;
     g_cmd_right_mm_s = 0.0f;
     g_segment_phase = SegmentPhase::IDLE;
+
+    // Set initial heading to match the first segment direction so we don't
+    // start with a spurious turn (important after YELLOW team mirror).
+    const int points = activeTrajectoryPoints();
+    if (points >= 2) {
+        g_estimated_heading_rad = angleBetween(g_working_trajectory[0], g_working_trajectory[1]);
+    } else {
+        g_estimated_heading_rad = 0.0f;
+    }
 }
 
 void commandWheelSpeeds(float left_mm_s, float right_mm_s, uint32_t now_us) {
@@ -179,7 +200,84 @@ float readUltrasonicDistanceMm() {
     return (static_cast<float>(pulse_us) / 58.3f) * 10.0f;
 }
 
-void publishTelemetry(uint32_t now_ms, float distance_mm) {
+struct RemainingEstimate {
+    float distance_mm;
+    float angle_rad;
+};
+
+float segmentLengthMm(int segment_index) {
+    const int points = activeTrajectoryPoints();
+    if (segment_index < 0 || segment_index >= (points - 1)) {
+        return 0.0f;
+    }
+    return distanceBetween(g_working_trajectory[segment_index], g_working_trajectory[segment_index + 1]);
+}
+
+RemainingEstimate estimateCurrentSegmentRemaining(uint32_t now_us) {
+    RemainingEstimate estimate{0.0f, 0.0f};
+    const int points = activeTrajectoryPoints();
+
+    if (points < 2 || g_segment_index >= (points - 1)) {
+        return estimate;
+    }
+
+    const float current_seg_len_mm = segmentLengthMm(g_segment_index);
+    if (current_seg_len_mm < 1.0f) {
+        return estimate;
+    }
+
+    const Waypoint &from = g_working_trajectory[g_segment_index];
+    const Waypoint &to = g_working_trajectory[g_segment_index + 1];
+    const float segment_target_heading = angleBetween(from, to);
+    const float total_turn_rad = fabsf(normalizeAngle(segment_target_heading - g_estimated_heading_rad));
+
+    // When paused, pretend time stopped at pause start
+    const uint32_t effective_now_us = (g_state == MotionState::PAUSED_OBSTACLE && g_pause_started_us != 0)
+                                      ? g_pause_started_us : now_us;
+
+    if (g_segment_phase == SegmentPhase::TURNING) {
+        estimate.distance_mm = current_seg_len_mm;
+
+        float remaining_turn_rad = total_turn_rad;
+        if (g_phase_deadline_us != 0 && !timeReachedUs(effective_now_us, g_phase_deadline_us)) {
+            const float remaining_turn_s = static_cast<float>(g_phase_deadline_us - effective_now_us) / 1000000.0f;
+            const float turn_omega_rad_s = (2.0f * TURN_WHEEL_SPEED_MM_S) / ENTRAXE_MM;
+            remaining_turn_rad = remaining_turn_s * turn_omega_rad_s;
+            if (remaining_turn_rad > total_turn_rad) {
+                remaining_turn_rad = total_turn_rad;
+            }
+        } else {
+            remaining_turn_rad = 0.0f;
+        }
+
+        estimate.angle_rad = remaining_turn_rad;
+        return estimate;
+    }
+
+    if (g_segment_phase == SegmentPhase::DRIVING) {
+        float remaining_ratio = 0.0f;
+        if (g_pending_drive_duration_us > 0 && g_phase_deadline_us != 0 && !timeReachedUs(effective_now_us, g_phase_deadline_us)) {
+            remaining_ratio = static_cast<float>(g_phase_deadline_us - effective_now_us) / static_cast<float>(g_pending_drive_duration_us);
+            if (remaining_ratio < 0.0f) {
+                remaining_ratio = 0.0f;
+            } else if (remaining_ratio > 1.0f) {
+                remaining_ratio = 1.0f;
+            }
+        }
+
+        estimate.distance_mm = current_seg_len_mm * remaining_ratio;
+        estimate.angle_rad = 0.0f;
+        return estimate;
+    }
+
+    estimate.distance_mm = current_seg_len_mm;
+    if (total_turn_rad >= MIN_TURN_RAD) {
+        estimate.angle_rad = total_turn_rad;
+    }
+    return estimate;
+}
+
+void publishTelemetry(uint32_t now_ms, uint32_t now_us, float distance_mm) {
     if (static_cast<uint32_t>(now_ms - g_last_telemetry_ms) < TELEMETRY_PERIOD_MS) {
         return;
     }
@@ -202,18 +300,54 @@ void publishTelemetry(uint32_t now_ms, float distance_mm) {
         case SegmentPhase::DRIVING: phase = "DRIVE"; break;
     }
 
-    Serial.printf("[motion] state=%s phase=%s team=%s seg=%d dist_mm=%.1f obstacle=%d t_phase_ms=%lu\n",
+    const RemainingEstimate remaining = estimateCurrentSegmentRemaining(now_us);
+    const int points = activeTrajectoryPoints();
+    const int max_segment_index = (points > 0) ? (points - 1) : 0;
+    const int segment_from = (g_segment_index < max_segment_index) ? g_segment_index : max_segment_index;
+    const int segment_to = (segment_from < max_segment_index) ? (segment_from + 1) : segment_from;
+    const float avg_speed_mm_s = (fabsf(g_cmd_left_mm_s) + fabsf(g_cmd_right_mm_s)) / 2.0f;
+
+    // Use pause-frozen time for remaining display
+    const uint32_t effective_now_us = (g_state == MotionState::PAUSED_OBSTACLE && g_pause_started_us != 0)
+                                      ? g_pause_started_us : now_us;
+    unsigned long remaining_phase_ms = 0UL;
+    if (g_phase_deadline_us != 0 && !timeReachedUs(effective_now_us, g_phase_deadline_us)) {
+        remaining_phase_ms = static_cast<unsigned long>((g_phase_deadline_us - effective_now_us) / 1000);
+    }
+
+    Serial.printf("[motion] state=%s phase=%s team=%s seg=%d->%d spd_mm_s=%.1f seg_rem_mm=%.1f seg_rem_deg=%.1f obstacle=%d t_phase_ms=%lu dist_mm=%.1f\n",
                   state,
                   phase,
                   g_candidate_team == Team::YELLOW ? "YELLOW" : "BLUE",
-                  g_segment_index,
-                  distance_mm,
+                  segment_from,
+                  segment_to,
+                  avg_speed_mm_s,
+                  remaining.distance_mm,
+                  remaining.angle_rad * 180.0f / static_cast<float>(PI),
                   g_blocked_by_obstacle ? 1 : 0,
-                  static_cast<unsigned long>(g_phase_deadline_us / 1000));
+                  remaining_phase_ms,
+                  distance_mm);
 }
 
 void stopMotors() {
     stepperControlStop();
+}
+
+void printStepperDiagnostics() {
+    const float wheel_circumference_mm = static_cast<float>(PI) * WHEEL_DIAMETER_MM;
+    const float steps_per_wheel_turn = MOTOR_STEPS_PER_REV * MICROSTEPS * GEAR_RATIO;
+    const float steps_per_mm = steps_per_wheel_turn / wheel_circumference_mm;
+
+    LOG_WARN("Stepper", "=== Diagnostics ===");
+    LOG_WARN("Stepper", "WHEEL_DIAMETER_MM=%.1f", WHEEL_DIAMETER_MM);
+    LOG_WARN("Stepper", "MOTOR_STEPS_PER_REV=%.0f", MOTOR_STEPS_PER_REV);
+    LOG_WARN("Stepper", "MICROSTEPS=%.0f", MICROSTEPS);
+    LOG_WARN("Stepper", "GEAR_RATIO=%.1f", GEAR_RATIO);
+    LOG_WARN("Stepper", "wheel_circumference_mm=%.2f", wheel_circumference_mm);
+    LOG_WARN("Stepper", "steps_per_wheel_turn=%.0f", steps_per_wheel_turn);
+    LOG_WARN("Stepper", "steps_per_mm=%.2f", steps_per_mm);
+    LOG_WARN("Stepper", "For 80 mm/s: %.0f steps/s, period=%.0f µs", 80.0f * steps_per_mm, 1000000.0f / (80.0f * steps_per_mm * 2.0f));
+    LOG_WARN("Stepper", "For 200 mm/s: %.0f steps/s, period=%.0f µs", 200.0f * steps_per_mm, 1000000.0f / (200.0f * steps_per_mm * 2.0f));
 }
 
 } // namespace
@@ -228,6 +362,7 @@ void motionInit() {
     ledStatusInit();
     LOG_INFO("Motion", "Initialized status LED...");
     stepperControlInit();
+    pinMode(ACTUATOR_PIN, ANALOG);
     stopMotors();
     LOG_INFO("Motion", "Initialized stepperControl...");
 
@@ -281,24 +416,47 @@ void motionInit() {
     g_last_telemetry_ms = 0;
 
     applyLedPolicy();
+
+    if (kGeneratedTrajectoryPoints != TRAJECTORY_POINTS_COUNT) {
+        LOG_WARN("Motion", "Trajectory count mismatch: declared=%d generated=%d (using %d)",
+                 TRAJECTORY_POINTS_COUNT, kGeneratedTrajectoryPoints, activeTrajectoryPoints());
+    }
+
+    if (g_forward_test_mode_enabled) {
+        LOG_WARN("Motion", "Forward TEST mode enabled: left=right=%.1f mm/s", g_forward_test_speed_mm_s);
+    }
+
+    printStepperDiagnostics();
 }
 
 void motionTick(uint32_t now_us) {
     const uint32_t now_ms = millis();
+
+    if (g_forward_test_mode_enabled) {
+        g_forward_test_mode_was_active = true;
+        commandWheelSpeeds(g_forward_test_speed_mm_s, g_forward_test_speed_mm_s, now_us);
+        stepperControlTick(now_us);
+        // publishTelemetry(now_ms, now_us, -1.0f);
+        return;
+    }
+
+    if (g_forward_test_mode_was_active) {
+        stopMotors();
+        g_forward_test_mode_was_active = false;
+    }
 
     const bool tirette_raw = readDigitalActive(TIRETTE_PIN, TIRETTE_PULLUP);
     const bool tirette_changed = updateDebounced(g_tirette_input, tirette_raw, now_ms, TIRETTE_DEBOUNCE_MS);
     const bool tirette_start_edge = tirette_changed && g_tirette_input.stable_value;
 
     float distance_mm = -1.0f;
-    if (g_state == MotionState::RUNNING || g_state == MotionState::PAUSED_OBSTACLE) {
-        distance_mm = readUltrasonicDistanceMm();
-        if (distance_mm > 0.0f) {
-            if (distance_mm <= OBSTACLE_STOP_MM) {
-                g_blocked_by_obstacle = true;
-            } else if (distance_mm >= OBSTACLE_RESUME_MM) {
-                g_blocked_by_obstacle = false;
-            }
+    // FIXME: pulseIn blocks up to 25ms and kills step generation at high speed.
+    distance_mm = readUltrasonicDistanceMm();
+    if (distance_mm > 0.0f) {
+        if (distance_mm <= OBSTACLE_STOP_MM) {
+            g_blocked_by_obstacle = true;
+        } else if (distance_mm >= OBSTACLE_RESUME_MM) {
+            g_blocked_by_obstacle = false;
         }
     }
 
@@ -373,6 +531,8 @@ void motionTick(uint32_t now_us) {
         case MotionState::COMPLETED:
             {
                 stopMotors();
+                analogWrite(ACTUATOR_PIN, 20);
+                digitalWrite(ENABLE_MOTORS, HIGH); // Disable drivers to avoid heating
                 break;
             }
 
@@ -382,7 +542,8 @@ void motionTick(uint32_t now_us) {
     }
 
     applyLedPolicy();
-    publishTelemetry(now_ms, distance_mm);
+    if (g_state != MotionState::COMPLETED)
+        publishTelemetry(now_ms, now_us, distance_mm);
 }
 
 MotionState motionGetState() {

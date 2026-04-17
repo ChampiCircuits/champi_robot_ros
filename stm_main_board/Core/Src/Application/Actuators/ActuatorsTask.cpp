@@ -151,17 +151,17 @@ void update_elements_pipeline()
 
 void ActuatorsTask(void *argument)
 {
-    initEveryThing();
+    // initEveryThing();
 
     LOG_INFO("act", "Starting loop.");
     while (true)
     {
-        handleManualRequests();
-
-        if (mod_reg::requests->team_color != boxesSorter.getTeamColor())
-            boxesSorter.setTeamColor(mod_reg::requests->team_color);
-
-        update_elements_pipeline();
+        // handleManualRequests();
+        //
+        // if (mod_reg::requests->team_color != boxesSorter.getTeamColor())
+        //     boxesSorter.setTeamColor(mod_reg::requests->team_color);
+        //
+        // update_elements_pipeline();
 
         osDelay(100);
     }
