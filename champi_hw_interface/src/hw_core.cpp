@@ -188,6 +188,26 @@ nav_msgs::msg::Odometry HardwareInterfaceNode::make_odom_otos(const Vector3 &pos
 }
 
 
+void HardwareInterfaceNode::reconnect_modbus() {
+    RCLCPP_ERROR(this->get_logger(), "🔌 Too many consecutive failures (%d), reconnecting modbus...", consecutive_failures_);
+    consecutive_failures_ = 0;
+
+    if (mb_) {
+        modbus_close(mb_);
+        modbus_free(mb_);
+        mb_ = nullptr;
+    }
+
+    while (setup_modbus() != 0) {
+        RCLCPP_ERROR(this->get_logger(), "Reconnect failed, retrying in 1s...");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    RCLCPP_INFO(this->get_logger(), "🔌 Modbus reconnected! Re-configuring STM...");
+    setup_stm();
+}
+
+
 void HardwareInterfaceNode::loop() {
 
     static rclcpp::Time last_time;
@@ -200,8 +220,20 @@ void HardwareInterfaceNode::loop() {
     auto dt = (this->now() - last_time).seconds();
     last_time = this->now();
 
+    // Check if we need to reconnect
+    RCLCPP_DEBUG(this->get_logger(), "Loop start, consecutive_failures_=%d", static_cast<int>(consecutive_failures_));
+    if (consecutive_failures_ >= MAX_CONSECUTIVE_FAILURES) {
+        RCLCPP_ERROR(this->get_logger(), "🔌 Consecutive failures reached %d, triggering reconnect...", static_cast<int>(consecutive_failures_));
+        std::lock_guard<std::mutex> lock(modbus_mutex_);
+        reconnect_modbus();
+        return;
+    }
+
     // Read
-    read(mod_reg::reg_state);
+    std::lock_guard<std::mutex> lock(modbus_mutex_);
+    if (!read(mod_reg::reg_state)) {
+        return; // skip this iteration, will reconnect if failures pile up
+    }
 
     if (mod_reg::state->safe_check_counter != latest_safe_check_counter_value) {
         latest_safe_check_counter_value = mod_reg::state->safe_check_counter;
@@ -228,34 +260,49 @@ void HardwareInterfaceNode::loop() {
                      static_cast<int>(mod_reg::state->safe_check_counter));
     }
 
-    check_for_actuators_state();
-    read_stm_state();
+    // Throttle actuator state check to ~5Hz (every 10 loop iterations at 50Hz)
+    static int actuator_check_counter = 0;
+    if (++actuator_check_counter >= 10) {
+        actuator_check_counter = 0;
+        check_for_actuators_state();
+    }
+
+    read_stm_state(); // uses already-read reg_state, no extra modbus read
 }
 
-void HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
+bool HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
     int result;
     int nb_attempts = 0;
     do {
         result = modbus_write_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         nb_attempts++;
         if (result == -1 && nb_attempts < MODBUS_MAX_RETRIES) {
+            RCLCPP_WARN(this->get_logger(), "Write retry %d/%d for reg addr=%d size=%d: errno=%d (%s)",
+                        nb_attempts, MODBUS_MAX_RETRIES, reg_meta.address, reg_meta.size, errno, modbus_strerror(errno));
             modbus_flush(this->mb_);
-            usleep(5000); // 5ms delay before retry
+            usleep(10000); // 10ms delay before retry
         }
     }
     while (result == -1 && nb_attempts < MODBUS_MAX_RETRIES);
 
-    if (nb_attempts > 3) {
-        RCLCPP_ERROR(this->get_logger(), "Write data after %d attempts", nb_attempts);
+    if (nb_attempts > 1 && result != -1) {
+        RCLCPP_WARN(this->get_logger(), "Write succeeded after %d attempts (reg addr=%d)", nb_attempts, reg_meta.address);
     }
 
     if (result == -1) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to write data: error num: %d, message: %s", errno, modbus_strerror(errno));
-        // exit(1);
+        RCLCPP_ERROR(this->get_logger(), "Failed to write data: reg addr=%d size=%d, errno=%d (%s)",
+                     reg_meta.address, reg_meta.size, errno, modbus_strerror(errno));
+        consecutive_failures_++;
+        usleep(2000);
+        return false;
     }
+
+    consecutive_failures_ = 0;
+    usleep(2000); // 2ms inter-transaction gap to let the bus settle
+    return true;
 }
 
-void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
+bool HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
 
     int result;
     int nb_attempts = 0;
@@ -263,20 +310,30 @@ void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
         result = modbus_read_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         nb_attempts++;
         if (result == -1 && nb_attempts < MODBUS_MAX_RETRIES) {
+            RCLCPP_WARN(this->get_logger(), "Read retry %d/%d for reg addr=%d size=%d: errno=%d (%s)",
+                        nb_attempts, MODBUS_MAX_RETRIES, reg_meta.address, reg_meta.size, errno, modbus_strerror(errno));
             modbus_flush(this->mb_);
-            usleep(5000); // 5ms delay before retry
+            usleep(10000); // 10ms delay before retry
         }
     }
     while (result == -1 && nb_attempts < MODBUS_MAX_RETRIES);
 
-    if (nb_attempts > 3) {
-        RCLCPP_ERROR(this->get_logger(), "Read data after %d attempts", nb_attempts);
+    if (nb_attempts > 1 && result != -1) {
+        RCLCPP_WARN(this->get_logger(), "Read succeeded after %d attempts (reg addr=%d)", nb_attempts, reg_meta.address);
     }
 
     if (result == -1) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to read data: error num: %d, message: %s", errno, modbus_strerror(errno));
-        // exit(1);
+        RCLCPP_ERROR(this->get_logger(), "Failed to read data: reg addr=%d size=%d, errno=%d (%s)",
+                     reg_meta.address, reg_meta.size, errno, modbus_strerror(errno));
+        consecutive_failures_++;
+        RCLCPP_ERROR(this->get_logger(), ">>> consecutive_failures_ = %d / %d", static_cast<int>(consecutive_failures_), MAX_CONSECUTIVE_FAILURES);
+        usleep(2000);
+        return false;
     }
+
+    consecutive_failures_ = 0;
+    usleep(2000); // 2ms inter-transaction gap to let the bus settle
+    return true;
 }
 
 
@@ -320,7 +377,7 @@ void HardwareInterfaceNode::check_for_actuators_state() const // TODO mettre a 5
 
 void HardwareInterfaceNode::read_stm_state()
 {
-    read(mod_reg::reg_state);
+    // reg_state is already read in loop(), no need to read again
 
     auto msg = champi_interfaces::msg::STMState();
     msg.e_stop_pressed = mod_reg::state->e_stop_pressed;

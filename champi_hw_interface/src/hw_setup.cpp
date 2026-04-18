@@ -60,6 +60,11 @@ int HardwareInterfaceNode::setup_modbus()
 
     std::string device_path = findDeviceBySerial(device_ser_no_);
 
+    if (device_path.empty()) {
+        RCLCPP_WARN(this->get_logger(), "Device with serial '%s' not found (STM not connected/ready?)", device_ser_no_.c_str());
+        return -1;
+    }
+
     mb_ = modbus_new_rtu(device_path.c_str(), baud_rate_, 'N', 8, 1);
     if (!mb_) {
         RCLCPP_FATAL(this->get_logger(), "Failed to create Modbus RTU context");
@@ -68,6 +73,7 @@ int HardwareInterfaceNode::setup_modbus()
 
     if (modbus_connect(mb_) == -1) {
         RCLCPP_FATAL(this->get_logger(), "Connection to Modbus RTU device failed: %s", modbus_strerror(errno));
+        // see https://help.contec.com/pc-helper/daq-libmb-win/en/reference/errorcode.htm for error codes
         modbus_free(mb_);
         return -1;
     }

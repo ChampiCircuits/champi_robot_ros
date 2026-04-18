@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include <champi_hw_interface/ModbusRegister.h>
 #include "tf2_ros/transform_broadcaster.h"
@@ -61,9 +62,13 @@ private:
     void read_config();
     void setup_stm();
 
-    void write( mod_reg::register_metadata &reg_meta) const;
-    void read( mod_reg::register_metadata &reg_meta) const;
+    bool write( mod_reg::register_metadata &reg_meta) const;
+    bool read( mod_reg::register_metadata &reg_meta) const;
+    void reconnect_modbus();
     void loop();
+
+    mutable int consecutive_failures_{0};
+    static constexpr int MAX_CONSECUTIVE_FAILURES = 1;
 
     void publish_transform();
 
@@ -80,6 +85,7 @@ private:
     int baud_rate_;
     int slave_id_;
     modbus_t *mb_{nullptr};
+    mutable std::mutex modbus_mutex_;
     rclcpp::TimerBase::SharedPtr timer_;
 
     Config stm_config_{};
