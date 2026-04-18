@@ -394,15 +394,16 @@ int SCServos::WriteSpeed(uint8_t ID, int velocity, uint8_t ReturnLevel)
     uint8_t velH =  vel&0xff;
 
     fflushRevBuf();
-    write_byte(startByte);
-    write_byte(startByte);
-    write_byte(ID);
-    write_byte(messageLength);
-    write_byte(INST_WRITE);
-    write_byte(P_GOAL_SPEED_L);
-    write_byte(velL);
-    write_byte(velH);
-    write_byte((~(ID + messageLength + INST_WRITE + P_GOAL_SPEED_L + velL + velH))&0xFF);
+    buffer[0] = startByte;
+    buffer[1] = startByte;
+    buffer[2] = ID;
+    buffer[3] = messageLength;
+    buffer[4] = INST_WRITE;
+    buffer[5] = P_GOAL_SPEED_L;
+    buffer[6] = velL;
+    buffer[7] = velH;
+    buffer[8] = (~(ID + messageLength + INST_WRITE + P_GOAL_SPEED_L + velL + velH))&0xFF;
+    write_bytes(buffer, 9);
     if(ID != 16 && ReturnLevel==2)
         return ReadBuf(6);
     return 0;

@@ -37,24 +37,25 @@ public:
     static constexpr int EXIT_RAMP_SERVO_ID = 5; // TODO
 
 private:
-    static constexpr float BOX_WIDTH = 50.0; // mm --> pusher increment
+    static constexpr float BOX_WIDTH = 100; // encoder steps --> pusher increment // TODO calibrate!
+    static constexpr int ENCODER_RANGE = 1024; // encoder wraps at 1024 (0-1023)
 
     // TOP PUSHER SERVO (FREE ROTATION SERVO)
     // | TOBOGGAN - STRAIGHT HOLE - COLOR SENSOR - LIFT - READY POSITION |
     static constexpr float TOP_PUSHER_SERVO_SPEED  = 1023;  // [0,1023]
     static constexpr float TOP_PUSHER_SERVO_POSITION_READY  = 0;
-    static constexpr float TOP_PUSHER_SERVO_POSITION_COLOR_SENSOR_FIRST_BOX  = 200;  // mm // TODO
-    static constexpr float TOP_PUSHER_SERVO_POSITION_STRAIGHT_HOLE_FIRST_BOX  = 300; // mm // TODO
-    static constexpr float TOP_PUSHER_SERVO_POSITION_TOBOGGAN_HOLE_FIRST_BOX  = 400; // mm // TODO
+    static constexpr float TOP_PUSHER_SERVO_POSITION_COLOR_SENSOR_FIRST_BOX  = 400;  // steps // TODO
+    static constexpr float TOP_PUSHER_SERVO_POSITION_STRAIGHT_HOLE_FIRST_BOX  = 600; // steps // TODO
+    static constexpr float TOP_PUSHER_SERVO_POSITION_TOBOGGAN_HOLE_FIRST_BOX  = 800; // steps // TODO
     float topPusherPosition = TOP_PUSHER_SERVO_POSITION_READY;
     GPIO_TypeDef* TOP_END_SWITCH_GPIO_Port = D0_GPIO_Port;
     static constexpr auto TOP_END_SWITCH_GPIO_Pin = D0_Pin;
 
     // BOTTOM PUSHER SERVO (FREE ROTATION SERVO)
     // | OUT | TOBOGGAN - STRAIGHT HOLE - READY |
-    static constexpr float BOTTOM_PUSHER_SERVO_SPEED  = 1023;  // [0,1023]
-    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_READY  = -2;  // mm
-    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_OUT  = 85; // mm
+    static constexpr float BOTTOM_PUSHER_SERVO_SPEED  = 500;  // [0,1023]
+    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_READY  = -125;  // steps
+    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_OUT  = 1500; // steps // TODO calibrate!
     float bottomPusherPosition = BOTTOM_PUSHER_SERVO_POSITION_READY;
     GPIO_TypeDef* BOTTOM_END_SWITCH_GPIO_Port = D6_GPIO_Port;
     static constexpr auto BOTTOM_END_SWITCH_GPIO_Pin = D6_Pin;

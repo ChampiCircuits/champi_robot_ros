@@ -2,6 +2,7 @@
 
 #include "Application/SCServosApp.h"
 #include "Util/logging.h"
+#include <cmath>
 
 
 void BoxesSorter::prepareTopPusher()
@@ -60,6 +61,8 @@ void BoxesSorter::push2BoxesOut()
 {
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_OUT);
     devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -BOTTOM_PUSHER_SERVO_SPEED, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin);
+    bottomPusherPosition = 0;
+    osDelay(1000);
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY); // si on fait pas ca, il faut écrire à la main la position
 }
 
@@ -72,10 +75,13 @@ void BoxesSorter::initialize()
 {
     LOG_INFO("box_sorter", "initializing boxes sorter...");
     // Move top pusher out
-    devices::scs_servos::homingByEndSwitch(TOP_PUSHER_SERVO_ID, 500, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin);
-    moveBottomPusherToPosition(TOP_PUSHER_SERVO_POSITION_READY);
+    // devices::scs_servos::homingByEndSwitch(TOP_PUSHER_SERVO_ID, 500, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin);
+    // topPusherPosition = 0;
+    // moveBottomPusherToPosition(TOP_PUSHER_SERVO_POSITION_READY);
     // Move bottom pusher in
     devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -500, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin);
+    bottomPusherPosition = 0;
+    osDelay(1000);
     // move pusher a bit more inside (end switch is too much inside)
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY);
 
@@ -105,29 +111,76 @@ void BoxesSorter::_openTrapdoor()
 
 void BoxesSorter::_movePusherToPosition(int servoID, int speed, float target, float currentPosition)
 {
-    // 1. Define your mechanical constant (Calibration needed!)
-    // Example: At speed 200, the pusher moves at 30mm/s
-    static constexpr float MM_PER_SEC_AT_BASE_SPEED = 30.0f; // TODO TO TEST
-
     const float distanceToMove = target - currentPosition;
-    if (abs(distanceToMove) < 0.1f) return; // Already there
+    if (fabsf(distanceToMove) < 0.1f) return; // Already there
 
-    // 3. Calculate direction and duration
     const int direction = (distanceToMove > 0) ? 1 : -1;
-    const float durationSeconds = abs(distanceToMove) / MM_PER_SEC_AT_BASE_SPEED;
-    const uint32_t durationMs = static_cast<uint32_t>(durationSeconds * 1000.0f);
+    const float stepsNeeded = fabsf(distanceToMove);
 
-    // 4. Execute movement
-    LOG_INFO("sorter", "Moving pusher %d to %.1f mm (Duration: %lu ms)", speed, target, durationMs);
+    // Read start position from encoder
+    const int startPos = devices::scs_servos::read_position_raw(servoID);
+    if (startPos < 0) {
+        LOG_ERROR("sorter", "Failed to read position for servo %d", servoID);
+        return;
+    }
+
+    LOG_INFO("sorter", "Moving servo %d: target=%.1f, current=%.1f, distance=%.1f, stepsNeeded=%.0f, dir=%d, startPos=%d",
+             servoID, target, currentPosition, distanceToMove, stepsNeeded, direction, startPos);
 
     // Start motor
     devices::scs_servos::set_speed(servoID, speed * direction);
 
-    // Wait for the calculated time
-    osDelay(durationMs);
+    float totalStepsMoved = 0.0f;
+    int prevPos = startPos;
+    constexpr int TIMEOUT_MS = 10000;
+    int elapsedMs = 0;
+    int readErrors = 0;
 
-    // Stop motor
-    devices::scs_servos::set_speed(servoID, 0);
+    while (totalStepsMoved < stepsNeeded)
+    {
+        osDelay(5); // poll at ~200 Hz
+        elapsedMs += 5;
+
+        if (elapsedMs >= TIMEOUT_MS) {
+            LOG_ERROR("sorter", "Timeout servo %d! Moved %.0f/%.0f steps", servoID, totalStepsMoved, stepsNeeded);
+            break;
+        }
+
+        int nowPos = devices::scs_servos::read_position_raw(servoID);
+        if (nowPos < 0) {
+            readErrors++;
+            if (readErrors > 100) {
+                LOG_ERROR("sorter", "Too many read errors for servo %d, aborting", servoID);
+                break;
+            }
+            continue;
+        }
+        readErrors = 0;
+
+        // Compute delta with wrap-around handling
+        int delta = nowPos - prevPos;
+
+        if (delta > ENCODER_RANGE / 2)
+            delta -= ENCODER_RANGE;
+        else if (delta < -ENCODER_RANGE / 2)
+            delta += ENCODER_RANGE;
+
+        totalStepsMoved += fabsf(static_cast<float>(delta));
+
+        LOG_INFO_THROTTLE("sorter", 100, "Servo %d: nowPos=%d, delta=%d, totalMoved=%.0f/%.0f",
+                          servoID, nowPos, delta, totalStepsMoved, stepsNeeded);
+
+        prevPos = nowPos;
+    }
+
+    // Stop motor (send multiple times to ensure it's received)
+    for (int i = 0; i < 3; i++) {
+        devices::scs_servos::set_speed(servoID, 0);
+        osDelay(10);
+    }
+
+    int finalPos = devices::scs_servos::read_position_raw(servoID);
+    LOG_INFO("sorter", "Servo %d stopped. Total steps: %.0f, finalPos=%d", servoID, totalStepsMoved, finalPos);
 }
 
 void BoxesSorter::moveTopPusherToPosition(float target)

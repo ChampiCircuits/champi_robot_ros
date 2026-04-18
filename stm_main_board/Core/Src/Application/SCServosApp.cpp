@@ -114,11 +114,19 @@ namespace devices
             servos.WriteSpeed(ID, speed);
         }
 
+        int read_position_raw(uint8_t id)
+        {
+            return servos.ReadPos(id);
+        }
+
         bool homingByEndSwitch(uint8_t ID, int speed, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
         {
             // If already on the switch, back off first
-            if (HAL_GPIO_ReadPin(GPIOx, GPIO_Pin) == GPIO_PIN_RESET)
+            LOG_INFO("scs", "Homing servo %d by end switch on GPIO %p pin %d", ID, GPIOx, GPIO_Pin);
+            // going forward a bit
+            // if (HAL_GPIO_ReadPin(GPIOx, GPIO_Pin) == GPIO_PIN_RESET)
             {
+                LOG_INFO("scs", "Homing servo %d: backing off a bit...", ID);
                 set_speed(ID, -speed);
                 while (HAL_GPIO_ReadPin(GPIOx, GPIO_Pin) == GPIO_PIN_RESET)
                     osDelay(10);
