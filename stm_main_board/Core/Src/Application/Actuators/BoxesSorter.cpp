@@ -59,7 +59,7 @@ void BoxesSorter::grabAndSort2BoxesFromLift()
 void BoxesSorter::push2BoxesOut()
 {
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_OUT);
-    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -BOTTOM_PUSHER_SERVO_SPEED, END_SWITCH_GPIO_Port, END_SWITCH_GPIO_Pin);
+    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -BOTTOM_PUSHER_SERVO_SPEED, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin);
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY); // si on fait pas ca, il faut écrire à la main la position
 }
 
@@ -72,10 +72,11 @@ void BoxesSorter::initialize()
 {
     LOG_INFO("box_sorter", "initializing boxes sorter...");
     // Move top pusher out
-    // devices::scs_servos::homingByStall(TOP_PUSHER_SERVO_ID, 300, 300);
+    devices::scs_servos::homingByEndSwitch(TOP_PUSHER_SERVO_ID, 500, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin);
+    moveBottomPusherToPosition(TOP_PUSHER_SERVO_POSITION_READY);
     // Move bottom pusher in
-    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -500, END_SWITCH_GPIO_Port, END_SWITCH_GPIO_Pin);
-    // move pusher
+    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -500, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin);
+    // move pusher a bit more inside (end switch is too much inside)
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY);
 
 

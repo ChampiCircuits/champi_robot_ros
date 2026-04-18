@@ -41,22 +41,23 @@ private:
 
     // TOP PUSHER SERVO (FREE ROTATION SERVO)
     // | TOBOGGAN - STRAIGHT HOLE - COLOR SENSOR - LIFT - READY POSITION |
-    static constexpr float TOP_PUSHER_SERVO_SPEED  = 200;  // [0,1023]
+    static constexpr float TOP_PUSHER_SERVO_SPEED  = 1023;  // [0,1023]
     static constexpr float TOP_PUSHER_SERVO_POSITION_READY  = 0;
     static constexpr float TOP_PUSHER_SERVO_POSITION_COLOR_SENSOR_FIRST_BOX  = 200;  // mm // TODO
     static constexpr float TOP_PUSHER_SERVO_POSITION_STRAIGHT_HOLE_FIRST_BOX  = 300; // mm // TODO
     static constexpr float TOP_PUSHER_SERVO_POSITION_TOBOGGAN_HOLE_FIRST_BOX  = 400; // mm // TODO
     float topPusherPosition = TOP_PUSHER_SERVO_POSITION_READY;
+    GPIO_TypeDef* TOP_END_SWITCH_GPIO_Port = D0_GPIO_Port;
+    static constexpr auto TOP_END_SWITCH_GPIO_Pin = D0_Pin;
 
     // BOTTOM PUSHER SERVO (FREE ROTATION SERVO)
     // | OUT | TOBOGGAN - STRAIGHT HOLE - READY |
     static constexpr float BOTTOM_PUSHER_SERVO_SPEED  = 1023;  // [0,1023]
-    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_READY  = -2;  // mm // TODO
-    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_OUT  = 85; // mm // TODO
+    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_READY  = -2;  // mm
+    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_OUT  = 85; // mm
     float bottomPusherPosition = BOTTOM_PUSHER_SERVO_POSITION_READY;
-
-    GPIO_TypeDef* END_SWITCH_GPIO_Port = D6_GPIO_Port;
-    static constexpr auto END_SWITCH_GPIO_Pin = D6_Pin;
+    GPIO_TypeDef* BOTTOM_END_SWITCH_GPIO_Port = D6_GPIO_Port;
+    static constexpr auto BOTTOM_END_SWITCH_GPIO_Pin = D6_Pin;
 
     // TRAPDOOR SERVO (NORMAL POSITION SERVO)
     static constexpr int TRAPDOOR_SERVO_OPEN   = 0;     // ° [0,270] // TODO

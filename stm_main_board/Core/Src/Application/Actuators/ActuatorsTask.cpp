@@ -36,24 +36,20 @@ void raiseThermometerServo()
     devices::scs_servos::set_angle_async(THERMO_SERVO_ID, THERMO_SERVO_OPEN, 300);
 }
 
+void setServoInContinousRotation(const uint8_t servo_id)
+{
+    // Set wheel (infinite rotation) mode: both angle limits to 0
+    devices::scs_servos::servos.WriteLimitAngle(servo_id, 0, 0);
+    osDelay(1000);
+}
+
 void initEveryThing()
 {
     LOG_INFO("act", "Beginning actuators initializing...");
     osDelay(3000);
     SCServosApp_Init(); // Reminder: blocking until the servos are found
-
-    HAL_Delay(100);
-    // Set wheel (infinite rotation) mode: both angle limits to 0
-    devices::scs_servos::servos.WriteLimitAngle(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 0, 0);
-    HAL_Delay(100);
-    devices::scs_servos::servos.EnableTorque(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 1);
-    HAL_Delay(100);
-    devices::scs_servos::servos.WriteLimitTroque(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 600);
-    HAL_Delay(100);
-    devices::scs_servos::servos.WriteLimitVoltageMax(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 95);
-    HAL_Delay(100);
-
-    osDelay(1000);
+    setServoInContinousRotation(BoxesSorter::BOTTOM_PUSHER_SERVO_ID);
+    setServoInContinousRotation(BoxesSorter::TOP_PUSHER_SERVO_ID);
 
     // raiseThermometerServo();
     // liftAndClamp.initialize();
