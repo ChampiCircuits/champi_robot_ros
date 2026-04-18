@@ -2,7 +2,7 @@
 #define HW_INTERFACE_H
 
 #define MODBUS_TIMEOUT_US 50000 // 50ms
-#define MODBUS_MAX_RETRIES 5
+#define MODBUS_MAX_RETRIES 10
 
 #include <rclcpp/rclcpp.hpp>
 #include <modbus/modbus.h>

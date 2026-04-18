@@ -14,13 +14,13 @@ enum class TeamColor : uint8_t
   BLUE
 };
 
-struct Vector3 {
+struct __attribute__((packed)) Vector3 {
   double x;
   double y;
   double theta;
 };
 
-struct HoloDriveConfig {
+struct __attribute__((packed)) HoloDriveConfig {
   double wheel_radius;
   double base_radius;
   double max_accel_wheel;
@@ -30,19 +30,19 @@ struct HoloDriveConfig {
   double max_decel_angular;
 };
 
-struct OtosConfig {
+struct __attribute__((packed)) OtosConfig {
   double linear_scalar;
   double angular_scalar;
 };
 
-struct Config {
+struct __attribute__((packed)) Config {
   bool is_set;
   double cmd_vel_timeout;
   HoloDriveConfig holo_drive_config;
   OtosConfig otos_config;
 };
 
-struct State {
+struct __attribute__((packed)) State {
   bool is_read;
   Vector3 measured_vel;
   Vector3 otos_pose;
@@ -52,18 +52,18 @@ struct State {
   double dummy; // to not be multiple of 32
 };
 
-struct Cmd {
+struct __attribute__((packed)) Cmd {
   bool is_read;
   Vector3 cmd_vel;
 };
 
-struct Requests {
+struct __attribute__((packed)) Requests {
   bool request_reset_otos;
   bool request_reset_stm;
   TeamColor team_color;
 };
 
-struct Actuators
+struct __attribute__((packed)) Actuators
 {
   // list of actuators commands.
   double dummy; // to not be multiple of 32

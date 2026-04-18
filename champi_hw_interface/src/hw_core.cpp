@@ -4,6 +4,7 @@
 #include "tf2/impl/utils.h"
 
 #include <cctype>
+#include <unistd.h>
 
 
 #define THRESHOLD_REJECT_DIST 0.03
@@ -237,8 +238,12 @@ void HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
     do {
         result = modbus_write_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         nb_attempts++;
+        if (result == -1 && nb_attempts < MODBUS_MAX_RETRIES) {
+            modbus_flush(this->mb_);
+            usleep(5000); // 5ms delay before retry
+        }
     }
-    while (result == -1 && nb_attempts++ < MODBUS_MAX_RETRIES);
+    while (result == -1 && nb_attempts < MODBUS_MAX_RETRIES);
 
     if (nb_attempts > 3) {
         RCLCPP_ERROR(this->get_logger(), "Write data after %d attempts", nb_attempts);
@@ -246,7 +251,7 @@ void HardwareInterfaceNode::write( mod_reg::register_metadata &reg_meta) const {
 
     if (result == -1) {
         RCLCPP_ERROR(this->get_logger(), "Failed to write data: error num: %d, message: %s", errno, modbus_strerror(errno));
-        exit(1);
+        // exit(1);
     }
 }
 
@@ -257,8 +262,12 @@ void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
     do {
         result = modbus_read_registers(this->mb_, reg_meta.address, reg_meta.size, reg_meta.ptr);
         nb_attempts++;
+        if (result == -1 && nb_attempts < MODBUS_MAX_RETRIES) {
+            modbus_flush(this->mb_);
+            usleep(5000); // 5ms delay before retry
+        }
     }
-    while (result == -1 && nb_attempts++ < MODBUS_MAX_RETRIES);
+    while (result == -1 && nb_attempts < MODBUS_MAX_RETRIES);
 
     if (nb_attempts > 3) {
         RCLCPP_ERROR(this->get_logger(), "Read data after %d attempts", nb_attempts);
@@ -266,7 +275,7 @@ void HardwareInterfaceNode::read( mod_reg::register_metadata &reg_meta) const {
 
     if (result == -1) {
         RCLCPP_ERROR(this->get_logger(), "Failed to read data: error num: %d, message: %s", errno, modbus_strerror(errno));
-        exit(1);
+        // exit(1);
     }
 }
 
