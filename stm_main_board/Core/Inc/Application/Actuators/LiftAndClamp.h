@@ -26,6 +26,8 @@ public:
 
     int boxesInLiftCount = 0; // always an even number (clamp takes boxes 2 by 2)
 
+    static constexpr int CLAMP_SERVO_ID = 0;                     // TODO
+
 private:
     // LIFT STEPPER
     static constexpr float LIFT_INIT_ACCEL = 5.0;
@@ -42,7 +44,6 @@ private:
     static constexpr auto END_SWITCH_GPIO_Pin = D6_Pin;      // TODO
 
     // CLAMP SERVO
-    static constexpr int CLAMP_SERVO_ID = 0;                     // TODO
     static constexpr int CLAMP_SERVO_OPEN   = 0;    // ° [0,270] // TODO
     static constexpr int CLAMP_SERVO_CLOSED = 150;  // ° [0,270] // TODO
 

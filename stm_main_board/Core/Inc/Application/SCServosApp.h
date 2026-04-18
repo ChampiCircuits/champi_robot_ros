@@ -5,14 +5,8 @@
 #ifndef SCSERVOSAPP_H
 #define SCSERVOSAPP_H
 
-#define N_SERVOS 6
+#define N_SERVOS 1
 
-#define ID_SERVO_ARM_END_RIGHT 5
-#define ID_SERVO_ARM_END_LEFT 9
-#define ID_SERVO_ARM 7
-#define ID_SERVO_Y_RIGHT 8
-#define ID_SERVO_Y_LEFT 18
-#define ID_SERVO_BANNER 14
 
 #include "cmsis_os2.h"
 
@@ -34,8 +28,7 @@ namespace devices
         void test_angle(uint8_t id, float angle); // Tests a given angle, then reverts it to original angle.
         // for free rotation servos only
         void set_speed(uint8_t ID, int speed);
-        // for free rotation servos only
-        bool homingByStall(uint8_t ID, int speed, uint16_t timeoutMs);
+        bool homingByEndSwitch(uint8_t ID, int speed, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
     }
 }
 

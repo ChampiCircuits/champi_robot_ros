@@ -531,7 +531,7 @@ void motionTick(uint32_t now_us) {
         case MotionState::COMPLETED:
             {
                 stopMotors();
-                analogWrite(ACTUATOR_PIN, 20);
+                analogWrite(ACTUATOR_PIN, 50);
                 digitalWrite(ENABLE_MOTORS, HIGH); // Disable drivers to avoid heating
                 break;
             }

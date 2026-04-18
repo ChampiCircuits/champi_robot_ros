@@ -59,7 +59,8 @@ void BoxesSorter::grabAndSort2BoxesFromLift()
 void BoxesSorter::push2BoxesOut()
 {
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_OUT);
-    moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY);
+    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -BOTTOM_PUSHER_SERVO_SPEED, END_SWITCH_GPIO_Port, END_SWITCH_GPIO_Pin);
+    moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY); // si on fait pas ca, il faut écrire à la main la position
 }
 
 void BoxesSorter::openExitRamp()
@@ -69,14 +70,20 @@ void BoxesSorter::openExitRamp()
 
 void BoxesSorter::initialize()
 {
+    LOG_INFO("box_sorter", "initializing boxes sorter...");
     // Move top pusher out
-    devices::scs_servos::homingByStall(TOP_PUSHER_SERVO_ID, 300, 300);
+    // devices::scs_servos::homingByStall(TOP_PUSHER_SERVO_ID, 300, 300);
     // Move bottom pusher in
-    devices::scs_servos::homingByStall(BOTTOM_PUSHER_SERVO_ID, 300, 300);
+    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -500, END_SWITCH_GPIO_Port, END_SWITCH_GPIO_Pin);
+    // move pusher
+    moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY);
+
+
     // Close first hole trapdoor
-    _closeTrapdoor();
+    // _closeTrapdoor();
     // Close exit ramp servo
-    devices::scs_servos::set_angle_async(EXIT_RAMP_SERVO_ID, EXIT_RAMP_SERVO_IDLE, 300);
+    // devices::scs_servos::set_angle_async(EXIT_RAMP_SERVO_ID, EXIT_RAMP_SERVO_IDLE, 300);
+    LOG_INFO("box_sorter", "initialized boxes sorter...");
 }
 
 void BoxesSorter::setTeamColor(const com_types::TeamColor color)

@@ -1,5 +1,7 @@
  #include "Application/SCServosApp.h"
 
+#include "Actuators/BoxesSorter.h"
+#include "Actuators/LiftAndClamp.h"
 #include "Config/Config.h"
 #include "Util/logging.h"
 
@@ -10,7 +12,20 @@ namespace devices
 {
     namespace scs_servos {
 
-        uint8_t ids_servos[N_SERVOS] = {ID_SERVO_ARM_END_LEFT, ID_SERVO_ARM_END_RIGHT, ID_SERVO_ARM, ID_SERVO_Y_LEFT, ID_SERVO_Y_RIGHT, ID_SERVO_BANNER};
+        uint8_t ids_servos[N_SERVOS] = {
+            // BoxesSorter::TOP_PUSHER_SERVO_ID,
+            BoxesSorter::BOTTOM_PUSHER_SERVO_ID,
+            // BoxesSorter::TRAPDOOR_SERVO_ID,
+            // BoxesSorter::EXIT_RAMP_SERVO_ID,
+            // LiftAndClamp::CLAMP_SERVO_ID
+        };
+        // uint8_t ids_servos[N_SERVOS] = {
+        //     BoxesSorter::TOP_PUSHER_SERVO_ID,
+        //     BoxesSorter::BOTTOM_PUSHER_SERVO_ID,
+        //     BoxesSorter::TRAPDOOR_SERVO_ID,
+        //     BoxesSorter::EXIT_RAMP_SERVO_ID,
+        //     LiftAndClamp::CLAMP_SERVO_ID
+        // };
         SCServos servos;
         bool init_successful = false;
 
@@ -99,63 +114,30 @@ namespace devices
             servos.WriteSpeed(ID, speed);
         }
 
-        /**
-         * @brief Performs a homing procedure by moving until a mechanical stall is detected. To be used ONLY with servos in free rotation (i.e. rack and pinion)
-         * @param ID The Servo ID.
-         * @param speed The rotation speed (positive for CW, negative for CCW).
-         * @param timeoutMs How long (in ms) the position must remain static to confirm stall.
-         * @return true if homing is successful, false if hardware error.
-         */
-        bool homingByStall(uint8_t ID, int speed, uint16_t timeoutMs)
+        bool homingByEndSwitch(uint8_t ID, int speed, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
         {
-            constexpr int STALL_THRESHOLD = 3;     // Minimum movement to be considered "moving"
-            constexpr int POLL_INTERVAL_MS = 20;   // Polling frequency
-
-            // 1. Ensure torque is enabled
-            servos.EnableTorque(ID, 1);
-
-            // 2. Start moving (Rotation Mode)
-            // With SCS15, Wheel Mode is triggered by setting Speed and having Angle Limits set to 0.
-            servos.WriteSpeed(ID, speed);
-
-            int lastPos = servos.ReadPos(ID);
-            if (lastPos == -1) return false; // Initial read failed
-
-            uint32_t stallCounter = 0;
-
-            while (stallCounter < timeoutMs)
+            // If already on the switch, back off first
+            if (HAL_GPIO_ReadPin(GPIOx, GPIO_Pin) == GPIO_PIN_RESET)
             {
-                osDelay(POLL_INTERVAL_MS);
-
-                int currentPos = servos.ReadPos(ID);
-                if (currentPos == -1) continue; // Skip failed UART reads
-
-                // Calculate absolute difference
-                // Note: The SCS15 encoder is 10-bit (0-1023)
-                int diff = abs(currentPos - lastPos);
-
-                // Handle the wrap-around case (e.g., jump from 1020 to 5)
-                if (diff > 512)
-                {
-                    diff = 1024 - diff;
-                }
-
-                if (diff >= STALL_THRESHOLD)
-                {
-                    // Servo is still moving
-                    stallCounter = 0;
-                    lastPos = currentPos;
-                }
-                else
-                {
-                    // Position is stagnant, increment stall timer
-                    stallCounter += POLL_INTERVAL_MS;
-                }
+                set_speed(ID, -speed);
+                while (HAL_GPIO_ReadPin(GPIOx, GPIO_Pin) == GPIO_PIN_RESET)
+                    osDelay(10);
+                osDelay(1000);
+                set_speed(ID, 0);
+                osDelay(100);
             }
 
-            // 3. Stall confirmed: Stop the motor immediately
-            servos.WriteSpeed(ID, 0);
+            // Move towards the end switch
+            set_speed(ID, speed);
 
+            while (HAL_GPIO_ReadPin(GPIOx, GPIO_Pin) != GPIO_PIN_RESET)
+            {
+                osDelay(10);
+                LOG_INFO_THROTTLE("scs", 10, "Homing servo %d...", ID);
+            }
+
+            set_speed(ID, 0);
+            LOG_INFO("scs", "Homing servo %d: end switch reached", ID);
             return true;
         }
 
@@ -169,7 +151,7 @@ int SCServosApp_Init()
 {
     LOG_INFO("scs", "Initializing servos... (blocking until all servos are found)");
     servos = SCServos(&huart10);
-    //find_ids(0, 16);
+    // find_ids(0, 16);
     //test_angle(ID_SERVO_Y_FRONT, 270);
 
     init_successful = false;

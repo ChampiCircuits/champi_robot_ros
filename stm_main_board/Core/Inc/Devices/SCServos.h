@@ -22,6 +22,7 @@ public:
     int WriteID(uint8_t oldID, uint8_t newID, uint8_t ReturnLevel=1);
     int WriteLimitAngle(uint8_t ID, int MinAngel, int MaxAngle, uint8_t ReturnLevel=1);
     int WriteLimitTroque(uint8_t ID, int MaxTroque, uint8_t ReturnLevel=1);
+    int WriteLimitVoltageMax(uint8_t ID, uint8_t MaxVoltage);
     int WritePunch(uint8_t ID, int Punch, uint8_t ReturnLevel=1);
     int WriteBaund(uint8_t ID, uint8_t Baund, uint8_t ReturnLevel=1);
     int WriteDeadBand(uint8_t ID, uint8_t CWDB, uint8_t CCWDB, uint8_t ReturnLevel=1);

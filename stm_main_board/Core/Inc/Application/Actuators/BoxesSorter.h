@@ -31,12 +31,16 @@ public:
 
     int boxesInSorterCount = 0; // always an even number (clamp takes boxes 2 by 2)
 
+    static constexpr int TOP_PUSHER_SERVO_ID = 2; // TODO
+    static constexpr int BOTTOM_PUSHER_SERVO_ID = 12; // ID ok
+    static constexpr int TRAPDOOR_SERVO_ID = 4; // TODO
+    static constexpr int EXIT_RAMP_SERVO_ID = 5; // TODO
+
 private:
     static constexpr float BOX_WIDTH = 50.0; // mm --> pusher increment
 
     // TOP PUSHER SERVO (FREE ROTATION SERVO)
     // | TOBOGGAN - STRAIGHT HOLE - COLOR SENSOR - LIFT - READY POSITION |
-    static constexpr int TOP_PUSHER_SERVO_ID = 2; // TODO
     static constexpr float TOP_PUSHER_SERVO_SPEED  = 200;  // [0,1023]
     static constexpr float TOP_PUSHER_SERVO_POSITION_READY  = 0;
     static constexpr float TOP_PUSHER_SERVO_POSITION_COLOR_SENSOR_FIRST_BOX  = 200;  // mm // TODO
@@ -46,19 +50,19 @@ private:
 
     // BOTTOM PUSHER SERVO (FREE ROTATION SERVO)
     // | OUT | TOBOGGAN - STRAIGHT HOLE - READY |
-    static constexpr int BOTTOM_PUSHER_SERVO_ID = 3; // TODO
-    static constexpr float BOTTOM_PUSHER_SERVO_SPEED  = 200;  // [0,1023]
-    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_READY  = 0;  // mm // TODO
-    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_OUT  = 600; // mm // TODO
+    static constexpr float BOTTOM_PUSHER_SERVO_SPEED  = 1023;  // [0,1023]
+    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_READY  = -2;  // mm // TODO
+    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_OUT  = 85; // mm // TODO
     float bottomPusherPosition = BOTTOM_PUSHER_SERVO_POSITION_READY;
 
+    GPIO_TypeDef* END_SWITCH_GPIO_Port = D6_GPIO_Port;
+    static constexpr auto END_SWITCH_GPIO_Pin = D6_Pin;
+
     // TRAPDOOR SERVO (NORMAL POSITION SERVO)
-    static constexpr int TRAPDOOR_SERVO_ID = 4; // TODO
     static constexpr int TRAPDOOR_SERVO_OPEN   = 0;     // ° [0,270] // TODO
     static constexpr int TRAPDOOR_SERVO_CLOSED = 90;    // ° [0,270] // TODO
 
     // EXIT RAMP SERVO (NORMAL POSITION SERVO)
-    static constexpr int EXIT_RAMP_SERVO_ID = 5; // TODO
     static constexpr int EXIT_RAMP_SERVO_IDLE   = 0;     // ° [0,270] // TODO
     static constexpr int EXIT_RAMP_SERVO_RELEASED = 90;    // ° [0,270] // TODO
 

@@ -240,6 +240,22 @@ int SCServos::WriteLimitTroque(uint8_t ID, int MaxTroque, uint8_t ReturnLevel)
     return 0;
 }
 
+int SCServos::WriteLimitVoltageMax(uint8_t ID, uint8_t MaxVoltage) {
+
+    int messageLength = 4;
+    fflushRevBuf();
+    write_byte(startByte);
+    write_byte(startByte);
+    write_byte(ID);
+    write_byte(messageLength);
+    write_byte(INST_WRITE);
+    write_byte(P_MAX_LIMIT_VOLTAGE);
+    write_byte(MaxVoltage);
+    write_byte((~(ID + messageLength + INST_WRITE + P_MAX_LIMIT_VOLTAGE + MaxVoltage))&0xFF);
+
+    return 0;
+}
+
 int SCServos::WritePunch(uint8_t ID, int Punch, uint8_t ReturnLevel)
 {
     int messageLength = 5;

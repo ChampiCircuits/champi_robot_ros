@@ -44,8 +44,8 @@ constexpr uint8_t MAX_US_INVALID_BEFORE_BLOCK = 5;
 constexpr uint32_t TELEMETRY_PERIOD_MS = 200;
 
 // Drivetrain geometry and motor setup.
-constexpr float WHEEL_DIAMETER_MM = 80.0f; // TODO check in real life
-constexpr float ENTRAXE_MM = 90.0f; // TODO check in real life
+constexpr float WHEEL_DIAMETER_MM = 70.0f;
+constexpr float ENTRAXE_MM = 135.0f;
 constexpr float MOTOR_STEPS_PER_REV = 200.0f; // 1 step = 1.8° --> steps_per_rev = 360/1.8 = 200
 constexpr float MICROSTEPS = 16.0f;
 constexpr float GEAR_RATIO = 1.0f;

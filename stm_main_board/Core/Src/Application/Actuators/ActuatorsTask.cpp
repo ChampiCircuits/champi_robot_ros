@@ -41,10 +41,22 @@ void initEveryThing()
     LOG_INFO("act", "Beginning actuators initializing...");
     osDelay(3000);
     SCServosApp_Init(); // Reminder: blocking until the servos are found
+
+    HAL_Delay(100);
+    // Set wheel (infinite rotation) mode: both angle limits to 0
+    devices::scs_servos::servos.WriteLimitAngle(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 0, 0);
+    HAL_Delay(100);
+    devices::scs_servos::servos.EnableTorque(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 1);
+    HAL_Delay(100);
+    devices::scs_servos::servos.WriteLimitTroque(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 600);
+    HAL_Delay(100);
+    devices::scs_servos::servos.WriteLimitVoltageMax(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 95);
+    HAL_Delay(100);
+
     osDelay(1000);
 
-    raiseThermometerServo();
-    liftAndClamp.initialize();
+    // raiseThermometerServo();
+    // liftAndClamp.initialize();
     boxesSorter.initialize();
 
     LOG_INFO("act", "Actuators have been initialized !");
@@ -151,12 +163,12 @@ void update_elements_pipeline()
 
 void ActuatorsTask(void *argument)
 {
-    // initEveryThing();
+    initEveryThing();
 
     LOG_INFO("act", "Starting loop.");
     while (true)
     {
-        // handleManualRequests();
+        handleManualRequests();
         //
         // if (mod_reg::requests->team_color != boxesSorter.getTeamColor())
         //     boxesSorter.setTeamColor(mod_reg::requests->team_color);
