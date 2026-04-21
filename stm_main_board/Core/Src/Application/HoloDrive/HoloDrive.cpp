@@ -1,5 +1,6 @@
 #include "Application/HoloDrive/HoloDrive.h"
 
+#include "logging.h"
 #include "Config/Config.h"
 #include "Util/SpeedLimits.h"
 
