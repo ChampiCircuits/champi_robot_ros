@@ -556,7 +556,7 @@ void motionTick(uint32_t now_us) {
             }
         case MotionState::RUNNING:
             {
-                if (g_blocked_by_obstacle) {
+                if (g_blocked_by_obstacle && g_segment_phase == SegmentPhase::DRIVING) {
                     stopMotors();
                     g_pause_started_us = now_us;
                     g_state = MotionState::PAUSED_OBSTACLE;
