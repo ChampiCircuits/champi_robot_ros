@@ -1,0 +1,153 @@
+{
+    "trajectories": {
+        "1": [
+            {
+                "x": 200.0,
+                "y": 1625.0,
+                "waitS": 0.0,
+                "headingDeg": 270.0
+            },
+            {
+                "x": 275.0,
+                "y": 400.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            },
+            {
+                "x": 1400.0,
+                "y": 150.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            }
+        ],
+        "2": [
+            {
+                "x": 200.0,
+                "y": 1775.0,
+                "waitS": 0.5,
+                "headingDeg": 270.0
+            },
+            {
+                "x": 275.0,
+                "y": 600.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            },
+            {
+                "x": 1125.0,
+                "y": 600.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            },
+            {
+                "x": 1425.0,
+                "y": 700.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            }
+        ],
+        "3": [
+            {
+                "x": 200.0,
+                "y": 1925.0,
+                "waitS": 0.75,
+                "headingDeg": 270.0
+            },
+            {
+                "x": 675.0,
+                "y": 1150.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            },
+            {
+                "x": 1275.0,
+                "y": 1350.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            }
+        ],
+        "4": [
+            {
+                "x": 75.0,
+                "y": 1625.0,
+                "waitS": 0.0,
+                "headingDeg": 270.0
+            },
+            {
+                "x": 100.0,
+                "y": 900.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            }
+        ],
+        "5": [
+            {
+                "x": 75.0,
+                "y": 1775.0,
+                "waitS": 1.0,
+                "headingDeg": 270.0
+            },
+            {
+                "x": 75.0,
+                "y": 1650.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            },
+            {
+                "x": 375.0,
+                "y": 850.0,
+                "waitS": 3.0,
+                "headingDeg": 0.0
+            },
+            {
+                "x": 600.0,
+                "y": 200.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            }
+        ],
+        "6": [
+            {
+                "x": 75.0,
+                "y": 1925.0,
+                "waitS": 2.0,
+                "headingDeg": 270.0
+            },
+            {
+                "x": 75.0,
+                "y": 1300.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            },
+            {
+                "x": 700.0,
+                "y": 850.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            }
+        ],
+        "bigRobot": [
+            {
+                "x": 1125.0,
+                "y": 1450.0,
+                "waitS": 5.0,
+                "headingDeg": 180.0
+            },
+            {
+                "x": 375.0,
+                "y": 1450.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            },
+            {
+                "x": 375.0,
+                "y": 1700.0,
+                "waitS": 0.0,
+                "headingDeg": 0.0
+            }
+        ]
+    },
+    "globalSpeed": 35.0,
+    "angularSpeedDegS": 40.0,
+    "delayAfterPullCordS": 0.0
+}
