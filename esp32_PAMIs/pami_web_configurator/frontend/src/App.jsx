@@ -26,12 +26,12 @@ const normalizeAngle = (a) => {
   return angle;
 };
 
-const calculateTrajectoryDuration = (pts, speedMmPerS, angularSpeedRadS) => {
+const calculateTrajectoryDuration = (pts, speedMmPerS, angularSpeedRadS, isHolonomic = false) => {
   if (!pts || pts.length === 0) return 0;
 
   const waitTime = calculateWaitTime(pts);
   const moveTime = speedMmPerS > 0 ? calculateDistance(pts) / speedMmPerS : 0;
-  if (pts.length < 2 || angularSpeedRadS <= 0) {
+  if (isHolonomic || pts.length < 2 || angularSpeedRadS <= 0) {
     return waitTime + moveTime;
   }
 
@@ -50,9 +50,9 @@ const calculateTrajectoryDuration = (pts, speedMmPerS, angularSpeedRadS) => {
 };
 
 function App() {
-  const [selectedPami, setSelectedPami] = useState(1);
+  const [selectedPami, setSelectedPami] = useState('1');
   const [trajectories, setTrajectories] = useState({
-    1: [], 2: [], 3: [], 4: [], 5: [], 6: []
+    '1': [], '2': [], '3': [], '4': [], '5': [], '6': [], bigRobot: []
   });
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
   const [isPlaying, setIsPlaying] = useState(false);
@@ -74,7 +74,12 @@ function App() {
     fetch(`${API_URL}/config`)
       .then(res => res.json())
       .then(data => {
-        if (data.trajectories) setTrajectories(data.trajectories);
+        if (data.trajectories) {
+          setTrajectories({
+            '1': [], '2': [], '3': [], '4': [], '5': [], '6': [], bigRobot: [],
+            ...data.trajectories,
+          });
+        }
         if (data.globalSpeed !== undefined) setGlobalSpeed(data.globalSpeed);
         if (data.angularSpeedDegS !== undefined) setAngularSpeedDegS(data.angularSpeedDegS);
         if (data.delayAfterPullCordS !== undefined) setDelayAfterPullCordS(data.delayAfterPullCordS);
@@ -120,8 +125,11 @@ function App() {
   const angularSpeedRadS = (angularSpeedDegS * Math.PI) / 180;
   const maxTrajectoryDuration = React.useMemo(() => {
     let maxDuration = 0;
-    Object.values(trajectories).forEach((pts) => {
-      maxDuration = Math.max(maxDuration, calculateTrajectoryDuration(pts, speedMmPerS, angularSpeedRadS));
+    Object.entries(trajectories).forEach(([trajId, pts]) => {
+      maxDuration = Math.max(
+        maxDuration,
+        calculateTrajectoryDuration(pts, speedMmPerS, angularSpeedRadS, trajId === 'bigRobot')
+      );
     });
     return maxDuration;
   }, [trajectories, speedMmPerS, angularSpeedRadS]);
@@ -130,6 +138,9 @@ function App() {
   const handleUpdateTrajectory = (pamiId, waypoints) => {
     setTrajectories(prev => ({...prev, [pamiId]: waypoints}));
   };
+
+  const isBigRobotSelected = selectedPami === 'bigRobot';
+  const selectedLabel = isBigRobotSelected ? 'Gros robot' : `PAMI ${selectedPami}`;
 
   const currentMovementCount = trajectories[selectedPami]?.length || 0;
   const selectedWaypoints = trajectories[selectedPami] || [];
@@ -216,7 +227,7 @@ function App() {
         <div style={{ width: '100%', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
           <div style={{ width: '15%', minWidth: '130px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div>
-              <strong>Edition de la trajectoire pour le PAMI {selectedPami}</strong>
+              <strong>Edition de la trajectoire pour {selectedLabel}</strong>
               {tableControlsState.isEditLocked && (
                 <div style={{ color: 'red', fontSize: '0.9em' }}>
                   (Mode Visualisation - Edition bloquee)
@@ -245,12 +256,13 @@ function App() {
               <label style={{ display: 'block', marginBottom: '6px' }}><strong>PAMI :</strong></label>
               <select
                 value={selectedPami}
-                onChange={(e) => setSelectedPami(Number(e.target.value))}
+                onChange={(e) => setSelectedPami(e.target.value)}
                 style={{ width: '100%', padding: '6px', fontSize: '14px' }}
               >
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                  <option key={i} value={i}>N° {i}</option>
+                  <option key={i} value={String(i)}>N° {i}</option>
                 ))}
+                <option value="bigRobot">Gros robot</option>
               </select>
             </div>
             <div style={{ marginTop: '4px' }}>
@@ -299,7 +311,7 @@ function App() {
               <strong>Y:</strong> {mousePos.y} mm
             </div>
             <div style={{ marginTop: '4px', fontFamily: 'monospace', fontSize: '13px' }}>
-              Mouvements PAMI {selectedPami} : {currentMovementCount}
+              Mouvements {selectedLabel} : {currentMovementCount}
             </div>
             <div style={{ marginTop: '8px', padding: '8px', border: '1px solid #ccd', borderRadius: '6px', backgroundColor: '#f7f9ff' }}>
               <div style={{ marginBottom: '6px' }}><strong>Point sélectionné</strong></div>
@@ -372,7 +384,9 @@ function App() {
           <ConfigPanel 
             selectedPami={selectedPami} 
             onSave={handleSaveConfig}
-            onCompileFlash={() => handleCompileFlash(selectedPami)}
+            onCompileFlash={() => handleCompileFlash(Number(selectedPami))}
+            canCompile={!isBigRobotSelected}
+            selectedLabel={selectedLabel}
             isSaving={isSaving}
           />
         </div>

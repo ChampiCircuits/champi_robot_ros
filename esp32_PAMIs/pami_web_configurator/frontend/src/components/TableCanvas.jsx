@@ -6,8 +6,11 @@ const PAMI_COLORS = {
     3: '#008000', // Vert
     4: '#FFA500', // Orange
     5: '#800080', // Violet
-    6: '#FF00FF'  // Magenta
+    6: '#FF00FF', // Magenta
+    bigRobot: '#444444'
 };
+
+const BIG_ROBOT_ID = 'bigRobot';
 
 const PAMI_LENGTH_MM = 140;
 const PAMI_WIDTH_MM = 102;
@@ -18,6 +21,7 @@ const CANVAS_WIDTH = 900;
 const CANVAS_HEIGHT = 600;
 const GRID_SPACING_MM = 50;
 const GRID_OFFSET_X_MM = 25;
+const BIG_ROBOT_RADIUS_MM = 150; // Diameter: 300mm
 
 // Fonctions de conversions Pixels <-> Millimètres avec repère en bas à gauche
 const mmToPxX = (x_mm) => (x_mm / TABLE_WIDTH_MM) * CANVAS_WIDTH;
@@ -88,6 +92,24 @@ const checkOBBCollision = (rect1, rect2) => {
     return true; // Tous les axes se superposent -> on touche !
 };
 
+const checkCircleOBBCollision = (circle, rect) => {
+    // Transform circle center into rectangle local coordinates.
+    const cosA = Math.cos(rect.angle);
+    const sinA = Math.sin(rect.angle);
+    const relX = circle.x - rect.x;
+    const relY = circle.y - rect.y;
+    const localX = relX * cosA + relY * sinA;
+    const localY = -relX * sinA + relY * cosA;
+
+    const halfW = rect.w / 2;
+    const halfH = rect.h / 2;
+    const closestX = Math.max(-halfW, Math.min(localX, halfW));
+    const closestY = Math.max(-halfH, Math.min(localY, halfH));
+    const dx = localX - closestX;
+    const dy = localY - closestY;
+    return (dx * dx + dy * dy) <= (circle.r * circle.r);
+};
+
 // Helper : trouve la position exacte à une certaine distance parcourue et calcule l'angle (orientation)
 const getPositionAtDistance = (pts, targetDist) => {
     if (!pts || pts.length === 0) return null;
@@ -122,7 +144,7 @@ const normalizeAngle = (angle) => {
     return a;
 };
 
-const getPoseAtTimeWithWaitsAndTurns = (pts, elapsedS, speedMmPerS, angularSpeedRadS) => {
+const getPoseAtTimeWithWaitsAndTurns = (pts, elapsedS, speedMmPerS, angularSpeedRadS, isHolonomic = false) => {
     if (!pts || pts.length === 0) return null;
     if (pts.length === 1) {
         const startHeadingDeg = normalizeHeadingDeg(Number(pts[0].headingDeg || 0));
@@ -149,7 +171,7 @@ const getPoseAtTimeWithWaitsAndTurns = (pts, elapsedS, speedMmPerS, angularSpeed
         const deltaHeading = normalizeAngle(targetHeading - currentHeading);
         const absDelta = Math.abs(deltaHeading);
 
-        if (absDelta >= minTurnRad && angularSpeedRadS > 0) {
+        if (!isHolonomic && absDelta >= minTurnRad && angularSpeedRadS > 0) {
             const turnTime = absDelta / angularSpeedRadS;
             if (t <= turnTime) {
                 const sign = deltaHeading >= 0 ? 1 : -1;
@@ -246,7 +268,7 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
                     const pts = allTrajectories[pamiId];
                     if (!pts || pts.length === 0) return;
                     
-                    const isSelected = parseInt(pamiId) === selectedPami;
+                    const isSelected = pamiId === selectedPami;
                     
                     // Si on est en mode édition pure, on grise les autres trajectoires
                     const isAnimActive = isPlaying || elapsedTime > 0;
@@ -329,7 +351,8 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
                             pts,
                             effectiveElapsedTime,
                             speedMmPerS,
-                            (angularSpeedDegS * Math.PI) / 180
+                            (angularSpeedDegS * Math.PI) / 180,
+                            pamiId === BIG_ROBOT_ID
                         );
                         if (pos) {
                             botPositions[pamiId] = pos;
@@ -339,21 +362,22 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
 
                 // 3. Dessiner les robots animés et vérifier les collisions
                 if (isPlaying || elapsedTime > 0) {
-                    const idsKey = Object.keys(botPositions);
+                    const allIds = Object.keys(botPositions);
+                    const pamiIds = allIds.filter((id) => id !== BIG_ROBOT_ID);
                     const collisions = new Set();
 
                     // Détection quadratique précise avec OBB (Oriented Bounding Boxes)
-                    for (let i = 0; i < idsKey.length; i++) {
-                        for (let j = i + 1; j < idsKey.length; j++) {
-                            const p1 = botPositions[idsKey[i]];
-                            const p2 = botPositions[idsKey[j]];
+                    for (let i = 0; i < pamiIds.length; i++) {
+                        for (let j = i + 1; j < pamiIds.length; j++) {
+                            const p1 = botPositions[pamiIds[i]];
+                            const p2 = botPositions[pamiIds[j]];
                             
                             const rect1 = { x: p1.x, y: p1.y, w: PAMI_LENGTH_MM, h: PAMI_WIDTH_MM, angle: p1.angle };
                             const rect2 = { x: p2.x, y: p2.y, w: PAMI_LENGTH_MM, h: PAMI_WIDTH_MM, angle: p2.angle };
 
                             if (checkOBBCollision(rect1, rect2)) {
-                                collisions.add(idsKey[i]);
-                                collisions.add(idsKey[j]);
+                                collisions.add(pamiIds[i]);
+                                collisions.add(pamiIds[j]);
                                 
                                 // Indicateur visuel du choc (un lien rouge épais entre les centres impliqués)
                                 ctx.beginPath();
@@ -367,7 +391,7 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
                     }
 
                     // Dessin des robots (Rectangles)
-                    idsKey.forEach(id => {
+                    allIds.forEach(id => {
                         const pos = botPositions[id];
                         const pxX = mmToPxX(pos.x);
                         const pxY = mmToPxY(pos.y);
@@ -381,25 +405,59 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
                         ctx.rotate(-pos.angle);
 
                         // Rectangle du PAMI centré
-                        ctx.fillStyle = collisions.has(id) ? '#FF0000' : PAMI_COLORS[id];
-                        ctx.fillRect(-wPx/2, -hPx/2, wPx, hPx);
-                        ctx.strokeStyle = '#000';
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(-wPx/2, -hPx/2, wPx, hPx);
+                        if (id === BIG_ROBOT_ID) {
+                            const radiusPx = (BIG_ROBOT_RADIUS_MM / TABLE_WIDTH_MM) * CANVAS_WIDTH;
+                            ctx.beginPath();
+                            ctx.arc(0, 0, radiusPx, 0, 2 * Math.PI);
+                            ctx.fillStyle = collisions.has(id) ? '#FF0000' : 'rgba(40, 40, 40, 0.35)';
+                            ctx.fill();
+                            ctx.strokeStyle = '#222';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        } else {
+                            ctx.fillStyle = collisions.has(id) ? '#FF0000' : PAMI_COLORS[id];
+                            ctx.fillRect(-wPx/2, -hPx/2, wPx, hPx);
+                            ctx.strokeStyle = '#000';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(-wPx/2, -hPx/2, wPx, hPx);
 
-                        // Indicateur de la face avant (Un petit bloc à l'avant du rectangle)
-                        ctx.fillStyle = '#000';
-                        ctx.fillRect(wPx/2 - 6, -hPx/4, 6, hPx/2);
+                            // Indicateur de la face avant (Un petit bloc à l'avant du rectangle)
+                            ctx.fillStyle = '#000';
+                            ctx.fillRect(wPx/2 - 6, -hPx/4, 6, hPx/2);
+                        }
                         
                         ctx.restore();
                         
-                        // Numéro du PAMI
-                        ctx.fillStyle = '#FFF';
-                        ctx.font = '14px Arial';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(id, pxX, pxY);
+                        if (id !== BIG_ROBOT_ID) {
+                            // Numéro du PAMI
+                            ctx.fillStyle = '#FFF';
+                            ctx.font = '14px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(id, pxX, pxY);
+                        }
                     });
+
+                    // Collision PAMI vs gros robot (cercle mobile)
+                    const bigRobotPos = botPositions[BIG_ROBOT_ID];
+                    if (bigRobotPos) {
+                        const circleObstacle = { x: bigRobotPos.x, y: bigRobotPos.y, r: BIG_ROBOT_RADIUS_MM };
+                        pamiIds.forEach(id => {
+                            const p = botPositions[id];
+                            const rect = { x: p.x, y: p.y, w: PAMI_LENGTH_MM, h: PAMI_WIDTH_MM, angle: p.angle };
+                            if (checkCircleOBBCollision(circleObstacle, rect)) {
+                                collisions.add(id);
+                                collisions.add(BIG_ROBOT_ID);
+
+                                ctx.beginPath();
+                                ctx.moveTo(mmToPxX(p.x), mmToPxY(p.y));
+                                ctx.lineTo(mmToPxX(circleObstacle.x), mmToPxY(circleObstacle.y));
+                                ctx.strokeStyle = 'rgba(255, 80, 0, 0.85)';
+                                ctx.lineWidth = 3;
+                                ctx.stroke();
+                            }
+                        });
+                    }
                 }
             };
             

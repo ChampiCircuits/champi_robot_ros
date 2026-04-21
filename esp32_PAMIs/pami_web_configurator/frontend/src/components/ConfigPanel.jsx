@@ -2,8 +2,10 @@ import React from 'react';
 
 const ConfigPanel = ({
     selectedPami,
+    selectedLabel,
     onSave,
     onCompileFlash,
+    canCompile,
     isSaving,
 }) => {
     return (
@@ -24,14 +26,19 @@ const ConfigPanel = ({
                  <h3>Export & Flash PAMI</h3>
 
                 <div style={{ color: '#555', fontSize: '0.9em', marginBottom: '15px' }}>
-                    <i>Connectez le PAMI <b>{selectedPami}</b> en USB. Le script génèrera le code C++ avec sa trajectoire spécifique puis lancera la compilation PlatformIO.</i>
+                    {canCompile ? (
+                        <i>Connectez le PAMI <b>{selectedPami}</b> en USB. Le script génèrera le code C++ avec sa trajectoire spécifique puis lancera la compilation PlatformIO.</i>
+                    ) : (
+                        <i>Le gros robot est uniquement utilise pour simulation/collision. Aucune generation CPP n'est lancee pour cette trajectoire.</i>
+                    )}
                 </div>
 
                 <button 
                     onClick={onCompileFlash}
-                    style={{ width: '100%', padding: '15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    disabled={!canCompile}
+                    style={{ width: '100%', padding: '15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: canCompile ? '#007bff' : '#8aa0bf', color: '#fff', border: 'none', borderRadius: '4px', cursor: canCompile ? 'pointer' : 'not-allowed' }}
                 >
-                    🚀 Compiler & Flasher PAMI {selectedPami}
+                    {canCompile ? `🚀 Compiler & Flasher ${selectedLabel}` : '🚫 Pas de flash pour le gros robot'}
                 </button>
             </div>
         </div>
