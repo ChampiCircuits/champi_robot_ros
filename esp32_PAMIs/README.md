@@ -117,7 +117,7 @@ Main entrypoints:
 Current runtime behavior includes:
 
 - waiting for tirette start event
-- applying `START_AFTER_DELAY_S` before motion
+- applying `DELAY_AFTER_PULL_CORD_S` before motion
 - team switch handling (blue/yellow)
 - yellow team trajectory mirroring on X axis (`x = 3000 - x`)
 - HC-SR04 pause/resume logic with hysteresis (`OBSTACLE_STOP_MM`, `OBSTACLE_RESUME_MM`)

@@ -3,7 +3,7 @@ import os
 def generate_cpp_code(pami_id, config_data):
     trajectories = config_data.get("trajectories", {})
     speed = config_data.get("globalSpeed", 10.0)
-    start_after_delay_s = config_data.get("startAfterDelayS", 10.0)
+    delay_after_pull_cord_s = config_data.get("delayAfterPullCordS", 3.0)
 
     pami_id_str = str(pami_id)
     waypoints = trajectories.get(pami_id_str, [])
@@ -15,7 +15,7 @@ def generate_cpp_code(pami_id, config_data):
 
 // Auto-generated configuration for PAMI {pami_id}
 const float GLOBAL_SPEED_MM_S = {speed * 10.0};
-const float START_AFTER_DELAY_S = {start_after_delay_s};
+const float DELAY_AFTER_PULL_CORD_S = {delay_after_pull_cord_s};
 const int TRAJECTORY_POINTS_COUNT = {num_points};
 
 struct Waypoint {{

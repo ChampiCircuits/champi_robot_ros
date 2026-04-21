@@ -470,7 +470,7 @@ void motionTick(uint32_t now_us) {
                 if (tirette_start_edge) {
                     buildWorkingTrajectory(g_candidate_team);
                     resetRunProgress();
-                    g_start_deadline_us = now_us + static_cast<uint32_t>(START_AFTER_DELAY_S * 1000000.0f);
+                    g_start_deadline_us = now_us + static_cast<uint32_t>(DELAY_AFTER_PULL_CORD_S * 1000000.0f);
                     g_state = MotionState::START_DELAY;
                 }
                 break;

@@ -3,7 +3,7 @@
 
 // Auto-generated configuration for PAMI 1
 const float GLOBAL_SPEED_MM_S = 200.0;
-const float START_AFTER_DELAY_S = 10.0;
+const float DELAY_AFTER_PULL_CORD_S = 10.0;
 const int TRAJECTORY_POINTS_COUNT = 5;
 
 struct Waypoint {

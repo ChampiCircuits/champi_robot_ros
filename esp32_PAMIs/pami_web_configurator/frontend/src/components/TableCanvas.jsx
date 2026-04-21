@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 
 const PAMI_COLORS = {
     1: '#FF0000', // Rouge
@@ -9,19 +9,22 @@ const PAMI_COLORS = {
     6: '#FF00FF'  // Magenta
 };
 
-const PAMI_LENGTH_MM = 150; // Rectangle 15cm x 8cm
-const PAMI_WIDTH_MM = 80;
+const PAMI_LENGTH_MM = 140;
+const PAMI_WIDTH_MM = 102;
 
 const TABLE_WIDTH_MM = 3000;
 const TABLE_HEIGHT_MM = 2000;
 const CANVAS_WIDTH = 900;
 const CANVAS_HEIGHT = 600;
+const GRID_SPACING_MM = 50;
 
 // Fonctions de conversions Pixels <-> Millimètres avec repère en bas à gauche
 const mmToPxX = (x_mm) => (x_mm / TABLE_WIDTH_MM) * CANVAS_WIDTH;
 const mmToPxY = (y_mm) => CANVAS_HEIGHT - ((y_mm / TABLE_HEIGHT_MM) * CANVAS_HEIGHT); // Inversion Y
 const pxToMmX = (x_px) => Math.round((x_px / CANVAS_WIDTH) * TABLE_WIDTH_MM);
 const pxToMmY = (y_px) => Math.round(((CANVAS_HEIGHT - y_px) / CANVAS_HEIGHT) * TABLE_HEIGHT_MM);
+const snapToGrid = (valueMm) => Math.round(valueMm / GRID_SPACING_MM) * GRID_SPACING_MM;
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 // Helpers pour la détection de collision via le théorème des axes séparateurs (SAT)
 const getOBBCorners = (x, y, w, h, angle) => {
@@ -104,7 +107,7 @@ const getPositionAtDistance = (pts, targetDist) => {
     return { ...pts[pts.length - 1], angle: Math.atan2(dy, dx) };
 };
 
-const TableCanvas = ({ selectedPami, waypoints, setWaypoints, allTrajectories, elapsedTime, isPlaying, speedMmPerS }) => {
+const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTrajectories, elapsedTime, isPlaying, speedMmPerS, delayAfterPullCordS, onControlsStateChange, onMousePositionChange }, ref) => {
     const canvasRef = useRef(null);
     const [redoStack, setRedoStack] = useState([]);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // En millimètres réels
@@ -125,6 +128,16 @@ const TableCanvas = ({ selectedPami, waypoints, setWaypoints, allTrajectories, e
             const render = () => {
                 ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
                 ctx.drawImage(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                // Grille de points tous les 5 cm, discrète pour garder la lisibilite des trajectoires.
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                for (let x = 0; x <= TABLE_WIDTH_MM; x += GRID_SPACING_MM) {
+                    for (let y = 0; y <= TABLE_HEIGHT_MM; y += GRID_SPACING_MM) {
+                        ctx.beginPath();
+                        ctx.arc(mmToPxX(x), mmToPxY(y), 1.2, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                }
 
                 const botPositions = {};
 
@@ -162,7 +175,8 @@ const TableCanvas = ({ selectedPami, waypoints, setWaypoints, allTrajectories, e
 
                     // 2. Calcul des positions courantes pour la simulation temporelle
                     if (isAnimActive) {
-                        const targetDist = elapsedTime * speedMmPerS;
+                        const effectiveElapsedTime = Math.max(0, elapsedTime - delayAfterPullCordS);
+                        const targetDist = effectiveElapsedTime * speedMmPerS;
                         const pos = getPositionAtDistance(pts, targetDist);
                         if (pos) {
                             botPositions[pamiId] = pos;
@@ -238,12 +252,14 @@ const TableCanvas = ({ selectedPami, waypoints, setWaypoints, allTrajectories, e
             
             render();
         };
-    }, [waypoints, allTrajectories, selectedPami, elapsedTime, isPlaying, speedMmPerS]);
+    }, [waypoints, allTrajectories, selectedPami, elapsedTime, isPlaying, speedMmPerS, delayAfterPullCordS]);
 
     const handleMouseMove = (e) => {
         const rect = canvasRef.current.getBoundingClientRect();
-        const x_px = e.clientX - rect.left;
-        const y_px = e.clientY - rect.top;
+        const scaleX = CANVAS_WIDTH / rect.width;
+        const scaleY = CANVAS_HEIGHT / rect.height;
+        const x_px = (e.clientX - rect.left) * scaleX;
+        const y_px = (e.clientY - rect.top) * scaleY;
         
         setMousePos({
             x: pxToMmX(x_px),
@@ -256,11 +272,13 @@ const TableCanvas = ({ selectedPami, waypoints, setWaypoints, allTrajectories, e
         if (isPlaying || elapsedTime > 0) return;
 
         const rect = canvasRef.current.getBoundingClientRect();
-        const x_px = e.clientX - rect.left;
-        const y_px = e.clientY - rect.top;
+        const scaleX = CANVAS_WIDTH / rect.width;
+        const scaleY = CANVAS_HEIGHT / rect.height;
+        const x_px = (e.clientX - rect.left) * scaleX;
+        const y_px = (e.clientY - rect.top) * scaleY;
         
-        const x_mm = pxToMmX(x_px);
-        const y_mm = pxToMmY(y_px);
+        const x_mm = clamp(snapToGrid(pxToMmX(x_px)), 0, TABLE_WIDTH_MM);
+        const y_mm = clamp(snapToGrid(pxToMmY(y_px)), 0, TABLE_HEIGHT_MM);
 
         const currentWaypoints = waypoints || [];
         setWaypoints([...currentWaypoints, { x: x_mm, y: y_mm }]);
@@ -293,41 +311,46 @@ const TableCanvas = ({ selectedPami, waypoints, setWaypoints, allTrajectories, e
         setRedoStack([]);
     };
 
+    useImperativeHandle(ref, () => ({
+        undo: handleUndo,
+        redo: handleRedo,
+        clear: handleClear,
+    }), [handleUndo, handleRedo, handleClear]);
+
+    useEffect(() => {
+        if (!onControlsStateChange) return;
+        onControlsStateChange({
+            canUndo: !!waypoints && waypoints.length > 0,
+            canRedo: redoStack.length > 0,
+            canClear: !!waypoints && waypoints.length > 0,
+            isEditLocked: isPlaying || elapsedTime > 0,
+        });
+    }, [onControlsStateChange, waypoints, redoStack, isPlaying, elapsedTime]);
+
+    useEffect(() => {
+        if (!onMousePositionChange) return;
+        onMousePositionChange(mousePos);
+    }, [onMousePositionChange, mousePos]);
+
     return (
-        <div>
-            <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={handleUndo} disabled={!waypoints || waypoints.length === 0 || isPlaying || elapsedTime > 0}>Undo</button>
-                    <button onClick={handleRedo} disabled={redoStack.length === 0 || isPlaying || elapsedTime > 0}>Redo</button>
-                    <button onClick={handleClear} disabled={!waypoints || waypoints.length === 0 || isPlaying || elapsedTime > 0}>Clear Trajectory</button>
-                </div>
-                <div style={{ fontFamily: 'monospace', fontSize: '15px', backgroundColor: '#eef', padding: '5px 10px', borderRadius: '5px', border: '1px solid #ccd' }}>
-                    <strong>X:</strong> {mousePos.x} mm | <strong>Y:</strong> {mousePos.y} mm
-                </div>
-            </div>
-            
-            <div style={{ marginBottom: '5px' }}>
-                <strong>Édition de la trajectoire pour le PAMI {selectedPami}</strong> 
-                {(isPlaying || elapsedTime > 0) && <span style={{ color: 'red', marginLeft: '10px' }}>(Mode Visualisation - Édition bloquée)</span>}
-            </div>
+        <div style={{ width: '100%' }}>
             <canvas 
                 ref={canvasRef} 
                 width={CANVAS_WIDTH} 
                 height={CANVAS_HEIGHT} 
                 style={{ 
                     border: '1px solid black', 
-                    cursor: (isPlaying || elapsedTime > 0) ? 'not-allowed' : 'crosshair' 
+                    cursor: (isPlaying || elapsedTime > 0) ? 'not-allowed' : 'crosshair',
+                    display: 'block',
+                    width: '100%',
+                    height: 'auto'
                 }}
                 onClick={handleCanvasClick}
                 onMouseMove={handleMouseMove}
             />
-            <div style={{ display: 'flex', gap: '15px', marginTop: '5px' }}>
-                <p>Mouvements PAMI {selectedPami} : {waypoints ? waypoints.length : 0}</p>
-                <p>Détection : {Object.keys(allTrajectories).length > 0 && elapsedTime > 0 ? <span style={{color: 'green'}}>Activée</span> : "En attente"}</p>
-            </div>
         </div>
     );
-};
+});
 
 export default TableCanvas;
 

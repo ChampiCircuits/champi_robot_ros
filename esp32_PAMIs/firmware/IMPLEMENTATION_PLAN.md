@@ -7,7 +7,7 @@ Also integrate:
 - HC-SR04 obstacle monitoring with pause/resume behavior.
 - Team selection switch (blue/yellow) with trajectory mirroring for yellow.
 - RGB LED status output for team and fault/waiting states.
-- Tirette start switch: motion starts only after tirette event, then waits `START_AFTER_DELAY_S`.
+- Tirette start switch: motion starts only after tirette event, then waits `DELAY_AFTER_PULL_CORD_S`.
 
 ## Scope and Constraints
 - Board/framework: ESP32-C3 + Arduino (`platformio.ini`).
@@ -16,7 +16,7 @@ Also integrate:
 - Use non-blocking control in `loop()` (no long `delay()` once motion starts).
 - Map size assumption: 3000 mm (X) x 2000 mm (Y).
 - Mirror line for yellow team: vertical line `x = 1500 mm`.
-- `START_AFTER_DELAY_S` is read from `include/generated_trajectory.h` and used as the pre-motion countdown after tirette start.
+- `DELAY_AFTER_PULL_CORD_S` is read from `include/generated_trajectory.h` and used as the pre-motion countdown after tirette start.
 
 ## Architecture (Code Organization)
 - `src/main.cpp`
@@ -27,7 +27,7 @@ Also integrate:
 - `src/motion.cpp`
   - Owns trajectory follower, kinematics, pulse generation, HC-SR04 gating, team transform, and safety state machine.
 - `include/generated_trajectory.h`
-  - Provides `GLOBAL_SPEED_MM_S`, `START_AFTER_DELAY_S`, `Waypoint`, `EXPERIMENT_TRAJECTORY`, `TRAJECTORY_POINTS_COUNT`.
+  - Provides `GLOBAL_SPEED_MM_S`, `DELAY_AFTER_PULL_CORD_S`, `Waypoint`, `EXPERIMENT_TRAJECTORY`, `TRAJECTORY_POINTS_COUNT`.
 
 ## Team Selection and Trajectory Transform
 - Team input is read from a physical `0/1` switch (blue/yellow).
@@ -45,7 +45,7 @@ Also integrate:
 1. Init: configure GPIO (steppers, HC-SR04, team switch, tirette, RGB LED), reset follower state (`segment_index = 0`, `done = false`, `fault = none`), set state to wait for tirette.
 2. Tick (fixed period, e.g. 5-10 ms):
    - While waiting for tirette, sample team switch continuously and update candidate team color on LED.
-   - On tirette start edge: latch current team, build working trajectory (mirrored or original), and start a countdown timer from `START_AFTER_DELAY_S`.
+  - On tirette start edge: latch current team, build working trajectory (mirrored or original), and start a countdown timer from `DELAY_AFTER_PULL_CORD_S`.
    - During countdown, hold motors stopped.
    - After countdown expires, enter `RUNNING`.
    - Sample HC-SR04 distance and update obstacle state with hysteresis.
@@ -64,7 +64,7 @@ Also integrate:
 
 ## State Machine and LED Policy
 - `WAITING_TIRETTE`: robot not started yet; team can still change from switch; LED = orange.
-- `START_DELAY`: tirette triggered, team latched, waiting `START_AFTER_DELAY_S`; LED = latched team color.
+- `START_DELAY`: tirette triggered, team latched, waiting `DELAY_AFTER_PULL_CORD_S`; LED = latched team color.
 - `RUNNING`: follower active; LED = team color (blue or yellow).
 - `PAUSED_OBSTACLE`: obstacle within stop threshold; LED stays team color.
 - `FAULT`: invalid trajectory/sensor timeout/unexpected condition; LED = red and motors stopped.
@@ -82,7 +82,7 @@ Transitions:
 | Current | Event | Guard | Next | Actions |
 |---|---|---|---|---|
 | `WAITING_TIRETTE` | `EV_TICK` | no tirette edge | `WAITING_TIRETTE` | sample team switch, update candidate team, LED orange, motors off |
-| `WAITING_TIRETTE` | `EV_TIRETTE_START_EDGE` | team value valid | `START_DELAY` | latch team, build working trajectory (mirror if yellow), set `start_deadline_us = now + START_AFTER_DELAY_S`, LED team color, motors off |
+| `WAITING_TIRETTE` | `EV_TIRETTE_START_EDGE` | team value valid | `START_DELAY` | latch team, build working trajectory (mirror if yellow), set `start_deadline_us = now + DELAY_AFTER_PULL_CORD_S`, LED team color, motors off |
 | `START_DELAY` | `EV_TICK` | `now < start_deadline_us` | `START_DELAY` | keep motors off, LED team color |
 | `START_DELAY` | `EV_TICK` | `now >= start_deadline_us` | `RUNNING` | enable follower execution from segment 0 |
 | `RUNNING` | `EV_OBSTACLE_NEAR` | true | `PAUSED_OBSTACLE` | command zero wheel speed immediately |
@@ -145,7 +145,7 @@ Add platform I/O and thresholds:
    - Implement LED driver and verify pre-start color behavior.
 3. **M3 - Tirette Start + Delay**
    - Detect tirette start edge.
-   - Latch team at start and enforce `START_AFTER_DELAY_S` before motion.
+  - Latch team at start and enforce `DELAY_AFTER_PULL_CORD_S` before motion.
 4. **M4 - Straight Segment Execution**
    - Execute one segment `P0 -> P1` using open-loop speed and distance timing.
    - Confirm stop behavior and direction switching.
@@ -172,5 +172,5 @@ Add platform I/O and thresholds:
 - Keep `main.cpp` orchestration-only; all math/hardware logic belongs to `motion.cpp`.
 - If `Waypoint` schema changes, update trajectory consumers and follower structs in the same commit.
 - Keep team mirroring and obstacle policy in one state machine to avoid contradictory motor commands.
-- Do not command any wheel motion before tirette start and `START_AFTER_DELAY_S` expiration.
+- Do not command any wheel motion before tirette start and `DELAY_AFTER_PULL_CORD_S` expiration.
 

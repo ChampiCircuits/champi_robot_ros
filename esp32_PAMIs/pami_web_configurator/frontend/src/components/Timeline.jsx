@@ -39,8 +39,7 @@ const Timeline = ({ elapsedTime, setElapsedTime, maxTime, isPlaying, setIsPlayin
     };
 
     return (
-        <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px', backgroundColor: '#f9f9f9' }}>
-            <h3 style={{ marginTop: 0 }}>Visualisation & Multijoueur</h3>
+        <div style={{  padding: '15px', border: '1px solid #ccc', borderRadius: '5px', backgroundColor: '#f9f9f9' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 <button onClick={handlePlayPause} style={{ padding: '8px 15px', cursor: 'pointer', minWidth: '80px' }}>
                     {isPlaying ? '⏸ Pause' : '▶ Play'}
