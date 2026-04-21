@@ -46,10 +46,13 @@ void setServoInContinousRotation(const uint8_t servo_id)
 void initEveryThing()
 {
     LOG_INFO("act", "Beginning actuators initializing...");
-    osDelay(3000);
+    // osDelay(3000);
     SCServosApp_Init(); // Reminder: blocking until the servos are found
     setServoInContinousRotation(BoxesSorter::BOTTOM_PUSHER_SERVO_ID);
     setServoInContinousRotation(BoxesSorter::TOP_PUSHER_SERVO_ID);
+
+    // DEBUG: print raw encoder position for a few seconds to check stability
+    // devices::scs_servos::print_position_loop(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 300000);
 
     // raiseThermometerServo();
     // liftAndClamp.initialize();

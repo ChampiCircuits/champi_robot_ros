@@ -14,8 +14,8 @@ namespace devices
 
         uint8_t ids_servos[N_SERVOS] = {
             // BoxesSorter::TOP_PUSHER_SERVO_ID,
-            BoxesSorter::BOTTOM_PUSHER_SERVO_ID,
-            // BoxesSorter::TRAPDOOR_SERVO_ID,
+            // BoxesSorter::BOTTOM_PUSHER_SERVO_ID,
+            BoxesSorter::TRAPDOOR_SERVO_ID,
             // BoxesSorter::EXIT_RAMP_SERVO_ID,
             // LiftAndClamp::CLAMP_SERVO_ID
         };
@@ -31,12 +31,14 @@ namespace devices
 
         void find_ids(uint8_t from_id, uint8_t to_id)
         {
+            LOG_INFO("scs", "Finding servos IDs from %d to %d...", from_id, to_id);
             for (uint8_t id=from_id; id<=to_id; id++)
             {
+                LOG_INFO("scs", "Test servo %d", id);
                 if (servos.ReadPos(id) != -1)
                 {
                 	osDelay(100);
-                    LOG_INFO("scs", "Found servo: %d, pos = %d", id, servos.ReadPos(id));
+                    LOG_INFO("scs", "########### Found servo: %d, pos = %d", id, servos.ReadPos(id));
                     osDelay(100);
                 }
             }
@@ -96,15 +98,16 @@ namespace devices
 
         void test_angle(uint8_t id, float angle)
         {
-            int pos = servos.ReadPos(id);
+            const int pos = servos.ReadPos(id);
+            LOG_INFO("scs", "Testing servo %d: current pos = %f, target angle = %.1f", id, pos*UNIT_TO_DEG, angle);
             if (pos == -1)
             {
                 LOG_ERROR("scs", "Error reading servo number %d", id);
                 return;
             }
-            set_angle(id, angle, 1000);
+            set_angle(id, angle, 500);
             osDelay(1500);
-            set_angle(id, pos * UNIT_TO_DEG, 1000);
+            set_angle(id, pos * UNIT_TO_DEG, 500);
             osDelay(1500);
 
         }
@@ -119,18 +122,51 @@ namespace devices
             return servos.ReadPos(id);
         }
 
-        bool homingByEndSwitch(uint8_t ID, int speed, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
+        void print_position_loop(uint8_t id, int durationMs)
+        {
+            LOG_INFO("scs", "=== Position test for servo %d, %d ms ===", id, durationMs);
+            int elapsed = 0;
+            while (elapsed < durationMs)
+            {
+                int pos = servos.ReadPos(id);
+                LOG_INFO("scs", "Servo %d pos = %d", id, pos);
+                osDelay(50);
+                elapsed += 50;
+            }
+            LOG_INFO("scs", "=== End position test ===");
+        }
+
+        void sweep_angle_test(uint8_t id, float stepDeg, int stepCount, int delayMs)
+        {
+            float currentAngle = read_angle(id);
+            int rawPos = servos.ReadPos(id);
+            LOG_INFO("scs", "=== Sweep test servo %d: start angle=%.1f, raw=%d, step=%.1f, count=%d ===",
+                     id, currentAngle, rawPos, stepDeg, stepCount);
+
+            for (int i = 0; i < stepCount; i++)
+            {
+                currentAngle += stepDeg;
+                set_angle_async(id, currentAngle, delayMs);
+                osDelay(delayMs);
+                rawPos = servos.ReadPos(id);
+                LOG_INFO("scs", "Servo %d: target=%.1f deg, raw pos=%d", id, currentAngle, rawPos);
+            }
+            LOG_INFO("scs", "=== End sweep test ===");
+        }
+
+        bool homingByEndSwitch(uint8_t ID, int speed, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, bool move_backward_first=false)
         {
             // If already on the switch, back off first
             LOG_INFO("scs", "Homing servo %d by end switch on GPIO %p pin %d", ID, GPIOx, GPIO_Pin);
             // going forward a bit
             // if (HAL_GPIO_ReadPin(GPIOx, GPIO_Pin) == GPIO_PIN_RESET)
+            if (move_backward_first)
             {
                 LOG_INFO("scs", "Homing servo %d: backing off a bit...", ID);
                 set_speed(ID, -speed);
                 while (HAL_GPIO_ReadPin(GPIOx, GPIO_Pin) == GPIO_PIN_RESET)
                     osDelay(10);
-                osDelay(1000);
+                osDelay(500);
                 set_speed(ID, 0);
                 osDelay(100);
             }
@@ -159,8 +195,11 @@ int SCServosApp_Init()
 {
     LOG_INFO("scs", "Initializing servos... (blocking until all servos are found)");
     servos = SCServos(&huart10);
-    // find_ids(0, 16);
-    //test_angle(ID_SERVO_Y_FRONT, 270);
+    // find_ids(0, 24);
+    // osDelay(10000000);
+    // test_angle(17, 200);
+    // sweep_angle_test(17, 270, 10, 500);
+    osDelay(10000000);
 
     init_successful = false;
     while (test() == -1)

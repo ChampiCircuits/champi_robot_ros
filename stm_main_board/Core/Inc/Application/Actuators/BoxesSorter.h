@@ -33,7 +33,7 @@ public:
 
     static constexpr int TOP_PUSHER_SERVO_ID = 2; // TODO
     static constexpr int BOTTOM_PUSHER_SERVO_ID = 12; // ID ok
-    static constexpr int TRAPDOOR_SERVO_ID = 4; // TODO
+    static constexpr int TRAPDOOR_SERVO_ID = 17; // ID ok
     static constexpr int EXIT_RAMP_SERVO_ID = 5; // TODO
 
 private:
@@ -55,7 +55,7 @@ private:
     // | OUT | TOBOGGAN - STRAIGHT HOLE - READY |
     static constexpr float BOTTOM_PUSHER_SERVO_SPEED  = 500;  // [0,1023]
     static constexpr float BOTTOM_PUSHER_SERVO_POSITION_READY  = -125;  // steps
-    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_OUT  = 1500; // steps // TODO calibrate!
+    static constexpr float BOTTOM_PUSHER_SERVO_POSITION_OUT  = 2550; // steps
     float bottomPusherPosition = BOTTOM_PUSHER_SERVO_POSITION_READY;
     GPIO_TypeDef* BOTTOM_END_SWITCH_GPIO_Port = D6_GPIO_Port;
     static constexpr auto BOTTOM_END_SWITCH_GPIO_Pin = D6_Pin;

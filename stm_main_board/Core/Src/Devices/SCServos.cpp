@@ -124,6 +124,8 @@ int SCServos::ReadPos(uint8_t ID)
     int size;
     int pos=0;
 
+    xSemaphoreTake((QueueHandle_t)mutex_serial, portMAX_DELAY);
+
     fflushRevBuf();
     buffer[0] = startByte;
     buffer[1] = startByte;
@@ -133,10 +135,26 @@ int SCServos::ReadPos(uint8_t ID)
     buffer[5] = P_PRESENT_POSITION_L;
     buffer[6] = 2;
     buffer[7] = (~(ID + 4 + INST_READ + P_PRESENT_POSITION_L + 2)) & 0xFF;
-    write_bytes(buffer, 8);
+    for (int i = 0; i < 8; i++) {
+        write_byte(buffer[i]);
+    }
     size = ReadBuf(8, buf);
-    if(size<8)
+
+    xSemaphoreGive((QueueHandle_t)mutex_serial);
+
+    if(size < 8)
         return -1;
+
+    // Validate response: header (buf[0]=0xFF, buf[1]=0xFF), ID, length, checksum
+    if(buf[0] != 0xFF || buf[1] != 0xFF)
+        return -1;
+    if(buf[2] != ID)
+        return -1;
+    // buf[3] = length (should be 4: 1 err + 2 data + 1 checksum... actually length=nData+2)
+    uint8_t checksum = buf[2] + buf[3] + buf[4] + buf[5] + buf[6];
+    if((uint8_t)(~checksum) != buf[7])
+        return -1;
+
     pos = buf[5];
     pos <<= 8;
     pos |= buf[6];
@@ -393,6 +411,8 @@ int SCServos::WriteSpeed(uint8_t ID, int velocity, uint8_t ReturnLevel)
     uint8_t velL =  vel>>8;
     uint8_t velH =  vel&0xff;
 
+    xSemaphoreTake((QueueHandle_t)mutex_serial, portMAX_DELAY);
+
     fflushRevBuf();
     buffer[0] = startByte;
     buffer[1] = startByte;
@@ -403,10 +423,16 @@ int SCServos::WriteSpeed(uint8_t ID, int velocity, uint8_t ReturnLevel)
     buffer[6] = velL;
     buffer[7] = velH;
     buffer[8] = (~(ID + messageLength + INST_WRITE + P_GOAL_SPEED_L + velL + velH))&0xFF;
-    write_bytes(buffer, 9);
+    for (int i = 0; i < 9; i++) {
+        write_byte(buffer[i]);
+    }
+
+    int ret = 0;
     if(ID != 16 && ReturnLevel==2)
-        return ReadBuf(6);
-    return 0;
+        ret = ReadBuf(6);
+
+    xSemaphoreGive((QueueHandle_t)mutex_serial);
+    return ret;
 }
 
 

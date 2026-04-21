@@ -29,7 +29,9 @@ namespace devices
         // for free rotation servos only
         void set_speed(uint8_t ID, int speed);
         int read_position_raw(uint8_t id); // returns raw encoder value (0-1023)
-        bool homingByEndSwitch(uint8_t ID, int speed, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
+        void print_position_loop(uint8_t id, int durationMs); // prints position every 50ms for durationMs
+        void sweep_angle_test(uint8_t id, float stepDeg, int stepCount, int delayMs);
+        bool homingByEndSwitch(uint8_t ID, int speed, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, bool move_backward_first);
     }
 }
 

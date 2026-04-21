@@ -60,7 +60,7 @@ void BoxesSorter::grabAndSort2BoxesFromLift()
 void BoxesSorter::push2BoxesOut()
 {
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_OUT);
-    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -BOTTOM_PUSHER_SERVO_SPEED, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin);
+    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -BOTTOM_PUSHER_SERVO_SPEED, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin, false);
     bottomPusherPosition = 0;
     osDelay(1000);
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY); // si on fait pas ca, il faut écrire à la main la position
@@ -79,9 +79,9 @@ void BoxesSorter::initialize()
     // topPusherPosition = 0;
     // moveBottomPusherToPosition(TOP_PUSHER_SERVO_POSITION_READY);
     // Move bottom pusher in
-    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -500, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin);
+    devices::scs_servos::homingByEndSwitch(BOTTOM_PUSHER_SERVO_ID, -500, BOTTOM_END_SWITCH_GPIO_Port, BOTTOM_END_SWITCH_GPIO_Pin, true);
     bottomPusherPosition = 0;
-    osDelay(1000);
+    osDelay(500);
     // move pusher a bit more inside (end switch is too much inside)
     moveBottomPusherToPosition(BOTTOM_PUSHER_SERVO_POSITION_READY);
 
@@ -130,15 +130,31 @@ void BoxesSorter::_movePusherToPosition(int servoID, int speed, float target, fl
     // Start motor
     devices::scs_servos::set_speed(servoID, speed * direction);
 
+    // SCS15 encoder covers ~200° of 360° rotation (0-1023).
+    // The remaining ~160° is a "dead zone" where the encoder saturates at 0 or ~1022.
+    // During the dead zone the motor is still spinning, so we estimate steps from time.
+    // Measured: ~1020 readable steps per revolution, dead zone ≈ DEAD_ZONE_STEPS.
+    constexpr int DEAD_ZONE_NEAR_MIN = 5;          // encoder stuck near 0
+    constexpr int DEAD_ZONE_NEAR_MAX = 1018;       // encoder stuck near 1023
+    constexpr int DEAD_ZONE_STUCK_THRESHOLD_MS = 50; // if stuck this long, we're in dead zone
+    constexpr float STEPS_PER_MS_AT_SPEED_500 = 1.7f; // calibrate: encoder steps per ms at speed 500 TODO
+
     float totalStepsMoved = 0.0f;
     int prevPos = startPos;
-    constexpr int TIMEOUT_MS = 10000;
+    constexpr int TIMEOUT_MS = 15000;
+    constexpr int STALL_TIMEOUT_MS = 1000;
     int elapsedMs = 0;
+    int stuckMs = 0;       // time encoder hasn't changed
+    int stuckPos = -1;     // position where we got stuck
+    bool inDeadZone = false;
     int readErrors = 0;
+
+    // Speed factor for dead zone estimation
+    float stepsPerMs = STEPS_PER_MS_AT_SPEED_500 * (static_cast<float>(speed) / 500.0f);
 
     while (totalStepsMoved < stepsNeeded)
     {
-        osDelay(5); // poll at ~200 Hz
+        osDelay(5);
         elapsedMs += 5;
 
         if (elapsedMs >= TIMEOUT_MS) {
@@ -157,18 +173,59 @@ void BoxesSorter::_movePusherToPosition(int servoID, int speed, float target, fl
         }
         readErrors = 0;
 
-        // Compute delta with wrap-around handling
         int delta = nowPos - prevPos;
+        int absDelta = abs(delta);
 
-        if (delta > ENCODER_RANGE / 2)
-            delta -= ENCODER_RANGE;
-        else if (delta < -ENCODER_RANGE / 2)
-            delta += ENCODER_RANGE;
+        bool isNearEdge = (nowPos <= DEAD_ZONE_NEAR_MIN || nowPos >= DEAD_ZONE_NEAR_MAX);
 
-        totalStepsMoved += fabsf(static_cast<float>(delta));
+        if (absDelta <= 1 && isNearEdge) {
+            // Encoder is stuck near 0 or 1022 — possibly in dead zone
+            stuckMs += 5;
 
-        LOG_INFO_THROTTLE("sorter", 100, "Servo %d: nowPos=%d, delta=%d, totalMoved=%.0f/%.0f",
-                          servoID, nowPos, delta, totalStepsMoved, stepsNeeded);
+            if (stuckMs >= DEAD_ZONE_STUCK_THRESHOLD_MS && !inDeadZone) {
+                inDeadZone = true;
+                stuckPos = nowPos;
+                LOG_INFO("sorter", "Servo %d: entered dead zone at pos %d (total=%.0f)", servoID, nowPos, totalStepsMoved);
+            }
+
+            if (inDeadZone) {
+                // Estimate movement from time
+                totalStepsMoved += stepsPerMs * 5.0f;
+            }
+        } else if (inDeadZone) {
+            // Large jump while exiting dead zone — ignore the delta value (it's garbage)
+            if (absDelta > 50) {
+                // Encoder jumped to a new region after dead zone, don't count this delta
+                LOG_INFO("sorter", "Servo %d: exiting dead zone, jump to %d (ignoring delta %d)", servoID, nowPos, delta);
+            } else {
+                // Small delta, we're back in readable range
+                totalStepsMoved += static_cast<float>(absDelta);
+            }
+            inDeadZone = false;
+            stuckMs = 0;
+            LOG_INFO("sorter", "Servo %d: exited dead zone at pos %d (total=%.0f)", servoID, nowPos, totalStepsMoved);
+        } else {
+            // Normal tracking
+            stuckMs = 0;
+
+            if (absDelta > 0 && absDelta < 50) {
+                totalStepsMoved += static_cast<float>(absDelta);
+            } else if (absDelta >= 50) {
+                // Large jump (garbage read or dead zone transition) — ignore
+                LOG_INFO("sorter", "Servo %d: ignoring large delta %d (prev=%d, now=%d)", servoID, delta, prevPos, nowPos);
+            }
+            // absDelta == 0 with no edge: could be real stall
+            if (absDelta == 0 && !isNearEdge) {
+                stuckMs += 5;
+                if (stuckMs >= STALL_TIMEOUT_MS) {
+                    LOG_ERROR("sorter", "Servo %d stalled at pos %d! Moved %.0f/%.0f steps", servoID, nowPos, totalStepsMoved, stepsNeeded);
+                    break;
+                }
+            }
+        }
+
+        LOG_INFO_THROTTLE("sorter", 1, "Servo %d: nowPos=%d, totalMoved=%.0f/%.0f, dz=%d",
+                          servoID, nowPos, totalStepsMoved, stepsNeeded, inDeadZone ? 1 : 0);
 
         prevPos = nowPos;
     }
