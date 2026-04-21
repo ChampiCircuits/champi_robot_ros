@@ -24,6 +24,7 @@ class Waypoint(BaseModel):
 class ConfigData(BaseModel):
     trajectories: Dict[str, List[Waypoint]]
     globalSpeed: float
+    angularSpeedDegS: float
     delayAfterPullCordS: float
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "data", "config.json")
@@ -33,6 +34,7 @@ def load_config():
     default_config = {
         "trajectories": {str(i): [] for i in range(1, 7)},
         "globalSpeed": 10,
+        "angularSpeedDegS": 70,
         "delayAfterPullCordS": 3,
     }
 

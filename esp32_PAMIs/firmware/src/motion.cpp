@@ -135,16 +135,20 @@ bool startNextSegment(const uint32_t now_us) {
         g_pending_drive_duration_us = static_cast<uint32_t>(drive_duration_s * 1000000.0f);
 
         if (abs_delta >= MIN_TURN_RAD) {
-            constexpr float turn_omega_rad_s = (2.0f * TURN_WHEEL_SPEED_MM_S) / ENTRAXE_MM;
+            const float turn_omega_rad_s = (ANGULAR_SPEED_RAD_S > 0.0f)
+                                           ? ANGULAR_SPEED_RAD_S
+                                           : (2.0f * TURN_WHEEL_SPEED_MM_S) / ENTRAXE_MM;
             const float turn_duration_s = abs_delta / turn_omega_rad_s;
             g_phase_deadline_us = now_us + static_cast<uint32_t>(turn_duration_s * 1000000.0f);
 
+            const float turn_wheel_speed_mm_s = turn_omega_rad_s * ENTRAXE_MM * 0.5f;
+
             if (delta_heading > 0.0f) {
-                g_cmd_left_mm_s = -TURN_WHEEL_SPEED_MM_S;
-                g_cmd_right_mm_s = TURN_WHEEL_SPEED_MM_S;
+                g_cmd_left_mm_s = -turn_wheel_speed_mm_s;
+                g_cmd_right_mm_s = turn_wheel_speed_mm_s;
             } else {
-                g_cmd_left_mm_s = TURN_WHEEL_SPEED_MM_S;
-                g_cmd_right_mm_s = -TURN_WHEEL_SPEED_MM_S;
+                g_cmd_left_mm_s = turn_wheel_speed_mm_s;
+                g_cmd_right_mm_s = -turn_wheel_speed_mm_s;
             }
             g_segment_phase = SegmentPhase::TURNING;
         } else {
@@ -260,7 +264,9 @@ RemainingEstimate estimateCurrentSegmentRemaining(uint32_t now_us) {
         float remaining_turn_rad = total_turn_rad;
         if (g_phase_deadline_us != 0 && !timeReachedUs(effective_now_us, g_phase_deadline_us)) {
             const float remaining_turn_s = static_cast<float>(g_phase_deadline_us - effective_now_us) / 1000000.0f;
-            const float turn_omega_rad_s = (2.0f * TURN_WHEEL_SPEED_MM_S) / ENTRAXE_MM;
+            const float turn_omega_rad_s = (ANGULAR_SPEED_RAD_S > 0.0f)
+                                           ? ANGULAR_SPEED_RAD_S
+                                           : (2.0f * TURN_WHEEL_SPEED_MM_S) / ENTRAXE_MM;
             remaining_turn_rad = remaining_turn_s * turn_omega_rad_s;
             if (remaining_turn_rad > total_turn_rad) {
                 remaining_turn_rad = total_turn_rad;

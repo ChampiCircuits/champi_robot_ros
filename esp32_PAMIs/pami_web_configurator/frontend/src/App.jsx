@@ -19,10 +19,34 @@ const calculateWaitTime = (pts) => {
   return pts.reduce((sum, pt) => sum + Math.max(0, Number(pt.waitS || 0)), 0);
 };
 
-const calculateTrajectoryDuration = (pts, speedMmPerS) => {
+const normalizeAngle = (a) => {
+  let angle = a;
+  while (angle > Math.PI) angle -= 2 * Math.PI;
+  while (angle < -Math.PI) angle += 2 * Math.PI;
+  return angle;
+};
+
+const calculateTrajectoryDuration = (pts, speedMmPerS, angularSpeedRadS) => {
   if (!pts || pts.length === 0) return 0;
+
+  const waitTime = calculateWaitTime(pts);
   const moveTime = speedMmPerS > 0 ? calculateDistance(pts) / speedMmPerS : 0;
-  return moveTime + calculateWaitTime(pts);
+  if (pts.length < 2 || angularSpeedRadS <= 0) {
+    return waitTime + moveTime;
+  }
+
+  let turnTime = 0;
+  let currentHeading = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const nextHeading = Math.atan2(pts[i + 1].y - pts[i].y, pts[i + 1].x - pts[i].x);
+    const delta = Math.abs(normalizeAngle(nextHeading - currentHeading));
+    if (delta >= 0.02) {
+      turnTime += delta / angularSpeedRadS;
+    }
+    currentHeading = nextHeading;
+  }
+
+  return waitTime + moveTime + turnTime;
 };
 
 function App() {
@@ -33,6 +57,7 @@ function App() {
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
   const [isPlaying, setIsPlaying] = useState(false);
   const [globalSpeed, setGlobalSpeed] = useState(10); // in cm/s
+  const [angularSpeedDegS, setAngularSpeedDegS] = useState(70); // in deg/s
   const [delayAfterPullCordS, setDelayAfterPullCordS] = useState(3); // in seconds
   const [isSaving, setIsSaving] = useState(false);
   const tableCanvasRef = useRef(null);
@@ -51,6 +76,7 @@ function App() {
       .then(data => {
         if (data.trajectories) setTrajectories(data.trajectories);
         if (data.globalSpeed !== undefined) setGlobalSpeed(data.globalSpeed);
+        if (data.angularSpeedDegS !== undefined) setAngularSpeedDegS(data.angularSpeedDegS);
         if (data.delayAfterPullCordS !== undefined) setDelayAfterPullCordS(data.delayAfterPullCordS);
       })
       .catch(err => console.error("Could not load backend config", err));
@@ -61,7 +87,7 @@ function App() {
     fetch(`${API_URL}/config`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trajectories, globalSpeed, delayAfterPullCordS })
+      body: JSON.stringify({ trajectories, globalSpeed, angularSpeedDegS, delayAfterPullCordS })
     })
     .then(res => res.json())
     .then(() => {
@@ -91,13 +117,14 @@ function App() {
   };
 
   const speedMmPerS = globalSpeed * 10;
+  const angularSpeedRadS = (angularSpeedDegS * Math.PI) / 180;
   const maxTrajectoryDuration = React.useMemo(() => {
     let maxDuration = 0;
     Object.values(trajectories).forEach((pts) => {
-      maxDuration = Math.max(maxDuration, calculateTrajectoryDuration(pts, speedMmPerS));
+      maxDuration = Math.max(maxDuration, calculateTrajectoryDuration(pts, speedMmPerS, angularSpeedRadS));
     });
     return maxDuration;
-  }, [trajectories, speedMmPerS]);
+  }, [trajectories, speedMmPerS, angularSpeedRadS]);
   const maxTime = maxTrajectoryDuration > 0 ? delayAfterPullCordS + maxTrajectoryDuration : 0;
 
   const handleUpdateTrajectory = (pamiId, waypoints) => {
@@ -177,7 +204,7 @@ function App() {
               </select>
             </div>
             <div style={{ marginTop: '4px' }}>
-              <label style={{ display: 'block', marginBottom: '6px' }}><strong>Vitesse globale :</strong></label>
+              <label style={{ display: 'block', marginBottom: '6px' }}><strong>Vitesse linéaire globale :</strong></label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <input
                   type="number"
@@ -190,6 +217,20 @@ function App() {
               </div>
             </div>
             <div style={{ marginTop: '4px' }}>
+              <label style={{ display: 'block', marginBottom: '6px' }}><strong>Vitesse angulaire globale :</strong></label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="number"
+                  value={angularSpeedDegS}
+                  onChange={(e) => setAngularSpeedDegS(Number(e.target.value))}
+                  min="1"
+                  step="1"
+                  style={{ width: '100%', padding: '6px', fontSize: '14px' }}
+                />
+                <span style={{ fontSize: '12px' }}>deg/s</span>
+              </div>
+            </div>
+                        <div style={{ marginTop: '4px' }}>
               <label style={{ display: 'block', marginBottom: '6px' }}><strong>Délai après tirette :</strong></label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <input
@@ -211,7 +252,7 @@ function App() {
               Mouvements PAMI {selectedPami} : {currentMovementCount}
             </div>
             <div style={{ marginTop: '8px', padding: '8px', border: '1px solid #ccd', borderRadius: '6px', backgroundColor: '#f7f9ff' }}>
-              <div style={{ marginBottom: '6px' }}><strong>Point selectionne</strong></div>
+              <div style={{ marginBottom: '6px' }}><strong>Point sélectionné</strong></div>
               {selectedWaypoint ? (
                 <>
                   <div style={{ fontSize: '12px', marginBottom: '6px' }}>
@@ -249,6 +290,7 @@ function App() {
               elapsedTime={elapsedTime}
               isPlaying={isPlaying}
               speedMmPerS={speedMmPerS}
+              angularSpeedDegS={angularSpeedDegS}
               delayAfterPullCordS={delayAfterPullCordS}
               selectedWaypointIndex={selectedWaypointIndex}
               onSelectWaypoint={setSelectedWaypointIndex}

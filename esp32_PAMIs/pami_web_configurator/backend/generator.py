@@ -1,8 +1,10 @@
 import os
+import math
 
 def generate_cpp_code(pami_id, config_data):
     trajectories = config_data.get("trajectories", {})
     speed = config_data.get("globalSpeed", 10.0)
+    angular_speed_deg_s = config_data.get("angularSpeedDegS", 70.0)
     delay_after_pull_cord_s = config_data.get("delayAfterPullCordS", 3.0)
 
     pami_id_str = str(pami_id)
@@ -15,6 +17,7 @@ def generate_cpp_code(pami_id, config_data):
 
 // Auto-generated configuration for PAMI {pami_id}
 const float GLOBAL_SPEED_MM_S = {speed * 10.0};
+const float ANGULAR_SPEED_RAD_S = {angular_speed_deg_s * math.pi / 180.0};
 const float DELAY_AFTER_PULL_CORD_S = {delay_after_pull_cord_s};
 const int TRAJECTORY_POINTS_COUNT = {num_points};
 

@@ -107,35 +107,75 @@ const getPositionAtDistance = (pts, targetDist) => {
     return { ...pts[pts.length - 1], angle: Math.atan2(dy, dx) };
 };
 
-const getDistanceAtTimeWithWaits = (pts, elapsedS, speedMmPerS) => {
-    if (!pts || pts.length === 0 || speedMmPerS <= 0) return 0;
+const normalizeAngle = (angle) => {
+    let a = angle;
+    while (a > Math.PI) a -= 2 * Math.PI;
+    while (a < -Math.PI) a += 2 * Math.PI;
+    return a;
+};
+
+const getPoseAtTimeWithWaitsAndTurns = (pts, elapsedS, speedMmPerS, angularSpeedRadS) => {
+    if (!pts || pts.length === 0) return null;
+    if (pts.length === 1) return { x: pts[0].x, y: pts[0].y, angle: 0 };
+
     let t = Math.max(0, elapsedS);
-    let dist = 0;
+    let currentHeading = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+    const minTurnRad = 0.02;
 
     const waitAtPoint0 = Math.max(0, Number(pts[0].waitS || 0));
-    if (t <= waitAtPoint0) return 0;
+    if (t <= waitAtPoint0) {
+        return { x: pts[0].x, y: pts[0].y, angle: currentHeading };
+    }
     t -= waitAtPoint0;
 
-    for (let i = 1; i < pts.length; i++) {
-        const dx = pts[i].x - pts[i - 1].x;
-        const dy = pts[i].y - pts[i - 1].y;
-        const segDist = Math.hypot(dx, dy);
-        const segTime = segDist / speedMmPerS;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const from = pts[i];
+        const to = pts[i + 1];
 
-        if (t <= segTime) return dist + (t * speedMmPerS);
+        const targetHeading = Math.atan2(to.y - from.y, to.x - from.x);
+        const deltaHeading = normalizeAngle(targetHeading - currentHeading);
+        const absDelta = Math.abs(deltaHeading);
+
+        if (i > 0 && absDelta >= minTurnRad && angularSpeedRadS > 0) {
+            const turnTime = absDelta / angularSpeedRadS;
+            if (t <= turnTime) {
+                const sign = deltaHeading >= 0 ? 1 : -1;
+                const partialAngle = currentHeading + sign * angularSpeedRadS * t;
+                return { x: from.x, y: from.y, angle: partialAngle };
+            }
+            t -= turnTime;
+        }
+
+        currentHeading = targetHeading;
+
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const segDist = Math.hypot(dx, dy);
+        const segTime = speedMmPerS > 0 ? segDist / speedMmPerS : Number.POSITIVE_INFINITY;
+
+        if (t <= segTime) {
+            const ratio = segTime > 0 && Number.isFinite(segTime) ? t / segTime : 0;
+            return {
+                x: from.x + dx * ratio,
+                y: from.y + dy * ratio,
+                angle: currentHeading,
+            };
+        }
 
         t -= segTime;
-        dist += segDist;
 
-        const waitAtPoint = Math.max(0, Number(pts[i].waitS || 0));
-        if (t <= waitAtPoint) return dist;
+        const waitAtPoint = Math.max(0, Number(to.waitS || 0));
+        if (t <= waitAtPoint) {
+            return { x: to.x, y: to.y, angle: currentHeading };
+        }
         t -= waitAtPoint;
     }
 
-    return dist;
+    const n = pts.length;
+    return { x: pts[n - 1].x, y: pts[n - 1].y, angle: currentHeading };
 };
 
-const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTrajectories, elapsedTime, isPlaying, speedMmPerS, delayAfterPullCordS, selectedWaypointIndex, onSelectWaypoint, onControlsStateChange, onMousePositionChange }, ref) => {
+const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTrajectories, elapsedTime, isPlaying, speedMmPerS, angularSpeedDegS, delayAfterPullCordS, selectedWaypointIndex, onSelectWaypoint, onControlsStateChange, onMousePositionChange }, ref) => {
     const canvasRef = useRef(null);
     const [redoStack, setRedoStack] = useState([]);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // En millimètres réels
@@ -225,8 +265,12 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
                     // 2. Calcul des positions courantes pour la simulation temporelle
                     if (isAnimActive) {
                         const effectiveElapsedTime = Math.max(0, elapsedTime - delayAfterPullCordS);
-                        const targetDist = getDistanceAtTimeWithWaits(pts, effectiveElapsedTime, speedMmPerS);
-                        const pos = getPositionAtDistance(pts, targetDist);
+                        const pos = getPoseAtTimeWithWaitsAndTurns(
+                            pts,
+                            effectiveElapsedTime,
+                            speedMmPerS,
+                            (angularSpeedDegS * Math.PI) / 180
+                        );
                         if (pos) {
                             botPositions[pamiId] = pos;
                         }
@@ -301,7 +345,7 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
             
             render();
         };
-    }, [waypoints, allTrajectories, selectedPami, selectedWaypointIndex, elapsedTime, isPlaying, speedMmPerS, delayAfterPullCordS]);
+    }, [waypoints, allTrajectories, selectedPami, selectedWaypointIndex, elapsedTime, isPlaying, speedMmPerS, angularSpeedDegS, delayAfterPullCordS]);
 
     const handleMouseMove = (e) => {
         const rect = canvasRef.current.getBoundingClientRect();
