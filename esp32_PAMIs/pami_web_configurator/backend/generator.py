@@ -21,16 +21,18 @@ const int TRAJECTORY_POINTS_COUNT = {num_points};
 struct Waypoint {{
     float x;
     float y;
+    float waitS;
 }};
 
 """
     if num_points > 0:
         cpp_code += "const Waypoint EXPERIMENT_TRAJECTORY[] = {\n"
         for wp in waypoints:
-            cpp_code += f"    {{{float(wp['x']):.2f}, {float(wp['y']):.2f}}},\n"
+            wait_s = float(wp.get('waitS', 0.0))
+            cpp_code += f"    {{{float(wp['x']):.2f}, {float(wp['y']):.2f}, {wait_s:.2f}}},\n"
         cpp_code += "};\n"
     else:
-        cpp_code += "const Waypoint EXPERIMENT_TRAJECTORY[1] = {{0, 0}};\n"
+        cpp_code += "const Waypoint EXPERIMENT_TRAJECTORY[1] = {{0, 0, 0}};\n"
 
     cpp_code += "\n#endif // GENERATED_TRAJECTORY_H\n"
 

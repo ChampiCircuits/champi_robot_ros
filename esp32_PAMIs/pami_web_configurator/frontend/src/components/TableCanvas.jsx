@@ -107,7 +107,35 @@ const getPositionAtDistance = (pts, targetDist) => {
     return { ...pts[pts.length - 1], angle: Math.atan2(dy, dx) };
 };
 
-const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTrajectories, elapsedTime, isPlaying, speedMmPerS, delayAfterPullCordS, onControlsStateChange, onMousePositionChange }, ref) => {
+const getDistanceAtTimeWithWaits = (pts, elapsedS, speedMmPerS) => {
+    if (!pts || pts.length === 0 || speedMmPerS <= 0) return 0;
+    let t = Math.max(0, elapsedS);
+    let dist = 0;
+
+    const waitAtPoint0 = Math.max(0, Number(pts[0].waitS || 0));
+    if (t <= waitAtPoint0) return 0;
+    t -= waitAtPoint0;
+
+    for (let i = 1; i < pts.length; i++) {
+        const dx = pts[i].x - pts[i - 1].x;
+        const dy = pts[i].y - pts[i - 1].y;
+        const segDist = Math.hypot(dx, dy);
+        const segTime = segDist / speedMmPerS;
+
+        if (t <= segTime) return dist + (t * speedMmPerS);
+
+        t -= segTime;
+        dist += segDist;
+
+        const waitAtPoint = Math.max(0, Number(pts[i].waitS || 0));
+        if (t <= waitAtPoint) return dist;
+        t -= waitAtPoint;
+    }
+
+    return dist;
+};
+
+const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTrajectories, elapsedTime, isPlaying, speedMmPerS, delayAfterPullCordS, selectedWaypointIndex, onSelectWaypoint, onControlsStateChange, onMousePositionChange }, ref) => {
     const canvasRef = useRef(null);
     const [redoStack, setRedoStack] = useState([]);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // En millimètres réels
@@ -169,6 +197,27 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
                         ctx.fill();
                         ctx.lineWidth = 1;
                         ctx.stroke();
+
+                        if (isSelected && selectedWaypointIndex === index) {
+                            ctx.beginPath();
+                            ctx.arc(mmToPxX(wp.x), mmToPxY(wp.y), 10, 0, 2 * Math.PI);
+                            ctx.strokeStyle = '#111';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+
+                        const waitS = Math.max(0, Number(wp.waitS || 0));
+                        if (waitS > 0) {
+                            const tx = mmToPxX(wp.x) + 8;
+                            const ty = mmToPxY(wp.y) - 8;
+                            ctx.font = '12px Arial';
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                            const label = `⏱ ${waitS.toFixed(1)}s`;
+                            const labelW = ctx.measureText(label).width;
+                            ctx.fillRect(tx - 4, ty - 10, labelW + 8, 14);
+                            ctx.fillStyle = '#222';
+                            ctx.fillText(label, tx, ty);
+                        }
                     });
                     
                     ctx.globalAlpha = 1.0;
@@ -176,7 +225,7 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
                     // 2. Calcul des positions courantes pour la simulation temporelle
                     if (isAnimActive) {
                         const effectiveElapsedTime = Math.max(0, elapsedTime - delayAfterPullCordS);
-                        const targetDist = effectiveElapsedTime * speedMmPerS;
+                        const targetDist = getDistanceAtTimeWithWaits(pts, effectiveElapsedTime, speedMmPerS);
                         const pos = getPositionAtDistance(pts, targetDist);
                         if (pos) {
                             botPositions[pamiId] = pos;
@@ -252,7 +301,7 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
             
             render();
         };
-    }, [waypoints, allTrajectories, selectedPami, elapsedTime, isPlaying, speedMmPerS, delayAfterPullCordS]);
+    }, [waypoints, allTrajectories, selectedPami, selectedWaypointIndex, elapsedTime, isPlaying, speedMmPerS, delayAfterPullCordS]);
 
     const handleMouseMove = (e) => {
         const rect = canvasRef.current.getBoundingClientRect();
@@ -277,11 +326,29 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
         const x_px = (e.clientX - rect.left) * scaleX;
         const y_px = (e.clientY - rect.top) * scaleY;
         
+        const currentWaypoints = waypoints || [];
+        const hitThresholdPx = 10;
+        let hitIndex = -1;
+        for (let i = 0; i < currentWaypoints.length; i++) {
+            const wp = currentWaypoints[i];
+            const dx = mmToPxX(wp.x) - x_px;
+            const dy = mmToPxY(wp.y) - y_px;
+            if (Math.hypot(dx, dy) <= hitThresholdPx) {
+                hitIndex = i;
+                break;
+            }
+        }
+
+        if (hitIndex >= 0) {
+            onSelectWaypoint?.(hitIndex);
+            return;
+        }
+
         const x_mm = clamp(snapToGrid(pxToMmX(x_px)), 0, TABLE_WIDTH_MM);
         const y_mm = clamp(snapToGrid(pxToMmY(y_px)), 0, TABLE_HEIGHT_MM);
 
-        const currentWaypoints = waypoints || [];
-        setWaypoints([...currentWaypoints, { x: x_mm, y: y_mm }]);
+        setWaypoints([...currentWaypoints, { x: x_mm, y: y_mm, waitS: 0 }]);
+        onSelectWaypoint?.(currentWaypoints.length);
         setRedoStack([]); 
     };
 

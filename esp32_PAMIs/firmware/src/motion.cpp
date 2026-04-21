@@ -20,6 +20,7 @@ enum class SegmentPhase : uint8_t {
     IDLE = 0,
     TURNING,
     DRIVING,
+    WAITING_POINT,
 };
 
 struct DebouncedInput {
@@ -160,6 +161,24 @@ bool startNextSegment(const uint32_t now_us) {
     return false;
 }
 
+bool startWaypointWaitIfNeeded(const uint32_t now_us) {
+    const int points = activeTrajectoryPoints();
+    if (g_segment_index < 0 || g_segment_index >= points) {
+        return false;
+    }
+
+    const float wait_s = g_working_trajectory[g_segment_index].waitS;
+    if (wait_s <= 0.0f) {
+        return false;
+    }
+
+    g_phase_deadline_us = now_us + static_cast<uint32_t>(wait_s * 1000000.0f);
+    g_cmd_left_mm_s = 0.0f;
+    g_cmd_right_mm_s = 0.0f;
+    g_segment_phase = SegmentPhase::WAITING_POINT;
+    return true;
+}
+
 void resetRunProgress() {
     g_segment_index = 0;
     g_phase_deadline_us = 0;
@@ -270,6 +289,12 @@ RemainingEstimate estimateCurrentSegmentRemaining(uint32_t now_us) {
         return estimate;
     }
 
+    if (g_segment_phase == SegmentPhase::WAITING_POINT) {
+        estimate.distance_mm = 0.0f;
+        estimate.angle_rad = 0.0f;
+        return estimate;
+    }
+
     estimate.distance_mm = current_seg_len_mm;
     if (total_turn_rad >= MIN_TURN_RAD) {
         estimate.angle_rad = total_turn_rad;
@@ -298,6 +323,7 @@ void publishTelemetry(uint32_t now_ms, uint32_t now_us, float distance_mm) {
         case SegmentPhase::IDLE: phase = "IDLE"; break;
         case SegmentPhase::TURNING: phase = "TURN"; break;
         case SegmentPhase::DRIVING: phase = "DRIVE"; break;
+        case SegmentPhase::WAITING_POINT: phase = "WAIT"; break;
     }
 
     const RemainingEstimate remaining = estimateCurrentSegmentRemaining(now_us);
@@ -479,7 +505,7 @@ void motionTick(uint32_t now_us) {
             {
                 stopMotors();
                 if (timeReachedUs(now_us, g_start_deadline_us)) {
-                    if (!startNextSegment(now_us)) {
+                    if (!startWaypointWaitIfNeeded(now_us) && !startNextSegment(now_us)) {
                         g_state = MotionState::COMPLETED;
                         break;
                     }
@@ -506,6 +532,12 @@ void motionTick(uint32_t now_us) {
                             g_segment_phase = SegmentPhase::DRIVING;
                         } else if (g_segment_phase == SegmentPhase::DRIVING) {
                             ++g_segment_index;
+                            if (!startWaypointWaitIfNeeded(now_us) && !startNextSegment(now_us)) {
+                                stopMotors();
+                                g_segment_phase = SegmentPhase::IDLE;
+                                g_state = MotionState::COMPLETED;
+                            }
+                        } else if (g_segment_phase == SegmentPhase::WAITING_POINT) {
                             if (!startNextSegment(now_us)) {
                                 stopMotors();
                                 g_segment_phase = SegmentPhase::IDLE;

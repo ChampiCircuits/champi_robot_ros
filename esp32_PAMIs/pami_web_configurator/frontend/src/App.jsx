@@ -14,6 +14,17 @@ const calculateDistance = (pts) => {
   return d;
 };
 
+const calculateWaitTime = (pts) => {
+  if (!pts) return 0;
+  return pts.reduce((sum, pt) => sum + Math.max(0, Number(pt.waitS || 0)), 0);
+};
+
+const calculateTrajectoryDuration = (pts, speedMmPerS) => {
+  if (!pts || pts.length === 0) return 0;
+  const moveTime = speedMmPerS > 0 ? calculateDistance(pts) / speedMmPerS : 0;
+  return moveTime + calculateWaitTime(pts);
+};
+
 function App() {
   const [selectedPami, setSelectedPami] = useState(1);
   const [trajectories, setTrajectories] = useState({
@@ -32,6 +43,7 @@ function App() {
     isEditLocked: false,
   });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [selectedWaypointIndex, setSelectedWaypointIndex] = useState(null);
 
   useEffect(() => {
     fetch(`${API_URL}/config`)
@@ -78,23 +90,48 @@ function App() {
       });
   };
 
-  const maxGlobalDistanceMm = React.useMemo(() => {
-    let maxD = 0;
-    Object.values(trajectories).forEach(pts => {
-      maxD = Math.max(maxD, calculateDistance(pts));
-    });
-    return maxD;
-  }, [trajectories]);
-
   const speedMmPerS = globalSpeed * 10;
-  const movementTime = speedMmPerS > 0 ? maxGlobalDistanceMm / speedMmPerS : 0;
-  const maxTime = movementTime > 0 ? delayAfterPullCordS + movementTime : 0;
+  const maxTrajectoryDuration = React.useMemo(() => {
+    let maxDuration = 0;
+    Object.values(trajectories).forEach((pts) => {
+      maxDuration = Math.max(maxDuration, calculateTrajectoryDuration(pts, speedMmPerS));
+    });
+    return maxDuration;
+  }, [trajectories, speedMmPerS]);
+  const maxTime = maxTrajectoryDuration > 0 ? delayAfterPullCordS + maxTrajectoryDuration : 0;
 
   const handleUpdateTrajectory = (pamiId, waypoints) => {
     setTrajectories(prev => ({...prev, [pamiId]: waypoints}));
   };
 
   const currentMovementCount = trajectories[selectedPami]?.length || 0;
+  const selectedWaypoints = trajectories[selectedPami] || [];
+  const selectedWaypoint = selectedWaypointIndex !== null ? selectedWaypoints[selectedWaypointIndex] : null;
+
+  useEffect(() => {
+    setSelectedWaypointIndex(null);
+  }, [selectedPami]);
+
+  useEffect(() => {
+    if (selectedWaypointIndex === null) return;
+    if (selectedWaypointIndex >= selectedWaypoints.length) {
+      setSelectedWaypointIndex(selectedWaypoints.length > 0 ? selectedWaypoints.length - 1 : null);
+    }
+  }, [selectedWaypointIndex, selectedWaypoints]);
+
+  const updateSelectedWaypointWait = (nextWaitS) => {
+    if (selectedWaypointIndex === null) return;
+    const safeWaitS = Math.max(0, Number.isFinite(nextWaitS) ? nextWaitS : 0);
+    setTrajectories((prev) => {
+      const current = [...(prev[selectedPami] || [])];
+      if (!current[selectedWaypointIndex]) return prev;
+      current[selectedWaypointIndex] = {
+        ...current[selectedWaypointIndex],
+        waitS: safeWaitS,
+      };
+      return { ...prev, [selectedPami]: current };
+    });
+  };
 
   return (
     <div className="App" style={{ margin: '0 auto', padding: '20px' }}>
@@ -173,6 +210,33 @@ function App() {
             <div style={{ marginTop: '4px', fontFamily: 'monospace', fontSize: '13px' }}>
               Mouvements PAMI {selectedPami} : {currentMovementCount}
             </div>
+            <div style={{ marginTop: '8px', padding: '8px', border: '1px solid #ccd', borderRadius: '6px', backgroundColor: '#f7f9ff' }}>
+              <div style={{ marginBottom: '6px' }}><strong>Point selectionne</strong></div>
+              {selectedWaypoint ? (
+                <>
+                  <div style={{ fontSize: '12px', marginBottom: '6px' }}>
+                    Point #{selectedWaypointIndex + 1} ({Math.round(selectedWaypoint.x)}, {Math.round(selectedWaypoint.y)})
+                  </div>
+                  <label style={{ display: 'block', marginBottom: '6px' }}><strong>Attente (s) :</strong></label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={Number(selectedWaypoint.waitS || 0)}
+                    onChange={(e) => updateSelectedWaypointWait(Number(e.target.value))}
+                    style={{ width: '100%', padding: '6px', fontSize: '14px', marginBottom: '6px' }}
+                  />
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button onClick={() => updateSelectedWaypointWait((selectedWaypoint.waitS || 0) + 0.5)}>+0.5s</button>
+                    <button onClick={() => updateSelectedWaypointWait((selectedWaypoint.waitS || 0) + 1)}>+1s</button>
+                    <button onClick={() => updateSelectedWaypointWait((selectedWaypoint.waitS || 0) + 2)}>+2s</button>
+                    <button onClick={() => updateSelectedWaypointWait(0)}>=0s</button>
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: '12px' }}>Clique sur un point de trajectoire pour régler son attente.</div>
+              )}
+            </div>
           </div>
 
           <div style={{ width: '85%' }}>
@@ -186,6 +250,8 @@ function App() {
               isPlaying={isPlaying}
               speedMmPerS={speedMmPerS}
               delayAfterPullCordS={delayAfterPullCordS}
+              selectedWaypointIndex={selectedWaypointIndex}
+              onSelectWaypoint={setSelectedWaypointIndex}
               onControlsStateChange={setTableControlsState}
               onMousePositionChange={setMousePos}
             />
