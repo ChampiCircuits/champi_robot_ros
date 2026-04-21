@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "./start_pami_configurator.sh",
+    "dev": "./start_pami_configurator_linux.sh",
+    "dev:linux": "./start_pami_configurator_linux.sh",
+    "dev:windows": "powershell -ExecutionPolicy Bypass -File .\\start_pami_configurator_windows.ps1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

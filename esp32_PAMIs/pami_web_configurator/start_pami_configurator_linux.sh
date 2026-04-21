@@ -10,10 +10,26 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! command -v npm >/dev/null 2>&1; then
-  echo "Error: npm is required." >&2
-  exit 1
-fi
+install_npm_if_missing() {
+  if command -v npm >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "npm not found. Attempting automatic installation..."
+
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update && sudo apt-get install -y npm
+  fi
+
+  if ! command -v npm >/dev/null 2>&1; then
+    echo "Error: npm installation failed. Please install npm manually and rerun this script." >&2
+    return 1
+  fi
+
+  echo "npm installation successful."
+}
+
+install_npm_if_missing
 
 if [ ! -d "$BACKEND_DIR" ] || [ ! -d "$FRONTEND_DIR" ]; then
   echo "Error: backend or frontend directory not found next to this script." >&2
