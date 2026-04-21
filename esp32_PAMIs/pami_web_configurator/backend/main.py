@@ -20,6 +20,7 @@ class Waypoint(BaseModel):
     x: float
     y: float
     waitS: float = 0.0
+    headingDeg: float = 0.0
 
 class ConfigData(BaseModel):
     trajectories: Dict[str, List[Waypoint]]

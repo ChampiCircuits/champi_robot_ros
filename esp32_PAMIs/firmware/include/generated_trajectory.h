@@ -11,13 +11,14 @@ struct Waypoint {
     float x;
     float y;
     float waitS;
+    float headingDeg;
 };
 
 const Waypoint EXPERIMENT_TRAJECTORY[] = {
-    {250.00, 1750.00, 0.50},
-    {500.00, 1750.00, 0.00},
-    {500.00, 1250.00, 0.00},
-    {1450.00, 850.00, 0.00},
+    {250.00, 1750.00, 0.50, 0.0},
+    {500.00, 1750.00, 0.00, 0.0},
+    {500.00, 1250.00, 0.00, 0.0},
+    {1450.00, 850.00, 0.00, 0.0},
 };
 
 #endif // GENERATED_TRAJECTORY_H

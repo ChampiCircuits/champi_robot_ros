@@ -17,14 +17,22 @@ const TABLE_HEIGHT_MM = 2000;
 const CANVAS_WIDTH = 900;
 const CANVAS_HEIGHT = 600;
 const GRID_SPACING_MM = 50;
+const GRID_OFFSET_X_MM = 25;
 
 // Fonctions de conversions Pixels <-> Millimètres avec repère en bas à gauche
 const mmToPxX = (x_mm) => (x_mm / TABLE_WIDTH_MM) * CANVAS_WIDTH;
 const mmToPxY = (y_mm) => CANVAS_HEIGHT - ((y_mm / TABLE_HEIGHT_MM) * CANVAS_HEIGHT); // Inversion Y
 const pxToMmX = (x_px) => Math.round((x_px / CANVAS_WIDTH) * TABLE_WIDTH_MM);
 const pxToMmY = (y_px) => Math.round(((CANVAS_HEIGHT - y_px) / CANVAS_HEIGHT) * TABLE_HEIGHT_MM);
-const snapToGrid = (valueMm) => Math.round(valueMm / GRID_SPACING_MM) * GRID_SPACING_MM;
+const snapToGridY = (valueMm) => Math.round(valueMm / GRID_SPACING_MM) * GRID_SPACING_MM;
+const snapToGridX = (valueMm) => Math.round((valueMm - GRID_OFFSET_X_MM) / GRID_SPACING_MM) * GRID_SPACING_MM + GRID_OFFSET_X_MM;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const normalizeHeadingDeg = (deg) => {
+    let d = Number.isFinite(deg) ? deg : 0;
+    d = ((d % 360) + 360) % 360;
+    return d;
+};
+const degToRad = (deg) => (deg * Math.PI) / 180;
 
 // Helpers pour la détection de collision via le théorème des axes séparateurs (SAT)
 const getOBBCorners = (x, y, w, h, angle) => {
@@ -116,10 +124,15 @@ const normalizeAngle = (angle) => {
 
 const getPoseAtTimeWithWaitsAndTurns = (pts, elapsedS, speedMmPerS, angularSpeedRadS) => {
     if (!pts || pts.length === 0) return null;
-    if (pts.length === 1) return { x: pts[0].x, y: pts[0].y, angle: 0 };
+    if (pts.length === 1) {
+        const startHeadingDeg = normalizeHeadingDeg(Number(pts[0].headingDeg || 0));
+        return { x: pts[0].x, y: pts[0].y, angle: degToRad(startHeadingDeg) };
+    }
 
     let t = Math.max(0, elapsedS);
-    let currentHeading = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+    const firstSegHeading = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+    const hasStartHeading = Number.isFinite(Number(pts[0].headingDeg));
+    let currentHeading = hasStartHeading ? degToRad(normalizeHeadingDeg(Number(pts[0].headingDeg))) : firstSegHeading;
     const minTurnRad = 0.02;
 
     const waitAtPoint0 = Math.max(0, Number(pts[0].waitS || 0));
@@ -136,7 +149,7 @@ const getPoseAtTimeWithWaitsAndTurns = (pts, elapsedS, speedMmPerS, angularSpeed
         const deltaHeading = normalizeAngle(targetHeading - currentHeading);
         const absDelta = Math.abs(deltaHeading);
 
-        if (i > 0 && absDelta >= minTurnRad && angularSpeedRadS > 0) {
+        if (absDelta >= minTurnRad && angularSpeedRadS > 0) {
             const turnTime = absDelta / angularSpeedRadS;
             if (t <= turnTime) {
                 const sign = deltaHeading >= 0 ? 1 : -1;
@@ -177,13 +190,32 @@ const getPoseAtTimeWithWaitsAndTurns = (pts, elapsedS, speedMmPerS, angularSpeed
 
 const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTrajectories, elapsedTime, isPlaying, speedMmPerS, angularSpeedDegS, delayAfterPullCordS, selectedWaypointIndex, onSelectWaypoint, onControlsStateChange, onMousePositionChange }, ref) => {
     const canvasRef = useRef(null);
+    const [undoStack, setUndoStack] = useState([]);
     const [redoStack, setRedoStack] = useState([]);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // En millimètres réels
     
     // Clear redo history when changing PAMI context
     useEffect(() => {
+        setUndoStack([]);
         setRedoStack([]);
     }, [selectedPami]);
+
+    const deleteWaypointAt = (index) => {
+        if (isPlaying || elapsedTime > 0) return;
+        const currentWaypoints = [...(waypoints || [])];
+        if (index < 0 || index >= currentWaypoints.length) return;
+
+        const [removedPoint] = currentWaypoints.splice(index, 1);
+        setWaypoints(currentWaypoints);
+        setUndoStack((prev) => [...prev, { type: 'remove', index, point: removedPoint }]);
+        setRedoStack([]);
+
+        if (currentWaypoints.length === 0) {
+            onSelectWaypoint?.(null);
+        } else {
+            onSelectWaypoint?.(Math.max(0, index - 1));
+        }
+    };
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -199,7 +231,7 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
 
                 // Grille de points tous les 5 cm, discrète pour garder la lisibilite des trajectoires.
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                for (let x = 0; x <= TABLE_WIDTH_MM; x += GRID_SPACING_MM) {
+                for (let x = GRID_OFFSET_X_MM; x <= TABLE_WIDTH_MM; x += GRID_SPACING_MM) {
                     for (let y = 0; y <= TABLE_HEIGHT_MM; y += GRID_SPACING_MM) {
                         ctx.beginPath();
                         ctx.arc(mmToPxX(x), mmToPxY(y), 1.2, 0, 2 * Math.PI);
@@ -257,6 +289,34 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
                             ctx.fillRect(tx - 4, ty - 10, labelW + 8, 14);
                             ctx.fillStyle = '#222';
                             ctx.fillText(label, tx, ty);
+                        }
+
+                        if (index === 0) {
+                            const headingDeg = normalizeHeadingDeg(Number(wp.headingDeg || 0));
+                            const headingRad = degToRad(headingDeg);
+                            const startX = mmToPxX(wp.x);
+                            const startY = mmToPxY(wp.y);
+                            const arrowLen = 20;
+                            const endX = startX + Math.cos(headingRad) * arrowLen;
+                            const endY = startY - Math.sin(headingRad) * arrowLen;
+
+                            ctx.beginPath();
+                            ctx.moveTo(startX, startY);
+                            ctx.lineTo(endX, endY);
+                            ctx.strokeStyle = '#111';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+
+                            const ah = 6;
+                            const left = headingRad + Math.PI - 0.4;
+                            const right = headingRad + Math.PI + 0.4;
+                            ctx.beginPath();
+                            ctx.moveTo(endX, endY);
+                            ctx.lineTo(endX + Math.cos(left) * ah, endY - Math.sin(left) * ah);
+                            ctx.lineTo(endX + Math.cos(right) * ah, endY - Math.sin(right) * ah);
+                            ctx.closePath();
+                            ctx.fillStyle = '#111';
+                            ctx.fill();
                         }
                     });
                     
@@ -360,6 +420,22 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
         });
     };
 
+    const rotateStartHeading = () => {
+        const currentWaypoints = [...(waypoints || [])];
+        if (!currentWaypoints[0]) return;
+
+        const beforePoint = currentWaypoints[0];
+        const beforeHeading = normalizeHeadingDeg(Number(beforePoint.headingDeg || 0));
+        const afterHeading = (beforeHeading + 90) % 360;
+        const afterPoint = { ...beforePoint, headingDeg: afterHeading };
+
+        currentWaypoints[0] = afterPoint;
+        setWaypoints(currentWaypoints);
+        setUndoStack((prev) => [...prev, { type: 'update', index: 0, beforePoint, afterPoint }]);
+        setRedoStack([]);
+        onSelectWaypoint?.(0);
+    };
+
     const handleCanvasClick = (e) => {
         // Interdire le dessin pendant la lecture de l'animation
         if (isPlaying || elapsedTime > 0) return;
@@ -384,59 +460,125 @@ const TableCanvas = forwardRef(({ selectedPami, waypoints, setWaypoints, allTraj
         }
 
         if (hitIndex >= 0) {
+            if (hitIndex === 0) {
+                rotateStartHeading();
+                return;
+            }
             onSelectWaypoint?.(hitIndex);
             return;
         }
 
-        const x_mm = clamp(snapToGrid(pxToMmX(x_px)), 0, TABLE_WIDTH_MM);
-        const y_mm = clamp(snapToGrid(pxToMmY(y_px)), 0, TABLE_HEIGHT_MM);
+        const x_mm = clamp(snapToGridX(pxToMmX(x_px)), 0, TABLE_WIDTH_MM);
+        const y_mm = clamp(snapToGridY(pxToMmY(y_px)), 0, TABLE_HEIGHT_MM);
 
-        setWaypoints([...currentWaypoints, { x: x_mm, y: y_mm, waitS: 0 }]);
-        onSelectWaypoint?.(currentWaypoints.length);
-        setRedoStack([]); 
+        const insertIndex = selectedWaypointIndex !== null
+            ? Math.min(selectedWaypointIndex + 1, currentWaypoints.length)
+            : currentWaypoints.length;
+        const nextWaypoints = [...currentWaypoints];
+        const insertedPoint = { x: x_mm, y: y_mm, waitS: 0, headingDeg: 0 };
+        nextWaypoints.splice(insertIndex, 0, insertedPoint);
+
+        setWaypoints(nextWaypoints);
+        setUndoStack((prev) => [...prev, { type: 'add', index: insertIndex, point: insertedPoint }]);
+        setRedoStack([]);
+        onSelectWaypoint?.(insertIndex);
     };
 
     const handleUndo = () => {
         if (isPlaying || elapsedTime > 0) return;
-        if (waypoints && waypoints.length > 0) {
-            const currentWaypoints = [...waypoints];
-            const undone = currentWaypoints.pop();
-            setWaypoints(currentWaypoints);
-            setRedoStack([...redoStack, undone]);
+        if (undoStack.length === 0) return;
+
+        const action = undoStack[undoStack.length - 1];
+        const currentWaypoints = [...(waypoints || [])];
+        let nextWaypoints = currentWaypoints;
+
+        if (action.type === 'add') {
+            if (action.index >= 0 && action.index < nextWaypoints.length) {
+                nextWaypoints = [...nextWaypoints];
+                nextWaypoints.splice(action.index, 1);
+                onSelectWaypoint?.(nextWaypoints.length > 0 ? Math.max(0, action.index - 1) : null);
+            }
+        } else if (action.type === 'remove') {
+            nextWaypoints = [...nextWaypoints];
+            nextWaypoints.splice(action.index, 0, action.point);
+            onSelectWaypoint?.(action.index);
+        } else if (action.type === 'update') {
+            if (action.index >= 0 && action.index < nextWaypoints.length) {
+                nextWaypoints = [...nextWaypoints];
+                nextWaypoints[action.index] = action.beforePoint;
+                onSelectWaypoint?.(action.index);
+            }
+        } else if (action.type === 'clear') {
+            nextWaypoints = [...action.points];
+            onSelectWaypoint?.(null);
         }
+
+        setWaypoints(nextWaypoints);
+        setUndoStack((prev) => prev.slice(0, -1));
+        setRedoStack((prev) => [...prev, action]);
     };
 
     const handleRedo = () => {
         if (isPlaying || elapsedTime > 0) return;
-        if (redoStack.length > 0) {
-            const currentRedoStack = [...redoStack];
-            const redone = currentRedoStack.pop();
-            setWaypoints([...(waypoints || []), redone]);
-            setRedoStack(currentRedoStack);
+        if (redoStack.length === 0) return;
+
+        const action = redoStack[redoStack.length - 1];
+        const currentWaypoints = [...(waypoints || [])];
+        let nextWaypoints = currentWaypoints;
+
+        if (action.type === 'add') {
+            nextWaypoints = [...nextWaypoints];
+            nextWaypoints.splice(action.index, 0, action.point);
+            onSelectWaypoint?.(action.index);
+        } else if (action.type === 'remove') {
+            if (action.index >= 0 && action.index < nextWaypoints.length) {
+                nextWaypoints = [...nextWaypoints];
+                nextWaypoints.splice(action.index, 1);
+                onSelectWaypoint?.(nextWaypoints.length > 0 ? Math.max(0, action.index - 1) : null);
+            }
+        } else if (action.type === 'update') {
+            if (action.index >= 0 && action.index < nextWaypoints.length) {
+                nextWaypoints = [...nextWaypoints];
+                nextWaypoints[action.index] = action.afterPoint;
+                onSelectWaypoint?.(action.index);
+            }
+        } else if (action.type === 'clear') {
+            nextWaypoints = [];
+            onSelectWaypoint?.(null);
         }
+
+        setWaypoints(nextWaypoints);
+        setRedoStack((prev) => prev.slice(0, -1));
+        setUndoStack((prev) => [...prev, action]);
     };
 
     const handleClear = () => {
         if (isPlaying || elapsedTime > 0) return;
+        const currentWaypoints = [...(waypoints || [])];
+        if (currentWaypoints.length === 0) return;
+
         setWaypoints([]);
+        setUndoStack((prev) => [...prev, { type: 'clear', points: currentWaypoints }]);
         setRedoStack([]);
+        onSelectWaypoint?.(null);
     };
 
     useImperativeHandle(ref, () => ({
         undo: handleUndo,
         redo: handleRedo,
         clear: handleClear,
-    }), [handleUndo, handleRedo, handleClear]);
+        deleteSelectedWaypoint: deleteWaypointAt,
+    }), [handleUndo, handleRedo, handleClear, deleteWaypointAt]);
 
     useEffect(() => {
         if (!onControlsStateChange) return;
         onControlsStateChange({
-            canUndo: !!waypoints && waypoints.length > 0,
+            canUndo: undoStack.length > 0,
             canRedo: redoStack.length > 0,
             canClear: !!waypoints && waypoints.length > 0,
             isEditLocked: isPlaying || elapsedTime > 0,
         });
-    }, [onControlsStateChange, waypoints, redoStack, isPlaying, elapsedTime]);
+    }, [onControlsStateChange, waypoints, undoStack, redoStack, isPlaying, elapsedTime]);
 
     useEffect(() => {
         if (!onMousePositionChange) return;

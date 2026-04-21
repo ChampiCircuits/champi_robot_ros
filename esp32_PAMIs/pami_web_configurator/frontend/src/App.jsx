@@ -160,6 +160,56 @@ function App() {
     });
   };
 
+  const removeSelectedWaypoint = () => {
+    if (selectedWaypointIndex === null || tableControlsState.isEditLocked) return;
+    tableCanvasRef.current?.deleteSelectedWaypoint(selectedWaypointIndex);
+  };
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (!(event.key === 'Delete' || event.key === 'Del')) return;
+      const tag = (event.target?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (selectedWaypointIndex === null || tableControlsState.isEditLocked) return;
+
+      event.preventDefault();
+      removeSelectedWaypoint();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedWaypointIndex, tableControlsState.isEditLocked]);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const tag = (event.target?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      const isCtrlOrMeta = event.ctrlKey || event.metaKey;
+      if (!isCtrlOrMeta) return;
+
+      const key = event.key.toLowerCase();
+      const isUndo = key === 'z' && !event.shiftKey;
+      const isRedo = key === 'y' || (key === 'z' && event.shiftKey);
+
+      if (isUndo) {
+        if (tableControlsState.isEditLocked || !tableControlsState.canUndo) return;
+        event.preventDefault();
+        tableCanvasRef.current?.undo();
+        return;
+      }
+
+      if (isRedo) {
+        if (tableControlsState.isEditLocked || !tableControlsState.canRedo) return;
+        event.preventDefault();
+        tableCanvasRef.current?.redo();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [tableControlsState.isEditLocked, tableControlsState.canUndo, tableControlsState.canRedo]);
+
   return (
     <div className="App" style={{ margin: '0 auto', padding: '20px' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -272,6 +322,15 @@ function App() {
                     <button onClick={() => updateSelectedWaypointWait((selectedWaypoint.waitS || 0) + 1)}>+1s</button>
                     <button onClick={() => updateSelectedWaypointWait((selectedWaypoint.waitS || 0) + 2)}>+2s</button>
                     <button onClick={() => updateSelectedWaypointWait(0)}>=0s</button>
+                  </div>
+                  <div style={{ marginTop: '6px' }}>
+                    <button
+                      onClick={removeSelectedWaypoint}
+                      disabled={tableControlsState.isEditLocked}
+                      style={{ padding: '3px 8px', fontSize: '12px' }}
+                    >
+                      Supprimer ce point
+                    </button>
                   </div>
                 </>
               ) : (

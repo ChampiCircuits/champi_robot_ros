@@ -91,6 +91,14 @@ void buildWorkingTrajectory(Team team) {
         Waypoint wp = EXPERIMENT_TRAJECTORY[i];
         if (team == Team::YELLOW) {
             wp.x = MAP_WIDTH_MM - wp.x;
+            float mirrored_heading = 180.0f - wp.headingDeg;
+            while (mirrored_heading < 0.0f) {
+                mirrored_heading += 360.0f;
+            }
+            while (mirrored_heading >= 360.0f) {
+                mirrored_heading -= 360.0f;
+            }
+            wp.headingDeg = mirrored_heading;
         }
         g_working_trajectory[i] = wp;
     }
@@ -193,11 +201,10 @@ void resetRunProgress() {
     g_cmd_right_mm_s = 0.0f;
     g_segment_phase = SegmentPhase::IDLE;
 
-    // Set initial heading to match the first segment direction so we don't
-    // start with a spurious turn (important after YELLOW team mirror).
+    // Set initial heading from the first waypoint orientation.
     const int points = activeTrajectoryPoints();
-    if (points >= 2) {
-        g_estimated_heading_rad = angleBetween(g_working_trajectory[0], g_working_trajectory[1]);
+    if (points >= 1) {
+        g_estimated_heading_rad = g_working_trajectory[0].headingDeg * static_cast<float>(M_PI) / 180.0f;
     } else {
         g_estimated_heading_rad = 0.0f;
     }

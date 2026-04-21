@@ -25,6 +25,7 @@ struct Waypoint {{
     float x;
     float y;
     float waitS;
+    float headingDeg;
 }};
 
 """
@@ -32,10 +33,11 @@ struct Waypoint {{
         cpp_code += "const Waypoint EXPERIMENT_TRAJECTORY[] = {\n"
         for wp in waypoints:
             wait_s = float(wp.get('waitS', 0.0))
-            cpp_code += f"    {{{float(wp['x']):.2f}, {float(wp['y']):.2f}, {wait_s:.2f}}},\n"
+            heading_deg = float(wp.get('headingDeg', 0.0))
+            cpp_code += f"    {{{float(wp['x']):.2f}, {float(wp['y']):.2f}, {wait_s:.2f}, {heading_deg:.1f}}},\n"
         cpp_code += "};\n"
     else:
-        cpp_code += "const Waypoint EXPERIMENT_TRAJECTORY[1] = {{0, 0, 0}};\n"
+        cpp_code += "const Waypoint EXPERIMENT_TRAJECTORY[1] = {{0, 0, 0, 0}};\n"
 
     cpp_code += "\n#endif // GENERATED_TRAJECTORY_H\n"
 
