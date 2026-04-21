@@ -228,7 +228,7 @@ class StateMachine:
         """Check initialization progress and advance if ready."""
         # Check each initialization step in order
         if not self._ros_initialized:
-            self.logger.info("Waiting for ROS initialization...")
+            self.logger.info("Waiting for STRAT/ros initialization...")
             return
             
         if not self._config_chosen:

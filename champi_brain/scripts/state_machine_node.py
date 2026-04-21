@@ -201,13 +201,15 @@ class StateMachineNode(Node):
         self.create_timer(0.1, self._update_callback)
         
         # ============================================================
-        # AUTO-START IN SIM MODE
+        # AUTO-START IN SIM MODE (deferred to first timer tick so the
+        # node is already being spun by the executor, which allows
+        # service calls with spin_once to work correctly)
         # ============================================================
-                
+        self._pending_auto_load = False
         if self.sim_mode and self.use_default_strategy_and_color_in_sim:
-            self.get_logger().warn(f'🎮 SIM MODE: Auto-loading strategy: {self.default_strategy_file}')
-            self._load_strategy(self.default_strategy_file, self.default_sim_color)
-        
+            self.get_logger().warn(f'🎮 SIM MODE: Will auto-load strategy: {self.default_strategy_file}')
+            self._pending_auto_load = True
+
         self.get_logger().warn('State Machine ready started!\n')
 
 
@@ -358,6 +360,15 @@ class StateMachineNode(Node):
     
     def _update_callback(self) -> None:
         """Main update loop called at 10 Hz."""
+
+        # Deferred auto-load: now the node is being spun by the executor,
+        # so service calls (spin_once) will work properly.
+        if self._pending_auto_load:
+            self._pending_auto_load = False
+            self.get_logger().warn(f'🎮 SIM MODE: Auto-loading strategy: {self.default_strategy_file}')
+            self._load_strategy(self.default_strategy_file, self.default_sim_color)
+            return
+
         if not self.state_machine:
             # Publish "waiting" state when no strategy loaded
             msg = String()
@@ -456,25 +467,15 @@ class StateMachineNode(Node):
         """Set initial robot pose in localization via SetPose service."""
         self.get_logger().warn(f'📍 Setting initial pose via /set_pose service: ({pose[0]:.2f}, {pose[1]:.2f}, {pose[2]:.1f}°)')
         
-        # Wait for service to be available
-        if not self.set_pose_client.wait_for_service(timeout_sec=5.0):
-            self.get_logger().error('⚠️ /set_pose service not available after 5s timeout')
+        # Check service availability (non-blocking: just check if it's known)
+        if not self.set_pose_client.service_is_ready():
+            self.get_logger().error('⚠️ /set_pose service not available yet')
             raise RuntimeError('/set_pose service not available')
         
-        # Wait for first odometry message to ensure localization system is ready
-        # This prevents the pose from being overwritten by initialization values from loc_node
+        # Check that we have odometry (should already be available since
+        # this is called from a spin callback, not from __init__)
         if self.current_pose is None:
-            self.get_logger().info('⏱️ Waiting for first odometry message...')
-            timeout = 5.0  # seconds
-            start_time = time.time()
-            while self.current_pose is None and (time.time() - start_time) < timeout:
-                rclpy.spin_once(self, timeout_sec=0.1)
-            
-            if self.current_pose is None:
-                self.get_logger().error('⚠️ No odometry received after 5s timeout')
-                raise RuntimeError('No odometry received, cannot set initial pose')
-            
-            self.get_logger().info(f'✅ First odometry received: ({self.current_pose[0]:.2f}, {self.current_pose[1]:.2f}, {self.current_pose[2]:.1f}°)')
+            self.get_logger().warn('⚠️ No odometry received yet, but proceeding with set_pose anyway')
         
         # Create request
         request = SetPose.Request()
@@ -495,26 +496,23 @@ class StateMachineNode(Node):
         request.pose.pose.covariance[7] = 1e-5   # y variance
         request.pose.pose.covariance[35] = 1e-5  # yaw variance
         
-        # Call service and wait for response
+        # Call service asynchronously and check result via callback.
+        # NOTE: We cannot use spin_once() here because this method may be
+        # called from within a spin callback (e.g. _on_chosen_strategy or
+        # _update_callback), and the single-threaded executor cannot re-enter.
+        # Instead, we fire the request and attach a done-callback.
         future = self.set_pose_client.call_async(request)
-        
-        # Wait for the service call to complete (with timeout)
-        timeout_sec = 2.0
-        start_time = self.get_clock().now()
-        
-        while not future.done():
-            rclpy.spin_once(self, timeout_sec=0.1)
-            if (self.get_clock().now() - start_time).nanoseconds / 1e9 > timeout_sec:
-                raise RuntimeError('/set_pose service call timed out')
-        
-        # Check result
+        future.add_done_callback(self._on_set_pose_done)
+        self.get_logger().info('📤 /set_pose request sent, waiting for response asynchronously...')
+
+    def _on_set_pose_done(self, future) -> None:
+        """Callback when the /set_pose service call completes."""
         try:
             response = future.result()
-            # SetPose service has an empty response, just check that it completed without exception
-            self.get_logger().info(f'✅ Initial pose set successfully')
+            self.get_logger().info('✅ Initial pose set successfully')
         except Exception as e:
-            raise RuntimeError(f'/set_pose service call failed: {e}')
-        
+            self.get_logger().error(f'❌ /set_pose service call failed: {e}')
+
     
     def _on_state_changed(self, new_state: str) -> None:
         """Called when state machine changes state."""

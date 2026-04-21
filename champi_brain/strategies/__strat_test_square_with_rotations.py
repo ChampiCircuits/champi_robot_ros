@@ -21,10 +21,10 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
 
     # Add square movements
     for i in range(num_iterations):
-        strategy.move_to(Position(1.5, 1.0, 0.0)  , speed=1.0, accel_linear=1.0, accel_angular=15.0)
-        strategy.move_to(Position(1.5, 1.5, 90.0) , speed=1.0, accel_linear=1.0, accel_angular=15.0)
-        strategy.move_to(Position(1.0, 1.5, 180.0), speed=1.0, accel_linear=1.0, accel_angular=15.0)
-        strategy.move_to(Position(1.0, 1.0, 270.0), speed=1.0, accel_linear=1.0, accel_angular=15.0)
+        strategy.move_to(Position(1.5, 1.0, 0.0)  , speed=1.0, accel_linear=10.0, accel_angular=15.0)
+        strategy.move_to(Position(1.5, 1.5, 90.0) , speed=1.0, accel_linear=10.0, accel_angular=15.0)
+        strategy.move_to(Position(1.0, 1.5, 180.0), speed=1.0, accel_linear=10.0, accel_angular=15.0)
+        strategy.move_to(Position(1.0, 1.0, 270.0), speed=1.0, accel_linear=10.0, accel_angular=15.0)
 
     # Come home at the end
     strategy.come_home()
