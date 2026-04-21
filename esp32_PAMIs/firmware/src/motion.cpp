@@ -46,6 +46,11 @@ float g_cmd_left_mm_s = 0.0f;
 float g_cmd_right_mm_s = 0.0f;
 SegmentPhase g_segment_phase = SegmentPhase::IDLE;
 Waypoint g_working_trajectory[TRAJECTORY_POINTS_COUNT];
+bool g_match_timeout_armed = false;
+bool g_match_timeout_triggered = false;
+uint32_t g_match_timeout_deadline_us = 0;
+
+constexpr uint32_t kMatchHardStopUs = 100000000UL; // 100 s after pull-cord start.
 
 constexpr int kGeneratedTrajectoryPoints = static_cast<int>(sizeof(EXPERIMENT_TRAJECTORY) / sizeof(EXPERIMENT_TRAJECTORY[0]));
 
@@ -372,6 +377,11 @@ void stopMotors() {
     stepperControlStop();
 }
 
+void enforceHardMotorStop() {
+    stopMotors();
+    digitalWrite(ENABLE_MOTORS, HIGH); // Disable drivers to avoid heating and any further motion.
+}
+
 void printStepperDiagnostics() {
     const float wheel_circumference_mm = static_cast<float>(PI) * WHEEL_DIAMETER_MM;
     const float steps_per_wheel_turn = MOTOR_STEPS_PER_REV * MICROSTEPS * GEAR_RATIO;
@@ -450,6 +460,9 @@ void motionInit() {
     g_candidate_team = team_raw ? Team::YELLOW : Team::BLUE;
     g_state = MotionState::WAITING_TIRETTE;
     g_blocked_by_obstacle = false;
+    g_match_timeout_armed = false;
+    g_match_timeout_triggered = false;
+    g_match_timeout_deadline_us = 0;
     resetRunProgress();
     g_start_deadline_us = 0;
     g_last_telemetry_ms = 0;
@@ -470,6 +483,19 @@ void motionInit() {
 
 void motionTick(uint32_t now_us) {
     const uint32_t now_ms = millis();
+
+    if (g_match_timeout_armed && !g_match_timeout_triggered && timeReachedUs(now_us, g_match_timeout_deadline_us)) {
+        g_match_timeout_triggered = true;
+        g_state = MotionState::COMPLETED;
+        LOG_WARN("Motion", "Hard stop timeout reached (100s after pull-cord). Motors disabled permanently.");
+    }
+
+    if (g_match_timeout_triggered) {
+        enforceHardMotorStop();
+        applyLedPolicy();
+        analogWrite(ACTUATOR_PIN, 50);
+        return;
+    }
 
     if (g_forward_test_mode_enabled) {
         g_forward_test_mode_was_active = true;
@@ -510,6 +536,8 @@ void motionTick(uint32_t now_us) {
                     buildWorkingTrajectory(g_candidate_team);
                     resetRunProgress();
                     g_start_deadline_us = now_us + static_cast<uint32_t>(DELAY_AFTER_PULL_CORD_S * 1000000.0f);
+                    g_match_timeout_armed = true;
+                    g_match_timeout_deadline_us = now_us + kMatchHardStopUs;
                     g_state = MotionState::START_DELAY;
                 }
                 break;
@@ -575,9 +603,8 @@ void motionTick(uint32_t now_us) {
             }
         case MotionState::COMPLETED:
             {
-                stopMotors();
+                enforceHardMotorStop();
                 analogWrite(ACTUATOR_PIN, 50);
-                digitalWrite(ENABLE_MOTORS, HIGH); // Disable drivers to avoid heating
                 break;
             }
 
