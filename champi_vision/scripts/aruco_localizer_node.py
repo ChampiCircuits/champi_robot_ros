@@ -219,6 +219,16 @@ class ArucoLocalizerNode(Node):
     def image_callback(self, msg):
         self.latest_img = msg
         self.timestamp = msg.header.stamp
+        # Warn if camera timestamp drifts from ROS clock (indicates a sync problem)
+        img_ns = rclpy.time.Time.from_msg(msg.header.stamp).nanoseconds
+        now_ns = self.get_clock().now().nanoseconds
+        drift_ms = abs(now_ns - img_ns) / 1e6
+        if drift_ms > 200.0:
+            self.get_logger().warn(
+                f"Camera clock drift: {drift_ms:.0f}ms — latency compensation may be inaccurate. "
+                "Ensure the camera driver publishes with synchronized ROS time.",
+                throttle_duration_sec=1.0
+            )
 
     def is_blurry(self, image, threshold=1000.0):
         """

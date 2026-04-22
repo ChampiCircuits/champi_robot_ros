@@ -2,15 +2,17 @@
 
 import rclpy
 from rclpy.node import Node
-from rclpy.time import Duration
+from rclpy.time import Duration, Time
 from rclpy.duration import Duration
+from collections import deque
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped, Pose
+from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped, Pose, Vector3Stamped
+from std_msgs.msg import Float32
 from champi_interfaces.srv import SetPose
 import tf2_ros
 import tf_transformations
 from tf2_ros import TransformBroadcaster
-from math import atan2, degrees
+from math import atan2, degrees, sqrt, pi
 
 
 def pose_to_transform(pose: Pose):
@@ -37,7 +39,7 @@ class LocNode(Node):
         self.odom_sub = self.create_subscription(
             Odometry,
             '/odom_otos',
-            self.odom_callback,
+            self.odom_otos_callback,
             10
         )
         self.set_pose_sub = self.create_subscription(
@@ -64,96 +66,115 @@ class LocNode(Node):
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         # cooldown timer for aruco : 1s
-        self.cooldown_value = 1.0 #s
-        self.last_time_aruco_pose_taken_in_account = self.get_clock().now()
+        self.aruco_cooldown_s = 1.0
+        self.last_aruco_correction_time = self.get_clock().now()
+
+        # Buffer for past OTOS poses (latency compensation, ~5s at 100 Hz)
+        self.odom_otos_buffer: deque = deque(maxlen=500)
 
         # Publishers
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
+        # Innovation = différence entre pose estimée courante et pose ArUco reçue
+        # (vector.x = dx, vector.y = dy en mètres, vector.z = dtheta en radians)
+        self.innovation_pub = self.create_publisher(Vector3Stamped, '/loc/aruco_innovation', 10)
+        self.latency_pub = self.create_publisher(Float32, '/loc/aruco_latency_ms', 10)
 
         # Transform Broadcaster
         self.tf_broadcaster = TransformBroadcaster(self)
 
         # Offset variables
-        self.latest_set_pose = PoseWithCovarianceStamped()
+        self.odom_aruco = PoseWithCovarianceStamped()
 
         self.latest_robot_pose = Odometry()
-        self.robot_pose_when_set_pose = Odometry()
-        self.odom_callback(Odometry())
+        self.odom_otos_at_aruco_capture = Odometry()
+        self.odom_otos_callback(Odometry())
 
     def handle_set_pose_srv(self, request, response):
         self.set_pose_callback(request.pose)
         return response
 
     def set_pose_callback(self, msg: PoseWithCovarianceStamped):
-        self.latest_set_pose = msg
-        self.robot_pose_when_set_pose = self.latest_robot_pose
+        self.odom_aruco = msg
+        self.odom_otos_at_aruco_capture = self.latest_robot_pose
         self.get_logger().warn("📍 Set pose received")
 
     def aruco_pose_callback(self, msg: PoseWithCovarianceStamped):
         # We receive an aruco pose at 5Hz.
         # To avoid the pose oscillating, we update only every second
-        if self.get_clock().now() - self.last_time_aruco_pose_taken_in_account < Duration(seconds=self.cooldown_value):
-            return
-        
-
-        # t_image = Time.from_msg(msg.header.stamp)
-        #
-        # # latency calculation
-        # t_image = Time.from_msg(msg.header.stamp)
-        # # t_recv  = self.get_clock().now()
-        # # latency_ms = (t_recv - t_image).nanoseconds / 1e6
-        # # print(t_recv)
-        #
-        # try:
-        #     tf = self.tf_buffer.lookup_transform(
-        #         'world',  # target frame
-        #         msg.header.frame_id,
-        #         t_image,
-        #         timeout=Duration(seconds=0.1)
-        #     )
-        #     corrected_pose = tf2_geometry_msgs.do_transform_pose(msg.pose, tf)
-        #     corrected_x = corrected_pose.pose.position.x
-        #     corrected_y = corrected_pose.pose.position.y
-        #     corrected_z = corrected_pose.pose.position.z
-        #
-        #
-        #     self.get_logger().info(f"Corrected position (x): {corrected_x:.3f}, (y): {corrected_y:.3f}, (z): {corrected_z:.3f}")
-        # except Exception as e:
-        #     self.get_logger().warn(f"TF lookup failed: {e}")
-
-
-        # We take the aruco pose into account only if we are almost not moving
-        if abs(self.latest_robot_pose.twist.twist.linear.x) > 0.05 \
-            or abs(self.latest_robot_pose.twist.twist.linear.y) > 0.05 \
-                or abs(self.latest_robot_pose.twist.twist.angular.z) > 0.05:
-            self.get_logger().info("Seen Aruco but robot is moving, not taking aruco pose into account")
-            self.get_logger().debug(f"Robot speed: {self.latest_robot_pose.twist.twist.linear.x} m/s, {self.latest_robot_pose.twist.twist.linear.y} m/s, {self.latest_robot_pose.twist.twist.angular.z} rad/s")
+        if self.get_clock().now() - self.last_aruco_correction_time < Duration(seconds=self.aruco_cooldown_s):
             return
 
-        # We take the aruco pose into account
-        self.last_time_aruco_pose_taken_in_account = self.get_clock().now()
-        self.latest_set_pose = msg
-        self.robot_pose_when_set_pose = self.latest_robot_pose
+        # Take the aruco pose into account using the OTOS pose at image capture time (latency compensation)
+        self.last_aruco_correction_time = self.get_clock().now()
+
+        # --- Innovation: écart entre pose estimée courante et pose ArUco reçue ---
+        t_cur_world = (pose_to_transform(self.odom_aruco.pose.pose)
+                       @ tf_transformations.inverse_matrix(pose_to_transform(self.odom_otos_at_aruco_capture.pose.pose))
+                       @ pose_to_transform(self.latest_robot_pose.pose.pose))
+        cur_pose = transform_to_pose(t_cur_world)
+        dx = msg.pose.pose.position.x - cur_pose.position.x
+        dy = msg.pose.pose.position.y - cur_pose.position.y
+        new_theta = 2.0 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
+        cur_theta = 2.0 * atan2(cur_pose.orientation.z, cur_pose.orientation.w)
+        dtheta = (new_theta - cur_theta + pi) % (2 * pi) - pi
+        dist = sqrt(dx**2 + dy**2)
+
+        if dist > 0.05:
+            self.get_logger().warn(
+                f"🚨⚠️ ArUco correction jump: {dist*100:.1f}cm "
+                f"(dx={dx:.3f}m dy={dy:.3f}m dθ={degrees(dtheta):.1f}°)"
+            )
+        self.get_logger().info(
+            f"ArUco innovation: dx={dx:.3f}m dy={dy:.3f}m dθ={degrees(dtheta):.1f}°"
+        )
+        innov_msg = Vector3Stamped()
+        innov_msg.header.stamp = msg.header.stamp
+        innov_msg.header.frame_id = 'odom'
+        innov_msg.vector.x = dx
+        innov_msg.vector.y = dy
+        innov_msg.vector.z = dtheta
+        self.innovation_pub.publish(innov_msg)
+        # --- fin innovation ---
+
+        self.odom_aruco = msg
+        self.odom_otos_at_aruco_capture = self._get_odom_at_stamp(msg.header.stamp)
 
         position = msg.pose.pose.position
         rotation_deg = degrees(atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w))
-        self.get_logger().info(f"New aruco pose received (pose={position.x} {position.y} {rotation_deg}°) (now waiting cooldown={self.cooldown_value}s)")
+        self.get_logger().info(f"New aruco pose received (pose={position.x} {position.y} {rotation_deg}°) (now waiting cooldown={self.aruco_cooldown_s}s)")
 
-    def odom_callback(self, msg: Odometry):
+    def _get_odom_at_stamp(self, stamp_msg) -> Odometry:
+        """Return the buffered Odometry sample closest to stamp_msg for latency compensation."""
+        target_ns = Time.from_msg(stamp_msg).nanoseconds
+        if not self.odom_otos_buffer:
+            return self.latest_robot_pose
+        closest_ts, closest_odom = min(self.odom_otos_buffer, key=lambda e: abs(e[0] - target_ns))
+        age_ms = abs(closest_ts - target_ns) / 1e6
+        if age_ms > 500.0:
+            self.get_logger().warn(
+                f"ArUco stamp is {age_ms:.0f}ms away from closest OTOS sample — using current pose instead"
+            )
+            return self.latest_robot_pose
+        self.latency_pub.publish(Float32(data=float(age_ms)))
+        return closest_odom
+
+    def odom_otos_callback(self, msg: Odometry):
         self.latest_robot_pose = msg
+        self.odom_otos_buffer.append((Time.from_msg(msg.header.stamp).nanoseconds, msg))
 
-        t = pose_to_transform(msg.pose.pose)
-        t_offset = pose_to_transform(self.latest_set_pose.pose.pose)
-        t_when_set_pose = pose_to_transform(self.robot_pose_when_set_pose.pose.pose)
-        t_when_set_pose_inverse = tf_transformations.inverse_matrix(t_when_set_pose)
+        t_odom_aruco_world = pose_to_transform(self.odom_aruco.pose.pose)
+        
+        t_odom_otos_now = pose_to_transform(msg.pose.pose)
+        t_odom_otos_at_capture = pose_to_transform(self.odom_otos_at_aruco_capture.pose.pose)
+        t_odom_otos_at_capture_inv = tf_transformations.inverse_matrix(t_odom_otos_at_capture)
 
-        t_transformed = t_offset @ t_when_set_pose_inverse @ t
+        t_robot_world = t_odom_aruco_world @ t_odom_otos_at_capture_inv @ t_odom_otos_now
 
         # Publish odom
         new_odom = Odometry()
         new_odom.header = msg.header
         new_odom.child_frame_id = msg.child_frame_id
-        new_odom.pose.pose = transform_to_pose(t_transformed)
+        new_odom.pose.pose = transform_to_pose(t_robot_world)
         new_odom.pose.covariance = msg.pose.covariance
         new_odom.twist = msg.twist
 
