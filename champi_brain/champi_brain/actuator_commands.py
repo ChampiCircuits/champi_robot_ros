@@ -28,7 +28,7 @@ class ActuatorCommand(IntEnum):
 
     # OTHER COMMON ACTIONS
     MOVE                           = 100
-    DETECT_PLATFORM                = 101
+    DETECT_NUTBOXES                = 101
     WAIT                           = 102
     ADD_POINTS                     = 103
 

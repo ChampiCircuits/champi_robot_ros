@@ -69,7 +69,7 @@ class StrategyPublisher(Node):
             return ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)  # Red
         elif action_type == 'moveForPlatform':
             return ColorRGBA(r=0.0, g=0.8, b=0.8, a=1.0)  # Cyan
-        elif action_type == 'detectPlatform':
+        elif action_type == 'detectNutBoxes':
             return ColorRGBA(r=0.0, g=0.5, b=1.0, a=1.0)  # Blue
         elif 'TAKE' in action_type:
             return ColorRGBA(r=1.0, g=0.5, b=0.0, a=1.0)  # Orange for all TAKE actions
@@ -88,7 +88,7 @@ class StrategyPublisher(Node):
             return Marker.ARROW
         elif action_type == 'moveForPlatform':
             return Marker.ARROW
-        elif action_type == 'detectPlatform':
+        elif action_type == 'detectNutBoxes':
             return Marker.SPHERE
         elif 'TAKE' in action_type:
             return Marker.CUBE

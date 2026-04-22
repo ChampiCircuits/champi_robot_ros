@@ -8,9 +8,11 @@ import tf2_ros
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs_py.point_cloud2 import read_points, create_cloud_xyz32
 from std_msgs.msg import Header, Float32
+from geometry_msgs.msg import PoseStamped
 
 from scipy.spatial.transform import Rotation as R
 import numpy as np
+import cv2
 from icecream import ic
 
 def create_point_cloud2(points_array, frame_id):
@@ -56,22 +58,25 @@ def transform_points_array_to_frame_with_transform_matrix(points, transform_matr
     return transformed_points
 
 
-def find_distance_to_platform(filtered_point_cloud_array_in_base_link):
+def find_box_pose_2d(points_3d):
     """
-    Find the distance to the platform in the filtered point cloud.
+    Fit an oriented bounding rectangle to the 2D (x, y) projection of top-plane points.
+    Returns (cx, cy, angle_rad, long_side_m, short_side_m) in base_link frame.
+    angle_rad is the orientation of the long axis of the box.
+    Requires at least 5 points.
     """
-    # Calculate the distance to the platform
-    distances = np.linalg.norm(filtered_point_cloud_array_in_base_link, axis=1)
+    pts_2d = points_3d[:, :2].astype(np.float32).reshape((-1, 1, 2))
+    (cx, cy), (w, h), angle_deg = cv2.minAreaRect(pts_2d)
+    # Normalise: long_side >= short_side, angle refers to the long axis
+    if w < h:
+        angle_deg += 90.0
+        w, h = h, w
+    return float(cx), float(cy), float(np.deg2rad(angle_deg)), float(w), float(h)
 
-    # Find the minimum distance
-    min_distance = np.min(distances)
 
-    return min_distance
-
-
-class PlatformDetectionNode(Node):
+class NutBoxesDetectionNode(Node):
     def __init__(self):
-        super().__init__('platform_detection_node')
+        super().__init__('nut_boxes_detection_node')
 
         # point cloud sub
         self.point_cloud_sub = self.create_subscription(PointCloud2, '/camera/camera/depth/color/points', self.point_cloud_callback, 10)
@@ -86,17 +91,19 @@ class PlatformDetectionNode(Node):
         self.transform_matrix_cam_to_base_link = None
         self.transform_matrix_base_link_to_odom = None
 
-        # platforms
-        margin = 0.02 # m
-        platform_height = 0.125 # m
-        self.interval_platform_height = [platform_height - margin, platform_height + margin] # m
+        # Nuts Box to detect: dimensions (length x width x height in meters)
+        self.box_length = 0.150
+        self.box_width  = 0.050 * 4  # we want to detect the whole cluster of 4 boxes, not each box separately, so we consider a "virtual box" that encompasses the 4 boxes
+        self.box_height = 0.030
+        height_margin = 0.02  # m, tolerance on z filtering
+        self.top_plane_height_interval = [self.box_height - height_margin, self.box_height + height_margin]
 
         # distance publisher
-        self.distance_pub = self.create_publisher(Float32, '/platform_distance', 10)
+        self.nutboxes_relative_position_pub = self.create_publisher(PoseStamped, '/nutboxes_relative_position', 10)
 
         self.timer = self.create_timer(0.5, self.timer_callback)
 
-        self.get_logger().info("Platform Detection Node started !")
+        self.get_logger().info("Nut Boxes Detection Node started !")
 
     def timer_callback(self):
         if self.latest_point_cloud is None:
@@ -125,7 +132,7 @@ class PlatformDetectionNode(Node):
         transformed_points_array = self.transform_points_to_base_link(points)
 
         end_time = self.get_clock().now()
-        elapsed_time = (end_time - start_time).nanoseconds / 1e6  # Convert to milliseconds
+        elapsed_time = (end_time - start_time).nanoseconds / 1e6
         self.get_logger().debug(f"Point cloud processing time: {elapsed_time:.2f} ms")
 
         # ==================================== FILTER POINT CLOUD ====================================
@@ -134,29 +141,62 @@ class PlatformDetectionNode(Node):
         filtered_point_cloud_array_in_base_link = self.filter_point_cloud_array(transformed_points_array)
 
         stop_time = self.get_clock().now()
-        elapsed_time = (stop_time - start_time).nanoseconds / 1e6  # Convert to milliseconds
+        elapsed_time = (stop_time - start_time).nanoseconds / 1e6
         filtered_points_count = filtered_point_cloud_array_in_base_link.shape[0]
         self.get_logger().debug(f"Filtered point cloud size: {filtered_points_count}")
         self.get_logger().debug(f"Point cloud filtering time: {elapsed_time:.2f} ms \n")
 
         if filtered_points_count == 0:
-            msg = Float32()
-            msg.data = -1.0
-            self.distance_pub.publish(msg) # we always publish, even when nothing is detected so that state machine still get updated values
+            msg_out = PoseStamped()
+            msg_out.header.stamp = self.get_clock().now().to_msg()
+            msg_out.header.frame_id = 'base_link'
+            msg_out.pose.position.z = -1.0  # sentinel: no detection
+            self.nutboxes_relative_position_pub.publish(msg_out)
             return
 
-        # transform filtered point cloud to odom frame
-        # filtered_point_cloud_in_odom = self.transform_points_to_base_link(filtered_point_cloud_array_in_base_link)
-        # for viz only :
         self.publish_filtered_point_cloud(filtered_point_cloud_array_in_base_link, 'base_link')
 
-        # Find the shortest from the robot to the platform
-        dist_to_platform = find_distance_to_platform(filtered_point_cloud_array_in_base_link)
-        self.get_logger().debug(f"Distance to platform: {dist_to_platform:.2f} m")
+        if filtered_points_count < 5:
+            self.get_logger().warn("Not enough points to fit box rectangle.")
+            return
 
-        msg = Float32()
-        msg.data = dist_to_platform
-        self.distance_pub.publish(msg)
+        cx, cy, angle_rad, detected_long, detected_short = find_box_pose_2d(filtered_point_cloud_array_in_base_link)
+
+        # Validate detected rectangle dimensions against expected box size (±20% tolerance)
+        size_tolerance = 0.20
+        long_ok  = abs(detected_long  - self.box_length) < self.box_length * size_tolerance
+        short_ok = abs(detected_short - self.box_width)  < self.box_width  * size_tolerance
+        if not long_ok or not short_ok:
+            self.get_logger().debug(
+                f"❌ Rectangle size mismatch: detected ({detected_long:.3f}m x {detected_short:.3f}m), "
+                f"expected ({self.box_length:.3f}m x {self.box_width:.3f}m)"
+            )
+            msg_out = PoseStamped()
+            msg_out.header.stamp = self.get_clock().now().to_msg()
+            msg_out.header.frame_id = 'base_link'
+            msg_out.pose.position.z = -1.0  # sentinel: no valid detection
+            self.nutboxes_relative_position_pub.publish(msg_out)
+            return
+
+        dist = float(np.hypot(cx, cy))
+        self.get_logger().debug(
+            f"✅ Box detected: {filtered_points_count} pts | "
+            f"size=({detected_long:.3f}x{detected_short:.3f})m | "
+            f"pos=({cx:.3f}, {cy:.3f})m dist={dist:.3f}m angle={np.degrees(angle_rad):.1f}°"
+        )
+
+        msg_out = PoseStamped()
+        msg_out.header.stamp = self.get_clock().now().to_msg()
+        msg_out.header.frame_id = 'base_link'
+        msg_out.pose.position.x = cx
+        msg_out.pose.position.y = cy
+        msg_out.pose.position.z = 0.0
+        quat = R.from_euler('z', angle_rad).as_quat()
+        msg_out.pose.orientation.x = quat[0]
+        msg_out.pose.orientation.y = quat[1]
+        msg_out.pose.orientation.z = quat[2]
+        msg_out.pose.orientation.w = quat[3]
+        self.nutboxes_relative_position_pub.publish(msg_out)
 
     def publish_filtered_point_cloud(self, filtered_point_cloud_array, frame):
         # Create a PointCloud2 message
@@ -197,7 +237,7 @@ class PlatformDetectionNode(Node):
         filtered_point_cloud = []
         for point in transformed_points:
             x, y, z = point
-            if (self.interval_platform_height[0]) < z < self.interval_platform_height[1]:
+            if self.top_plane_height_interval[0] < z < self.top_plane_height_interval[1]:
                 filtered_point_cloud.append(point)
 
         filtered_point_cloud = np.array(filtered_point_cloud)
@@ -207,7 +247,7 @@ class PlatformDetectionNode(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    node = PlatformDetectionNode()
+    node = NutBoxesDetectionNode()
 
     try:
         rclpy.spin(node)

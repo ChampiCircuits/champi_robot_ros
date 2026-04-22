@@ -30,12 +30,28 @@ class ROSActionExecutor(ActionExecutor):
 
         super().__init__(node)
     
-    def detect_platform(self) -> None:
+    _DETECT_NUTBOXES_TIMEOUT_S = 3.0
+
+    def detect_nutboxes(self) -> None:
         """
-        Trigger platform detection.
-        Note: Detection is handled by sensor callbacks in the state machine.
+        Trigger nutbox detection. Fires on_goal_failed if no valid detection
+        arrives within _DETECT_NUTBOXES_TIMEOUT_S seconds.
         """
-        self.logger.info('Platform detection triggered')
+        self.logger.info('Started Nutbox detection timer...')
+        self._detect_nutboxes_timeout_timer = self.node.create_timer(
+            self._DETECT_NUTBOXES_TIMEOUT_S, self._on_detect_nutboxes_timeout
+        )
+
+    def _on_detect_nutboxes_timeout(self) -> None:
+        self.cancel_detect_nutboxes_timeout()
+        self.logger.warn(f'⚠️ Nutbox detection timeout ({self._DETECT_NUTBOXES_TIMEOUT_S:.0f}s) — cancelling group')
+        self.on_goal_failed('detectNutBoxes timeout')
+
+    def cancel_detect_nutboxes_timeout(self) -> None:
+        timer = getattr(self, '_detect_nutboxes_timeout_timer', None)
+        if timer is not None:
+            timer.destroy()
+            self._detect_nutboxes_timeout_timer = None
         
     
     def execute_actuator_action(self, actuator_command: ActuatorCommand) -> None:

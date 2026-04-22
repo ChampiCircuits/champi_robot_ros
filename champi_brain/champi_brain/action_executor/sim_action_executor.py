@@ -8,7 +8,7 @@ import time
 from rclpy.node import Node
 from champi_brain.action_executor.action_executor import ActionExecutor
 from std_msgs.msg import Int8
-
+from geometry_msgs.msg import PoseStamped
 from champi_brain.actuator_commands import ActuatorCommand
 
 
@@ -61,10 +61,25 @@ class SIMActionExecutor(ActionExecutor):
         self.time_per_action = time_per_action
         self.logger.info(f'Updated time per action configuration with {len(time_per_action)} entries')
 
-    def detect_platform(self) -> None:
+    def detect_nutboxes(self) -> None:
         """
-        Trigger platform detection using sensors.
-        The detected position will be made available through callbacks.
+        Simulate nutbox detection: inject a fake detection at a fixed relative position (0.3m ahead).
         """
-        ...
-        # TODO delete or return a fixed value ?
+        self.logger.info('[SIM] Simulating nutbox detection — injecting fake pose in 1s')
+        self._sim_nutbox_timer = self.node.create_timer(1.0, self._sim_nutbox_detected_callback)
+
+    def _sim_nutbox_detected_callback(self) -> None:
+        if hasattr(self, '_sim_nutbox_timer') and self._sim_nutbox_timer is not None:
+            self._sim_nutbox_timer.destroy()
+            self._sim_nutbox_timer = None
+
+        msg = PoseStamped()
+        msg.header.frame_id = 'base_link'
+        msg.header.stamp = self.node.get_clock().now().to_msg()
+        msg.pose.position.x = 0.30  # 30cm ahead
+        msg.pose.position.y = 0.0
+        msg.pose.position.z = 0.0  # z != -1 means valid detection
+        self.logger.info('[SIM] Nutbox fake detection published')
+        if not hasattr(self, '_sim_nutbox_pub'):
+            self._sim_nutbox_pub = self.node.create_publisher(PoseStamped, '/nutboxes_relative_position', 10)
+        self._sim_nutbox_pub.publish(msg)

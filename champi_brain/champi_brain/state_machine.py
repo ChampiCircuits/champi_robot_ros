@@ -75,8 +75,8 @@ class StateMachine:
         # Flags for state transitions
         self._stop_requested = False
         self._action_completed = False
-        self._platform_detected = False
-        self.platform_center: Optional[tuple[float, float, float]] = None
+        self._nutboxes_detected = False
+        self.nutboxes_center_pose_in_world: Optional[tuple[float, float, float]] = None
         
         # Initialization flags
         self._ros_initialized = False
@@ -157,16 +157,31 @@ class StateMachine:
                 self.logger.info(f"Added {self.strategy_config.come_home_points} points for coming home")
                 self.match.add_points(self.strategy_config.come_home_points)
 
-    def notify_platform_detected(self, platform_pose: tuple[float, float, float]) -> None:
-        """Notify that platform has been detected."""
-        self.platform_center = platform_pose
-        self._platform_detected = True
+    def notify_nutboxes_detected(self, nutboxes_center_pose_in_world: tuple[float, float, float]) -> None:
+        """Notify that nutboxes have been detected. Injects the position into
+        world_state_elements under the key 'detected_nutboxes' so that subsequent
+        move_relative_to('detected_nutboxes', ...) actions resolve at runtime."""
+        x, y, theta_deg = nutboxes_center_pose_in_world
+        self.nutboxes_center_pose_in_world = nutboxes_center_pose_in_world
+        self._nutboxes_detected = True
+
+        elem = GameElement()
+        elem.id = "detected_nutboxes"
+        elem.pose.position.x = x
+        elem.pose.position.y = y
+        t = radians(theta_deg)
+        elem.pose.orientation.z = sin(t / 2)
+        elem.pose.orientation.w = cos(t / 2)
+        self.world_state_elements["detected_nutboxes"] = elem
+        self.logger.info(f"📦 Nutboxes injected into world state at ({x:.3f}, {y:.3f}, {theta_deg:.1f}°)")
+
         self.notify_action_completed()
         
     def cancel_current_group(self) -> None:
         """Cancel all actions with the current group."""
         if self.current_group:
             self.canceled_groups.add(self.current_group)
+        self.world_state_elements.pop("detected_nutboxes", None)
         self._cancel_current_action()
         # Transition back to idle after canceling
         if self.state == self.STATE_EXECUTING_ACTION:
@@ -256,7 +271,7 @@ class StateMachine:
         """Handle entry into idle state - find next action."""
         self.current_action = None
         self._action_completed = False
-        self._platform_detected = False
+        self._nutboxes_detected = False
         
         # Process next action from strategy
         self._find_next_action()
@@ -340,8 +355,8 @@ class StateMachine:
     
         if actuator_command == ActuatorCommand.MOVE:
             self._execute_move(action)
-        elif actuator_command == ActuatorCommand.DETECT_PLATFORM:
-            self._execute_detect_platform(action)
+        elif actuator_command == ActuatorCommand.DETECT_NUTBOXES:
+            self._execute_detect_nutboxes(action)
         elif actuator_command == ActuatorCommand.WAIT:
             self._execute_wait(action)
         elif actuator_command == ActuatorCommand.ADD_POINTS:
@@ -447,10 +462,10 @@ class StateMachine:
             new_theta = theta_deg + offset.theta_deg
         return new_x, new_y, new_theta
 
-    def _execute_detect_platform(self, action: Action) -> None:
-        """Execute platform detection."""
-        self.logger.info("Detecting platform...")
-        self.executor.detect_platform()
+    def _execute_detect_nutboxes(self, action: Action) -> None:
+        """Execute nutbox detection."""
+        self.logger.info("Detecting nutboxes...")
+        self.executor.detect_nutboxes()
     
     def _execute_wait(self, action: Action) -> None:
         """Execute wait action."""
@@ -507,10 +522,11 @@ class StateMachine:
         self.strategy = []
         self.current_group = None
         self.canceled_groups.clear()
-        self.platform_center = None
+        self.nutboxes_center_pose_in_world = None
+        self.world_state_elements.pop("detected_nutboxes", None)
         
         self._stop_requested = False
         self._action_completed = False
-        self._platform_detected = False
+        self._nutboxes_detected = False
         
         self._transition_to(self.STATE_STOP)

@@ -69,9 +69,9 @@ class ActionExecutor():
         send_goal_future.add_done_callback(self._goal_response_callback)
     
     @abstractmethod
-    def detect_platform(self) -> None:
+    def detect_nutboxes(self) -> None:
         """
-        Trigger platform detection using sensors.
+        Trigger nutbox detection using sensors.
         The detected position will be made available through callbacks.
         """
         ...
@@ -86,6 +86,10 @@ class ActionExecutor():
             action_name: Name of actuator action (PUT_BANNER, TAKE_CANS, etc.)
         """
         ...
+
+    def cancel_detect_nutboxes_timeout(self) -> None:
+        """Cancel the nutbox detection timeout timer if active. No-op by default."""
+        pass
 
     def wait(self, duration: float) -> None:
         """

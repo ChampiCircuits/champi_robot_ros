@@ -11,6 +11,7 @@ from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
 from ament_index_python.packages import get_package_share_directory
 # Messages imports
 from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32
+from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
 from rclpy.duration import Duration
 
@@ -18,7 +19,7 @@ from champi_interfaces.msg import STMState, TableObservation
 from champi_interfaces.srv import SetPose
 # Other imports
 import time
-from math import atan2, degrees, radians
+from math import atan2, degrees, radians, cos, sin
 # champi_brain imports
 from champi_brain.state_machine import StateMachine, StrategyConfig
 from champi_brain.match_controller import MatchController
@@ -148,13 +149,13 @@ class StateMachineNode(Node):
             10
         )
         
-        # Platform detection # TODO remove
+        # Box detection
         self.create_subscription(
-            Float32, '/platform_distance',
-            self._on_platform_distance,
+            PoseStamped, '/nutboxes_relative_position',
+            self._on_nutbox_pose,
             10
         )
-        self.last_platform_distance = None
+        self.last_nutbox_pose: PoseStamped | None = None
         
         # Actuators finished
         self.create_subscription(
@@ -282,33 +283,31 @@ class StateMachineNode(Node):
         
         self.get_logger().warn('✅ State machine reset complete')
     
-    def _on_platform_distance(self, msg: Float32) -> None:
-        """Handle platform distance detection.""" # TODO informer le world state ?
-        self.last_platform_distance = msg.data
-        
+    def _on_nutbox_pose(self, msg: PoseStamped) -> None:
+        """Handle box relative pose detection (pose in base_link frame). z=-1 means no detection."""
         if not self.state_machine or not self.current_pose:
             return
-        
-        # Only process if we're in detection mode
-        if self.state_machine.get_state() != StateMachine.STATE_EXECUTING_ACTION:
+
+        current_action = self.state_machine.current_action
+        if current_action is None or current_action.action != ActuatorCommand.DETECT_NUTBOXES:
             return
         
-        # Check if platform detected
-        if self.last_platform_distance is not None and self.last_platform_distance > 0 and self.last_platform_distance < 0.6:
-            # Compute platform pose from robot pose
-            x_robot, y_robot, theta_deg = self.current_pose
-            theta_rad = radians(theta_deg)
-            
-            # Platform is at distance in front of robot
-            half_platform = 0.05
-            center_dist = self.last_platform_distance + half_platform
-            
-            from math import cos, sin
-            x_platform = x_robot + center_dist * cos(theta_rad)
-            y_platform = y_robot + center_dist * sin(theta_rad)
-            
-            self.get_logger().info(f'📍 Platform detected at ({x_platform:.2f}, {y_platform:.2f})')
-            self.state_machine.notify_platform_detected((x_platform, y_platform, theta_deg))
+        self.get_logger().info(f'📦 Nutbox pose received: ({msg.pose.position.x:.2f}, {msg.pose.position.y:.2f}, {msg.pose.position.z:.2f}) in base_link frame')
+
+        # Cancel timeout — we have a valid detection
+        self.action_executor.cancel_detect_nutboxes_timeout()
+
+        # Convert relative pose (base_link) to world pose using current robot pose
+        x_robot, y_robot, theta_deg = self.current_pose
+        theta_rad = radians(theta_deg)
+
+        dx = msg.pose.position.x
+        dy = msg.pose.position.y
+        x_box = x_robot + cos(theta_rad) * dx - sin(theta_rad) * dy
+        y_box = y_robot + sin(theta_rad) * dx + cos(theta_rad) * dy
+
+        self.get_logger().info(f'📦 Nutboxes detected at ({x_box:.2f}, {y_box:.2f}, {theta_deg:.2f}°) in world frame')
+        self.state_machine.notify_nutboxes_detected((x_box, y_box, theta_deg))
     
     def _on_actuators_finished(self, msg: Int8MultiArray) -> None:
         """Handle actuator completion."""
@@ -404,7 +403,7 @@ class StateMachineNode(Node):
         if action is None:
             return ""
 
-        label = action.action.name  # e.g. "MOVE", "TAKE_2_BOXES"...
+        label = action.action if isinstance(action.action, str) else action.action.name
         if action.group:
             label += f":[{action.group}]"
 

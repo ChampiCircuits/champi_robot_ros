@@ -336,10 +336,12 @@ class StrategyBuilder:
         self.set_current_group(group)
 
         # Approach movement
-        self.move_relative_to(elements_center, Offset(-0.2, 0.0, 0.0), use_collision_avoidance=True)
+        self.move_relative_to(elements_center, Offset(-0.25, 0.0, 0.0), use_collision_avoidance=True)
 
-        # Platform detection - offset from platform center
-        # self.custom_action("detectPlatform")
+        # NutBoxes detection — after this action, 'detected_nutboxes' is available in world state
+        self.custom_action(ActuatorCommand.DETECT_NUTBOXES)
+        # Move relative to the detected position rather than the theoretical center
+        self.move_relative_to("detected_nutboxes", Offset(-0.20, 0.0, 0.0))
 
         # Taking first 2 boxes
         self.custom_action(ActuatorCommand.TAKE_2_BOXES)
