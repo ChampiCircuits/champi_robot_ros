@@ -143,14 +143,10 @@ class ArucoLocalizerNode(Node):
 
         # get bird view
         bird_view_img = self.bird_view.project_img_to_bird(self.curent_image)
-        
+
+        # Check if the frame is blurry (on grayscale image, before any binarization)
         frame = cv2.resize(bird_view_img, (200, 140))
-
-        new_image = cv2.adaptiveThreshold(frame, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-                    cv2.THRESH_BINARY, 11, 2)
-
-        # Check if the frame is blurry
-        _, blurry, variance = self.is_blurry(new_image, threshold=1000.0)
+        _, blurry, variance = self.is_blurry(frame, threshold=1000.0)
 
         if blurry:
             self.get_logger().warn(f"Image is blurry, variance: {variance:.2f}")

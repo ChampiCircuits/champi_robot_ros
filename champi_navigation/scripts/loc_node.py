@@ -76,8 +76,8 @@ class LocNode(Node):
         # Offset variables
         self.latest_set_pose = PoseWithCovarianceStamped()
 
-        self.latest_robot_pose = PoseWithCovarianceStamped()
-        self.robot_pose_when_set_pose = PoseWithCovarianceStamped()
+        self.latest_robot_pose = Odometry()
+        self.robot_pose_when_set_pose = Odometry()
         self.odom_callback(Odometry())
 
     def handle_set_pose_srv(self, request, response):
