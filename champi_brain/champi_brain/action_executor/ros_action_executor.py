@@ -66,6 +66,5 @@ class ROSActionExecutor(ActionExecutor):
         msg = Int8()
         msg.data = int(actuator_command)
         self.actuator_pub.publish(msg)
-        # TODO there should be feedback when action is done
-        # also we should be able to tell if we want to wait for completion or not
+        # Completion feedback comes via /actuators_finished published by hw_interface
     

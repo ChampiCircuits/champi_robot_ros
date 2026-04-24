@@ -4,10 +4,9 @@ SIM Action Executor - Simulation implementation of ActionExecutor interface.
 Simulates robot actions without real hardware.
 """
 
-import time
 from rclpy.node import Node
 from champi_brain.action_executor.action_executor import ActionExecutor
-from std_msgs.msg import Int8
+from std_msgs.msg import Int8, Int8MultiArray
 from geometry_msgs.msg import PoseStamped
 from champi_brain.actuator_commands import ActuatorCommand
 
@@ -29,6 +28,8 @@ class SIMActionExecutor(ActionExecutor):
         super().__init__(node)
         self.simulate_actuators_delays = simulate_actuators_delays
         self.time_per_action: dict = {}
+        self._actuator_timer = None
+        self.actuators_finished_pub = node.create_publisher(Int8MultiArray, '/actuators_finished', 10)
     
     def execute_actuator_action(self, actuator_command: ActuatorCommand) -> None:
         """
@@ -39,8 +40,9 @@ class SIMActionExecutor(ActionExecutor):
         """
         if not self.simulate_actuators_delays:
             self.logger.info(f'Executing actuator action: {actuator_command.name} in sim, no delay simulated')
+            self._publish_actuator_finished(actuator_command)
             return
-        
+
         # Get delay from configuration
         try:
             delay = self.time_per_action[actuator_command.name]
@@ -48,8 +50,23 @@ class SIMActionExecutor(ActionExecutor):
             raise ValueError(f'No time_per_action entry for action: {actuator_command.name}, possible values: {list(self.time_per_action.keys())}')
 
         self.logger.info(f'Executing actuator action: {actuator_command.name} in sim, waiting {delay}s')
-        time.sleep(delay)  # TODO: make non-blocking with timer callback?
+        self._actuator_timer = self.node.create_timer(
+            delay, lambda cmd=actuator_command: self._on_actuator_timer_done(cmd)
+        )
+
+    def _on_actuator_timer_done(self, actuator_command: ActuatorCommand) -> None:
+        if self._actuator_timer is not None:
+            self._actuator_timer.destroy()
+            self._actuator_timer = None
         self.logger.info(f'Executing actuator action: {actuator_command.name} done!')
+        self._publish_actuator_finished(actuator_command)
+
+    def _publish_actuator_finished(self, actuator_command: ActuatorCommand) -> None:
+        msg = Int8MultiArray()
+        idx = int(actuator_command)
+        msg.data = [0] * (idx + 1)
+        msg.data[idx] = 2  # ActuatorState::DONE
+        self.actuators_finished_pub.publish(msg)
 
     def set_time_per_action(self, time_per_action: dict) -> None:
         """

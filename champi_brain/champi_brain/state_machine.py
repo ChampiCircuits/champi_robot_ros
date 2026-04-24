@@ -489,7 +489,6 @@ class StateMachine:
         """Execute actuator action."""
         self.logger.info(f"Executing actuator: {action.action}")
         self.executor.execute_actuator_action(action.action)
-        self.notify_action_completed()
     
     def _cancel_current_action(self) -> None:
         """Cancel the current action."""
