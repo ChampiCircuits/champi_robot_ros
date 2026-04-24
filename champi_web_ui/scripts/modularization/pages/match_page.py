@@ -18,16 +18,22 @@ color = None
 
 last_odom_time_label, tirette_label, e_stop_label = None, None, None
 radio_strategy_selection, radio_color_selection = None, None
+auto_placement_checkbox, auto_placement_status_label = None, None
 
 src = 'champi_web_ui/scripts/modularization/resources/table_2025.png'
 
 def ready_to_launch_match():
+    enabled = auto_placement_checkbox.value if auto_placement_checkbox is not None else False
+    ros_node.set_auto_placement_enabled(enabled)
     ros_node.ready_to_start_match = True
     on_strategy_selected()
-    container.clear()
-    with container:
-        ui.image(src).style('width:75%')
-    ui.navigate.to('/in_match')
+    if enabled:
+        ui.notify('Auto-placement lancé. Suivre le statut ci-dessous.', color='warning')
+    else:
+        container.clear()
+        with container:
+            ui.image(src).style('width:75%')
+        ui.navigate.to('/in_match')
 
 def zone_chosen(args: events.GenericEventArguments):
     id = args.args['element_id']
@@ -136,8 +142,11 @@ def create() -> None:
 
                             with ui.step('Choisir la strategie'):
                                 available_strategies = get_available_strategies()
-                                global radio_strategy_selection
+                                global radio_strategy_selection, auto_placement_checkbox, auto_placement_status_label
                                 radio_strategy_selection = ui.radio(available_strategies, value='__strat_main_2025.py')
+                                auto_placement_checkbox = ui.checkbox('Auto robot placement', value=False)
+                                auto_placement_status_label = ui.label('Statut auto-placement: inactif')
+                                ui.timer(0.2, update_auto_placement_status)
                                 with ui.stepper_navigation():
                                     btn_next = ui.button('Prêt !! 😬', on_click=ready_to_launch_match)
                                     btn_next.bind_enabled_from(radio_strategy_selection, 'value')
@@ -192,7 +201,32 @@ def open_banner():
 def on_strategy_selected():
     # send the chosen strategy to the node
     ros_node.pub_strategy(radio_strategy_selection.value+"#"+color)
-    stepper.next()
+
+
+def update_auto_placement_status():
+    if auto_placement_status_label is None:
+        return
+
+    if not ros_node.auto_placement_enabled:
+        auto_placement_status_label.text = 'Statut auto-placement: inactif'
+        return
+
+    state = ros_node.latest_sm_state
+    labels = {
+        'auto_placement_wait_still': 'Statut auto-placement: attente immobilite robot',
+        'auto_placement_localizing': 'Statut auto-placement: localisation ArUco en cours',
+        'auto_placement_setting_pose': 'Statut auto-placement: recalage pose localisation',
+        'auto_placement_moving': 'Statut auto-placement: deplacement vers pose initiale',
+        'auto_placement_failed': 'Statut auto-placement: echec (placer robot a la main ou retry)'
+    }
+
+    auto_placement_status_label.text = labels.get(state, f'Statut auto-placement: {state}')
+
+    if state == 'init':
+        container.clear()
+        with container:
+            ui.image(src).style('width:75%')
+        ui.navigate.to('/in_match')
 
 def reset_all():
     ros_node.reset_all()

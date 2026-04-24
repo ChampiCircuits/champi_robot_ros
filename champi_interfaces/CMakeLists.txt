@@ -17,6 +17,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/TableObservation.msg"
   "action/Navigate.action"
   "srv/SetPose.srv"
+  "srv/SetAutoPlacementEnabled.srv"
   DEPENDENCIES geometry_msgs
 )
 

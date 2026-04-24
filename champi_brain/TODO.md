@@ -3,7 +3,6 @@
 FEATURES
 - garder detect_platform ? faut plutot faire passer l'info par le world state d'ailleurs et qu'après les movements se basent sur la pos en world state
 - améliorer la verif de ros initialized ? checker par ex que tous les noeuds sont vivants
-- quand une action termine (par ex un actuateur, il faut appeler un callback plutot que d'attendre activement)
 - utiliser le feedback de la nav + rejet de goal
 - ajouter des diags partout
 

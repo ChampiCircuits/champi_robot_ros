@@ -5,6 +5,7 @@ from rclpy.node import Node
 from std_msgs.msg import Int64, Int64MultiArray
 from nav_msgs.msg import Odometry
 from champi_interfaces.msg import STMState
+from champi_interfaces.srv import SetAutoPlacementEnabled
 from std_msgs.msg import Int8, Empty
 
 from enum import Enum
@@ -47,6 +48,7 @@ class PagesNode(Node):
             )
 
             self.score_subscriber = self.create_subscription(Int8, '/final_score', self.update_score, 10)
+            self.sm_state_subscriber = self.create_subscription(String, '/sm_state', self.update_sm_state, 10)
 
             # Variables used during match
             self.score = 0
@@ -54,6 +56,8 @@ class PagesNode(Node):
             self.start_time = None
             self.match_started = False
             self.ready_to_start_match = False
+            self.latest_sm_state = 'waiting_for_strategy'
+            self.auto_placement_enabled = False
 
             self.timer = self.create_timer(0.1, self.update)
 
@@ -63,6 +67,10 @@ class PagesNode(Node):
                 10
             )
             self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
+            self.set_auto_placement_enabled_client = self.create_client(
+                SetAutoPlacementEnabled,
+                '/set_auto_placement_enabled'
+            )
 
             self.c = 0
             self.get_logger().info("Node created !")
@@ -131,12 +139,33 @@ class PagesNode(Node):
     def stm_state_callback(self, msg):
         self.last_stm_state = msg
 
+    def update_sm_state(self, msg: String):
+        self.latest_sm_state = msg.data
+
     def pub_strategy(self, strategy):
         self.get_logger().info(f'Strategy set to {strategy}')
 
         msg = String()
         msg.data = strategy
         self.strategy_pub.publish(msg)
+
+    def set_auto_placement_enabled(self, enabled: bool) -> bool:
+        self.auto_placement_enabled = enabled
+        if not self.set_auto_placement_enabled_client.service_is_ready():
+            self.get_logger().warn('Service /set_auto_placement_enabled not ready')
+            return False
+
+        request = SetAutoPlacementEnabled.Request()
+        request.enabled = enabled
+        future = self.set_auto_placement_enabled_client.call_async(request)
+        future.add_done_callback(self._on_set_auto_placement_done)
+        return True
+
+    def _on_set_auto_placement_done(self, future):
+        try:
+            future.result()
+        except Exception as exc:
+            self.get_logger().error(f'Failed to call /set_auto_placement_enabled: {exc}')
 
 
 

@@ -11,12 +11,13 @@ from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
 from ament_index_python.packages import get_package_share_directory
 # Messages imports
 from std_msgs.msg import Int8, Int8MultiArray, String, Empty, Float32
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from rclpy.duration import Duration
 
 from champi_interfaces.msg import STMState, TableObservation
 from champi_interfaces.srv import SetPose
+from champi_interfaces.srv import SetAutoPlacementEnabled
 # Other imports
 import time
 from math import atan2, degrees, radians, cos, sin
@@ -29,6 +30,8 @@ from champi_brain.action_executor.sim_action_executor import SIMActionExecutor
 from champi_brain.strategy_loader import load_strategy
 from champi_brain.motion_config import configure_motion_defaults
 from champi_brain.actuator_commands import ActuatorCommand
+from champi_brain.strategy_dsl import MotionParams
+from champi_brain.auto_placement_controller import AutoPlacementController
 from champi_libraries_py.marker_helper.canva import *
 from champi_libraries_py.marker_helper.canva import Canva
 
@@ -83,6 +86,15 @@ class StateMachineNode(Node):
             self.get_logger().info(f'\tsimulate_actuators_delays: {simulate_actuators_delays}')
         self.get_logger().info(f'\tmatch_total_time: {match_total_time}s')
         self.get_logger().info(f'\treturn_home_safety_margin: {return_home_safety_margin}s')
+
+        # Auto-placement constants (hardcoded on purpose for now)
+        self.AUTO_PLACEMENT_TOTAL_TIMEOUT_S = 15.0
+        self.AUTO_PLACEMENT_REST_REQUIRED_S = 0.5
+        self.AUTO_PLACEMENT_REQUIRED_ARUCO_POSES = 3
+        self.AUTO_PLACEMENT_ARUCO_POS_THRESHOLD_M = 0.05
+        self.AUTO_PLACEMENT_ARUCO_ANGLE_THRESHOLD_DEG = 8.0
+        self.AUTO_PLACEMENT_LINEAR_VEL_THRESHOLD = 0.03
+        self.AUTO_PLACEMENT_ANGULAR_VEL_THRESHOLD = 0.15
         
         # ============================================================
         # CONFIGURE MOTION DEFAULTS FROM POSE CONTROLLER PARAMS
@@ -134,6 +146,8 @@ class StateMachineNode(Node):
             10
         )
         self.current_pose = None  # (x, y, theta_deg) # TODO object Position instead?
+        self.current_linear_velocity = 0.0
+        self.current_angular_velocity = 0.0
         
         # Chosen strategy
         self.create_subscription(
@@ -156,6 +170,13 @@ class StateMachineNode(Node):
             10
         )
         self.last_nutbox_pose: PoseStamped | None = None
+
+        self.create_subscription(
+            PoseWithCovarianceStamped,
+            '/aruco_loc/pose',
+            self._on_aruco_pose,
+            10
+        )
         
         # Actuators finished
         self.create_subscription(
@@ -193,6 +214,27 @@ class StateMachineNode(Node):
         
         # Service client for setting initial pose
         self.set_pose_client = self.create_client(SetPose, '/set_pose')
+
+        # Service server for toggling auto placement from UI
+        self.create_service(
+            SetAutoPlacementEnabled,
+            '/set_auto_placement_enabled',
+            self._on_set_auto_placement_enabled
+        )
+
+        self.auto_placement = AutoPlacementController(
+            logger=self.get_logger(),
+            request_set_pose=self._set_initial_pose,
+            request_move_to_init=self._request_auto_placement_move,
+            on_completed=self._on_auto_placement_completed,
+            total_timeout_s=self.AUTO_PLACEMENT_TOTAL_TIMEOUT_S,
+            rest_required_s=self.AUTO_PLACEMENT_REST_REQUIRED_S,
+            required_aruco_poses=self.AUTO_PLACEMENT_REQUIRED_ARUCO_POSES,
+            aruco_pos_threshold_m=self.AUTO_PLACEMENT_ARUCO_POS_THRESHOLD_M,
+            aruco_angle_threshold_deg=self.AUTO_PLACEMENT_ARUCO_ANGLE_THRESHOLD_DEG,
+            linear_vel_threshold=self.AUTO_PLACEMENT_LINEAR_VEL_THRESHOLD,
+            angular_vel_threshold=self.AUTO_PLACEMENT_ANGULAR_VEL_THRESHOLD,
+        )
         
         # ============================================================
         # TIMER
@@ -247,7 +289,24 @@ class StateMachineNode(Node):
             msg.pose.pose.position.y,
             theta_deg
         )
-    
+        self.current_linear_velocity = (msg.twist.twist.linear.x ** 2 + msg.twist.twist.linear.y ** 2) ** 0.5
+        self.current_angular_velocity = abs(msg.twist.twist.angular.z)
+
+    def _on_set_auto_placement_enabled(self, request: SetAutoPlacementEnabled.Request, response: SetAutoPlacementEnabled.Response):
+        """Enable/disable auto-placement from GUI."""
+        self.auto_placement.set_enabled(bool(request.enabled))
+        self.get_logger().warn(f'Auto-placement enabled set to: {self.auto_placement.enabled}')
+        return response
+
+    def _on_aruco_pose(self, msg: PoseWithCovarianceStamped) -> None:
+        """Collect ArUco poses during localization phase."""
+        theta_rad = 2 * atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
+        self.auto_placement.on_aruco_pose(
+            msg.pose.pose.position.x,
+            msg.pose.pose.position.y,
+            degrees(theta_rad),
+        )
+
     def _on_chosen_strategy(self, msg: String) -> None:
         """Handle strategy choice."""
         # Format: "strategy_file#COLOR"
@@ -264,6 +323,8 @@ class StateMachineNode(Node):
     def _on_reset_request(self, msg: Empty) -> None:
         """Handle reset request."""
         self.get_logger().warn('🔄 Reset requested')
+
+        self.auto_placement.reset()
         
         if self.state_machine:
             self.state_machine.reset()
@@ -336,12 +397,20 @@ class StateMachineNode(Node):
     
     def _on_action_completed(self) -> None:
         """Called when action executor completes an action."""
+        if self.auto_placement.in_progress and self.auto_placement.status == AutoPlacementController.STATUS_MOVING_TO_INIT:
+            self.auto_placement.on_move_result(success=True)
+            return
+
         if self.state_machine:
             self.state_machine.notify_action_completed()
     
     def _on_action_failed(self, error_msg: str) -> None:
         """Called when action executor fails."""
         self.get_logger().error(f'❌ Action failed: {error_msg}')
+
+        if self.auto_placement.in_progress and self.auto_placement.status == AutoPlacementController.STATUS_MOVING_TO_INIT:
+            self.auto_placement.on_move_result(success=False, error_msg=error_msg)
+            return
         
         if self.state_machine:
             self.state_machine.cancel_current_group()
@@ -374,6 +443,13 @@ class StateMachineNode(Node):
             msg.data = "waiting_for_strategy"
             self.state_pub.publish(msg)
             return
+
+        if self.auto_placement.in_progress:
+            self.auto_placement.update(self.current_linear_velocity, self.current_angular_velocity)
+            msg = String()
+            msg.data = self._sm_state_for_ui()
+            self.state_pub.publish(msg)
+            return
         
         # Auto-release tirette in sim mode
         if self.sim_mode and self.state_machine.get_state() == StateMachine.STATE_INIT:
@@ -390,7 +466,7 @@ class StateMachineNode(Node):
         
         # Publish current state
         msg = String()
-        msg.data = self.state_machine.get_state()
+        msg.data = self._sm_state_for_ui()
         self.state_pub.publish(msg)
     
     # ================================================================
@@ -408,6 +484,20 @@ class StateMachineNode(Node):
             label += f":[{action.group}]"
 
         return label
+
+    def _sm_state_for_ui(self) -> str:
+        if self.auto_placement.in_progress:
+            return self.auto_placement.ui_state()
+        return self.state_machine.get_state()
+
+    def _request_auto_placement_move(self, init_pose: tuple[float, float, float]) -> None:
+        x, y, theta_deg = init_pose
+        motion = MotionParams(use_collision_avoidance=False)
+        self.action_executor.move_to(x, y, theta_deg, motion)
+
+    def _on_auto_placement_completed(self) -> None:
+        if self.state_machine:
+            self.state_machine.notify_config_chosen()
 
     def _load_strategy(self, strategy_file: str, color: str) -> None:
         """Load strategy and create state machine."""
@@ -449,13 +539,16 @@ class StateMachineNode(Node):
             self.state_machine.on_state_changed = self._on_state_changed
             self.state_machine.on_strategy_completed = self._on_strategy_completed
 
-            # Initialize robot pose
-            self._set_initial_pose(init_pose)
-
             # Start initialization
             self.state_machine.start_initialization()
             self.state_machine.notify_ros_initialized()
-            self.state_machine.notify_config_chosen()
+
+            if self.auto_placement.enabled and not self.sim_mode:
+                self.auto_placement.start(tuple(init_pose))
+            else:
+                # Initialize robot pose directly when auto-placement is disabled.
+                self._set_initial_pose(init_pose)
+                self.state_machine.notify_config_chosen()
             
         except Exception as e:
             self.get_logger().error(f'❌ Failed to load strategy: {e}')
@@ -507,10 +600,12 @@ class StateMachineNode(Node):
     def _on_set_pose_done(self, future) -> None:
         """Callback when the /set_pose service call completes."""
         try:
-            response = future.result()
+            future.result()
             self.get_logger().info('✅ Initial pose set successfully')
+            self.auto_placement.on_set_pose_done(success=True)
         except Exception as e:
             self.get_logger().error(f'❌ /set_pose service call failed: {e}')
+            self.auto_placement.on_set_pose_done(success=False, error_msg=str(e))
 
     
     def _on_state_changed(self, new_state: str) -> None:
