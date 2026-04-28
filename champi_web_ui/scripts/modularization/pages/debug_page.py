@@ -1,10 +1,9 @@
 import theme
 
 from nicegui import ui, events
-from std_msgs.msg import Int64, Int64MultiArray, Empty, String
+from std_msgs.msg import Empty, String
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, Twist
-from enum import Enum
 from math import acos, sin, cos, pi
 
 from node import init_ros_node
@@ -24,14 +23,6 @@ def pose_from_position(position, stamp): # TODO, à importer de utils dans champ
     goal_pose_msg.pose.orientation.z = sin(position[2] / 2)
     goal_pose_msg.pose.orientation.w = cos(position[2] / 2)
     return goal_pose_msg
-
-class CAN_MSGS(Enum): #TODO jsp comment l'importer de champi_brain.utils
-    START_GRAB_PLANTS = 0
-    STOP_GRAB_PLANTS = 1
-    RELEASE_PLANT = 2
-    TURN_SOLAR_PANEL = 3
-    INITIALIZING = 4
-    FREE = 5
 
 toggle_pose_effect_value = False
 interactive_image_table = None
@@ -65,29 +56,6 @@ robot_pose = None
 #################################################
 #################### PAGE #######################
 #################################################
-class ToggleButtonGrabPlants(ui.button):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._state = False
-        self.on('click', self.toggle)
-        self.props(f'color=green')
-
-    def toggle(self) -> None:
-        """Toggle the button state."""
-        self._state = not self._state
-        if self._state:
-            self.props(f'color=red')
-            self.set_text("Stop Grabbing Plants")
-            start_grab_plants()
-        else:
-            self.props(f'color=green')
-            self.set_text("Start Grabbing Plants")
-            stop_grab_plants()
-        self.update()
-
-    def update(self) -> None:
-        super().update()
-
 def zone_chosen(args: events.GenericEventArguments):
     id = args.args['element_id']
     print(id)
@@ -152,108 +120,56 @@ def knob_update(event):
 
     goal_pose_publisher.publish(msg)
 
-@ui.refreshable
 def create() -> None:
     @ui.page('/debug')
     def page_a():
         with theme.frame('Debug'):
             with ui.grid(columns=1).style('width: 100%'):
                 with ui.element('div'):
-                    with ui.card().style('align-items: center'):
-                        with ui.row():
-                            ui.label('START_GRAB_PLANTS = 0; STOP_GRAB_PLANTS = 1; RELEASE_PLANT = 2; TURN_SOLAR_PANEL = 3; INITIALIZING = 4; FREE = 5')
-                            ui.label('CAN State:').classes('text-h4 text-grey-8')
-                            with ui.element('div'):
-                                ui.label().classes('text-h4 text-black-8').bind_text_from(globals(), 'CAN_state')
+                    with ui.card():
+                        ui.label('Contrôle').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        with ui.row().classes('q-gutter-sm'):
+                            ui.button('RESET [SELECT]', on_click=lambda: ros_node.send_actuator_action('RESET_ACTUATORS')).props('color=orange')
+                            def tirette_publish():
+                                e = Empty()
+                                tirette_pub.publish(e)
+                            ui.button('Tirette', on_click=tirette_publish)
 
-                        ToggleButtonGrabPlants('Start Grabbing Plants...')
+                        ui.label('Thermomètre').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        with ui.row().classes('q-gutter-sm'):
+                            ui.button('Relever [L1]', on_click=lambda: ros_node.send_actuator_action('THERMOMETER_RAISE_SERVO')).props('color=blue')
+                            ui.button('Abaisser [L2]', on_click=lambda: ros_node.send_actuator_action('THERMOMETER_LOWER_SERVO')).props('color=blue')
 
-                    with ui.card().style('align-items: center'):
-                        with ui.row():
-                            ui.label('Plants in the robot:').classes('text-h4 text-grey-8')
-                            ui.label().classes('text-h4 text-black-8').bind_text_from(globals(), 'nb_plants')
-                        ui.button('Release 1 plant',on_click= release_plant).props('color=pink')
+                        ui.label('Ascenseur + Pince').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        with ui.row().classes('q-gutter-sm'):
+                            ui.button('Prendre 2 boîtes [A]', on_click=lambda: ros_node.send_actuator_action('TAKE_2_BOXES')).props('color=green')
+                            ui.button('Monter 2 boîtes [A↑]', on_click=lambda: ros_node.send_actuator_action('BRING_2_BOXES_ON_TOP')).props('color=green')
+                            ui.button('Poser les 2 dernières boîtes devant [A↓]', on_click=lambda: ros_node.send_actuator_action('PUT_2_LAST_BOXES_ON_THE_GROUND')).props('color=green')
 
-                    with ui.card().style('align-items: center'):
-                        with ui.row():
-                            with ui.column():
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                            with ui.column():
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
-                                ui.button('xxxxxxxxxxxxxx', on_click=release_plant)
+                        ui.label('Tri + pushers').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        with ui.row().classes('q-gutter-sm'):
+                            ui.button('Préparer le pusher [Y]', on_click=lambda: ros_node.send_actuator_action('PREPARE_TOP_PUSHER')).props('color=purple')
+                            ui.button('Prendre & Trier 2 boîtes de l ascenseur [Y←]', on_click=lambda: ros_node.send_actuator_action('GRAB_AND_SORT_2_BOXES_FROM_LIFT')).props('color=purple')
+                            ui.button('Sortir 2 boîtes[X]', on_click=lambda: ros_node.send_actuator_action('PUSH_2_BOXES_OUT')).props('color=purple')
 
-                    with ui.card().style('align-items: center'):
-                        def tirette_publish():
-                            e = Empty()
-                            tirette_pub.publish(e)
-                        ui.button('Tirette', on_click=tirette_publish)
+                        ui.label('Rampe').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        with ui.row().classes('q-gutter-sm'):
+                            ui.button('Ouvrir [B]', on_click=lambda: ros_node.send_actuator_action('OPEN_EXIT_RAMP')).props('color=orange')
+
+                        ui.label('Debug').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        with ui.row().classes('q-gutter-sm'):
+                            ui.button('GET READY', on_click=lambda: ros_node.send_actuator_action('GET_READY')).props('color=green')
+                            ui.button('STOP MOTEURS', on_click=lambda: ros_node.send_actuator_action('STOP_ALL_MOTORS')).props('color=red')
+                            ui.button('ACTIVER MOTEURS', on_click=lambda: ros_node.send_actuator_action('ENABLE_ALL_MOTORS')).props('color=blue')
 
 
 #################################################
 #################### UTILS ######################
 #################################################
 
-def act_sub_update(msg):
-    global CAN_state, nb_plants
-    CAN_state = msg.data[0]
-    nb_plants = msg.data[1]
-        # START_GRAB_PLANTS = 0
-        # STOP_GRAB_PLANTS = 1
-        # RELEASE_PLANT = 2
-        # TURN_SOLAR_PANEL = 3
-        # INITIALIZING = 4
-        # FREE = 5
-
-    if CAN_state == CAN_MSGS.START_GRAB_PLANTS:
-        CAN_state = "START_GRAB_PLANTS"
-    elif CAN_state == CAN_MSGS.STOP_GRAB_PLANTS:
-        CAN_state = "STOP_GRAB_PLANTS"
-    elif CAN_state == CAN_MSGS.RELEASE_PLANT:
-        CAN_state = "RELEASE_PLANT"
-    elif CAN_state == CAN_MSGS.TURN_SOLAR_PANEL:
-        CAN_state = "TURN_SOLAR_PANEL"
-    elif CAN_state == CAN_MSGS.INITIALIZING:
-        CAN_state = "INITIALIZING"
-    elif CAN_state == CAN_MSGS.FREE:
-        CAN_state = "FREE"
-
-def start_grab_plants():
-    print("start_grab_plants")
-    publish_on_CAN(CAN_MSGS.START_GRAB_PLANTS) # TODO
-
-def stop_grab_plants():
-    print("stop_grab_plants")
-    publish_on_CAN(CAN_MSGS.STOP_GRAB_PLANTS)
-
-def release_plant():
-    print("release_plant")
-    publish_on_CAN(CAN_MSGS.RELEASE_PLANT)
-
-def publish_on_CAN( message):
-    # publish on the topic "/CAN" to be forwarded by CAN by the API
-    msg = Int64()
-    if message == CAN_MSGS.START_GRAB_PLANTS:
-        msg.data = 0
-    elif message == CAN_MSGS.STOP_GRAB_PLANTS:
-        msg.data = 1
-    elif message == CAN_MSGS.RELEASE_PLANT:
-        msg.data = 2
-    elif message == CAN_MSGS.TURN_SOLAR_PANEL:
-        msg.data = 3
-    ros_node.CAN_pub.publish(msg)
-    
-
-CAN_state = "?"
-nb_plants = 0
-
 ros_node = init_ros_node()
-ros_node.create_subscription(Int64MultiArray, '/act_status', act_sub_update, 10)
 tirette_pub = ros_node.create_publisher(Empty, '/tirette_start', 10)
 odom_subscriber = ros_node.create_subscription(Odometry, '/odometry/filtered', update_robot_position, 10)
 goal_pose_publisher = ros_node.create_publisher(PoseStamped, '/goal_pose', 10)
 zone_pub = ros_node.create_publisher(String, '/start_zone', 10)
 cmd_vel_publisher = ros_node.create_publisher(Twist,'/cmd_vel_stop',10)
-
-
-# TODO update CAN state et nb plants

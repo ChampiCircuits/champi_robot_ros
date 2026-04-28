@@ -4,7 +4,7 @@ import rclpy, time
 from rclpy.node import Node
 from std_msgs.msg import Int64, Int64MultiArray
 from nav_msgs.msg import Odometry
-from champi_interfaces.msg import STMState
+from champi_interfaces.msg import STMState, CtrlGoal
 from champi_interfaces.srv import SetAutoPlacementEnabled
 from std_msgs.msg import Int8, Empty
 
@@ -40,6 +40,14 @@ class PagesNode(Node):
                 self.odom_callback,
                 10)
             self.latest_odom_position: tuple[float, float] | None = None
+            self.latest_odom_velocity: tuple[float, float] | None = None
+
+            self.sub_goal_pose = self.create_subscription(
+                CtrlGoal,
+                '/ctrl_goal',
+                self.goal_pose_callback,
+                10)
+            self.latest_goal_position: tuple[float, float] | None = None
 
             self.sub_stm_state = self.create_subscription(
                 STMState,
@@ -65,6 +73,20 @@ class PagesNode(Node):
             self.ready_to_start_match = False
             self.latest_sm_state = 'waiting_for_strategy'
             self.auto_placement_enabled = False
+            self.sm_state_descriptions = {
+                'waiting_for_strategy':        'En attente de stratégie',
+                'waiting_for_start':           'Prêt — en attente du départ',
+                'running_strategy':            'Stratégie en cours',
+                'match_ended':                 'Match terminé',
+                'emergency_stop':              'Arrêt d\'urgence actif',
+                'auto_placement_wait_still':   'Localisation : attente immobilité',
+                'auto_placement_localizing':   'Localisation : scan ArUco',
+                'auto_placement_setting_pose': 'Localisation : recalage pose',
+                'auto_placement_moving':       'Localisation : déplacement pose initiale',
+                'auto_placement_failed':       'Localisation : échec (placer manuellement)',
+                'moving_to_goal':              'Déplacement vers objectif',
+                'executing_action':            'Exécution d\'une action',
+            }
 
             self.timer = self.create_timer(0.1, self.update)
 
@@ -88,31 +110,31 @@ class PagesNode(Node):
     def send_actuator_action(self, action):
         msg = Int8()
 
-        if action == 'PUT_BANNER':
+        if action == 'RESET_ACTUATORS':
             msg.data = 0
-        elif action == 'TAKE_LOWER_PLANK':
-            msg.data = 1
-        elif action == 'TAKE_UPPER_PLANK':
-            msg.data = 2
-        elif action == 'PUT_LOWER_PLANK_LAYER_1':
-            msg.data = 3
-        elif action == 'PUT_UPPER_PLANK_LAYER_2':
-            msg.data = 4
-        elif action == 'TAKE_CANS_RIGHT':
-            msg.data = 5
-        elif action == 'TAKE_CANS_LEFT':
-            msg.data = 6
-        elif action == 'PUT_CANS_RIGHT_LAYER_2':
-            msg.data = 7
-        elif action == 'PUT_CANS_LEFT_LAYER_1':
-            msg.data = 8
-        elif action == 'RESET_ACTUATORS':
-            msg.data = 9
         elif action == 'STOP_ALL_MOTORS':
-            msg.data = 10
+            msg.data = 1
         elif action == 'ENABLE_ALL_MOTORS':
-            msg.data = 11
+            msg.data = 2
         elif action == 'GET_READY':
+            msg.data = 3
+        elif action == 'THERMOMETER_LOWER_SERVO':
+            msg.data = 4
+        elif action == 'THERMOMETER_RAISE_SERVO':
+            msg.data = 5
+        elif action == 'TAKE_2_BOXES':
+            msg.data = 6
+        elif action == 'BRING_2_BOXES_ON_TOP':
+            msg.data = 7
+        elif action == 'PUT_2_LAST_BOXES_ON_THE_GROUND':
+            msg.data = 8
+        elif action == 'PREPARE_TOP_PUSHER':
+            msg.data = 9
+        elif action == 'GRAB_AND_SORT_2_BOXES_FROM_LIFT':
+            msg.data = 10
+        elif action == 'PUSH_2_BOXES_OUT':
+            msg.data = 11
+        elif action == 'OPEN_EXIT_RAMP':
             msg.data = 12
         self.actuators_ctrl_pub.publish(msg)
 
@@ -150,6 +172,19 @@ class PagesNode(Node):
             msg.pose.pose.position.x,
             msg.pose.pose.position.y,
         )
+        self.latest_odom_velocity = (
+            msg.twist.twist.linear.x,
+            msg.twist.twist.linear.y,
+        )
+
+    def goal_pose_callback(self, msg: CtrlGoal):
+        self.latest_goal_position = (
+            msg.pose.position.x,
+            msg.pose.position.y,
+        )
+
+    def get_sm_state_description(self) -> str:
+        return self.sm_state_descriptions.get(self.latest_sm_state, f'({self.latest_sm_state})')
 
     def stm_state_callback(self, msg):
         self.last_stm_state = msg

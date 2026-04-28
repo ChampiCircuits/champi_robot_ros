@@ -20,7 +20,7 @@ last_odom_time_label, tirette_label, e_stop_label = None, None, None
 radio_strategy_selection, radio_color_selection = None, None
 auto_placement_checkbox, auto_placement_status_label = None, None
 
-src = 'champi_web_ui/scripts/modularization/resources/table_2025.png'
+src = '~/champi_ws/src/champi_robot_ros/champi_web_ui/scripts/modularization/resources/table_2026_with_annotations.drawio.png'
 
 def ready_to_launch_match():
     enabled = auto_placement_checkbox.value if auto_placement_checkbox is not None else False
@@ -79,7 +79,7 @@ def create() -> None:
             with ui.grid(columns=2).style('width: 100%;padding-top:150px'):
                 with ui.column():
                     ui.button("Reset", on_click=reset_all)
-                    ui.button("Ouvrir bannière", on_click=open_banner)
+                    # ui.button("Ouvrir bannière", on_click=open_banner)
                 with ui.column():
                     container = ui.column().classes('w-full; items-center')
                     with container:
@@ -190,7 +190,8 @@ def on_color_chosen():
     stepper.next()
 
 def open_banner():
-    ros_node.send_actuator_action('PUT_BANNER')
+    # Banner action removed - not available in joystick mapping (no equivalent in new action set)
+    pass
 
 
 def on_strategy_selected():
