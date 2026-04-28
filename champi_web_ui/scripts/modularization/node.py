@@ -34,6 +34,13 @@ class PagesNode(Node):
                 10)
             self.last_odom_otos_time = -1
 
+            self.sub_odom = self.create_subscription(
+                nav_msgs.msg.Odometry,
+                '/odom',
+                self.odom_callback,
+                10)
+            self.latest_odom_position: tuple[float, float] | None = None
+
             self.sub_stm_state = self.create_subscription(
                 STMState,
                 '/STM_state',
@@ -134,8 +141,16 @@ class PagesNode(Node):
     def update_score(self, received_score: Int8):
         self.score = received_score.data
         self.get_logger().info(f'received score : {received_score}')
+
     def odom_otos_callback(self, msg):
         self.last_odom_otos_time = time.time()
+
+    def odom_callback(self, msg: Odometry):
+        self.latest_odom_position = (
+            msg.pose.pose.position.x,
+            msg.pose.pose.position.y,
+        )
+
     def stm_state_callback(self, msg):
         self.last_stm_state = msg
 

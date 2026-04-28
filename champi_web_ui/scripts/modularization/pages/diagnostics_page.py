@@ -8,7 +8,6 @@ from node import init_ros_node
 #################### PAGE #######################
 #################################################
 
-@ui.refreshable
 def create() -> None:
     @ui.page('/diagnostics')
     def page_diagnostics():

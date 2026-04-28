@@ -5,7 +5,7 @@ def menu() -> None:
     ui.link('Start Match', '/').classes(replace='text-white')
     ui.link('In Match', '/in_match').classes(replace='text-white')
     ui.link('Launchs', '/launchs').classes(replace='text-white')
-    ui.link('Strategies', '/strategies').classes(replace='text-white')
+    # ui.link('Strategies', '/strategies').classes(replace='text-white')
     ui.link('Debug Actions', '/debug').classes(replace='text-white')
     ui.link('Diagnostics', '/diagnostics').classes(replace='text-white')
     ui.link('IP', '/ip').classes(replace='text-white')

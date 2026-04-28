@@ -36,27 +36,23 @@ def update():
 def get_ip_address(interface):
     try:
         addrs = netifaces.ifaddresses(interface)
-        ip_info = {}
-        if netifaces.AF_INET in addrs:  # Check for IPv4 address
-            ip_info['IPv4'] = addrs[netifaces.AF_INET][0]['addr']
-        if netifaces.AF_INET6 in addrs:  # Check for IPv6 address
-            ip_info['IPv6'] = addrs[netifaces.AF_INET6][0]['addr']
-        if not ip_info:
-            return "Not connected"
-        return ip_info['IPv4']
-    except ValueError:
-        return {}
+        if netifaces.AF_INET in addrs:
+            return addrs[netifaces.AF_INET][0]['addr']
+        return None
+    except (ValueError, KeyError, IndexError):
+        return None
 
 def get_ip_addresses():
-    interfaces = netifaces.interfaces()
-
-    ip_addresses = []
-    for interface_name in interfaces:
-        ip_address = get_ip_address(interface_name)
-        ip_addresses.append(f"{interface_name}: {ip_address}")
-
-    # return " ; ".join(ip_addresses)
-    return ip_addresses[1].split(": ")[1]
+    try:
+        for interface_name in netifaces.interfaces():
+            if interface_name == 'lo':
+                continue
+            ip = get_ip_address(interface_name)
+            if ip is not None:
+                return ip
+        return "No IP found"
+    except Exception:
+        return "Error retrieving IP"
 
 def get_wifi_name():
     subprocess_result = subprocess.Popen('iwgetid',shell=True,stdout=subprocess.PIPE)
