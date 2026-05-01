@@ -120,6 +120,7 @@ class StateMachineNode(Node):
         
         # State Machine Config (will be filled when strategy is chosen)
         self.sm_strategy_config = None
+        self._returning_to_start_for_stop = False
         # Create state machine
         self.state_machine = StateMachine( 
             executor=self.action_executor,
@@ -160,6 +161,12 @@ class StateMachineNode(Node):
         self.create_subscription(
             Empty, '/reset_state_machine',
             self._on_reset_request,
+            10
+        )
+
+        self.create_subscription(
+            Empty, '/stop_match',
+            self._on_stop_match_request,
             10
         )
         
@@ -262,6 +269,7 @@ class StateMachineNode(Node):
 
     def _on_stm_state(self, msg: STMState) -> None:
         """Handle STM state (e-stop and tirette)."""
+        was_e_stop_pressed = self.e_stop_pressed
         self.e_stop_pressed = msg.e_stop_pressed
         self.tirette_released = msg.tirette_released
         
@@ -272,6 +280,8 @@ class StateMachineNode(Node):
         if self.e_stop_pressed:
             self.get_logger().error('🛑 E-STOP PRESSED!', throttle_duration_sec=2.)
             self.state_machine.request_stop()
+        elif was_e_stop_pressed:
+            self.get_logger().warn('✅ E-STOP RELEASED!')
         
         # Handle tirette in init state
         if self.tirette_released and self.state_machine.get_state() == StateMachine.STATE_INIT:
@@ -343,6 +353,37 @@ class StateMachineNode(Node):
             self.action_executor.execute_actuator_action(ActuatorCommand.RESET_ACTUATORS)
         
         self.get_logger().warn('✅ State machine reset complete')
+
+    def _on_stop_match_request(self, msg: Empty) -> None:
+        """Handle stop request sent from web UI - returns to start then resets."""
+        self.get_logger().warn('🛑 STOP MATCH REQUESTED FROM WEB UI!')
+
+        if self.sm_strategy_config is not None:
+            # Cancel whatever is running and navigate back to start pose first
+            if self.action_executor:
+                self.action_executor.cancel_current_action()
+            x, y, theta_deg = self.sm_strategy_config.init_pose
+            motion = MotionParams(use_collision_avoidance=False)
+            self.action_executor.move_to(x, y, theta_deg, motion)
+            self._returning_to_start_for_stop = True
+            self.get_logger().warn(f'↩️ Returning to start pose ({x:.2f}, {y:.2f}, {theta_deg:.1f}°) before reset...')
+        else:
+            self._do_stop_match_reset()
+
+    def _do_stop_match_reset(self) -> None:
+        """Perform the full stop-match reset."""
+        self.auto_placement.reset()
+
+        if self.state_machine:
+            self.state_machine.reset()
+
+        if self.action_executor:
+            self.action_executor.cancel_current_action()
+
+        if self.match_controller:
+            self.match_controller.reset()
+
+        self.get_logger().warn('✅ Stop match complete - ready for new match')
     
     def _on_nutbox_pose(self, msg: PoseStamped) -> None:
         """Handle box relative pose detection (pose in base_link frame). z=-1 means no detection."""
@@ -397,6 +438,12 @@ class StateMachineNode(Node):
     
     def _on_action_completed(self) -> None:
         """Called when action executor completes an action."""
+        if self._returning_to_start_for_stop:
+            self._returning_to_start_for_stop = False
+            self.get_logger().warn('✅ Returned to start pose')
+            self._do_stop_match_reset()
+            return
+
         if self.auto_placement.in_progress and self.auto_placement.status == AutoPlacementController.STATUS_MOVING_TO_INIT:
             self.auto_placement.on_move_result(success=True)
             return
@@ -407,6 +454,12 @@ class StateMachineNode(Node):
     def _on_action_failed(self, error_msg: str) -> None:
         """Called when action executor fails."""
         self.get_logger().error(f'❌ Action failed: {error_msg}')
+
+        if self._returning_to_start_for_stop:
+            self._returning_to_start_for_stop = False
+            self.get_logger().warn('⚠️ Return to start failed, resetting anyway')
+            self._do_stop_match_reset()
+            return
 
         if self.auto_placement.in_progress and self.auto_placement.status == AutoPlacementController.STATUS_MOVING_TO_INIT:
             self.auto_placement.on_move_result(success=False, error_msg=error_msg)

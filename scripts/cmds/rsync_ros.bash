@@ -2,6 +2,7 @@
 
 # Configuration
 USER="champi"
+SSH_PASS="circuits"
 DEST_PATH="/home/champi/champi_ws/src/champi_robot_ros"
 LOCAL_PATH="$HOME/champi_ws/src/champi_robot_ros"
 IP_ETH="10.0.0.1"
@@ -47,7 +48,13 @@ echo "📁 Remote: $USER@$ROBOT_IP:$DEST_PATH"
 echo "🚫 Excludes: ${EXCLUDES[*]}"
 
 # Run rsync with excludes
-rsync -avz --delete --copy-links "${EXCLUDE_ARGS[@]}" "$LOCAL_PATH/" "$USER@$ROBOT_IP:$DEST_PATH"
+if ! command -v sshpass &> /dev/null; then
+    echo "⚠️  sshpass not found. Install it with: sudo apt install sshpass"
+    exit 1
+fi
+sshpass -p "$SSH_PASS" rsync -avz --delete --copy-links \
+    -e "ssh -o StrictHostKeyChecking=no" \
+    "${EXCLUDE_ARGS[@]}" "$LOCAL_PATH/" "$USER@$ROBOT_IP:$DEST_PATH"
 
 if [ $? -eq 0 ]; then
     echo "✅ Sync completed successfully!"

@@ -95,6 +95,11 @@ class PagesNode(Node):
                 '/reset_state_machine',
                 10
             )
+            self.stop_match_pub = self.create_publisher(
+                Empty,
+                '/stop_match',
+                10
+            )
             self.actuators_ctrl_pub = self.create_publisher(Int8, '/ctrl/actuators', 10)
             self.set_auto_placement_enabled_client = self.create_client(
                 SetAutoPlacementEnabled,
@@ -159,6 +164,12 @@ class PagesNode(Node):
 
         self.get_logger().warn('Resetting the state machine !')
         self.reset_state_machine_pub.publish(Empty())
+
+    def stop_match(self):
+        self.get_logger().warn('STOP MATCH requested from web UI')
+        self.match_started = False
+        self.ready_to_start_match = False
+        self.stop_match_pub.publish(Empty())
 
     def update_score(self, received_score: Int8):
         self.score = received_score.data

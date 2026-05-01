@@ -39,7 +39,7 @@ hardware_interface:
         wheel_distances: [0.13, 0.13, 0.13] # distance wheel to robot center in m
 
         max_acceleration_linear: 0.5 # m/s^2
-        max_acceleration_angular: 0.5 # rad/s^2
+        max_acceleration_angular: 6.0 # rad/s^2
 
         max_deceleration_linear: 10.0 # m/s^2
         max_deceleration_angular: 20.0 # rad/s^2
@@ -146,6 +146,7 @@ path_planner:
   ros__parameters:
     # Strategy parameters
     use_default_strategy_and_color_in_sim: true       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
+    # use_default_strategy_and_color_in_sim: false       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
     # default_strategy_file: '__strat_test_square.py'
 #    default_strategy_file: '__strat_test_square_with_rotations.py'
     default_strategy_file: '__strat_main_2026.py'     # Default strategy file for simulation

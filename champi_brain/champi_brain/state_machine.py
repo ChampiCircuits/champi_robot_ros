@@ -132,6 +132,8 @@ class StateMachine:
 
     def request_stop(self) -> None:
         """Request emergency stop."""
+        if self.state == self.STATE_END_OF_MATCH:
+            return  # Match already over, ignore stop request
         self._stop_requested = True
         self._transition_to(self.STATE_STOP)
         
@@ -197,7 +199,7 @@ class StateMachine:
             if self.state != self.STATE_END_OF_MATCH:
                 self._cancel_current_action()
                 self._transition_to(self.STATE_END_OF_MATCH)
-                return
+            return  # Always return when match is over - END_OF_MATCH is terminal
         
         # Check if we should return home (in any state except already coming home or ended)
         if self.match.is_match_started():
@@ -527,5 +529,10 @@ class StateMachine:
         self._stop_requested = False
         self._action_completed = False
         self._nutboxes_detected = False
+
+        # Reset init flags so the full init sequence is replayed after reset
+        self._ros_initialized = False
+        self._config_chosen = False
+        self._tirette_released = False
         
         self._transition_to(self.STATE_STOP)

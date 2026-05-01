@@ -36,6 +36,9 @@ def create() -> None:
                 ui.label('Temps restant :').classes('text-h4 text-grey-8')
                 time_left_label = ui.label(str(ros_node.time_left) + ' secondes').classes('text-h4 text-black-8')
 
+                ui.separator()
+                ui.button('STOP MATCH', on_click=stop_match).props('color=negative').classes('text-bold')
+
         # Place this overlay outside theme.frame (which uses absolute-center),
         # otherwise fixed positioning is constrained to the centered container.
         global sm_state_label, sm_state_desc_label, odom_label, speed_label, distance_label
@@ -100,4 +103,18 @@ def update():
             ox, oy = ros_node.latest_odom_position
             gx, gy = ros_node.latest_goal_position
             distance_label.set_text(f'Distance au goal: {((gx-ox)**2+(gy-oy)**2)**0.5:.3f} m')
+
+
+def stop_match():
+    with ui.dialog() as dialog, ui.card():
+        ui.label('Confirmer le STOP MATCH ?').classes('text-h6')
+        ui.label('Le match sera arrêté immédiatement.').classes('text-body2 text-grey-7')
+        with ui.row():
+            ui.button('CONFIRMER', on_click=lambda: (dialog.close(), _do_stop_match())).props('color=negative').classes('text-bold')
+            ui.button('Annuler', on_click=dialog.close).props('flat')
+    dialog.open()
+
+def _do_stop_match():
+    ros_node.stop_match()
+    ui.notify('STOP MATCH envoyé', color='negative')
 

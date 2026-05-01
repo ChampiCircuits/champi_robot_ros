@@ -117,7 +117,7 @@ void handleManualRequests(){
         {
             ActuatorCommand actuator = static_cast<ActuatorCommand>(i);
             LOG_INFO("act", "[MANUAL] Requested actuator %s to state %s", to_c_str(actuator), to_c_str(actuator_request));
-            HandleRequest(actuator);
+            // HandleRequest(actuator); // TODO for now always directly return and not apply actuators
             xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
             mod_reg::actuators->requests[i] = static_cast<uint8_t>(ActuatorState::DONE);
             xSemaphoreGive(ModbusH.ModBusSphrHandle);
@@ -162,7 +162,7 @@ void update_elements_pipeline()
 
 void ActuatorsTask(void *argument)
 {
-    initEveryThing();
+    // initEveryThing();
 
     LOG_INFO("act", "Starting loop.");
     while (true)
