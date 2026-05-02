@@ -546,10 +546,11 @@ class StateMachineNode(Node):
 
     def _request_auto_placement_move(self, init_pose: tuple[float, float, float]) -> None:
         x, y, theta_deg = init_pose
-        motion = MotionParams(use_collision_avoidance=False)
+        motion = MotionParams(use_collision_avoidance=False, speed=0.1, max_angular_speed=0.1, linear_tolerance=0.01, angular_tolerance=0.01, accel_linear=0.1, accel_angular=0.1)
         self.action_executor.move_to(x, y, theta_deg, motion)
 
     def _on_auto_placement_completed(self) -> None:
+        time.sleep(2)
         if self.state_machine:
             self.state_machine.notify_config_chosen()
 

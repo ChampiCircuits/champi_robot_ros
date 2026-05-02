@@ -11,6 +11,7 @@ along with the color of each kapla sorted left-to-right.
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 import tf2_ros
 
 from sensor_msgs.msg import Image, CameraInfo
@@ -239,7 +240,9 @@ class NutBoxesDetectionNode(Node):
         self.nutboxes_pub.publish(msg_out)
 
     def _publish_info_image(self, info_image):
-        info_msg = self.cv_bridge.cv2_to_imgmsg(info_image, encoding='bgr8')
+        # Convert BGR to RGB for Foxglove compatibility
+        info_image_rgb = cv2.cvtColor(info_image, cv2.COLOR_BGR2RGB)
+        info_msg = self.cv_bridge.cv2_to_imgmsg(info_image_rgb, encoding='rgb8')
         info_msg.header.stamp = self.get_clock().now().to_msg()
         info_msg.header.frame_id = 'camera_color_optical_frame'
         self.info_image_pub.publish(info_msg)

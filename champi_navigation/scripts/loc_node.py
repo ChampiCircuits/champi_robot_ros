@@ -142,6 +142,8 @@ class LocNode(Node):
         position = msg.pose.pose.position
         rotation_deg = degrees(atan2(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w))
         self.get_logger().info(f"New aruco pose received (pose={position.x} {position.y} {rotation_deg}°) (now waiting cooldown={self.aruco_cooldown_s}s)")
+        # log previous pose
+        self.get_logger().info(f"Previous pose was ({cur_pose.position.x} {cur_pose.position.y} {degrees(cur_theta):.1f}°)")
 
     def _get_odom_at_stamp(self, stamp_msg) -> Odometry:
         """Return the buffered Odometry sample closest to stamp_msg for latency compensation."""

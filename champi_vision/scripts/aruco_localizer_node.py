@@ -99,7 +99,7 @@ class ArucoLocalizerNode(Node):
 
             # initialize bird view
             K = np.array(self.camera_info.k).reshape(3,3)
-            self.bird_view = bv.BirdView(K, transform_mtx, (0.2, -0.4), (0.7, 0.4), resolution=378)
+            self.bird_view = bv.BirdView(K, transform_mtx, (0.2, -0.4), (1.0, 0.4), resolution=378) # crop (x_min, y_min) and (x_max, y_max)
 
             # compute undistortion map
             self.map1, self.map2 = cv2.initUndistortRectifyMap(K, np.array(self.camera_info.d), None, K, (self.camera_info.width,self.camera_info.height), cv2.CV_32FC1)
@@ -146,7 +146,8 @@ class ArucoLocalizerNode(Node):
 
         # Check if the frame is blurry (on grayscale image, before any binarization)
         frame = cv2.resize(bird_view_img, (200, 140))
-        _, blurry, variance = self.is_blurry(frame, threshold=1000.0)
+        _, blurry, variance = self.is_blurry(frame, threshold=400.0)
+        # _, blurry, variance = self.is_blurry(frame, threshold=1000.0)
 
         if blurry:
             self.get_logger().warn(f"Image is blurry, variance: {variance:.2f}")

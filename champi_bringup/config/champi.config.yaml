@@ -123,8 +123,8 @@ pose_controller:
     default_motion_accel_linear: 0.5 # m/s²
     default_motion_accel_angular: 6.0 # rad/s²
     default_motion_use_collision_avoidance: true
-    default_motion_linear_tolerance: 0.005 # m
-    default_motion_angular_tolerance: 0.05 # rad
+    default_motion_linear_tolerance: 0.005 # m = 5mm
+    default_motion_angular_tolerance: 0.05 # rad = ~3 degrees
 
 
 path_planner:
@@ -147,9 +147,9 @@ path_planner:
     # Strategy parameters
     use_default_strategy_and_color_in_sim: true       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
     # use_default_strategy_and_color_in_sim: false       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
-    # default_strategy_file: '__strat_test_square.py'
+    default_strategy_file: '__strat_test_square.py'
 #    default_strategy_file: '__strat_test_square_with_rotations.py'
-    default_strategy_file: '__strat_main_2026.py'     # Default strategy file for simulation
+#    default_strategy_file: '__strat_main_2026.py'     # Default strategy file for simulation
 #    default_sim_color: 'BLUE'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
     default_sim_color: 'YELLOW'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
 
