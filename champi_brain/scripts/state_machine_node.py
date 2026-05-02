@@ -15,7 +15,7 @@ from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from rclpy.duration import Duration
 
-from champi_interfaces.msg import STMState, TableObservation
+from champi_interfaces.msg import STMState, TableObservation, NutBoxesDetection
 from champi_interfaces.srv import SetPose
 from champi_interfaces.srv import SetAutoPlacementEnabled
 # Other imports
@@ -172,11 +172,11 @@ class StateMachineNode(Node):
         
         # Box detection
         self.create_subscription(
-            PoseStamped, '/nutboxes_relative_position',
+            NutBoxesDetection, '/nutboxes_detection',
             self._on_nutbox_pose,
             10
         )
-        self.last_nutbox_pose: PoseStamped | None = None
+        self.last_nutbox_pose: NutBoxesDetection | None = None
 
         self.create_subscription(
             PoseWithCovarianceStamped,
@@ -385,7 +385,7 @@ class StateMachineNode(Node):
 
         self.get_logger().warn('✅ Stop match complete - ready for new match')
     
-    def _on_nutbox_pose(self, msg: PoseStamped) -> None:
+    def _on_nutbox_pose(self, msg: NutBoxesDetection) -> None:
         """Handle box relative pose detection (pose in base_link frame). z=-1 means no detection."""
         if not self.state_machine or not self.current_pose:
             return
@@ -395,6 +395,7 @@ class StateMachineNode(Node):
             return
         
         self.get_logger().info(f'📦 Nutbox pose received: ({msg.pose.position.x:.2f}, {msg.pose.position.y:.2f}, {msg.pose.position.z:.2f}) in base_link frame')
+        self.get_logger().info(f'📦 Nutbox colors: {[["UNKNOWN","BLUE","YELLOW"][c] for c in msg.colors]}')
 
         # Cancel timeout — we have a valid detection
         self.action_executor.cancel_detect_nutboxes_timeout()

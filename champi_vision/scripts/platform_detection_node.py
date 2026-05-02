@@ -10,6 +10,8 @@ from sensor_msgs_py.point_cloud2 import read_points, create_cloud_xyz32
 from std_msgs.msg import Header, Float32
 from geometry_msgs.msg import PoseStamped
 
+from champi_interfaces.msg import NutBoxesDetection
+
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 import cv2
@@ -99,7 +101,7 @@ class NutBoxesDetectionNode(Node):
         self.top_plane_height_interval = [self.box_height - height_margin, self.box_height + height_margin]
 
         # distance publisher
-        self.nutboxes_relative_position_pub = self.create_publisher(PoseStamped, '/nutboxes_relative_position', 10)
+        self.nutboxes_relative_position_pub = self.create_publisher(NutBoxesDetection, '/nutboxes_detection', 10)
 
         self.timer = self.create_timer(0.5, self.timer_callback)
 
@@ -147,10 +149,11 @@ class NutBoxesDetectionNode(Node):
         self.get_logger().debug(f"Point cloud filtering time: {elapsed_time:.2f} ms \n")
 
         if filtered_points_count == 0:
-            msg_out = PoseStamped()
+            msg_out = NutBoxesDetection()
             msg_out.header.stamp = self.get_clock().now().to_msg()
             msg_out.header.frame_id = 'base_link'
             msg_out.pose.position.z = -1.0  # sentinel: no detection
+            msg_out.colors = [NutBoxesDetection.COLOR_UNKNOWN] * 4
             self.nutboxes_relative_position_pub.publish(msg_out)
             return
 
@@ -171,10 +174,11 @@ class NutBoxesDetectionNode(Node):
                 f"❌ Rectangle size mismatch: detected ({detected_long:.3f}m x {detected_short:.3f}m), "
                 f"expected ({self.box_length:.3f}m x {self.box_width:.3f}m)"
             )
-            msg_out = PoseStamped()
+            msg_out = NutBoxesDetection()
             msg_out.header.stamp = self.get_clock().now().to_msg()
             msg_out.header.frame_id = 'base_link'
             msg_out.pose.position.z = -1.0  # sentinel: no valid detection
+            msg_out.colors = [NutBoxesDetection.COLOR_UNKNOWN] * 4
             self.nutboxes_relative_position_pub.publish(msg_out)
             return
 
@@ -185,7 +189,7 @@ class NutBoxesDetectionNode(Node):
             f"pos=({cx:.3f}, {cy:.3f})m dist={dist:.3f}m angle={np.degrees(angle_rad):.1f}°"
         )
 
-        msg_out = PoseStamped()
+        msg_out = NutBoxesDetection()
         msg_out.header.stamp = self.get_clock().now().to_msg()
         msg_out.header.frame_id = 'base_link'
         msg_out.pose.position.x = cx
@@ -196,6 +200,8 @@ class NutBoxesDetectionNode(Node):
         msg_out.pose.orientation.y = quat[1]
         msg_out.pose.orientation.z = quat[2]
         msg_out.pose.orientation.w = quat[3]
+        # TODO: implement actual color detection for each nutbox
+        msg_out.colors = [NutBoxesDetection.COLOR_UNKNOWN] * 4
         self.nutboxes_relative_position_pub.publish(msg_out)
 
     def publish_filtered_point_cloud(self, filtered_point_cloud_array, frame):

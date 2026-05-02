@@ -9,6 +9,7 @@ from champi_brain.action_executor.action_executor import ActionExecutor
 from std_msgs.msg import Int8, Int8MultiArray
 from geometry_msgs.msg import PoseStamped
 from champi_brain.actuator_commands import ActuatorCommand
+from champi_interfaces.msg import NutBoxesDetection
 
 
 class SIMActionExecutor(ActionExecutor):
@@ -90,13 +91,14 @@ class SIMActionExecutor(ActionExecutor):
             self._sim_nutbox_timer.destroy()
             self._sim_nutbox_timer = None
 
-        msg = PoseStamped()
+        msg = NutBoxesDetection()
         msg.header.frame_id = 'base_link'
         msg.header.stamp = self.node.get_clock().now().to_msg()
         msg.pose.position.x = 0.30  # 30cm ahead
         msg.pose.position.y = 0.0
         msg.pose.position.z = 0.0  # z != -1 means valid detection
+        msg.colors = [NutBoxesDetection.COLOR_UNKNOWN] * 4
         self.logger.info('[SIM] Nutbox fake detection published')
         if not hasattr(self, '_sim_nutbox_pub'):
-            self._sim_nutbox_pub = self.node.create_publisher(PoseStamped, '/nutboxes_relative_position', 10)
+            self._sim_nutbox_pub = self.node.create_publisher(NutBoxesDetection, '/nutboxes_detection', 10)
         self._sim_nutbox_pub.publish(msg)
