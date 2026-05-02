@@ -18,15 +18,12 @@ class ActuatorCommand(IntEnum):
     GET_READY                      = 3
     THERMOMETER_LOWER_SERVO        = 4
     THERMOMETER_RAISE_SERVO        = 5
-    TAKE_2_BOXES                   = 6
-    BRING_2_BOXES_ON_TOP           = 7
-    PUT_2_LAST_BOXES_ON_THE_GROUND = 8
-    PREPARE_TOP_PUSHER             = 9
-    GRAB_AND_SORT_2_BOXES_FROM_LIFT = 10
-    PUSH_2_BOXES_OUT               = 11
-    OPEN_EXIT_RAMP                 = 12
+    LOWER_LEFT_ARM                 = 6
+    LET_GO_ELEMENTS_LEFT_ARM       = 7
+    LOWER_RIGHT_ARM                = 8
+    LET_GO_ELEMENTS_RIGHT_ARM      = 9
 
-    # OTHER COMMON ACTIONS
+    # OTHER COMMON ACTIONS (not sent to STM)
     MOVE                           = 100
     DETECT_NUTBOXES                = 101
     WAIT                           = 102

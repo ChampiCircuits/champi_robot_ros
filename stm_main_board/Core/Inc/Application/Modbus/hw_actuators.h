@@ -18,11 +18,9 @@ enum class ActuatorCommand : int
   THERMOMETER_RAISE_SERVO,
 
   LOWER_LEFT_ARM,
-  RAISE_LEFT_ARM,
   LET_GO_ELEMENTS_LEFT_ARM,
 
   LOWER_RIGHT_ARM,
-  RAISE_RIGHT_ARM,
   LET_GO_ELEMENTS_RIGHT_ARM,
 
   ACTUATORS_COUNT // only to count the number of available commands

@@ -309,7 +309,8 @@ class StrategyBuilder:
 
         # thermometer initial position is on the rightmost of its slider.
         # we have to move it in the center of the slider
-        thermometer_initial_position = Position(1.4, 0.0, 0.0) # for Yellow team
+        thermometer_initial_position = Position(1.1, 0.0, 0.0) # for Yellow team
+        # thermometer_initial_position = Position(1.4, 0.0, 0.0) # for Yellow team # TODO ca c'est la bonne pose, mais la table est trop petite là
         thermometer_target_position = Position(0.7, 0.0, 0.0)  # for Yellow team
 
         # world_frame=True  → x/y offsets are absolute (not rotated by target theta)
@@ -340,19 +341,19 @@ class StrategyBuilder:
 
         # NutBoxes detection — after this action, 'detected_nutboxes' is available in world state
         # self.custom_action(ActuatorCommand.DETECT_NUTBOXES) # TODO put back when vision is enabled
+        # TODO en plus de ca, ca donnera la couleur de chaque nutbox
         # Move relative to the detected position rather than the theoretical center
         # self.move_relative_to("detected_nutboxes", Offset(-0.20, 0.0, 0.0)) # TODO put back when vision is enabled
         self.move_relative_to(elements_center, Offset(-0.20, 0.0, 0.0))
 
+# TODO pour l'instant on fait tout pour le left, on verra plus tard pour que ca marche pour le right aussi
         # Taking first 2 boxes
-        self.custom_action(ActuatorCommand.TAKE_2_BOXES)
-        self.move_relative_to(elements_center, Offset(-0.1, 0.0, 0.0))
-        self.custom_action(ActuatorCommand.TAKE_2_BOXES)
+        self.custom_action(ActuatorCommand.LOWER_LEFT_ARM)
         
         return self
     
     def put_4_elements_sequence(self, target_position: Union[Position, str], group: str) -> 'StrategyBuilder':
-        """Complete sequence for placing elements by the sorted back exit of the robot
+        """Complete sequence for placing elements
         
         Args:
             target_position: Union[Position, str] object where to place elements or named target
@@ -362,51 +363,11 @@ class StrategyBuilder:
         
         # On dépose les caisses par l'arrière du robot
         self.move_relative_to(target_position, Offset(0.1, 0.0, 0.0), use_collision_avoidance=False)
-        self.custom_action(ActuatorCommand.PUSH_2_BOXES_OUT)
-        self.move_relative_to(target_position, Offset(0.2, 0.0, 0.0), use_collision_avoidance=False)
-        self.custom_action(ActuatorCommand.PUSH_2_BOXES_OUT)
+        self.custom_action(ActuatorCommand.LET_GO_ELEMENTS_LEFT_ARM)
 
         # Add points
         points = self.points_per_action["PUSH_4_BOXES_OUT_PLUS_BONUS"]
         self.add_points(points, f"PUSH_4_BOXES_OUT_PLUS_BONUS finished. {points} points", group=group)
-
-        return self
-
-    def put_2_elements_sequence(self, target_position: Union[Position, str], group: str) -> 'StrategyBuilder':
-        """Complete sequence for placing elements by the sorted back exit of the robot
-
-        Args:
-            target_position: Union[Position, str] object where to place elements or named target
-            group: Group name for these actions
-        """
-        self.set_current_group(group)
-
-        # On dépose les caisses par l'arrière du robot
-        self.move_relative_to(target_position, Offset(0.1, 0.0, 0.0), use_collision_avoidance=False)
-        self.custom_action(ActuatorCommand.PUSH_2_BOXES_OUT)
-
-        # Add points
-        points = self.points_per_action["PUSH_2_BOXES_OUT_PLUS_BONUS"]
-        self.add_points(points, f"PUSH_2_BOXES_OUT_PLUS_BONUS finished. {points} points", group=group)
-
-        return self
-
-    def put_last_2_elements_in_nest_sequence(self, target_position: Union[Position, str], group: str) -> 'StrategyBuilder':
-        """Complete sequence for placing the last 4 elements in front of the robot
-
-        Args:
-            target_position: Union[Position, str] object where to place elements or named target
-            group: Group name for these actions
-        """
-        self.set_current_group(group)
-
-        # On dépose les caisses par l'avant du robot
-        self.move_relative_to(target_position, Offset(-0.1, 0.0, 0.0), use_collision_avoidance=False)
-        self.custom_action(ActuatorCommand.PUT_2_LAST_BOXES_ON_THE_GROUND)
-
-        # Add points
-        points = self.points_per_action["PUT_LAST_2_BOXES_IN_THE_NEST"]
-        self.add_points(points, f"PUT_LAST_2_BOXES_IN_THE_NEST finished. {points} points", group=group)
 
         return self
     

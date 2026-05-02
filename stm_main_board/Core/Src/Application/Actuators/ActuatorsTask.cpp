@@ -84,8 +84,6 @@ void HandleRequest(const ActuatorCommand cmd,
 
     case ActuatorCommand::LOWER_LEFT_ARM:
         left_arm.lowerCups(left_suction_cups_activation_for_request);
-        break;
-    case ActuatorCommand::RAISE_LEFT_ARM:
         left_arm.raiseCups(left_suction_cups_activation_for_request);
         break;
     case ActuatorCommand::LET_GO_ELEMENTS_LEFT_ARM:
@@ -94,8 +92,6 @@ void HandleRequest(const ActuatorCommand cmd,
         break;
     case ActuatorCommand::LOWER_RIGHT_ARM:
         right_arm.lowerCups(left_suction_cups_activation_for_request);
-        break;
-    case ActuatorCommand::RAISE_RIGHT_ARM:
         right_arm.raiseCups(left_suction_cups_activation_for_request);
         break;
     case ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM:

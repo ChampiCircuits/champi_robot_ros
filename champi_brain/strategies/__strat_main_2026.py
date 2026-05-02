@@ -25,7 +25,7 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         ## Elements IDs (when used) are automatically transformed via mirror_id mapping
 
         # premier mouvement pour éviter le grenier
-        .move_to(Position(0.4, 0.8, -90.0), group="caisses_3", speed=1.0, accel_linear=1.0)
+        # .move_to(Position(0.4, 0.8, -90.0), group="caisses_3", speed=1.0, accel_linear=1.0)
 
         .take_elements_sequence(Position(1.15, 0.8, 0.0), group="caisses_3")
         
