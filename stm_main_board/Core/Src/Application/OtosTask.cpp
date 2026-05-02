@@ -88,7 +88,7 @@ void OtosTask(void *argument) {
     //                    otosPose.y, otosPose.h);
 
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
-    mod_reg::state->otos_pose = {-otosPose.x, -otosPose.y, otosPose.h};
+    mod_reg::state->otos_pose = {otosPose.x, otosPose.y, otosPose.h};
     char counter = mod_reg::state->safe_check_counter; // the safe check counter that we check on ros side to see if it's actually a new value between two reads
     if (counter < 127) {
       mod_reg::state->safe_check_counter = counter + 1;

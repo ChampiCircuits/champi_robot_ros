@@ -244,8 +244,8 @@ void HardwareInterfaceNode::loop() {
 
         // Write
         mod_reg::cmd->is_read = false;
-        mod_reg::cmd->cmd_vel.x = latest_twist_.linear.x;
-        mod_reg::cmd->cmd_vel.y = latest_twist_.linear.y;
+        mod_reg::cmd->cmd_vel.x = -latest_twist_.linear.x;
+        mod_reg::cmd->cmd_vel.y = -latest_twist_.linear.y;
         mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
 
         // RCLCPP_INFO(this->get_logger(), "New cmd_vel to send: x: %.2f, y: %.2f, theta: %.2f",

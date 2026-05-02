@@ -14,7 +14,7 @@
 // Hardcoded wheel configuration
 // wheel order: 0=left, 1=right, 2=back
 
-constexpr double WHEEL_ANGLES[3] = {60./180.*PI, 300./180.*PI, 180./180.*PI}; // angle between each wheel in radians
+constexpr double WHEEL_ANGLES[3] = {120./180.*PI, 240./180.*PI, 0./180.*PI}; // angle between each wheel in radians
 constexpr double WHEEL_DISTANCES[3] = {0.13, 0.13, 0.13}; // distance wheel to robot center in m
 
 Vector3 sub(Vector3 vel1, Vector3 vel2) {
