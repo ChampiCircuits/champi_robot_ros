@@ -23,7 +23,10 @@ def generate_launch_description():
             get_package_share_directory('realsense2_camera'),
             '/launch/rs_launch.py'
         ]),
-        launch_arguments={'pointcloud.enable': 'true'}.items()
+        launch_arguments={
+            'pointcloud.enable': 'true',
+            'global_time_enabled': 'true',
+        }.items()
     )
 
     ldlidar_node = Node(
@@ -38,4 +41,3 @@ def generate_launch_description():
         realsense2_camera_launch,
         ldlidar_node
     ])
-
