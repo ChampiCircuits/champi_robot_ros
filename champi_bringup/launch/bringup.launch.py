@@ -55,6 +55,12 @@ def generate_launch_description():
         description='Launch actuator controller (true|false)',
     )
 
+    sensors_arg = DeclareLaunchArgument(
+        'sensors',
+        default_value='True',
+        description='Launch lidar+camera (true|false)',
+    )
+
     brain_arg = DeclareLaunchArgument(
         'brain',
         default_value='False',
@@ -111,6 +117,13 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('brain'))
     )
 
+    sensors_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource([
+            get_package_share_directory('champi_bringup'),
+            '/launch/sensors.launch.py'
+        ]),
+        condition=IfCondition(LaunchConfiguration('sensors'))
+    )
 
     return LaunchDescription([
         sim_arg,
@@ -121,6 +134,7 @@ def generate_launch_description():
         teleop_arg,
         act_arg,
         brain_arg,
+        sensors_arg,
 
         base_launch,
         nav_launch,
@@ -128,5 +142,6 @@ def generate_launch_description():
         lidar_perception_launch,
         teleop_launch,
         brain_launch,
+        sensors_launch
     ])
 

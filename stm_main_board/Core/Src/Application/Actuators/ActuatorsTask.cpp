@@ -145,12 +145,12 @@ void handleManualRequests(){
 
 void ActuatorsTask(void *argument)
 {
-    initEveryThing();
+    // initEveryThing();
 
     LOG_INFO("act", "Starting loop.");
     while (true)
     {
-        handleManualRequests();
+        // handleManualRequests();
         osDelay(100);
     }
 }

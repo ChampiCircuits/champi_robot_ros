@@ -5,17 +5,23 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 import tf2_ros
 
-from sensor_msgs.msg import PointCloud2
+from sensor_msgs.msg import PointCloud2, Image, CameraInfo
 from sensor_msgs_py.point_cloud2 import read_points, create_cloud_xyz32
 from std_msgs.msg import Header, Float32
 from geometry_msgs.msg import PoseStamped
+from cv_bridge import CvBridge
 
 from champi_interfaces.msg import NutBoxesDetection
+from champi_vision.aruco_localizer import ArucoDetector
 
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 import cv2
 from icecream import ic
+
+# ArUco ID to color mapping
+ARUCO_ID_BLUE = 36
+ARUCO_ID_YELLOW = 47
 
 def create_point_cloud2(points_array, frame_id):
     """
@@ -84,6 +90,27 @@ class NutBoxesDetectionNode(Node):
         self.point_cloud_sub = self.create_subscription(PointCloud2, '/camera/camera/depth/color/points', self.point_cloud_callback, 10)
         self.latest_point_cloud = None
 
+        # RGB image sub
+        self.cv_bridge = CvBridge()
+        self.latest_image = None
+        self.image_subscriber = self.create_subscription(
+            Image,
+            '/camera/camera/color/image_raw',
+            self.image_callback,
+            10)
+        self.subscription_cam_info = self.create_subscription(
+            CameraInfo,
+            '/camera/camera/color/camera_info',
+            self.callback_cam_info,
+            10)
+        self.camera_info = None
+
+        # ArUco detector
+        self.aruco_detector = ArucoDetector()
+
+        # info image publisher
+        self.info_image_pub = self.create_publisher(Image, '/nutboxes_detection_info', 10)
+
         # rviz filtered point cloud pub
         self.filtered_point_cloud_pub = self.create_publisher(PointCloud2, '/rviz/filtered_point_cloud', 10)
 
@@ -107,6 +134,86 @@ class NutBoxesDetectionNode(Node):
 
         self.get_logger().info("Nut Boxes Detection Node started !")
 
+    def image_callback(self, msg):
+        """Store latest RGB image."""
+        self.latest_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+
+    def callback_cam_info(self, msg):
+        """Store camera info."""
+        self.camera_info = msg
+
+    def detect_nutbox_colors(self):
+        """Detect ArUco tags on the latest RGB image and return colors sorted left-to-right.
+
+        The robot approaches perpendicular to the 4 kaplas, so the kaplas are
+        side-by-side along the image x-axis. Sorting detected tags by their
+        x-pixel coordinate gives left-to-right order.
+
+        Returns:
+            (colors, info_image): list of 4 color constants, and annotated BGR image (or None).
+        """
+        colors = [NutBoxesDetection.COLOR_UNKNOWN] * 4
+        info_image = None
+
+        if self.latest_image is None:
+            return colors, info_image
+
+        image = self.latest_image.copy()
+        info_image = image.copy()
+
+        # Detect only nutbox ArUco IDs (36=blue, 47=yellow)
+        poses, ids = self.aruco_detector.detect_arucos(image, ids_to_find=[ARUCO_ID_BLUE, ARUCO_ID_YELLOW])
+
+        if len(ids) == 0:
+            self.get_logger().info("No nutbox ArUco tags detected")
+            cv2.putText(info_image, "No ArUco detected", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+            return colors, info_image
+
+        # Build list of (center_x_pixel, center_y_pixel, color, color_name, draw_color, aruco_id)
+        detections = []
+        for pose, aruco_id in zip(poses, ids):
+            cx_px, cy_px = pose[0], pose[1]
+            if aruco_id == ARUCO_ID_BLUE:
+                color = NutBoxesDetection.COLOR_BLUE
+                color_name = "BLUE"
+                draw_color = (255, 0, 0)  # BGR
+            elif aruco_id == ARUCO_ID_YELLOW:
+                color = NutBoxesDetection.COLOR_YELLOW
+                color_name = "YELLOW"
+                draw_color = (0, 255, 255)  # BGR
+            else:
+                continue
+            detections.append((cx_px, cy_px, color, color_name, draw_color, aruco_id))
+
+        # Sort by x pixel coordinate (left to right in the image)
+        detections.sort(key=lambda d: d[0])
+
+        # Fill colors array (up to 4)
+        for i, det in enumerate(detections[:4]):
+            colors[i] = det[2]
+
+        # Draw annotations on info image
+        for i, det in enumerate(detections[:4]):
+            cx_px, cy_px, _, color_name, draw_color, aruco_id = det
+            cx_px, cy_px = int(cx_px), int(cy_px)
+            # Circle at center
+            cv2.circle(info_image, (cx_px, cy_px), 12, draw_color, -1)
+            # Label with ID and color
+            label = f"#{aruco_id} {color_name}"
+            cv2.putText(info_image, label, (cx_px - 40, cy_px - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, draw_color, 2)
+            # Slot index
+            cv2.putText(info_image, f"[{i}]", (cx_px - 10, cy_px + 35),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+        self.get_logger().info(
+            f"ArUco colors detected: {[det[3] for det in detections[:4]]} "
+            f"({len(detections)} tags found)"
+        )
+
+        return colors, info_image
+
     def timer_callback(self):
         if self.latest_point_cloud is None:
             return
@@ -114,7 +221,7 @@ class NutBoxesDetectionNode(Node):
             if not self.init_transforms():
                 return
 
-        self.get_logger().debug("Processing point cloud...")
+        self.get_logger().info("Processing point cloud...")
         start_time = self.get_clock().now()
 
         # Read structured point cloud data
@@ -123,7 +230,7 @@ class NutBoxesDetectionNode(Node):
         if structured_points.size == 0:
             self.get_logger().warn("Received empty point cloud.")
             return
-        self.get_logger().debug(f"Point cloud size: {structured_points.shape[0]}")
+        self.get_logger().info(f"Point cloud size: {structured_points.shape[0]}")
 
         # ====================================TRANSFORM POINT CLOUD TO BASE LINK ====================================
 
@@ -135,7 +242,7 @@ class NutBoxesDetectionNode(Node):
 
         end_time = self.get_clock().now()
         elapsed_time = (end_time - start_time).nanoseconds / 1e6
-        self.get_logger().debug(f"Point cloud processing time: {elapsed_time:.2f} ms")
+        self.get_logger().info(f"Point cloud processing time: {elapsed_time:.2f} ms")
 
         # ==================================== FILTER POINT CLOUD ====================================
         start_time = self.get_clock().now()
@@ -145,8 +252,8 @@ class NutBoxesDetectionNode(Node):
         stop_time = self.get_clock().now()
         elapsed_time = (stop_time - start_time).nanoseconds / 1e6
         filtered_points_count = filtered_point_cloud_array_in_base_link.shape[0]
-        self.get_logger().debug(f"Filtered point cloud size: {filtered_points_count}")
-        self.get_logger().debug(f"Point cloud filtering time: {elapsed_time:.2f} ms \n")
+        self.get_logger().info(f"Filtered point cloud size: {filtered_points_count}")
+        self.get_logger().info(f"Point cloud filtering time: {elapsed_time:.2f} ms \n")
 
         if filtered_points_count == 0:
             msg_out = NutBoxesDetection()
@@ -167,10 +274,12 @@ class NutBoxesDetectionNode(Node):
 
         # Validate detected rectangle dimensions against expected box size (±20% tolerance)
         size_tolerance = 0.20
-        long_ok  = abs(detected_long  - self.box_length) < self.box_length * size_tolerance
-        short_ok = abs(detected_short - self.box_width)  < self.box_width  * size_tolerance
+        expected_long = max(self.box_length, self.box_width)
+        expected_short = min(self.box_length, self.box_width)
+        long_ok  = abs(detected_long  - expected_long)  < expected_long  * size_tolerance
+        short_ok = abs(detected_short - expected_short) < expected_short * size_tolerance
         if not long_ok or not short_ok:
-            self.get_logger().debug(
+            self.get_logger().info(
                 f"❌ Rectangle size mismatch: detected ({detected_long:.3f}m x {detected_short:.3f}m), "
                 f"expected ({self.box_length:.3f}m x {self.box_width:.3f}m)"
             )
@@ -183,7 +292,7 @@ class NutBoxesDetectionNode(Node):
             return
 
         dist = float(np.hypot(cx, cy))
-        self.get_logger().debug(
+        self.get_logger().info(
             f"✅ Box detected: {filtered_points_count} pts | "
             f"size=({detected_long:.3f}x{detected_short:.3f})m | "
             f"pos=({cx:.3f}, {cy:.3f})m dist={dist:.3f}m angle={np.degrees(angle_rad):.1f}°"
@@ -200,8 +309,18 @@ class NutBoxesDetectionNode(Node):
         msg_out.pose.orientation.y = quat[1]
         msg_out.pose.orientation.z = quat[2]
         msg_out.pose.orientation.w = quat[3]
-        # TODO: implement actual color detection for each nutbox
-        msg_out.colors = [NutBoxesDetection.COLOR_UNKNOWN] * 4
+
+        # Detect nutbox colors via ArUco tags
+        colors, info_image = self.detect_nutbox_colors()
+        msg_out.colors = colors
+
+        # Publish info image if available
+        if info_image is not None:
+            info_msg = self.cv_bridge.cv2_to_imgmsg(info_image, encoding='bgr8')
+            info_msg.header.stamp = self.get_clock().now().to_msg()
+            info_msg.header.frame_id = 'camera_color_optical_frame'
+            self.info_image_pub.publish(info_msg)
+
         self.nutboxes_relative_position_pub.publish(msg_out)
 
     def publish_filtered_point_cloud(self, filtered_point_cloud_array, frame):
@@ -210,7 +329,7 @@ class NutBoxesDetectionNode(Node):
 
         # Publish the filtered point cloud
         self.filtered_point_cloud_pub.publish(filtered_point_cloud_msg)
-        self.get_logger().debug("Filtered point cloud published")
+        self.get_logger().info("Filtered point cloud published")
 
     def init_transforms(self):
         try:
@@ -223,15 +342,15 @@ class NutBoxesDetectionNode(Node):
 
             self.get_logger().info("Transforms initialized.")
 
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            self.get_logger().warn("Transforms not initialized.")
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            self.get_logger().warn(f"Transforms not initialized: {e}")
             return False
 
         return True
 
     def point_cloud_callback(self, msg):
         self.latest_point_cloud = msg
-        self.get_logger().debug("Received point cloud data")
+        self.get_logger().info("Received point cloud data")
 
 
     def transform_points_to_base_link(self, points):
@@ -240,14 +359,50 @@ class NutBoxesDetectionNode(Node):
         return transform_points_array_to_frame_with_transform_matrix(points, self.transform_matrix_base_link_to_odom)
 
     def filter_point_cloud_array(self, transformed_points):
-        filtered_point_cloud = []
-        for point in transformed_points:
-            x, y, z = point
-            if self.top_plane_height_interval[0] < z < self.top_plane_height_interval[1]:
-                filtered_point_cloud.append(point)
+        """Filter points by height, then keep only the largest dense cluster (vectorized)."""
+        # Step 1: Vectorized height filter
+        z = transformed_points[:, 2]
+        mask = (z > self.top_plane_height_interval[0]) & (z < self.top_plane_height_interval[1])
+        pts = transformed_points[mask]
 
-        filtered_point_cloud = np.array(filtered_point_cloud)
-        return filtered_point_cloud
+        if pts.shape[0] < 5:
+            return pts
+
+        # Step 2: Voxel grid downsampling (2cm voxels) for speed
+        voxel_size = 0.02
+        coords_2d = pts[:, :2]
+        voxel_indices = np.floor(coords_2d / voxel_size).astype(np.int32)
+
+        # Step 3: Connected-components on voxel grid using OpenCV (ultra fast)
+        # Shift to positive indices
+        min_vox = voxel_indices.min(axis=0)
+        voxel_indices -= min_vox
+        max_vox = voxel_indices.max(axis=0)
+
+        # Create binary occupancy image
+        grid = np.zeros((max_vox[1] + 3, max_vox[0] + 3), dtype=np.uint8)
+        grid[voxel_indices[:, 1] + 1, voxel_indices[:, 0] + 1] = 255
+
+        # Dilate slightly to connect nearby voxels (bridge 1-voxel gaps)
+        kernel = np.ones((3, 3), dtype=np.uint8)
+        grid_dilated = cv2.dilate(grid, kernel, iterations=1)
+
+        # Connected components
+        num_labels, labels_img = cv2.connectedComponents(grid_dilated, connectivity=8)
+
+        if num_labels <= 1:
+            return pts
+
+        # Find label of each point
+        point_labels = labels_img[voxel_indices[:, 1] + 1, voxel_indices[:, 0] + 1]
+
+        # Find largest cluster (exclude background label 0)
+        unique, counts = np.unique(point_labels[point_labels > 0], return_counts=True)
+        if len(unique) == 0:
+            return np.empty((0, 3), dtype=pts.dtype)
+
+        largest_label = unique[np.argmax(counts)]
+        return pts[point_labels == largest_label]
 
 
 def main(args=None):
@@ -265,3 +420,4 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+

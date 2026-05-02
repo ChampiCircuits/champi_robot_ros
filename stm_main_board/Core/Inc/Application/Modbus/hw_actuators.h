@@ -46,10 +46,8 @@ inline const char* to_c_str(const ActuatorCommand command)
   case ActuatorCommand::THERMOMETER_LOWER_SERVO:        return "THERMOMETER_LOWER_SERVO";
   case ActuatorCommand::THERMOMETER_RAISE_SERVO:        return "THERMOMETER_RAISE_SERVO";
   case ActuatorCommand::LOWER_LEFT_ARM:                 return "LOWER_LEFT_ARM";
-  case ActuatorCommand::RAISE_LEFT_ARM:                 return "RAISE_LEFT_ARM";
   case ActuatorCommand::LET_GO_ELEMENTS_LEFT_ARM:       return "LET_GO_ELEMENTS_LEFT_ARM";
   case ActuatorCommand::LOWER_RIGHT_ARM:                return "LOWER_RIGHT_ARM";
-  case ActuatorCommand::RAISE_RIGHT_ARM:                return "RAISE_RIGHT_ARM";
   case ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM:      return "LET_GO_ELEMENTS_RIGHT_ARM";
   default:
     return "UNKNOWN_COMMAND";
