@@ -34,7 +34,11 @@ void SysTask(void *argument) {
     bool tirette_released = HAL_GPIO_ReadPin(TIRETTE_GPIO_Port, TIRETTE_Pin);
     bool e_stop_pressed = HAL_GPIO_ReadPin(BAU_GPIO_Port, BAU_Pin);
     bool e_stop_just_released = e_stop_pressed_prev && !e_stop_pressed;
+    bool e_stop_just_pressed  = !e_stop_pressed_prev && e_stop_pressed;
     e_stop_pressed_prev = e_stop_pressed;
+
+    if (e_stop_just_pressed)  LOG_INFO("sys", "E-STOP PRESSED");
+    if (e_stop_just_released) LOG_INFO("sys", "E-STOP RELEASED");
 
     // ===================== Send status to PC =================================
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);

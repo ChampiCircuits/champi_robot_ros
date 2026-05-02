@@ -17,14 +17,13 @@ enum class ActuatorCommand : int
   THERMOMETER_LOWER_SERVO,
   THERMOMETER_RAISE_SERVO,
 
-  TAKE_2_BOXES,
-  BRING_2_BOXES_ON_TOP,
-  PUT_2_LAST_BOXES_ON_THE_GROUND,
+  LOWER_LEFT_ARM,
+  RAISE_LEFT_ARM,
+  LET_GO_ELEMENTS_LEFT_ARM,
 
-  PREPARE_TOP_PUSHER,
-  GRAB_AND_SORT_2_BOXES_FROM_LIFT,
-  PUSH_2_BOXES_OUT,
-  OPEN_EXIT_RAMP,
+  LOWER_RIGHT_ARM,
+  RAISE_RIGHT_ARM,
+  LET_GO_ELEMENTS_RIGHT_ARM,
 
   ACTUATORS_COUNT // only to count the number of available commands
 };
@@ -48,13 +47,12 @@ inline const char* to_c_str(const ActuatorCommand command)
   case ActuatorCommand::GET_READY:                      return "GET_READY";
   case ActuatorCommand::THERMOMETER_LOWER_SERVO:        return "THERMOMETER_LOWER_SERVO";
   case ActuatorCommand::THERMOMETER_RAISE_SERVO:        return "THERMOMETER_RAISE_SERVO";
-  case ActuatorCommand::TAKE_2_BOXES:                   return "TAKE_2_BOXES";
-  case ActuatorCommand::BRING_2_BOXES_ON_TOP:           return "BRING_2_BOXES_ON_TOP";
-  case ActuatorCommand::PUT_2_LAST_BOXES_ON_THE_GROUND: return "PUT_2_LAST_BOXES_ON_THE_GROUND";
-  case ActuatorCommand::PREPARE_TOP_PUSHER:             return "PREPARE_TOP_PUSHER";
-  case ActuatorCommand::GRAB_AND_SORT_2_BOXES_FROM_LIFT:return "GRAB_AND_SORT_2_BOXES_FROM_LIFT";
-  case ActuatorCommand::PUSH_2_BOXES_OUT:               return "PUSH_2_BOXES_OUT";
-  case ActuatorCommand::OPEN_EXIT_RAMP:                 return "OPEN_EXIT_RAMP";
+  case ActuatorCommand::LOWER_LEFT_ARM:                 return "LOWER_LEFT_ARM";
+  case ActuatorCommand::RAISE_LEFT_ARM:                 return "RAISE_LEFT_ARM";
+  case ActuatorCommand::LET_GO_ELEMENTS_LEFT_ARM:       return "LET_GO_ELEMENTS_LEFT_ARM";
+  case ActuatorCommand::LOWER_RIGHT_ARM:                return "LOWER_RIGHT_ARM";
+  case ActuatorCommand::RAISE_RIGHT_ARM:                return "RAISE_RIGHT_ARM";
+  case ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM:      return "LET_GO_ELEMENTS_RIGHT_ARM";
   default:
     return "UNKNOWN_COMMAND";
   }

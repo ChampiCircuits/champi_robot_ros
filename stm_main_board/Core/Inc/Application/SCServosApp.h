@@ -5,7 +5,7 @@
 #ifndef SCSERVOSAPP_H
 #define SCSERVOSAPP_H
 
-#define N_SERVOS 1
+#define N_SERVOS 8
 
 
 #include "cmsis_os2.h"
@@ -30,7 +30,7 @@ namespace devices
         void set_speed(uint8_t ID, int speed);
         int read_position_raw(uint8_t id); // returns raw encoder value (0-1023)
         void print_position_loop(uint8_t id, int durationMs); // prints position every 50ms for durationMs
-        void sweep_angle_test(uint8_t id, float stepDeg, int stepCount, int delayMs);
+        void sweep_angle_test(uint8_t id);
         bool homingByEndSwitch(uint8_t ID, int speed, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, bool move_backward_first);
     }
 }

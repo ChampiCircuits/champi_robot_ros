@@ -1,9 +1,10 @@
  #include "Application/SCServosApp.h"
 
-#include "Actuators/BoxesSorter.h"
-#include "Actuators/LiftAndClamp.h"
 #include "Config/Config.h"
 #include "Util/logging.h"
+
+#include "Actuators/FourSuctionCup.h"
+#include "Application/Actuators/ActuatorsTask.h"
 
 #define UNIT_TO_DEG 0.26
 #define DEG_TO_UNIT 3.79
@@ -13,19 +14,16 @@ namespace devices
     namespace scs_servos {
 
         uint8_t ids_servos[N_SERVOS] = {
-            // BoxesSorter::TOP_PUSHER_SERVO_ID,
-            // BoxesSorter::BOTTOM_PUSHER_SERVO_ID,
-            BoxesSorter::TRAPDOOR_SERVO_ID,
-            // BoxesSorter::EXIT_RAMP_SERVO_ID,
-            // LiftAndClamp::CLAMP_SERVO_ID
+            LEFT_ARM_0_SERVO_ID,
+            LEFT_ARM_1_SERVO_ID,
+            LEFT_ARM_2_SERVO_ID,
+            LEFT_ARM_3_SERVO_ID,
+
+            RIGHT_ARM_0_SERVO_ID,
+            RIGHT_ARM_1_SERVO_ID,
+            RIGHT_ARM_2_SERVO_ID,
+            RIGHT_ARM_3_SERVO_ID
         };
-        // uint8_t ids_servos[N_SERVOS] = {
-        //     BoxesSorter::TOP_PUSHER_SERVO_ID,
-        //     BoxesSorter::BOTTOM_PUSHER_SERVO_ID,
-        //     BoxesSorter::TRAPDOOR_SERVO_ID,
-        //     BoxesSorter::EXIT_RAMP_SERVO_ID,
-        //     LiftAndClamp::CLAMP_SERVO_ID
-        // };
         SCServos servos;
         bool init_successful = false;
 
@@ -78,7 +76,7 @@ namespace devices
 
         void set_angle(uint8_t id, float angle, int ms)
         {
-            set_angle_async(id, angle, ms);
+            set_angle_async(id, angle, 300);
             osDelay(ms);
         }
 
@@ -136,21 +134,34 @@ namespace devices
             LOG_INFO("scs", "=== End position test ===");
         }
 
-        void sweep_angle_test(uint8_t id, float stepDeg, int stepCount, int delayMs)
+        void sweep_angle_test(uint8_t id)
         {
+            devices::scs_servos::init_successful = true; // for testing without waiting for full init
             float currentAngle = read_angle(id);
-            int rawPos = servos.ReadPos(id);
-            LOG_INFO("scs", "=== Sweep test servo %d: start angle=%.1f, raw=%d, step=%.1f, count=%d ===",
-                     id, currentAngle, rawPos, stepDeg, stepCount);
+            LOG_INFO("scs", "=== Sweep test servo %d: start angle=%.1f deg ===", id, currentAngle);
+            osDelay(1000);
+            float stepDeg = 5.0f;
 
-            for (int i = 0; i < stepCount; i++)
+            // Phase 1: sweep down to 0°
+            while (currentAngle > 0.0f)
+            {
+                currentAngle -= stepDeg;
+                if (currentAngle < 0.0f) currentAngle = 0.0f;
+                set_angle(id, currentAngle, 100);
+                osDelay(100);
+                LOG_INFO("scs", "0 Servo %d: %.1f deg", id, read_angle(id));
+            }
+
+            // Phase 2: sweep up to 270°
+            while (currentAngle < 270.0f)
             {
                 currentAngle += stepDeg;
-                set_angle_async(id, currentAngle, delayMs);
-                osDelay(delayMs);
-                rawPos = servos.ReadPos(id);
-                LOG_INFO("scs", "Servo %d: target=%.1f deg, raw pos=%d", id, currentAngle, rawPos);
+                if (currentAngle > 270.0f) currentAngle = 270.0f;
+                set_angle(id, currentAngle, 100);
+                osDelay(100);
+                LOG_INFO("scs", "270 Servo %d: %.1f deg", id, read_angle(id));
             }
+
             LOG_INFO("scs", "=== End sweep test ===");
         }
 
@@ -193,15 +204,35 @@ using namespace devices::scs_servos;
 
 int SCServosApp_Init()
 {
+    init_successful = false;
     LOG_INFO("scs", "Initializing servos... (blocking until all servos are found)");
     servos = SCServos(&huart10);
     // find_ids(0, 24);
+    // test_angle(12, 200);
+    // sweep_angle_test(5);
     // osDelay(10000000);
-    // test_angle(17, 200);
-    // sweep_angle_test(17, 270, 10, 500);
+    
+    while (1)
+    {
+        // // ALMOST CLOSED
+        // LOG_INFO("scs", "position servo 12: %.1f", read_angle(12));
+        // set_angle_async(12, BoxesSorter::TRAPDOOR_L_SERVO_ALMOST_CLOSED, 250); //L
+        // set_angle(5, BoxesSorter::TRAPDOOR_R_SERVO_ALMOST_CLOSED, 250); //R
+        // osDelay(3000);
+        // // CLOSE
+        // LOG_INFO("scs", "position servo 12: %.1f", read_angle(12));
+        // set_angle_async(12, BoxesSorter::TRAPDOOR_L_SERVO_CLOSED, 250); //L
+        // set_angle(5, BoxesSorter::TRAPDOOR_R_SERVO_CLOSED, 250); //R
+        // osDelay(3000);
+        // // OPEN
+        // LOG_INFO("scs", "position servo 12: %.1f", read_angle(12));
+        // set_angle_async(12, BoxesSorter::TRAPDOOR_L_SERVO_OPEN, 250); //L
+        // set_angle(5, BoxesSorter::TRAPDOOR_R_SERVO_OPEN, 250); //R
+        // osDelay(3000);
+    }
+
     osDelay(10000000);
 
-    init_successful = false;
     while (test() == -1)
     {
         LOG_ERROR("scs", "Error initializing servos. Retrying.");

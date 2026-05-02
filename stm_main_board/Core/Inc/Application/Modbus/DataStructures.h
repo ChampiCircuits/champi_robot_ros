@@ -68,6 +68,8 @@ struct __attribute__((packed)) Actuators
   // list of actuators commands.
   double dummy; // to not be multiple of 32
   uint8_t requests[static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT)];
+  uint8_t left_suction_cups_activation_for_request[static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT)]; // 4 bools, 1 for each suction cup. numbers are cups from left to right
+  uint8_t right_suction_cups_activation_for_request[static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT)]; // 4 bools, 1 for each suction cup. numbers are cups from left to right
 };
 
 }

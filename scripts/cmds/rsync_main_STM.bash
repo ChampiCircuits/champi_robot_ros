@@ -21,15 +21,6 @@ is_reachable() {
 
 echo "🍄 Launching script to compile and send STM firmware to the robot (stm32h7x) through the mini pc..."
 
-# Determine which IP to use
-if is_reachable $IP_ETH; then
-    ROBOT_IP=$IP_ETH
-elif is_reachable $IP_WIFI; then
-    ROBOT_IP=$IP_WIFI
-else
-    echo "🛑 Robot not reachable at $IP_WIFI or $IP_ETH"
-    exit 1
-fi
 
 # STM firmware compilation
 echo "\n🔧 Building STM firmware"
@@ -44,6 +35,17 @@ cmake .. \
 
 make -j"$(nproc)"
 cd -
+
+
+# Determine which IP to use
+if is_reachable $IP_ETH; then
+    ROBOT_IP=$IP_ETH
+elif is_reachable $IP_WIFI; then
+    ROBOT_IP=$IP_WIFI
+else
+    echo "🛑 Robot not reachable at $IP_WIFI or $IP_ETH"
+    exit 1
+fi
 
 # Check if the local ELF differs from the one on the robot
 echo "\n🔍 Checking if the firmware ELF changed..."

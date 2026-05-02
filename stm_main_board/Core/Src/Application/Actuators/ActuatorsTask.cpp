@@ -4,8 +4,6 @@
 
 #include "Application/Modbus/DataStructures.h"
 #include "Application/Modbus/ModbusRegister.h"
-#include "Application/Actuators/LiftAndClamp.h"
-#include "Application/Actuators/BoxesSorter.h"
 #include "Application/SCServosApp.h"
 #include "Application/Modbus/ModbusTask.h"
 #include "Application/Modbus/hw_actuators.h"
@@ -14,10 +12,22 @@
 
 #include "cmsis_os2.h"
 #include "semphr.h"
+#include "Actuators/FourSuctionCup.h"
 
 bool stop_all_actuators_requested = false;
-LiftAndClamp liftAndClamp;
-BoxesSorter boxesSorter;
+
+uint8_t LEFT_ARM_0_SERVO_ID = 1;
+uint8_t LEFT_ARM_1_SERVO_ID = 2;
+uint8_t LEFT_ARM_2_SERVO_ID = 3;
+uint8_t LEFT_ARM_3_SERVO_ID = 4;
+
+uint8_t RIGHT_ARM_0_SERVO_ID = 5;
+uint8_t RIGHT_ARM_1_SERVO_ID = 6;
+uint8_t RIGHT_ARM_2_SERVO_ID = 7;
+uint8_t RIGHT_ARM_3_SERVO_ID = 8;
+
+FourSuctionCup left_arm(LEFT_ARM_0_SERVO_ID,LEFT_ARM_1_SERVO_ID,LEFT_ARM_2_SERVO_ID,LEFT_ARM_3_SERVO_ID, D2_GPIO_Port, D2_Pin);
+FourSuctionCup right_arm(RIGHT_ARM_0_SERVO_ID,RIGHT_ARM_1_SERVO_ID,RIGHT_ARM_2_SERVO_ID,RIGHT_ARM_3_SERVO_ID, D3_GPIO_Port, D3_Pin);
 
 osThreadId_t ActuatorsTaskHandle;
 const osThreadAttr_t actuatorsTask_attributes = {
@@ -48,41 +58,50 @@ void initEveryThing()
     LOG_INFO("act", "Beginning actuators initializing...");
     // osDelay(3000);
     SCServosApp_Init(); // Reminder: blocking until the servos are found
-    setServoInContinousRotation(BoxesSorter::BOTTOM_PUSHER_SERVO_ID);
-    setServoInContinousRotation(BoxesSorter::TOP_PUSHER_SERVO_ID);
 
-    // DEBUG: print raw encoder position for a few seconds to check stability
-    // devices::scs_servos::print_position_loop(BoxesSorter::BOTTOM_PUSHER_SERVO_ID, 300000);
+    left_arm.setMontagePosition();
+    right_arm.setMontagePosition();
 
-    // raiseThermometerServo();
-    // liftAndClamp.initialize();
-    boxesSorter.initialize();
+    osDelay(10000000); // TODO for test
+    left_arm.initAllServos();
+    right_arm.initAllServos();
 
     LOG_INFO("act", "Actuators have been initialized !");
 }
 
-void HandleRequest(const ActuatorCommand cmd)
+void HandleRequest(const ActuatorCommand cmd,
+    uint8_t left_suction_cups_activation_for_request,
+    uint8_t right_suction_cups_activation_for_request)
 {
     switch (cmd)
     {
     case ActuatorCommand::RESET_ACTUATORS:                  initEveryThing(); break;
     case ActuatorCommand::STOP_ALL_MOTORS:                  stop_all_actuators_requested = true; break;
     case ActuatorCommand::ENABLE_ALL_MOTORS:                stop_all_actuators_requested = false; break;
+    case ActuatorCommand::GET_READY: break;
     case ActuatorCommand::THERMOMETER_LOWER_SERVO:          lowerThermometerServo(); break;
     case ActuatorCommand::THERMOMETER_RAISE_SERVO:          raiseThermometerServo(); break;
-    case ActuatorCommand::TAKE_2_BOXES:                     liftAndClamp.take2Boxes(); break;
-    case ActuatorCommand::BRING_2_BOXES_ON_TOP:
-        if (!boxesSorter.isPusherReady()) boxesSorter.prepareTopPusher(); // defensive: pusher must be retracted first
-        liftAndClamp.bring2BoxesToTop();
+
+    case ActuatorCommand::LOWER_LEFT_ARM:
+        left_arm.lowerCups(left_suction_cups_activation_for_request);
         break;
-    case ActuatorCommand::PUT_2_LAST_BOXES_ON_THE_GROUND:   liftAndClamp.put2LastBoxesOnTheGround(); break;
-    case ActuatorCommand::PREPARE_TOP_PUSHER:               boxesSorter.prepareTopPusher(); break;
-    case ActuatorCommand::GRAB_AND_SORT_2_BOXES_FROM_LIFT:
-        boxesSorter.grabAndSort2BoxesFromLift();
-        liftAndClamp.markBoxesGrabbed();
+    case ActuatorCommand::RAISE_LEFT_ARM:
+        left_arm.raiseCups(left_suction_cups_activation_for_request);
         break;
-    case ActuatorCommand::PUSH_2_BOXES_OUT:                 boxesSorter.push2BoxesOut(); break;
-    case ActuatorCommand::OPEN_EXIT_RAMP:                   boxesSorter.openExitRamp(); break;
+    case ActuatorCommand::LET_GO_ELEMENTS_LEFT_ARM:
+        left_arm.letGoCups(left_suction_cups_activation_for_request);
+        left_arm.initAllServos();
+        break;
+    case ActuatorCommand::LOWER_RIGHT_ARM:
+        right_arm.lowerCups(left_suction_cups_activation_for_request);
+        break;
+    case ActuatorCommand::RAISE_RIGHT_ARM:
+        right_arm.raiseCups(left_suction_cups_activation_for_request);
+        break;
+    case ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM:
+        right_arm.lowerCups(left_suction_cups_activation_for_request);
+        right_arm.initAllServos();
+        break;
 
     default:
         LOG_ERROR("act", "Unknown Actuator command %s in HandleRequest()", to_c_str(cmd));
@@ -111,13 +130,15 @@ void handleManualRequests(){
     {
         xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
         ActuatorState actuator_request = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
+        uint8_t left_suction_cups_activation_for_request = static_cast<uint8_t>(mod_reg::actuators->left_suction_cups_activation_for_request[i]);
+        uint8_t right_suction_cups_activation_for_request = static_cast<uint8_t>(mod_reg::actuators->right_suction_cups_activation_for_request[i]);
         xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
         if (actuator_request == ActuatorState::REQUESTED)
         {
             ActuatorCommand actuator = static_cast<ActuatorCommand>(i);
             LOG_INFO("act", "[MANUAL] Requested actuator %s to state %s", to_c_str(actuator), to_c_str(actuator_request));
-            // HandleRequest(actuator); // TODO for now always directly return and not apply actuators
+            HandleRequest(actuator, left_suction_cups_activation_for_request, right_suction_cups_activation_for_request);
             xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
             mod_reg::actuators->requests[i] = static_cast<uint8_t>(ActuatorState::DONE);
             xSemaphoreGive(ModbusH.ModBusSphrHandle);
@@ -126,54 +147,14 @@ void handleManualRequests(){
     }
 }
 
-/**
- * Advances the box pipeline one step forward, starting from the last stage.
- * Pipeline order: prepareTopPusher → bring2BoxesToTop → grabAndSort2BoxesFromLift
- * (push2BoxesOut is always triggered manually by ROS)
- *
- * Preconditions:
- *  - At least 4 boxes must be in the lift (2 are always kept clamped at the bottom).
- *  - prepareTopPusher() must be done before bring2BoxesToTop() (enforced here).
- *  - This function does nothing if a manual ROS request is pending.
- */
-void update_elements_pipeline()
-{
-    if (hasManualRequestPending()) return;
-
-    if (liftAndClamp.hasBoxesReadyAtTop())
-    {
-        // Stage 3: 2 boxes are at the top of the lift, ready to be grabbed and sorted.
-        boxesSorter.grabAndSort2BoxesFromLift();
-        liftAndClamp.markBoxesGrabbed();
-        // grabAndSort2BoxesFromLift() returns the pusher to READY position,
-        // so isPusherReady() == true on the next cycle → stage 2 will fire directly.
-    }
-    else if (boxesSorter.isPusherReady() && liftAndClamp.boxesInLiftCount > 2)
-    {
-        // Stage 2: pusher is retracted and there are boxes to move up.
-        liftAndClamp.bring2BoxesToTop();
-    }
-    else if (!boxesSorter.isPusherReady() && liftAndClamp.boxesInLiftCount > 2)
-    {
-        // Stage 1: pusher is not retracted yet — retract it before the lift can rise.
-        boxesSorter.prepareTopPusher();
-    }
-}
-
 void ActuatorsTask(void *argument)
 {
-    // initEveryThing();
+    initEveryThing();
 
     LOG_INFO("act", "Starting loop.");
     while (true)
     {
         handleManualRequests();
-        //
-        // if (mod_reg::requests->team_color != boxesSorter.getTeamColor())
-        //     boxesSorter.setTeamColor(mod_reg::requests->team_color);
-        //
-        // update_elements_pipeline();
-
         osDelay(100);
     }
 }
