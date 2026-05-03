@@ -77,7 +77,7 @@ class StateMachine:
         self._action_completed = False
         self._nutboxes_detected = False
         self.nutboxes_center_pose_in_world: Optional[tuple[float, float, float]] = None
-        
+
         # Initialization flags
         self._ros_initialized = False
         self._config_chosen = False

@@ -390,12 +390,15 @@ class StateMachineNode(Node):
         if not self.state_machine or not self.current_pose:
             return
 
+        # Ignore "no detection" sentinel
+        if msg.pose.position.z == -1.0:
+            return
+
         current_action = self.state_machine.current_action
         if current_action is None or current_action.action != ActuatorCommand.DETECT_NUTBOXES:
             return
         
-        self.get_logger().info(f'📦 Nutbox pose received: ({msg.pose.position.x:.2f}, {msg.pose.position.y:.2f}, {msg.pose.position.z:.2f}) in base_link frame')
-        self.get_logger().info(f'📦 Nutbox colors: {[["UNKNOWN","BLUE","YELLOW"][c] for c in msg.colors]}')
+        self.get_logger().info(f'📦 Nutbox pose received: ({msg.pose.position.x:.2f}, {msg.pose.position.y:.2f}) in base_link frame')
 
         # Cancel timeout — we have a valid detection
         self.action_executor.cancel_detect_nutboxes_timeout()
@@ -411,7 +414,7 @@ class StateMachineNode(Node):
 
         self.get_logger().info(f'📦 Nutboxes detected at ({x_box:.2f}, {y_box:.2f}, {theta_deg:.2f}°) in world frame')
         self.state_machine.notify_nutboxes_detected((x_box, y_box, theta_deg))
-    
+
     def _on_actuators_finished(self, msg: Int8MultiArray) -> None:
         """Handle actuator completion."""
         if not self.state_machine:

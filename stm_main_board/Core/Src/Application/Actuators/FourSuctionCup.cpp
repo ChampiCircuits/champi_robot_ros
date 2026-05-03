@@ -22,20 +22,25 @@ void FourSuctionCup::initAllServos()
     setCupPosition(CUP_3_SERVO_ID, CUP_SERVO_HIGH);
 }
 
-void FourSuctionCup::lowerCups(uint8_t suction_cups_activation_for_request)
+void FourSuctionCup::lowerCups()
 {
-    setCupsPosition(suction_cups_activation_for_request, CUP_SERVO_LOW);
+    setCupsPosition(0x0F, CUP_SERVO_LOW);
     setPumpState(true);
 }
 
-void FourSuctionCup::raiseCups(uint8_t suction_cups_activation_for_request)
+void FourSuctionCup::raiseCups()
 {
-    setCupsPosition(suction_cups_activation_for_request, CUP_SERVO_HIGH);
+    setCupsPosition(0x0F, CUP_SERVO_HIGH);
 }
 
 void FourSuctionCup::letGoCups(uint8_t suction_cups_activation_for_request)
 {
-    // on regarde pour chaque cup
+    LOG_INFO("4cup", "letGoCups mask=0x%02X: cup0=%s cup1=%s cup2=%s cup3=%s",
+        suction_cups_activation_for_request,
+        (suction_cups_activation_for_request & 0b0001) ? "RETURN" : "LOW",
+        (suction_cups_activation_for_request & 0b0010) ? "RETURN" : "LOW",
+        (suction_cups_activation_for_request & 0b0100) ? "RETURN" : "LOW",
+        (suction_cups_activation_for_request & 0b1000) ? "RETURN" : "LOW");
     // si c'est à true, alors on le retourne, dans ce cas là on envoie en position RETOURNEE, sinon en position LOW
     setCupPosition(0, (suction_cups_activation_for_request & 0b0001) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
     setCupPosition(1, (suction_cups_activation_for_request & 0b0010) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);

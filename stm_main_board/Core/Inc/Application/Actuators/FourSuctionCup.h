@@ -21,8 +21,8 @@ public:
     void setMontagePosition();
     void initAllServos();
 
-    void lowerCups(uint8_t suction_cups_activation_for_request);
-    void raiseCups(uint8_t suction_cups_activation_for_request);
+    void lowerCups();
+    void raiseCups();
     void letGoCups(uint8_t suction_cups_activation_for_request);
     void setPumpState(bool enable);
 

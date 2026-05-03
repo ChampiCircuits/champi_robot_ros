@@ -76,6 +76,11 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
         &HardwareInterfaceNode::actuators_control_callback, this, std::placeholders::_1));
     pub_ctrl_actuators_ = this->create_publisher<std_msgs::msg::Int8MultiArray>("/actuators_finished", 10);
     pub_stm_state = this->create_publisher<champi_interfaces::msg::STMState>("/STM_state", 10);
+
+    // NUTBOXES DETECTION — subscribe to compute suction cup activation mask
+    subscriber_nutboxes_detection_ = this->create_subscription<champi_interfaces::msg::NutBoxesDetection>(
+        "/nutboxes_detection", 10,
+        std::bind(&HardwareInterfaceNode::nutboxes_detection_callback, this, std::placeholders::_1));
 }
 
 void HardwareInterfaceNode::strategy_callback(const std_msgs::msg::String::SharedPtr msg)
@@ -245,7 +250,7 @@ void HardwareInterfaceNode::loop() {
         // Write
         mod_reg::cmd->is_read = false;
         mod_reg::cmd->cmd_vel.x = -latest_twist_.linear.x;
-        mod_reg::cmd->cmd_vel.y = -latest_twist_.linear.y;
+        mod_reg::cmd->cmd_vel.y = latest_twist_.linear.y;
         mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
 
         // RCLCPP_INFO(this->get_logger(), "New cmd_vel to send: x: %.2f, y: %.2f, theta: %.2f",

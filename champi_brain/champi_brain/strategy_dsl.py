@@ -337,7 +337,7 @@ class StrategyBuilder:
         self.set_current_group(group)
 
         # Approach movement
-        self.move_relative_to(elements_center, Offset(-0.25, 0.0, 0.0), use_collision_avoidance=True)
+        self.move_relative_to(elements_center, Offset(-0.35, 0.0, 0.0), use_collision_avoidance=True)
 
         # NutBoxes detection — after this action, "detected_nutboxes" is available in world state
         self.custom_action(ActuatorCommand.DETECT_NUTBOXES)

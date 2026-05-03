@@ -16,6 +16,11 @@
 
 bool stop_all_actuators_requested = false;
 
+// Masks saved at LOWER time, applied at LET_GO time, then reset.
+// This ensures the correct color mask is used even if the Modbus register changes between the two commands.
+static uint8_t pending_left_mask  = 0;
+static uint8_t pending_right_mask = 0;
+
 uint8_t LEFT_ARM_0_SERVO_ID = 1;
 uint8_t LEFT_ARM_1_SERVO_ID = 2;
 uint8_t LEFT_ARM_2_SERVO_ID = 3;
@@ -83,20 +88,50 @@ void HandleRequest(const ActuatorCommand cmd,
     case ActuatorCommand::THERMOMETER_RAISE_SERVO:          raiseThermometerServo(); break;
 
     case ActuatorCommand::LOWER_LEFT_ARM:
-        left_arm.lowerCups(left_suction_cups_activation_for_request);
-        left_arm.raiseCups(left_suction_cups_activation_for_request);
+        pending_left_mask = left_suction_cups_activation_for_request; // save for LET_GO
+        LOG_INFO("act", "[LEFT ARM] LOWER: saved pending_left_mask=0x%02X (cups: %d%d%d%d)",
+            pending_left_mask,
+            (pending_left_mask >> 3) & 1, (pending_left_mask >> 2) & 1,
+            (pending_left_mask >> 1) & 1, (pending_left_mask >> 0) & 1);
+        LOG_INFO("act", "[LEFT ARM] Lowering ALL 4 cups...");
+        left_arm.lowerCups();
+        LOG_INFO("act", "[LEFT ARM] Raising ALL 4 cups...");
+        left_arm.raiseCups();
+        LOG_INFO("act", "[LEFT ARM] LOWER done.");
         break;
     case ActuatorCommand::LET_GO_ELEMENTS_LEFT_ARM:
-        left_arm.letGoCups(left_suction_cups_activation_for_request);
+        LOG_INFO("act", "[LEFT ARM] LET_GO: applying pending_left_mask=0x%02X (cups to return: %d%d%d%d)",
+            pending_left_mask,
+            (pending_left_mask >> 3) & 1, (pending_left_mask >> 2) & 1,
+            (pending_left_mask >> 1) & 1, (pending_left_mask >> 0) & 1);
+        left_arm.letGoCups(pending_left_mask); // use mask saved at LOWER time
+        LOG_INFO("act", "[LEFT ARM] letGoCups done, resetting pending_left_mask.");
+        pending_left_mask = 0;
         left_arm.initAllServos();
+        LOG_INFO("act", "[LEFT ARM] LET_GO done.");
         break;
     case ActuatorCommand::LOWER_RIGHT_ARM:
-        right_arm.lowerCups(left_suction_cups_activation_for_request);
-        right_arm.raiseCups(left_suction_cups_activation_for_request);
+        pending_right_mask = right_suction_cups_activation_for_request; // save for LET_GO
+        LOG_INFO("act", "[RIGHT ARM] LOWER: saved pending_right_mask=0x%02X (cups: %d%d%d%d)",
+            pending_right_mask,
+            (pending_right_mask >> 3) & 1, (pending_right_mask >> 2) & 1,
+            (pending_right_mask >> 1) & 1, (pending_right_mask >> 0) & 1);
+        LOG_INFO("act", "[RIGHT ARM] Lowering ALL 4 cups...");
+        right_arm.lowerCups();
+        LOG_INFO("act", "[RIGHT ARM] Raising ALL 4 cups...");
+        right_arm.raiseCups();
+        LOG_INFO("act", "[RIGHT ARM] LOWER done.");
         break;
     case ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM:
-        right_arm.lowerCups(left_suction_cups_activation_for_request);
+        LOG_INFO("act", "[RIGHT ARM] LET_GO: applying pending_right_mask=0x%02X (cups to return: %d%d%d%d)",
+            pending_right_mask,
+            (pending_right_mask >> 3) & 1, (pending_right_mask >> 2) & 1,
+            (pending_right_mask >> 1) & 1, (pending_right_mask >> 0) & 1);
+        right_arm.letGoCups(pending_right_mask); // use mask saved at LOWER time
+        LOG_INFO("act", "[RIGHT ARM] letGoCups done, resetting pending_right_mask.");
+        pending_right_mask = 0;
         right_arm.initAllServos();
+        LOG_INFO("act", "[RIGHT ARM] LET_GO done.");
         break;
 
     default:
@@ -150,7 +185,7 @@ void ActuatorsTask(void *argument)
     LOG_INFO("act", "Starting loop.");
     while (true)
     {
-        // handleManualRequests();
+        handleManualRequests(); // TODO
         osDelay(100);
     }
 }

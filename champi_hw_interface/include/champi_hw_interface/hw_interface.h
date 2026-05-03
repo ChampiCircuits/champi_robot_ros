@@ -16,6 +16,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 
 #include <champi_interfaces/msg/stm_state.hpp>
+#include <champi_interfaces/msg/nut_boxes_detection.hpp>
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -74,6 +75,7 @@ private:
 
     void twist_callback(geometry_msgs::msg::Twist::SharedPtr msg);
     void strategy_callback(const std_msgs::msg::String::SharedPtr msg);
+    void nutboxes_detection_callback(const champi_interfaces::msg::NutBoxesDetection::SharedPtr msg);
 
     void actuators_control_callback(const std_msgs::msg::Int8 msg) const;
     void check_for_actuators_state() const;
@@ -101,6 +103,7 @@ private:
     std::vector<double> cov_vel_odom_otos_;
 
     rclcpp::Subscription<std_msgs::msg::Int8>::SharedPtr subscriber_ctrl_actuators_;
+    rclcpp::Subscription<champi_interfaces::msg::NutBoxesDetection>::SharedPtr subscriber_nutboxes_detection_;
     rclcpp::Publisher<std_msgs::msg::Int8MultiArray>::SharedPtr pub_ctrl_actuators_;
 
     rclcpp::Publisher<champi_interfaces::msg::STMState>::SharedPtr pub_stm_state;
@@ -108,3 +111,4 @@ private:
 
 
 #endif // HW_INTERFACE_H
+
