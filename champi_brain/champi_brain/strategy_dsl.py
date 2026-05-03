@@ -342,15 +342,13 @@ class StrategyBuilder:
         # NutBoxes detection — after this action, "detected_nutboxes" is available in world state
         self.custom_action(ActuatorCommand.DETECT_NUTBOXES)
         # Move relative to the detected position rather than the theoretical center
-        self.move_relative_to("detected_nutboxes", Offset(-0.20, 0.0, -60.0))
+        self.move_relative_to(group, Offset(-0.20, 0.0, -60.0)) # we use the group name as the label of the detected element. Same when inserting into world state
         # self.move_relative_to(elements_center, Offset(-0.20, 0.0, -60.0))
 
 # TODO pour l'instant on fait tout pour le left, on verra plus tard pour que ca marche pour le right aussi (-60 pour le côté gauche)
-        # Taking first 2 boxes
-        self.custom_action(ActuatorCommand.LOWER_LEFT_ARM)
+        # Taking boxes
+        self.custom_action(ActuatorCommand.LOWER_LEFT_ARM) # it will also raise it directly
 
-        # TODO we should probably remove "detected_nutboxes" from world state after, so that for the next one if we don't detect it we don't go back to the first one
-        
         return self
     
     def put_4_elements_sequence(self, target_position: Union[Position, str], group: str) -> 'StrategyBuilder':
@@ -367,8 +365,8 @@ class StrategyBuilder:
         self.custom_action(ActuatorCommand.LET_GO_ELEMENTS_LEFT_ARM)
 
         # Add points
-        points = self.points_per_action["PUSH_4_BOXES_OUT_PLUS_BONUS"]
-        self.add_points(points, f"PUSH_4_BOXES_OUT_PLUS_BONUS finished. {points} points", group=group)
+        points = self.points_per_action["PUT_4_BOXES_OUT_PLUS_BONUS"]
+        self.add_points(points, f"PUT_4_BOXES_OUT_PLUS_BONUS finished. {points} points", group=group)
 
         return self
     

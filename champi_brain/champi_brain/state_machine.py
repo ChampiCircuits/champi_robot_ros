@@ -168,14 +168,14 @@ class StateMachine:
         self._nutboxes_detected = True
 
         elem = GameElement()
-        elem.id = "detected_nutboxes"
+        elem.id = self.current_group if self.current_group else "detected_nutboxes"
         elem.pose.position.x = x
         elem.pose.position.y = y
         t = radians(theta_deg)
         elem.pose.orientation.z = sin(t / 2)
         elem.pose.orientation.w = cos(t / 2)
-        self.world_state_elements["detected_nutboxes"] = elem
-        self.logger.info(f"📦 Nutboxes injected into world state at ({x:.3f}, {y:.3f}, {theta_deg:.1f}°)")
+        self.world_state_elements[elem.id] = elem
+        self.logger.info(f"📦 Nutboxes ({elem.id}) injected into world state at ({x:.3f}, {y:.3f}, {theta_deg:.1f}°)")
 
         self.notify_action_completed()
         
