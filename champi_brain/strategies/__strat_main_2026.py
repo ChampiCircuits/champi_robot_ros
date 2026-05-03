@@ -25,36 +25,28 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         ## Elements IDs (when used) are automatically transformed via mirror_id mapping
 
         # premier mouvement pour éviter le grenier
-        # .move_to(Position(0.4, 1.4, -90.0), group="caisses_3", speed=1.0, accel_linear=1.0)
+        # .move_to(Position(0.4, 1.3, 180.0), group="sortie_grenier")
 
-        .move_to(Position(0.8, 1.4, 180.0), group="sortie_grenier", speed=1.0, accel_linear=1.0)
-        .take_elements_sequence(Position(0.175, 1.2, 180.0), group="caisses_1")
+        .take_elements_sequence(Position(0.175, 1.2, 180.0), group="caisses_1") # OK
+        .put_4_elements_sequence(Position(1.25, 1.45, 90.0), group="caisses_1") # garde_manger_4
 
+        .take_elements_sequence(Position(1.15, 0.8, -90.0), group="caisses_3")
+        .put_4_elements_sequence(Position(0.8, 0.8, 90.0), group="caisses_3") # garde_manger_3
 
-        # .take_elements_sequence(Position(1.15, 0.8, -90.0), group="caisses_3")
-        
-        # .move_to(Position(1.5, 0.175, 180.0), group="caisses_4", speed=1.0, accel_linear=1.0)
-        # .take_elements_sequence(Position(1.1, 0.175, 180.0), group="caisses_4")
+        .take_elements_sequence(Position(1.1, 0.175, -90.0), group="caisses_4")
 
-        # .move_thermometer("move_thermometer")
+        .move_to(Position(1.0, 0.6, 180.0), group="see_tag_before_thermo")
+        .move_thermometer("move_thermometer")
 
-        # .custom_action(ActuatorCommand.OPEN_EXIT_RAMP, group="caisses_3")
-        # .put_4_elements_sequence(Position(1.5, 0.1, 180.0), group="caisses_3") # garde_manger_5
-        # .put_4_elements_sequence(Position(0.7, 0.1, 180.0), group="caisses_4") # garde_manger_2
-        #
-        # .take_elements_sequence(Position(0.175, 0.4, 90.0), group="caisses_2")
-        # .put_4_elements_sequence(Position(0.1, 0.8, 90.0), group="caisses_2") # garde_manger_1
-        #
-        # .take_elements_sequence(Position(0.175, 1.2, 90.0), group="caisses_1")
-        #
-        # .put_2_elements_sequence(Position(1.25, 1.45, 180.0), group="caisses_1") # garde_manger_4
-        # .move_to(Position(0.4, 1.45, 90.0), group="caisses_1", speed=1.0, accel_linear=1.0)
-        #
-        # .put_last_2_elements_in_nest_sequence(Position(0.4, 1.8, 90.0), group="caisses_1")  # nid_jaune
+        .put_4_elements_sequence(Position(0.7, 0.1, -90.0), group="caisses_4") # garde_manger_2
+
+        .take_elements_sequence(Position(0.175, 0.4, 180.0), group="caisses_2")
+        .put_4_elements_sequence(Position(0.1, 0.8, 180.0), group="caisses_2") # garde_manger_1 # OK
+
 
         ######################### COME HOME ##########################################
         # movement before coming home to keep some distance from the table elements
-        # .move_to(Position(0.45, 0.9, 90.0), group="come_home", use_collision_avoidance=True, speed=1.0, accel_linear=1.0, accel_angular=15.0)
+        .move_to(Position(0.9, 1.3, -90.0), group="come_home", use_collision_avoidance=True)
         # .come_home() # done automatically at the end by the planner
     )
     

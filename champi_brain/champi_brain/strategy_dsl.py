@@ -309,16 +309,16 @@ class StrategyBuilder:
 
         # thermometer initial position is on the rightmost of its slider.
         # we have to move it in the center of the slider
-        thermometer_initial_position = Position(1.1, 0.0, 0.0) # for Yellow team
+        thermometer_initial_position = Position(1.2, 0.0, 0.0) # for Yellow team
         # thermometer_initial_position = Position(1.4, 0.0, 0.0) # for Yellow team # TODO ca c'est la bonne pose, mais la table est trop petite là
-        thermometer_target_position = Position(0.7, 0.0, 0.0)  # for Yellow team
+        thermometer_target_position = Position(0.68, 0.0, 0.0)  # for Yellow team
 
         # world_frame=True  → x/y offsets are absolute (not rotated by target theta)
         # theta_world_frame=True → robot always faces 180° (left) regardless of team color,
         #                          because the servo arm is physically on one fixed side of the robot
-        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.1, 180.0, world_frame=True, theta_world_frame=True), use_collision_avoidance=True)
+        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.2, 180.0, world_frame=True, theta_world_frame=True), use_collision_avoidance=True)
         self.custom_action(ActuatorCommand.THERMOMETER_LOWER_SERVO)
-        self.move_relative_to(thermometer_target_position, Offset(0.05, 0.1, 180.0, world_frame=True, theta_world_frame=True))
+        self.move_relative_to(thermometer_target_position, Offset(0.05, 0.2, 180.0, world_frame=True, theta_world_frame=True))
         self.custom_action(ActuatorCommand.THERMOMETER_RAISE_SERVO)
 
         points = self.points_per_action["THERMOMETER"]
@@ -342,10 +342,10 @@ class StrategyBuilder:
         # NutBoxes detection — after this action, "detected_nutboxes" is available in world state
         self.custom_action(ActuatorCommand.DETECT_NUTBOXES)
         # Move relative to the detected position rather than the theoretical center
-        self.move_relative_to("detected_nutboxes", Offset(-0.20, 0.0, 0.0))
-        # self.move_relative_to(elements_center, Offset(-0.20, 0.0, 0.0))
+        self.move_relative_to("detected_nutboxes", Offset(-0.20, 0.0, -60.0))
+        # self.move_relative_to(elements_center, Offset(-0.20, 0.0, -60.0))
 
-# TODO pour l'instant on fait tout pour le left, on verra plus tard pour que ca marche pour le right aussi
+# TODO pour l'instant on fait tout pour le left, on verra plus tard pour que ca marche pour le right aussi (-60 pour le côté gauche)
         # Taking first 2 boxes
         self.custom_action(ActuatorCommand.LOWER_LEFT_ARM)
 
@@ -363,7 +363,7 @@ class StrategyBuilder:
         self.set_current_group(group)
         
         # On dépose les caisses par l'arrière du robot
-        self.move_relative_to(target_position, Offset(0.1, 0.0, 0.0), use_collision_avoidance=False)
+        self.move_relative_to(target_position, Offset(-0.3, 0.0, -60.0), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
         self.custom_action(ActuatorCommand.LET_GO_ELEMENTS_LEFT_ARM)
 
         # Add points
