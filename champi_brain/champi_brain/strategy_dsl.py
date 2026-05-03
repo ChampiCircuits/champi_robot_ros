@@ -326,43 +326,62 @@ class StrategyBuilder:
         return self
 
     
-    def take_elements_sequence(self, elements_center: Union[Position, str], group: str) -> 'StrategyBuilder':
+    def take_elements_sequence(self, elements_center: Union[Position, str], which_actuator: str, group: str) -> 'StrategyBuilder':
         """Complete sequence for taking elements
         
         Args:
             elements_center: Union[Position, str] object for the center of the platform or named target
+            which_actuator: string to specify which actuator to use for taking ("LEFT" OR "RIGHT")
             group: Group name for these actions
             
         """
         self.set_current_group(group)
 
+        if which_actuator == 'LEFT':
+            offset_angle = -60.0
+            actuator_command = ActuatorCommand.LOWER_LEFT_ARM
+        elif which_actuator == 'RIGHT':
+            offset_angle = +60.0
+            actuator_command = ActuatorCommand.LOWER_RIGHT_ARM
+        else:
+            raise ValueError(f"Invalid actuator specified: {which_actuator}. Must be 'LEFT' or 'RIGHT'.")
+
         # Approach movement
         self.move_relative_to(elements_center, Offset(-0.35, 0.0, 0.0), use_collision_avoidance=True)
 
-        # NutBoxes detection — after this action, "detected_nutboxes" is available in world state
+        # NutBoxes detection — after this action, "<group>" is available in world state as the position of detected nut boxes
         self.custom_action(ActuatorCommand.DETECT_NUTBOXES)
         # Move relative to the detected position rather than the theoretical center
-        self.move_relative_to(group, Offset(-0.20, 0.0, -60.0)) # we use the group name as the label of the detected element. Same when inserting into world state
-        # self.move_relative_to(elements_center, Offset(-0.20, 0.0, -60.0))
+        # We use the group name as the label of the detected element. Same when inserting into world state
+        self.move_relative_to(group, Offset(-0.20, 0.0, offset_angle), linear_tolerance=0.001, angular_tolerance=0.05)
 
-# TODO pour l'instant on fait tout pour le left, on verra plus tard pour que ca marche pour le right aussi (-60 pour le côté gauche)
         # Taking boxes
-        self.custom_action(ActuatorCommand.LOWER_LEFT_ARM) # it will also raise it directly
+        self.custom_action(actuator_command) # it will also raise it directly after
 
         return self
     
-    def put_4_elements_sequence(self, target_position: Union[Position, str], group: str) -> 'StrategyBuilder':
+    def put_elements_sequence(self, target_position: Union[Position, str], which_actuator: str, group: str) -> 'StrategyBuilder':
         """Complete sequence for placing elements
         
         Args:
             target_position: Union[Position, str] object where to place elements or named target
+            which_actuator: string to specify which actuator to use for placing ("LEFT" OR "RIGHT")
             group: Group name for these actions            
         """
         self.set_current_group(group)
+
+        if which_actuator == 'LEFT':
+            offset_angle = -60.0
+            actuator_command = ActuatorCommand.LET_GO_ELEMENTS_LEFT_ARM
+        elif which_actuator == 'RIGHT':
+            offset_angle = +60.0
+            actuator_command = ActuatorCommand.LET_GO_ELEMENTS_RIGHT_ARM
+        else:
+            raise ValueError(f"Invalid actuator specified: {which_actuator}. Must be 'LEFT' or 'RIGHT'.")
         
         # On dépose les caisses par l'arrière du robot
-        self.move_relative_to(target_position, Offset(-0.3, 0.0, -60.0), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
-        self.custom_action(ActuatorCommand.LET_GO_ELEMENTS_LEFT_ARM)
+        self.move_relative_to(target_position, Offset(-0.3, 0.0, offset_angle), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
+        self.custom_action(actuator_command)
 
         # Add points
         points = self.points_per_action["PUT_4_BOXES_OUT_PLUS_BONUS"]

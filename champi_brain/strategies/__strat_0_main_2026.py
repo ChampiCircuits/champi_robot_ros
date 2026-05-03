@@ -30,21 +30,21 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         # premier mouvement pour éviter le grenier
         # .move_to(Position(0.4, 1.3, 180.0), group="sortie_grenier")
 
-        .take_elements_sequence(Position(0.175, 1.2, 180.0), group="caisses_1") # OK
-        .put_4_elements_sequence(Position(1.25, 1.45, 90.0), group="caisses_1") # garde_manger_4
+        .take_elements_sequence(Position(0.175, 1.2, 180.0), which_actuator='LEFT', group="caisses_1") # OK
+        .put_elements_sequence(Position(1.25, 1.45, 90.0), which_actuator='LEFT', group="caisses_1") # garde_manger_4
 
-        .take_elements_sequence(Position(1.15, 0.8, -90.0), group="caisses_3")
-        .put_4_elements_sequence(Position(0.8, 0.8, 90.0), group="caisses_3") # garde_manger_3
+        .take_elements_sequence(Position(1.15, 0.8, -90.0), which_actuator='RIGHT', group="caisses_3")
+        .put_elements_sequence(Position(0.8, 0.8, 90.0), which_actuator='RIGHT', group="caisses_3") # garde_manger_3
 
-        .take_elements_sequence(Position(1.1, 0.175, -90.0), group="caisses_4")
+        .take_elements_sequence(Position(1.1, 0.175, -90.0), which_actuator='LEFT', group="caisses_4")
 
         .move_to(Position(1.0, 0.6, 180.0), group="see_tag_before_thermo")
         .move_thermometer("move_thermometer")
 
-        .put_4_elements_sequence(Position(0.7, 0.1, -90.0), group="caisses_4") # garde_manger_2
+        .put_elements_sequence(Position(0.7, 0.1, -90.0), which_actuator='LEFT', group="caisses_4") # garde_manger_2
 
-        .take_elements_sequence(Position(0.175, 0.4, 180.0), group="caisses_2")
-        .put_4_elements_sequence(Position(0.1, 0.8, 180.0), group="caisses_2") # garde_manger_1 # OK
+        .take_elements_sequence(Position(0.175, 0.4, 180.0), which_actuator='RIGHT', group="caisses_2")
+        .put_elements_sequence(Position(0.1, 0.8, 180.0), which_actuator='RIGHT', group="caisses_2") # garde_manger_1 # OK
 
 
         ######################### COME HOME ##########################################
