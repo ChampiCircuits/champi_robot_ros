@@ -23,6 +23,7 @@ from champi_interfaces.msg import NutBoxesDetection
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 import cv2
+import time
 
 # ArUco ID to color mapping
 ARUCO_ID_BLUE = 36
@@ -100,6 +101,8 @@ class NutBoxesDetectionNode(Node):
     # ================================================================
 
     def timer_callback(self):
+        t_start = time.time()
+
         # Check prerequisites
         if self.latest_image is None or self.camera_matrix is None:
             return
@@ -109,8 +112,10 @@ class NutBoxesDetectionNode(Node):
                 return
 
         # Detect ArUco tags
+        t_aruco_start = time.time()
         image = self.latest_image.copy()
         marker_corners, marker_ids, _ = self.aruco_detector.detectMarkers(image)
+        t_aruco = time.time() - t_aruco_start
 
         # Build info image
         info_image = image.copy()
@@ -120,7 +125,11 @@ class NutBoxesDetectionNode(Node):
             cv2.putText(info_image, "No ArUco detected", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
             self._publish_no_detection()
+            t_pub_start = time.time()
             self._publish_info_image(info_image)
+            t_pub = time.time() - t_pub_start
+            t_total = time.time() - t_start
+            self.get_logger().info(f"⏱️ ArUco: {t_aruco*1000:.1f}ms | Publish: {t_pub*1000:.1f}ms | Total: {t_total*1000:.1f}ms")
             return
 
         # Filter for nutbox IDs only
@@ -179,7 +188,11 @@ class NutBoxesDetectionNode(Node):
             cv2.putText(info_image, "No nutbox ArUco", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 128, 255), 2)
             self._publish_no_detection()
+            t_pub_start = time.time()
             self._publish_info_image(info_image)
+            t_pub = time.time() - t_pub_start
+            t_total = time.time() - t_start
+            self.get_logger().info(f"⏱️ ArUco: {t_aruco*1000:.1f}ms | Publish: {t_pub*1000:.1f}ms | Total: {t_total*1000:.1f}ms")
             return
 
         # Sort by pixel x (left to right in image)
@@ -209,11 +222,6 @@ class NutBoxesDetectionNode(Node):
                     (10, info_image.shape[0] - 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-        self.get_logger().info(
-            f"✅ {len(detections)} tags | center=({center_x:.3f}, {center_y:.3f})m | "
-            f"colors={[d[4] for d in detections[:4]]}"
-        )
-
         # Publish result
         msg_out = NutBoxesDetection()
         msg_out.header.stamp = self.get_clock().now().to_msg()
@@ -225,7 +233,15 @@ class NutBoxesDetectionNode(Node):
         msg_out.colors = colors
         self.nutboxes_pub.publish(msg_out)
 
+        t_pub_start = time.time()
         self._publish_info_image(info_image)
+        t_pub = time.time() - t_pub_start
+        t_total = time.time() - t_start
+
+        self.get_logger().info(
+            f"✅ {len(detections)} tags | center=({center_x:.3f}, {center_y:.3f})m | "
+            f"colors={[d[4] for d in detections[:4]]} | ⏱️ ArUco: {t_aruco*1000:.1f}ms | Publish: {t_pub*1000:.1f}ms | Total: {t_total*1000:.1f}ms"
+        )
 
     # ================================================================
     # HELPERS

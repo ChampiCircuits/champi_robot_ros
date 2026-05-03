@@ -339,16 +339,17 @@ class StrategyBuilder:
         # Approach movement
         self.move_relative_to(elements_center, Offset(-0.25, 0.0, 0.0), use_collision_avoidance=True)
 
-        # NutBoxes detection — after this action, 'detected_nutboxes' is available in world state
-        # self.custom_action(ActuatorCommand.DETECT_NUTBOXES) # TODO put back when vision is enabled
-        # TODO en plus de ca, ca donnera la couleur de chaque nutbox
+        # NutBoxes detection — after this action, "detected_nutboxes" is available in world state
+        self.custom_action(ActuatorCommand.DETECT_NUTBOXES)
         # Move relative to the detected position rather than the theoretical center
-        # self.move_relative_to("detected_nutboxes", Offset(-0.20, 0.0, 0.0)) # TODO put back when vision is enabled
-        self.move_relative_to(elements_center, Offset(-0.20, 0.0, 0.0))
+        self.move_relative_to("detected_nutboxes", Offset(-0.20, 0.0, 0.0))
+        # self.move_relative_to(elements_center, Offset(-0.20, 0.0, 0.0))
 
 # TODO pour l'instant on fait tout pour le left, on verra plus tard pour que ca marche pour le right aussi
         # Taking first 2 boxes
         self.custom_action(ActuatorCommand.LOWER_LEFT_ARM)
+
+        # TODO we should probably remove "detected_nutboxes" from world state after, so that for the next one if we don't detect it we don't go back to the first one
         
         return self
     
