@@ -116,7 +116,8 @@ class StateMachineNode(Node):
         else:
             self.action_executor = ROSActionExecutor(self)
         self.action_executor.on_goal_reached = self._on_action_completed
-        self.action_executor.on_goal_failed = self._on_action_failed # TODO utiliser les 4 callbacks 
+        self.action_executor.on_goal_rejected = self._on_action_failed
+        self.action_executor.on_goal_failed = self._on_action_failed
         
         # State Machine Config (will be filled when strategy is chosen)
         self.sm_strategy_config = None

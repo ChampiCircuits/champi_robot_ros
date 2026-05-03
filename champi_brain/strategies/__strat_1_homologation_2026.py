@@ -32,8 +32,6 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
 
 
         ######################### COME HOME ##########################################
-        # movement before coming home to keep some distance from the table elements
-        .move_to(Position(0.4, 1.3, -90.0), group="come_home", use_collision_avoidance=True)
         .come_home() # done automatically at the end by the planner, but manually here for homologation
         )
 

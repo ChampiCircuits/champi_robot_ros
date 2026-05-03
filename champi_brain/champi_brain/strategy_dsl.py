@@ -393,6 +393,7 @@ class StrategyBuilder:
         """Return home
         """
         if self.home_pose:
+            self.move_relative_to(self.home_pose, Offset(+0.4, 0.0, 0.0), group="come_home") # to avoid the grenier
             self.move_to(self.home_pose, group="come_home")
         points = self.points_per_action["COME_HOME"]
         self.add_points(points, f"come_home finished. {points} points for coming home", group="come_home")
