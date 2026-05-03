@@ -48,7 +48,10 @@ class ActionExecutor():
         self.on_goal_rejected = lambda: None
         self.on_goal_reached = lambda: None  # Called when goal succeeds
         self.on_goal_failed = lambda msg: None  # Called when goal fails
-    
+
+        # Wait timer
+        self._wait_timer = None
+
     def move_to(self, x: float, y: float, theta_deg: float, motion_params: MotionParams) -> None:
         """
         Send navigation goal to the robot.
@@ -75,7 +78,6 @@ class ActionExecutor():
         The detected position will be made available through callbacks.
         """
         ...
-        # TODO delete ?
     
     @abstractmethod
     def execute_actuator_action(self, action_name: ActuatorCommand) -> None:
@@ -93,18 +95,27 @@ class ActionExecutor():
 
     def wait(self, duration: float) -> None:
         """
-        Wait for a duration.
-        Note: Actual waiting is handled by the state machine's wait state.
-        
+        Non-blocking wait for a duration. Calls on_goal_reached when done.
+
         Args:
             duration: Duration in seconds
         """
         self.logger.info(f'Starting wait for {duration:.1f}s')
-        # Waiting is handled by the state machine timer # TODO ??
-        
-    
+        self._wait_timer = self.node.create_timer(duration, self._on_wait_done)
+
+    def _on_wait_done(self) -> None:
+        """Called when wait duration has elapsed."""
+        self._wait_timer.destroy()
+        self._wait_timer = None
+        self.logger.info('Wait done.')
+        self.on_goal_reached()
+
     def cancel_current_action(self) -> None:
-        """Cancel currently executing navigation goal."""
+        """Cancel currently executing navigation goal or wait timer."""
+        if self._wait_timer is not None:
+            self._wait_timer.destroy()
+            self._wait_timer = None
+            self.logger.info('Wait timer cancelled.')
         if self.current_goal_handle is not None:
             self.logger.warn('Cancelling current navigation goal')
             cancel_future = self.current_goal_handle.cancel_goal_async()
