@@ -138,7 +138,7 @@ def create() -> None:
                             with ui.step('Choisir la strategie'):
                                 available_strategies = get_available_strategies()
                                 global radio_strategy_selection, auto_placement_checkbox, auto_placement_status_label
-                                radio_strategy_selection = ui.radio(available_strategies, value='__strat_main_2026.py')
+                                radio_strategy_selection = ui.radio(available_strategies, value='__strat_0_main_2026.py')
                                 auto_placement_checkbox = ui.checkbox('Auto robot placement', value=False)
                                 auto_placement_status_label = ui.label('Statut auto-placement: inactif')
                                 ui.timer(0.2, update_auto_placement_status)

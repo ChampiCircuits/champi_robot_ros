@@ -147,9 +147,10 @@ path_planner:
     # Strategy parameters
     use_default_strategy_and_color_in_sim: true       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
     # use_default_strategy_and_color_in_sim: false       # If true, the default strategy file and color will be used in simulation mode without waiting for user to choose
-    default_strategy_file: '__strat_test_square.py'
-#    default_strategy_file: '__strat_test_square_with_rotations.py'
-#    default_strategy_file: '__strat_main_2026.py'     # Default strategy file for simulation
+    default_strategy_file: '__strat_1_homologation_2026.py'
+#    default_strategy_file: '__strat_2_test_square.py'
+#    default_strategy_file: '__strat_3_test_square_with_rotations.py'
+#    default_strategy_file: '__strat_0_main_2026.py'     # Default strategy file for simulation
 #    default_sim_color: 'BLUE'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
     default_sim_color: 'YELLOW'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
 

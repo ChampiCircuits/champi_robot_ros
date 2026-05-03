@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-from champi_brain.strategy_dsl import StrategyBuilder, Position, Color
-from champi_brain.actuator_commands import ActuatorCommand
+from champi_brain.strategy_dsl import StrategyBuilder, Position
 
 
 # TODO use directly positions from world_state
@@ -14,10 +13,14 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .set_wait_to_come_home_pose(0.4, 1.4, 90.0)  # position in front of yellow home zone
         
         # Create groups
+        .create_group("caisses_1")
+        .create_group("caisses_2")
         .create_group("caisses_3")
         .create_group("caisses_4")
-        .create_group("caisses_2")
-        .create_group("caisses_1")
+        .create_group("caisses_5")
+        .create_group("caisses_6")
+        .create_group("caisses_7")
+        .create_group("caisses_8")
         .create_group("move_thermometer")
 
         ## The whole strategy is always given for YELLOW team
