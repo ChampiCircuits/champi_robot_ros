@@ -6,24 +6,17 @@ author: Atsushi Sakai (@Atsushi_twi)
 
 """
 
-import sys
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-import pathlib
-sys.path.append(str(pathlib.Path(__file__).parent.parent))
 
-from VisibilityRoadMap.geometry import Geometry
-from VoronoiRoadMap.dijkstra_search import DijkstraSearch
-
-show_animation = True
+from champi_navigation.visibility_planner.geometry import Geometry
+from champi_navigation.visibility_planner.dijkstra_search import DijkstraSearch
 
 
 class VisibilityRoadMap:
 
-    def __init__(self, expand_distance, do_plot=False):
+    def __init__(self, expand_distance):
         self.expand_distance = expand_distance
-        self.do_plot = do_plot
 
     def planning(self, start_x, start_y, goal_x, goal_y, obstacles):
 
@@ -32,11 +25,7 @@ class VisibilityRoadMap:
 
         road_map_info = self.generate_road_map_info(nodes, obstacles)
 
-        if self.do_plot:
-            self.plot_road_map(nodes, road_map_info)
-            plt.pause(1.0)
-
-        rx, ry = DijkstraSearch(show_animation).search(
+        rx, ry = DijkstraSearch().search(
             start_x, start_y,
             goal_x, goal_y,
             [node.x for node in nodes],
@@ -61,10 +50,6 @@ class VisibilityRoadMap:
 
             for (vx, vy) in zip(cvx_list, cvy_list):
                 nodes.append(DijkstraSearch.Node(vx, vy))
-
-        if self.do_plot:
-            for node in nodes:
-                plt.plot(node.x, node.y, "xr")
 
         return nodes
 
@@ -133,13 +118,6 @@ class VisibilityRoadMap:
         offset_y = y + self.expand_distance * math.sin(offset_vec)
         return offset_x, offset_y
 
-    @staticmethod
-    def plot_road_map(nodes, road_map_info_list):
-        for i, node in enumerate(nodes):
-            for index in road_map_info_list[i]:
-                plt.plot([node.x, nodes[index].x],
-                         [node.y, nodes[index].y], "-b")
-
 
 class ObstaclePolygon:
 
@@ -173,49 +151,6 @@ class ObstaclePolygon:
         self.x_list.append(self.x_list[0])
         self.y_list.append(self.y_list[0])
 
-    def plot(self):
-        plt.plot(self.x_list, self.y_list, "-k")
-
-
-def main():
-    print(__file__ + " start!!")
-
-    # start and goal position
-    sx, sy = 10.0, 10.0  # [m]
-    gx, gy = 50.0, 50.0  # [m]
-
-    expand_distance = 5.0  # [m]
-
-    obstacles = [
-        ObstaclePolygon(
-            [20.0, 30.0, 15.0],
-            [20.0, 20.0, 30.0],
-        ),
-        ObstaclePolygon(
-            [40.0, 45.0, 50.0, 40.0],
-            [50.0, 40.0, 20.0, 40.0],
-        ),
-        ObstaclePolygon(
-            [20.0, 30.0, 30.0, 20.0],
-            [40.0, 45.0, 60.0, 50.0],
-        )
-    ]
-
-    if show_animation:  # pragma: no cover
-        plt.plot(sx, sy, "or")
-        plt.plot(gx, gy, "ob")
-        for ob in obstacles:
-            ob.plot()
-        plt.axis("equal")
-        plt.pause(1.0)
-
-    rx, ry = VisibilityRoadMap(expand_distance, do_plot=show_animation)\
-        .planning(sx, sy, gx, gy, obstacles)
-
-    if show_animation:  # pragma: no cover
-        plt.plot(rx, ry, "-r")
-        plt.pause(0.1)
-        plt.show()
 
 
 if __name__ == '__main__':

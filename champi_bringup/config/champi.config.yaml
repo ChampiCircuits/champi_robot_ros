@@ -133,9 +133,10 @@ path_planner:
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
     waypoint_speed_linear: 0.1 # m/s
     debug: true
-    enemy_detect_dist: 0.45 # 0.18+0.22= 0.4 m
-    enemy_detect_angle: 60. # degrees from x+ axis
-    backoff_distance: 0.1 # m. Distance to back off from the enemy robot when it is too close after the timeout
+    robot_radius: 0.18 # m
+    enemy_robot_radius: 0.22 # m
+    table_width: 3.0 # m (x dimension)
+    table_height: 2.0 # m (y dimension)
 
 # Champi Brain nodes
 /champi_brain/**:

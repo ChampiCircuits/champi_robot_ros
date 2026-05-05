@@ -13,19 +13,17 @@ from geometry_msgs.msg import Pose, PoseStamped, Twist
 from champi_interfaces.action import Navigate
 from champi_interfaces.msg import CtrlGoal
 
-from math import radians
 import time
 from threading import Lock
 import diagnostic_updater
-from icecream import ic
 
-import champi_navigation.goal_checker as goal_checker
 from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
+from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap, ObstaclePolygon
 from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
-from champi_libraries_py.data_types.geometry import Pose2D, Vect2D
+from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.angles import get_yaw
-
+import champi_navigation.goal_checker as goal_checker
 
 
 class PlannerNode(Node):
@@ -36,32 +34,31 @@ class PlannerNode(Node):
 
     def __init__(self):
         super().__init__('planner_node')
-        #self.get_logger().set_level(rclpy.logging.LoggingSeverity.DEBUG)
 
         # Parameters
         self.loop_period = self.declare_parameter('planner_loop_period', rclpy.Parameter.Type.DOUBLE).value
         self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance', rclpy.Parameter.Type.DOUBLE).value
         self.waypoint_speed_linear = self.declare_parameter('waypoint_speed_linear', rclpy.Parameter.Type.DOUBLE).value
         self.debug = self.declare_parameter('debug', rclpy.Parameter.Type.BOOL).value
-        self.enemy_detect_dist = self.declare_parameter('enemy_detect_dist', rclpy.Parameter.Type.DOUBLE).value
-        self.enemy_detect_angle = self.declare_parameter('enemy_detect_angle', rclpy.Parameter.Type.DOUBLE).value
-        self.backoff_distance = self.declare_parameter('backoff_distance', rclpy.Parameter.Type.DOUBLE).value
+        self.robot_radius = self.declare_parameter('robot_radius', rclpy.Parameter.Type.DOUBLE).value
+        self.enemy_robot_radius = self.declare_parameter('enemy_robot_radius', rclpy.Parameter.Type.DOUBLE).value
+        self.table_width = self.declare_parameter('table_width', 3.0).value   # x dimension [m]
+        self.table_height = self.declare_parameter('table_height', 2.0).value  # y dimension [m]
 
         # Print parameters
         self.get_logger().info('Path Planner started with the following parameters:')
         self.get_logger().info(f'loop_period: {self.loop_period}')
         self.get_logger().info(f'waypoint_tolerance: {self.waypoint_tolerance}')
-        self.get_logger().info(f'debug: {self.debug}')
+        self.get_logger().info(f'robot_radius: {self.robot_radius}')
 
         # Subscribers
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.enemy_odom_sub = self.create_subscription(Odometry, '/enemy_pose', self.enemy_odom_callback, 10)
-        self.latest_enemy_pose = Pose2D(x=-100., y=-100.)
+        self.latest_enemy_pose: Pose2D = None
 
         # Publisher
         self.champi_path_pub = self.create_publisher(CtrlGoal, '/ctrl_goal', 10)
         self.path_publisher_viz = self.create_publisher(Path, '/plan_viz', 10)
-
         self.cmd_vel_stop_pub = self.create_publisher(Twist, '/emergency/cmd_vel_stop', 10)
 
         # Action Server /navigate
@@ -72,37 +69,93 @@ class PlannerNode(Node):
                                                    callback_group=ReentrantCallbackGroup())
         self.get_logger().info('Path Planner started /navigate server')
 
-        # Timeout object to abort the Navigate goal if it takes too long (robot stuck, goal occupied...)
+        # Timeout object to abort the Navigate goal if it takes too long
         self.timeout = Timeout()
 
         # Diagnostic updater
         updater = diagnostic_updater.Updater(self)
         updater.setHardwareID('none')
-
-        # Diagnostic for execution time of control loop
         self.exec_time_measurer = ExecTimeMeasurer()
         updater.add('Loop exec time', self.exec_time_measurer.produce_diagnostics)
+        updater.add('Timeout', self.timeout.produce_diagnostics)
 
-        # Diagnostic for timeout
-        updater.add('Timeout', self.timeout.produce_diagnostics) 
+        # Data retrieved from topics
+        self.robot_pose: Pose2D = None
 
-        # Data retreived from topics
-        self.robot_pose: Pose = None
-
-        # Current goal handle, that we get when a new goal is received by the action server
+        # Current goal handle
         self.goal_handle_navigate = None
-        
-        # True when we have a goal to reach. Come back to False when the goal is reached or cancelled
         self.planning = False
-
-        # This mutex is used to avoid the execute_callback to be running multiple times concurentlly, which leads to very annoying things.
-        # For example, without mutex, when we cancel a goal, the new execute_callback is called althrough the previous one is still running,
-        # and they modify the same attributes...
         self.mutex_exec = Lock()
 
+        # Visibility planner
+        self.visibility_planner = VisibilityRoadMap(expand_distance=self.robot_radius)
+
+        # Static obstacles: table borders as 4 thin edge polygons
+        self.static_obstacles = self._build_border_obstacles()
+
+    # ==================================== Obstacle Management ==========================================
+
+    def _build_border_obstacles(self):
+        """Build border obstacles as 4 thin rectangles along the edges of the table."""
+        w = self.table_width
+        h = self.table_height
+        t = 0.01  # thin wall thickness
+
+        borders = [
+            # Bottom wall
+            ObstaclePolygon([0.0, w, w, 0.0], [0.0, 0.0, -t, -t]),
+            # Top wall
+            ObstaclePolygon([0.0, w, w, 0.0], [h, h, h + t, h + t]),
+            # Left wall
+            ObstaclePolygon([0.0, 0.0, -t, -t], [0.0, h, h, 0.0]),
+            # Right wall
+            ObstaclePolygon([w, w, w + t, w + t], [0.0, h, h, 0.0]),
+        ]
+        return borders
+
+    def _build_enemy_obstacle(self, enemy_pose: Pose2D):
+        """Build a square obstacle around the enemy position."""
+        r = self.enemy_robot_radius
+        cx, cy = enemy_pose.x, enemy_pose.y
+        return ObstaclePolygon(
+            [cx - r, cx + r, cx + r, cx - r],
+            [cy - r, cy - r, cy + r, cy + r]
+        )
+
+    def _get_all_obstacles(self):
+        """Get all obstacles: static borders + dynamic enemy."""
+        obstacles = list(self.static_obstacles)
+        if self.latest_enemy_pose is not None:
+            obstacles.append(self._build_enemy_obstacle(self.latest_enemy_pose))
+        return obstacles
+
+    # ==================================== Path Planning ==========================================
+
+    def compute_path(self, start: Pose2D, goal: Pose2D):
+        """Compute path using visibility road map planner.
+
+        Returns:
+            list[Pose2D] or None: list of waypoints from start to goal, or None if no path found.
+        """
+        obstacles = self._get_all_obstacles()
+
+        rx, ry = self.visibility_planner.planning(
+            start.x, start.y, goal.x, goal.y, obstacles
+        )
+
+        if not rx or not ry:
+            return None
+
+        # rx, ry are from goal to start, reverse them
+        rx.reverse()
+        ry.reverse()
+
+        # Convert to Pose2D waypoints (use goal theta for all)
+        waypoints = [Pose2D(x=x, y=y, theta=goal.theta) for x, y in zip(rx, ry)]
+
+        return waypoints
 
     # ==================================== ROS2 topics Callbacks ==========================================
-
 
     def odom_callback(self, msg):
         self.robot_pose = Pose2D(pose=msg.pose.pose)
@@ -110,121 +163,56 @@ class PlannerNode(Node):
     def enemy_odom_callback(self, msg):
         self.latest_enemy_pose = Pose2D(pose=msg.pose.pose)
 
-    def is_enemy_close(self, robot_pose: Pose2D, enemy_pose: Pose2D, goal: Pose2D):
-
-        vect_robot = Vect2D(pose2d=robot_pose)
-        vect_enemy = Vect2D(pose2d=enemy_pose)
-        vect_goal = Vect2D(pose2d=goal)
-
-        vect_robot_to_goal = vect_goal.sub(vect_robot)
-        vect_robot_to_enemy = vect_enemy.sub(vect_robot)
-
-        try:
-            angle_enemy = vect_robot_to_goal.angle(vect_robot_to_enemy)
-        except:
-            ic(vect_robot_to_goal, vect_robot_to_enemy)
-            return False # We're spinning on one point
-
-        in_fov = abs(angle_enemy) < radians(self.enemy_detect_angle)
-
-        too_close = vect_robot.sub(vect_enemy).norm() < self.enemy_detect_dist
-
-        return in_fov and too_close
-
-
-    def make_backoff_pose(self, start: Pose2D, goal: Pose2D, robot_pose: Pose2D, backoff_dist):
-
-        vect_start = Vect2D(pose2d=start) # TODO we must not go further than the start.
-        vect_goal = Vect2D(pose2d=goal)
-        vect_robot = Vect2D(pose2d=robot_pose)
-
-        vect_dir = vect_goal.sub(vect_robot).normalize()
-
-        vect_backoff_pose = vect_robot.add(vect_dir.mult(-backoff_dist))
-
-        backoff_pose = vect_backoff_pose.to_pose2d()
-        backoff_pose.theta = goal.theta
-
-        return backoff_pose
-
-
-    def publish_emergency_stop(self):
-        # Publish a Twist with zero linear and angular speeds
-        twist = Twist()
-        self.cmd_vel_stop_pub.publish(twist)
-
-
-
     # ==================================== Action Server Callbacks ==========================================
 
-
     def navigate_callback(self, navigate_goal: Navigate.Goal):
-        """ Called when a new Navigate goal is received
-        """
         self.get_logger().info('New Navigate request received to pose: '
                                 f'({navigate_goal.pose.position.x}, {navigate_goal.pose.position.y}, {get_yaw(navigate_goal.pose)*180.0/3.14159})')
 
-        # Store the goal
         self.current_navigate_goal = navigate_goal
 
-        # Cancel the current goal if there is one
         if self.planning:
             self.goal_handle_navigate.abort()
-
             self.get_logger().info('Received a new Navigate request, cancelling the current one!')
-        
-        self.planning = True
 
+        self.planning = True
         return GoalResponse.ACCEPT
-    
 
     def cancel_callback(self, goal_handle):
-        """ Called when the goal is cancelled by the client
-        """
         self.get_logger().debug('Goal cancelled!')
         if self.planning:
             self.goal_handle_navigate.abort()
         else:
-            self.get_logger().warn('No goal to cancel!')  # Can happen if the robot reach the end at the same time as the goal is cancelled
+            self.get_logger().warn('No goal to cancel!')
         self.planning = False
         return CancelResponse.ACCEPT
 
-    
     async def execute_callback(self, goal_handle):
-        """ Called right after we return GoalResponse.ACCEPT in navigate_callback
-        """
         self.mutex_exec.acquire()
-
         self.goal_handle_navigate = goal_handle
-
 
         # =================================== INITIALIZATION ==========================================
 
-        # We're still waiting for first messages (init)
         while rclpy.ok() and self.robot_pose is None and goal_handle.is_active:
             self.get_logger().info(f'Waiting for init messages, robot_pose={self.robot_pose is not None}', throttle_duration_sec=1.)
-            
-            # Feedback
             feedback_msg = get_feedback_msg(ComputePathResult.INITIALIZING, [], 0)
             goal_handle.publish_feedback(feedback_msg)
-
             time.sleep(self.loop_period)
-
 
         # =================================== MAIN LOOP ==========================================
 
         navigate_goal_reached = False
         self.timeout.start(self.current_navigate_goal.timeout)
 
-        start_pose = self.robot_pose
+        goal_pose = Pose2D(pose=self.current_navigate_goal.pose)
 
-        poses_to_go = [Pose2D(pose=self.current_navigate_goal.pose)]
+        # Compute initial path
+        waypoints = self.compute_path(self.robot_pose, goal_pose)
+        current_waypoint_idx = 0
 
         while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached:
 
-            # Exectution time measurement for diagnostics. Check class definition for details.
             self.exec_time_measurer.start()
-
             t_loop_start = time.time()
 
             # Check if the timeout is reached
@@ -235,50 +223,57 @@ class PlannerNode(Node):
                 self.exec_time_measurer.stop()
                 continue
 
-            # Check if enemy close
-            # len(poses_to_go) == 1 means we are not performing backoff
-            if len(poses_to_go) == 1 and self.is_enemy_close(self.robot_pose, self.latest_enemy_pose, poses_to_go[0]):
+            # Recompute path (handles dynamic enemy obstacle)
+            new_waypoints = self.compute_path(self.robot_pose, goal_pose)
+            if new_waypoints is not None:
+                waypoints = new_waypoints
+                current_waypoint_idx = 0
 
-                self.get_logger().info("enemy close", throttle_duration_sec=1.)
+            # Determine result for feedback
+            if waypoints is None or len(waypoints) < 2:
+                result = ComputePathResult.NO_PATH_FOUND
+                # No valid path - publish feedback and wait
+                feedback_msg = get_feedback_msg(result, [], self.current_navigate_goal.max_linear_speed)
+                goal_handle.publish_feedback(feedback_msg)
+                self.exec_time_measurer.stop()
+                sleep_time = max(0, self.loop_period - (time.time() - t_loop_start))
+                time.sleep(sleep_time)
+                continue
 
-                self.publish_emergency_stop()
+            if len(waypoints) == 2:
+                result = ComputePathResult.SUCCESS_STRAIGHT
+            else:
+                result = ComputePathResult.SUCCESS_AVOIDANCE
 
-                backoff_pose = self.make_backoff_pose(start_pose, poses_to_go[0], self.robot_pose, self.backoff_distance)
-                # insert it first position
-                poses_to_go = [backoff_pose] + poses_to_go
+            # Current target waypoint
+            target_wp = waypoints[current_waypoint_idx]
 
-
-            # Check if goal is reached
-            if goal_checker.is_goal_reached(poses_to_go[0],
+            # Check if current waypoint is reached
+            is_last_waypoint = (current_waypoint_idx >= len(waypoints) - 1)
+            if goal_checker.is_goal_reached(target_wp,
                                             self.robot_pose,
-                                            self.current_navigate_goal.end_speed == 0,
-                                            self.current_navigate_goal.do_look_at_point,
-                                            Pose2D(point=self.current_navigate_goal.look_at_point),
-                                            self.current_navigate_goal.robot_angle_when_looking_at_point,
-                                            self.current_navigate_goal.linear_tolerance,
-                                            self.current_navigate_goal.angular_tolerance):
-
-                if len(poses_to_go) > 1: # Switch to next goal
-                    poses_to_go.pop(0)
-                else:
+                                            self.current_navigate_goal.end_speed == 0 and is_last_waypoint,
+                                            self.current_navigate_goal.do_look_at_point and is_last_waypoint,
+                                            Pose2D(point=self.current_navigate_goal.look_at_point) if is_last_waypoint else target_wp,
+                                            self.current_navigate_goal.robot_angle_when_looking_at_point if is_last_waypoint else 0.0,
+                                            self.current_navigate_goal.linear_tolerance if is_last_waypoint else self.waypoint_tolerance,
+                                            self.current_navigate_goal.angular_tolerance if is_last_waypoint else 3.14):
+                if is_last_waypoint:
                     navigate_goal_reached = True
                     self.exec_time_measurer.stop()
                     continue
+                else:
+                    current_waypoint_idx += 1
+                    target_wp = waypoints[current_waypoint_idx]
 
-            # Compute path
-            result = ComputePathResult.SUCCESS_STRAIGHT
-
-            # We got a valid path, create a CtrlGoal and publish it (+ debug visualizations)
-            # Create a CtrlGoal
-            ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=False)
-            ctrl_goal.pose = poses_to_go[0].to_ros_pose()
-
-            # Publish goal
+            # Create and publish CtrlGoal
+            is_waypoint = not is_last_waypoint
+            ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=is_waypoint)
+            ctrl_goal.pose = target_wp.to_ros_pose()
             self.champi_path_pub.publish(ctrl_goal)
 
-            remaining_path = [self.robot_pose] + poses_to_go
-
             # Publish action feedback
+            remaining_path = [self.robot_pose] + waypoints[current_waypoint_idx:]
             feedback_msg = get_feedback_msg(result, remaining_path, self.current_navigate_goal.max_linear_speed)
             goal_handle.publish_feedback(feedback_msg)
 
@@ -287,68 +282,45 @@ class PlannerNode(Node):
 
             self.exec_time_measurer.stop()
 
-            # Sleep to respect the loop period
             sleep_time = max(0, self.loop_period - (time.time() - t_loop_start))
             time.sleep(sleep_time)
 
         self.planning = False
         self.timeout.reset()
-        
 
         # ============================ FILL ACTION RESULT ====================================
 
-        # stop robot and clear path
         self.publish_stop()
         self.publish_path([])
 
         result = None
-        
-        # Check if the goal was aborted
+
         if not goal_handle.is_active:
             self.get_logger().debug('Action execution stopped because goal was aborted!!')
-            result =  Navigate.Result(success=False, message='Goal aborted!')
-
-        # Check if the node is shutting down
+            result = Navigate.Result(success=False, message='Goal aborted!')
         elif not rclpy.ok():
             result = Navigate.Result(success=False, message='Node shutdown!')
-
-        # The goal was reached
         else:
             goal_handle.succeed()
             self.get_logger().debug('Navigate Goal reached!')
             result = Navigate.Result(success=True, message='Goal reached!')
-        
-        self.mutex_exec.release()
-        
-        return result
 
+        self.mutex_exec.release()
+        return result
 
     # ====================================== Utils ==========================================
 
-
     def publish_stop(self):
-        """Publish a stop command to the controller node. Made by publishing an empty CtrlGoal; as max speed is 0, the robot will stop.
-        """
         ctrl_goal = CtrlGoal()
         self.champi_path_pub.publish(ctrl_goal)
 
-
     def publish_path(self, path: list[Pose]):
-        """Publish a path (for visualization)
-
-        Args:
-            path (list[Pose]): The path to publish
-        """
-
         path_msg = Path()
         path_msg.header.stamp = self.get_clock().now().to_msg()
         path_msg.header.frame_id = 'odom'
-
         for pose in path:
             path_msg.poses.append(self.pose_to_pose_stamped(pose, 'odom'))
-
         self.path_publisher_viz.publish(path_msg)
-
 
     def pose_to_pose_stamped(self, pose: Pose, frame_id: str) -> PoseStamped:
         pose_stamped = PoseStamped()
@@ -357,17 +329,8 @@ class PlannerNode(Node):
         pose_stamped.pose = pose
         return pose_stamped
 
-
-
     def create_ctrl_goal_from_navigate_goal(self, navigate_goal: Navigate.Goal, is_waypoint) -> CtrlGoal:
-
-        """
-        Create a CtrlGoal from a Navigate goal, transferring all the fields.
-        Then, you can edit what you need afterwards.
-        """
-
         ctrl_goal = CtrlGoal()
-
         ctrl_goal.pose = navigate_goal.pose
 
         if is_waypoint:
@@ -380,18 +343,15 @@ class PlannerNode(Node):
             ctrl_goal.max_linear_speed = navigate_goal.max_linear_speed
 
         ctrl_goal.max_angular_speed = navigate_goal.max_angular_speed
-
         ctrl_goal.accel_linear = navigate_goal.accel_linear
         ctrl_goal.accel_angular = navigate_goal.accel_angular
-
         ctrl_goal.angular_tolerance = navigate_goal.angular_tolerance
-
         ctrl_goal.do_look_at_point = navigate_goal.do_look_at_point
         ctrl_goal.look_at_point = navigate_goal.look_at_point
         ctrl_goal.robot_angle_when_looking_at_point = navigate_goal.robot_angle_when_looking_at_point
 
         return ctrl_goal
-    
+
 
     # ====================================== Main ==========================================
 
@@ -401,7 +361,6 @@ def main(args=None):
 
     node = PlannerNode()
 
-    # We use a MultiThreadedExecutor to enable processing goals concurrently
     executor = MultiThreadedExecutor()
 
     try:
