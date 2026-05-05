@@ -137,6 +137,7 @@ path_planner:
     enemy_robot_radius: 0.22 # m
     table_width: 3.0 # m (x dimension)
     table_height: 2.0 # m (y dimension)
+    forbidden_area_wait_time: 1.0 # s. Time to wait when robot enters a forbidden area before exiting
 
 # Champi Brain nodes
 /champi_brain/**:

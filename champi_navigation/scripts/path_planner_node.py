@@ -45,6 +45,7 @@ class PlannerNode(Node):
         self.enemy_robot_radius = self.declare_parameter('enemy_robot_radius', rclpy.Parameter.Type.DOUBLE).value
         self.table_width = self.declare_parameter('table_width', 3.0).value   # x dimension [m]
         self.table_height = self.declare_parameter('table_height', 2.0).value  # y dimension [m]
+        self.forbidden_area_wait_time = self.declare_parameter('forbidden_area_wait_time', 1.0).value  # s
 
         # Print parameters
         self.get_logger().info('Path Planner started with the following parameters:')
@@ -133,6 +134,60 @@ class PlannerNode(Node):
         if self.latest_enemy_pose is not None:
             obstacles.append(self._build_enemy_obstacle(self.latest_enemy_pose))
         return obstacles
+
+    def _is_robot_in_forbidden_area(self):
+        """Check if the robot is inside any expanded obstacle polygon."""
+        if self.robot_pose is None:
+            return False
+        obstacles = self._get_all_obstacles()
+        expanded_obstacles = self.visibility_planner.build_expanded_obstacles(obstacles)
+        for obs in expanded_obstacles:
+            if VisibilityRoadMap._point_in_polygon(self.robot_pose.x, self.robot_pose.y, obs):
+                return True
+        return False
+
+    def _find_nearest_exit_point(self):
+        """Find the nearest point outside all expanded obstacles by projecting onto polygon edges."""
+        obstacles = self._get_all_obstacles()
+        expanded_obstacles = self.visibility_planner.build_expanded_obstacles(obstacles)
+
+        best_point = None
+        best_dist = float('inf')
+
+        for obs in expanded_obstacles:
+            if not VisibilityRoadMap._point_in_polygon(self.robot_pose.x, self.robot_pose.y, obs):
+                continue
+            # Find closest point on polygon boundary and move slightly outside
+            for i in range(len(obs.x_list) - 1):
+                ax, ay = obs.x_list[i], obs.y_list[i]
+                bx, by = obs.x_list[i + 1], obs.y_list[i + 1]
+                # Project robot position onto edge segment
+                dx, dy = bx - ax, by - ay
+                seg_len_sq = dx * dx + dy * dy
+                if seg_len_sq < 1e-9:
+                    continue
+                t = max(0.0, min(1.0, ((self.robot_pose.x - ax) * dx + (self.robot_pose.y - ay) * dy) / seg_len_sq))
+                proj_x = ax + t * dx
+                proj_y = ay + t * dy
+                # Move slightly outward (away from polygon center)
+                nx, ny = -dy, dx  # normal to edge
+                norm = (nx * nx + ny * ny) ** 0.5
+                if norm < 1e-9:
+                    continue
+                nx, ny = nx / norm, ny / norm
+                # Choose direction pointing away from polygon interior
+                cx = sum(obs.x_list[:-1]) / (len(obs.x_list) - 1)
+                cy = sum(obs.y_list[:-1]) / (len(obs.y_list) - 1)
+                if nx * (proj_x - cx) + ny * (proj_y - cy) < 0:
+                    nx, ny = -nx, -ny
+                exit_x = proj_x + nx * 0.03  # 3cm outside
+                exit_y = proj_y + ny * 0.03
+                dist = ((self.robot_pose.x - exit_x) ** 2 + (self.robot_pose.y - exit_y) ** 2) ** 0.5
+                if dist < best_dist:
+                    best_dist = dist
+                    best_point = Pose2D(x=exit_x, y=exit_y, theta=self.robot_pose.theta)
+
+        return best_point
 
     # ==================================== Path Planning ==========================================
 
@@ -230,6 +285,24 @@ class PlannerNode(Node):
                 self.get_logger().warn('Timeout reached!')
                 goal_handle.abort()
                 self.timeout.reset()
+                self.exec_time_measurer.stop()
+                continue
+
+            # Check if robot is inside a forbidden (expanded obstacle) area
+            if self._is_robot_in_forbidden_area():
+                self.get_logger().warn('Robot is inside a forbidden area! Stopping and exiting...')
+                self.publish_stop()
+                time.sleep(self.forbidden_area_wait_time)
+
+                # Find exit point and navigate to it
+                exit_point = self._find_nearest_exit_point()
+                if exit_point is not None:
+                    ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=True)
+                    ctrl_goal.pose = exit_point.to_ros_pose()
+                    self.champi_path_pub.publish(ctrl_goal)
+                    # Wait until robot exits the forbidden area
+                    while rclpy.ok() and goal_handle.is_active and self._is_robot_in_forbidden_area():
+                        time.sleep(self.loop_period)
                 self.exec_time_measurer.stop()
                 continue
 
