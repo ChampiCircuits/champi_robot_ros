@@ -23,7 +23,9 @@ class VisibilityRoadMap:
         nodes = self.generate_visibility_nodes(start_x, start_y,
                                                goal_x, goal_y, obstacles)
 
-        road_map_info = self.generate_road_map_info(nodes, obstacles)
+        expanded_obstacles = self.build_expanded_obstacles(obstacles)
+
+        road_map_info = self.generate_road_map_info(nodes, expanded_obstacles)
 
         rx, ry = DijkstraSearch().search(
             start_x, start_y,
@@ -71,15 +73,23 @@ class VisibilityRoadMap:
 
         return cvx_list, cvy_list
 
+    def build_expanded_obstacles(self, obstacles):
+        """Build expanded obstacle polygons using configuration space vertices."""
+        expanded = []
+        for obstacle in obstacles:
+            cvx_list, cvy_list = self.calc_vertexes_in_configuration_space(
+                obstacle.x_list, obstacle.y_list)
+            expanded.append(ObstaclePolygon(cvx_list, cvy_list))
+        return expanded
+
     def generate_road_map_info(self, nodes, obstacles):
 
         road_map_info_list = []
 
-        for target_node in nodes:
+        for target_id, target_node in enumerate(nodes):
             road_map_info = []
             for node_id, node in enumerate(nodes):
-                if np.hypot(target_node.x - node.x,
-                            target_node.y - node.y) <= 0.1:
+                if node_id == target_id:
                     continue
 
                 is_valid = True
@@ -96,6 +106,8 @@ class VisibilityRoadMap:
 
     @staticmethod
     def is_edge_valid(target_node, node, obstacle):
+        eps = 1e-6
+        skipped_any = False
 
         for i in range(len(obstacle.x_list) - 1):
             p1 = Geometry.Point(target_node.x, target_node.y)
@@ -103,10 +115,42 @@ class VisibilityRoadMap:
             p3 = Geometry.Point(obstacle.x_list[i], obstacle.y_list[i])
             p4 = Geometry.Point(obstacle.x_list[i + 1], obstacle.y_list[i + 1])
 
+            # Skip if an edge endpoint coincides with a polygon vertex
+            # (C-space nodes lie on expanded polygon vertices)
+            if (abs(p1.x - p3.x) < eps and abs(p1.y - p3.y) < eps) or \
+               (abs(p1.x - p4.x) < eps and abs(p1.y - p4.y) < eps) or \
+               (abs(p2.x - p3.x) < eps and abs(p2.y - p3.y) < eps) or \
+               (abs(p2.x - p4.x) < eps and abs(p2.y - p4.y) < eps):
+                skipped_any = True
+                continue
+
             if Geometry.is_seg_intersect(p1, p2, p3, p4):
                 return False
 
+        # If we skipped some edges due to vertex coincidence, verify the edge
+        # midpoint is not inside the polygon (prevents diagonal shortcuts)
+        if skipped_any:
+            mid_x = (target_node.x + node.x) / 2.0
+            mid_y = (target_node.y + node.y) / 2.0
+            if VisibilityRoadMap._point_in_polygon(mid_x, mid_y, obstacle):
+                return False
+
         return True
+
+    @staticmethod
+    def _point_in_polygon(x, y, obstacle):
+        """Ray casting point-in-polygon test."""
+        n = len(obstacle.x_list) - 1  # closed polygon, skip last duplicate
+        inside = False
+        j = n - 1
+        for i in range(n):
+            xi, yi = obstacle.x_list[i], obstacle.y_list[i]
+            xj, yj = obstacle.x_list[j], obstacle.y_list[j]
+            if ((yi > y) != (yj > y)) and \
+               (x < (xj - xi) * (y - yi) / (yj - yi) + xi):
+                inside = not inside
+            j = i
+        return inside
 
     def calc_offset_xy(self, px, py, x, y, nx, ny):
         p_vec = math.atan2(y - py, x - px)

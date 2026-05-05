@@ -23,6 +23,7 @@ from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
 from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.angles import get_yaw
+from champi_libraries_py.marker_helper.canva import Canva, items, presets
 import champi_navigation.goal_checker as goal_checker
 
 
@@ -93,6 +94,10 @@ class PlannerNode(Node):
         # Static obstacles: table borders as 4 thin edge polygons
         self.static_obstacles = self._build_border_obstacles()
 
+        # Visualization
+        Canva(self, enable=self.debug)
+        self.viz_timer = self.create_timer(0.2, self.viz_timer_callback)
+
     # ==================================== Obstacle Management ==========================================
 
     def _build_border_obstacles(self):
@@ -138,13 +143,17 @@ class PlannerNode(Node):
             list[Pose2D] or None: list of waypoints from start to goal, or None if no path found.
         """
         obstacles = self._get_all_obstacles()
+        self.get_logger().debug(f'Computing path from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f}) with {len(obstacles)} obstacles')
 
         rx, ry = self.visibility_planner.planning(
             start.x, start.y, goal.x, goal.y, obstacles
         )
 
         if not rx or not ry:
+            self.get_logger().warn(f'No path found from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f})')
             return None
+
+        self.get_logger().debug(f'Path found with {len(rx)} waypoints')
 
         # rx, ry are from goal to start, reverse them
         rx.reverse()
@@ -162,6 +171,7 @@ class PlannerNode(Node):
 
     def enemy_odom_callback(self, msg):
         self.latest_enemy_pose = Pose2D(pose=msg.pose.pose)
+        self.get_logger().info(f'Enemy pose received: ({self.latest_enemy_pose.x:.2f}, {self.latest_enemy_pose.y:.2f})', throttle_duration_sec=2.)
 
     # ==================================== Action Server Callbacks ==========================================
 
@@ -280,6 +290,9 @@ class PlannerNode(Node):
             # Publish path for visualization
             self.publish_path([p.to_ros_pose() for p in remaining_path])
 
+            # Draw obstacles and path with marker helper
+            self.draw_viz(waypoints, current_waypoint_idx)
+
             self.exec_time_measurer.stop()
 
             sleep_time = max(0, self.loop_period - (time.time() - t_loop_start))
@@ -307,6 +320,39 @@ class PlannerNode(Node):
 
         self.mutex_exec.release()
         return result
+
+    # ====================================== Visualization ==========================================
+
+    def viz_timer_callback(self):
+        """Periodically draw obstacles even when not navigating."""
+        if not self.planning:
+            self.draw_viz(None, 0)
+
+    def draw_viz(self, waypoints, current_waypoint_idx):
+        Canva().clear()
+
+        # Draw obstacles
+        obstacles = self._get_all_obstacles()
+        self.get_logger().debug(f'Drawing {len(obstacles)} obstacles (enemy_pose={self.latest_enemy_pose is not None})')
+        for obs in obstacles:
+            points = list(zip(obs.x_list, obs.y_list))
+            Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.RED), frame_id='odom')
+
+        # Draw expanded (C-space) obstacles
+        expanded_obstacles = self.visibility_planner.build_expanded_obstacles(obstacles)
+        for obs in expanded_obstacles:
+            points = list(zip(obs.x_list, obs.y_list))
+            Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.ORANGE), frame_id='odom')
+
+        # Draw path
+        if waypoints and current_waypoint_idx < len(waypoints):
+            path_points = [(wp.x, wp.y) for wp in waypoints[current_waypoint_idx:]]
+            if len(path_points) >= 2:
+                Canva().add(items.Polyline(path_points, size=presets.LINE_MEDIUM, color=presets.GREEN), frame_id='odom')
+            # Draw waypoints as spheres
+            Canva().add(items.Spheres(path_points, color=presets.CYAN), frame_id='odom')
+
+        Canva().draw()
 
     # ====================================== Utils ==========================================
 
