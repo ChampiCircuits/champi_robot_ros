@@ -15,6 +15,7 @@
   <depend>tf_transformations</depend>
   <depend>twist_mux</depend>
   <depend>champi_interfaces</depend>
+  <exec_depend>champi_brain</exec_depend>
 
 
   <test_depend>ament_lint_auto</test_depend>

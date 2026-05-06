@@ -16,6 +16,8 @@ from champi_interfaces.msg import CtrlGoal
 import time
 from threading import Lock
 import diagnostic_updater
+import yaml
+from ament_index_python.packages import get_package_share_directory
 
 from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
 from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap, ObstaclePolygon
@@ -47,6 +49,7 @@ class PlannerNode(Node):
         self.table_height = self.declare_parameter('table_height', rclpy.Parameter.Type.DOUBLE).value
         self.forbidden_area_wait_time = self.declare_parameter('forbidden_area_wait_time', rclpy.Parameter.Type.DOUBLE).value
         self.forbidden_area_margin = self.declare_parameter('forbidden_area_margin', rclpy.Parameter.Type.DOUBLE).value
+        self.world_state_file = self.declare_parameter('world_state_file', rclpy.Parameter.Type.STRING).value
 
         # Print parameters
         self.get_logger().info('Path Planner started with the following parameters:')
@@ -100,11 +103,42 @@ class PlannerNode(Node):
         # Static obstacles: table borders as 4 thin edge polygons
         self.static_obstacles = self._build_border_obstacles()
 
+        # Zone obstacles (loaded from world state file)
+        self.zones = self._load_zones()
+        # Zone occupancy: all occupied by default (will be updated via topic later)
+        self.zone_occupied = {zone['id']: True for zone in self.zones}
+        self.get_logger().info(f'Loaded {len(self.zones)} zones as obstacles: {[z["id"] for z in self.zones]}')
+
         # Visualization
         Canva(self, enable=self.debug)
         self.viz_timer = self.create_timer(0.2, self.viz_timer_callback)
 
     # ==================================== Obstacle Management ==========================================
+
+    def _load_zones(self):
+        """Load zones from the world state YAML file."""
+        config_path = get_package_share_directory('champi_brain') + '/config/' + self.world_state_file
+        with open(config_path, 'r') as f:
+            world_state = yaml.safe_load(f)
+        zones = world_state.get('zones', [])
+        return zones
+
+    def _build_zone_obstacles(self):
+        """Build obstacle polygons for all currently occupied zones."""
+        obstacles = []
+        for zone in self.zones:
+            if not self.zone_occupied.get(zone['id'], False):
+                continue
+            x = zone['x']
+            y = zone['y']
+            w = zone['width']
+            h = zone['height']
+            # Zone position is bottom-left corner
+            obstacles.append(ObstaclePolygon(
+                [x, x + w, x + w, x],
+                [y, y, y + h, y + h]
+            ))
+        return obstacles
 
     def _build_border_obstacles(self):
         """Build border obstacles as 4 thin rectangles along the edges of the table."""
@@ -134,8 +168,9 @@ class PlannerNode(Node):
         )
 
     def _get_all_obstacles(self):
-        """Get all obstacles: static borders + dynamic enemy."""
+        """Get all obstacles: static borders + zones + dynamic enemy."""
         obstacles = list(self.static_obstacles)
+        obstacles.extend(self._build_zone_obstacles())
         if self.latest_enemy_pose is not None:
             obstacles.append(self._build_enemy_obstacle(self.latest_enemy_pose))
         return obstacles
@@ -206,6 +241,8 @@ class PlannerNode(Node):
         Returns:
             list[Pose2D] or None: list of waypoints from start to goal, or None if no path found.
         """
+        t_start = time.time()
+
         obstacles = self._get_all_obstacles()
         self.get_logger().debug(f'Computing path from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f}) with {len(obstacles)} obstacles')
 
@@ -213,11 +250,13 @@ class PlannerNode(Node):
             start.x, start.y, goal.x, goal.y, obstacles
         )
 
+        computation_time_ms = (time.time() - t_start) * 1000.0
+
         if not rx or not ry:
-            self.get_logger().warn(f'No path found from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f})')
+            self.get_logger().warn(f'No path found from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f}) (took {computation_time_ms:.1f}ms)')
             return None
 
-        self.get_logger().debug(f'Path found with {len(rx)} waypoints')
+        self.get_logger().info(f'Path found with {len(rx)} waypoints in {computation_time_ms:.1f}ms')
 
         # rx, ry are from goal to start, reverse them
         rx.reverse()
