@@ -138,6 +138,7 @@ path_planner:
     table_width: 3.0 # m (x dimension)
     table_height: 2.0 # m (y dimension)
     forbidden_area_wait_time: 1.0 # s. Time to wait when robot enters a forbidden area before exiting
+    forbidden_area_margin: 0.05 # m. Margin before triggering forbidden area stop
 
 # Champi Brain nodes
 /champi_brain/**:

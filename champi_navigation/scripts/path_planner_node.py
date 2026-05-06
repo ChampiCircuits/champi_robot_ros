@@ -43,10 +43,10 @@ class PlannerNode(Node):
         self.debug = self.declare_parameter('debug', rclpy.Parameter.Type.BOOL).value
         self.robot_radius = self.declare_parameter('robot_radius', rclpy.Parameter.Type.DOUBLE).value
         self.enemy_robot_radius = self.declare_parameter('enemy_robot_radius', rclpy.Parameter.Type.DOUBLE).value
-        self.table_width = self.declare_parameter('table_width', 3.0).value   # x dimension [m]
-        self.table_height = self.declare_parameter('table_height', 2.0).value  # y dimension [m]
-        self.forbidden_area_wait_time = self.declare_parameter('forbidden_area_wait_time', 1.0).value  # s
-        self.forbidden_area_margin = self.declare_parameter('forbidden_area_margin', 0.05).value  # margin [m] before triggering forbidden area stop
+        self.table_width = self.declare_parameter('table_width', rclpy.Parameter.Type.DOUBLE).value
+        self.table_height = self.declare_parameter('table_height', rclpy.Parameter.Type.DOUBLE).value
+        self.forbidden_area_wait_time = self.declare_parameter('forbidden_area_wait_time', rclpy.Parameter.Type.DOUBLE).value
+        self.forbidden_area_margin = self.declare_parameter('forbidden_area_margin', rclpy.Parameter.Type.DOUBLE).value
 
         # Print parameters
         self.get_logger().info('Path Planner started with the following parameters:')
@@ -240,35 +240,40 @@ class PlannerNode(Node):
     # ==================================== Action Server Callbacks ==========================================
 
     def navigate_callback(self, navigate_goal: Navigate.Goal):
-        self.get_logger().info('New Navigate request received to pose: '
-                                f'({navigate_goal.pose.position.x}, {navigate_goal.pose.position.y}, {get_yaw(navigate_goal.pose)*180.0/3.14159})')
+        self.get_logger().info(f'[NAV] navigate_callback: New Navigate request received to pose: '
+                                f'({navigate_goal.pose.position.x:.3f}, {navigate_goal.pose.position.y:.3f}, {get_yaw(navigate_goal.pose)*180.0/3.14159:.1f}deg), '
+                                f'timeout={navigate_goal.timeout:.1f}s, currently_planning={self.planning}')
 
         self.current_navigate_goal = navigate_goal
 
         if self.planning:
+            self.get_logger().warn(f'[NAV] navigate_callback: Aborting previous goal to accept new one!')
             self.goal_handle_navigate.abort()
-            self.get_logger().info('Received a new Navigate request, cancelling the current one!')
 
         self.planning = True
+        self.get_logger().debug(f'[NAV] navigate_callback: Goal ACCEPTED')
         return GoalResponse.ACCEPT
 
     def cancel_callback(self, goal_handle):
-        self.get_logger().debug('Goal cancelled!')
+        self.get_logger().debug(f'[NAV] cancel_callback: Cancel requested, currently_planning={self.planning}')
         if self.planning:
             self.goal_handle_navigate.abort()
+            self.get_logger().info('[NAV] cancel_callback: Goal aborted due to cancel request')
         else:
-            self.get_logger().warn('No goal to cancel!')
+            self.get_logger().warn('[NAV] cancel_callback: No goal to cancel!')
         self.planning = False
         return CancelResponse.ACCEPT
 
     async def execute_callback(self, goal_handle):
+        self.get_logger().debug(f'[NAV] execute_callback: Waiting to acquire mutex (blocked={self.mutex_exec.locked()})')
         self.mutex_exec.acquire()
+        self.get_logger().debug(f'[NAV] execute_callback: Mutex acquired, goal_active={goal_handle.is_active}')
         self.goal_handle_navigate = goal_handle
 
         # =================================== INITIALIZATION ==========================================
 
         while rclpy.ok() and self.robot_pose is None and goal_handle.is_active:
-            self.get_logger().info(f'Waiting for init messages, robot_pose={self.robot_pose is not None}', throttle_duration_sec=1.)
+            self.get_logger().info(f'[NAV] execute_callback: Waiting for init messages, robot_pose={self.robot_pose is not None}', throttle_duration_sec=1.)
             feedback_msg = get_feedback_msg(ComputePathResult.INITIALIZING, [], 0)
             goal_handle.publish_feedback(feedback_msg)
             time.sleep(self.loop_period)
@@ -279,10 +284,13 @@ class PlannerNode(Node):
         self.timeout.start(self.current_navigate_goal.timeout)
 
         goal_pose = Pose2D(pose=self.current_navigate_goal.pose)
+        self.get_logger().debug(f'[NAV] execute_callback: Starting main loop, goal=({goal_pose.x:.3f}, {goal_pose.y:.3f}, {goal_pose.theta:.2f}rad), '
+                               f'robot=({self.robot_pose.x:.3f}, {self.robot_pose.y:.3f}), timeout={self.current_navigate_goal.timeout:.1f}s')
 
         # Compute initial path
         waypoints = self.compute_path(self.robot_pose, goal_pose)
-        current_waypoint_idx = 0
+        current_waypoint_idx = 1  # Skip waypoint 0 (always robot's current position)
+        self.get_logger().debug(f'[NAV] execute_callback: Initial path computed, waypoints={len(waypoints) if waypoints else 0}')
 
         while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached:
 
@@ -291,7 +299,7 @@ class PlannerNode(Node):
 
             # Check if the timeout is reached
             if self.timeout.is_elapsed():
-                self.get_logger().warn('Timeout reached!')
+                self.get_logger().warn(f'[NAV] execute_callback: TIMEOUT reached! Aborting goal.')
                 goal_handle.abort()
                 self.timeout.reset()
                 self.exec_time_measurer.stop()
@@ -299,7 +307,7 @@ class PlannerNode(Node):
 
             # Check if robot is inside a forbidden (expanded obstacle) area
             if self._is_robot_in_forbidden_area():
-                self.get_logger().warn('Robot is inside a forbidden area! Stopping and exiting...')
+                self.get_logger().warn(f'[NAV] execute_callback: Robot is inside FORBIDDEN AREA at ({self.robot_pose.x:.3f}, {self.robot_pose.y:.3f})! Stopping...')
                 self.publish_stop()
                 time.sleep(self.forbidden_area_wait_time)
 
@@ -319,7 +327,7 @@ class PlannerNode(Node):
             new_waypoints = self.compute_path(self.robot_pose, goal_pose)
             if new_waypoints is not None:
                 waypoints = new_waypoints
-                current_waypoint_idx = 0
+                current_waypoint_idx = 1  # Skip waypoint 0 (always robot's current position)
 
             # Determine result for feedback
             if waypoints is None or len(waypoints) < 2:
@@ -351,10 +359,14 @@ class PlannerNode(Node):
                                             self.current_navigate_goal.linear_tolerance if is_last_waypoint else self.waypoint_tolerance,
                                             self.current_navigate_goal.angular_tolerance if is_last_waypoint else 3.14):
                 if is_last_waypoint:
+                    self.get_logger().info(f'[NAV] execute_callback: FINAL GOAL REACHED at robot=({self.robot_pose.x:.3f}, {self.robot_pose.y:.3f}), '
+                                          f'target=({target_wp.x:.3f}, {target_wp.y:.3f})')
                     navigate_goal_reached = True
                     self.exec_time_measurer.stop()
                     continue
                 else:
+                    self.get_logger().debug(f'[NAV] execute_callback: Waypoint {current_waypoint_idx}/{len(waypoints)-1} reached at '
+                                           f'({target_wp.x:.3f}, {target_wp.y:.3f}), advancing to next')
                     current_waypoint_idx += 1
                     target_wp = waypoints[current_waypoint_idx]
 
@@ -392,15 +404,17 @@ class PlannerNode(Node):
         result = None
 
         if not goal_handle.is_active:
-            self.get_logger().debug('Action execution stopped because goal was aborted!!')
+            self.get_logger().info('[NAV] execute_callback: RESULT => Goal aborted (goal_handle not active)')
             result = Navigate.Result(success=False, message='Goal aborted!')
         elif not rclpy.ok():
+            self.get_logger().info('[NAV] execute_callback: RESULT => Node shutdown')
             result = Navigate.Result(success=False, message='Node shutdown!')
         else:
             goal_handle.succeed()
-            self.get_logger().debug('Navigate Goal reached!')
+            self.get_logger().info(f'[NAV] execute_callback: RESULT => Goal REACHED at ({self.robot_pose.x:.3f}, {self.robot_pose.y:.3f})')
             result = Navigate.Result(success=True, message='Goal reached!')
 
+        self.get_logger().debug(f'[NAV] execute_callback: Releasing mutex, planning=False')
         self.mutex_exec.release()
         return result
 
