@@ -46,6 +46,7 @@ class PlannerNode(Node):
         self.table_width = self.declare_parameter('table_width', 3.0).value   # x dimension [m]
         self.table_height = self.declare_parameter('table_height', 2.0).value  # y dimension [m]
         self.forbidden_area_wait_time = self.declare_parameter('forbidden_area_wait_time', 1.0).value  # s
+        self.forbidden_area_margin = self.declare_parameter('forbidden_area_margin', 0.05).value  # margin [m] before triggering forbidden area stop
 
         # Print parameters
         self.get_logger().info('Path Planner started with the following parameters:')
@@ -92,6 +93,10 @@ class PlannerNode(Node):
         # Visibility planner
         self.visibility_planner = VisibilityRoadMap(expand_distance=self.robot_radius)
 
+        # Separate planner with smaller expansion for forbidden area detection
+        # This avoids false triggers when the robot is just barely on the C-space boundary
+        self.forbidden_area_checker = VisibilityRoadMap(expand_distance=max(0.0, self.robot_radius - self.forbidden_area_margin))
+
         # Static obstacles: table borders as 4 thin edge polygons
         self.static_obstacles = self._build_border_obstacles()
 
@@ -136,11 +141,15 @@ class PlannerNode(Node):
         return obstacles
 
     def _is_robot_in_forbidden_area(self):
-        """Check if the robot is inside any expanded obstacle polygon."""
+        """Check if the robot is inside any expanded obstacle polygon (with margin).
+        
+        Uses a smaller expansion than path planning so the robot must be significantly
+        inside the C-space boundary before triggering the emergency stop.
+        """
         if self.robot_pose is None:
             return False
         obstacles = self._get_all_obstacles()
-        expanded_obstacles = self.visibility_planner.build_expanded_obstacles(obstacles)
+        expanded_obstacles = self.forbidden_area_checker.build_expanded_obstacles(obstacles)
         for obs in expanded_obstacles:
             if VisibilityRoadMap._point_in_polygon(self.robot_pose.x, self.robot_pose.y, obs):
                 return True
@@ -149,7 +158,7 @@ class PlannerNode(Node):
     def _find_nearest_exit_point(self):
         """Find the nearest point outside all expanded obstacles by projecting onto polygon edges."""
         obstacles = self._get_all_obstacles()
-        expanded_obstacles = self.visibility_planner.build_expanded_obstacles(obstacles)
+        expanded_obstacles = self.forbidden_area_checker.build_expanded_obstacles(obstacles)
 
         best_point = None
         best_dist = float('inf')
@@ -350,6 +359,7 @@ class PlannerNode(Node):
                     target_wp = waypoints[current_waypoint_idx]
 
             # Create and publish CtrlGoal
+            is_last_waypoint = (current_waypoint_idx >= len(waypoints) - 1)
             is_waypoint = not is_last_waypoint
             ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=is_waypoint)
             ctrl_goal.pose = target_wp.to_ros_pose()

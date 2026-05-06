@@ -131,7 +131,7 @@ path_planner:
   ros__parameters:
     planner_loop_period: 0.05
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
-    waypoint_speed_linear: 0.1 # m/s
+    waypoint_speed_linear: 0.5 # m/s
     debug: true
     robot_radius: 0.18 # m
     enemy_robot_radius: 0.22 # m
