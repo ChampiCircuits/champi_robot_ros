@@ -15,6 +15,7 @@ from champi_interfaces.msg import CtrlGoal
 
 import time
 from threading import Lock
+import diagnostic_msgs.msg
 import diagnostic_updater
 import yaml
 from ament_index_python.packages import get_package_share_directory
@@ -27,6 +28,44 @@ from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.angles import get_yaw
 from champi_libraries_py.marker_helper.canva import Canva, items, presets
 import champi_navigation.goal_checker as goal_checker
+
+
+class PlanningDiagnostic:
+    """Tracks planning call statistics and produces ROS diagnostics."""
+
+    def __init__(self):
+        self._last_ms = None
+        self._worst_ms = 0.0
+        self._total_ms = 0.0
+        self._n_calls = 0
+        self._n_failed = 0
+
+    def record(self, planning_ms: float, success: bool):
+        self._last_ms = planning_ms
+        self._n_calls += 1
+        self._total_ms += planning_ms
+        if planning_ms > self._worst_ms:
+            self._worst_ms = planning_ms
+        if not success:
+            self._n_failed += 1
+
+    def produce_diagnostics(self, stat):
+        if self._last_ms is None:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, 'No planning call yet')
+            return stat
+        avg_ms = self._total_ms / self._n_calls if self._n_calls else 0.0
+        fail_rate = self._n_failed / self._n_calls if self._n_calls else 0.0
+        level = diagnostic_msgs.msg.DiagnosticStatus.OK
+        if self._worst_ms > 75.0 or fail_rate > 0.2:
+            level = diagnostic_msgs.msg.DiagnosticStatus.WARN
+        stat.summary(level, f'last={self._last_ms:.1f}ms  avg={avg_ms:.1f}ms  worst={self._worst_ms:.1f}ms')
+        stat.add('Last planning time (ms)', f'{self._last_ms:.2f}')
+        stat.add('Avg planning time (ms)',  f'{avg_ms:.2f}')
+        stat.add('Worst planning time (ms)', f'{self._worst_ms:.2f}')
+        stat.add('Total calls', str(self._n_calls))
+        stat.add('Failed calls (no path)', str(self._n_failed))
+        stat.add('Failure rate', f'{fail_rate*100:.1f}%')
+        return stat
 
 
 class PlannerNode(Node):
@@ -82,8 +121,10 @@ class PlannerNode(Node):
         updater = diagnostic_updater.Updater(self)
         updater.setHardwareID('none')
         self.exec_time_measurer = ExecTimeMeasurer()
+        self.planning_diagnostic = PlanningDiagnostic()
         updater.add('Loop exec time', self.exec_time_measurer.produce_diagnostics)
         updater.add('Timeout', self.timeout.produce_diagnostics)
+        updater.add('Path planner', self.planning_diagnostic.produce_diagnostics)
 
         # Data retrieved from topics
         self.robot_pose: Pose2D = None
@@ -124,9 +165,15 @@ class PlannerNode(Node):
         return zones
 
     def _build_zone_obstacles(self):
-        """Build obstacle polygons for all currently occupied zones."""
+        """Build obstacle polygons for all currently occupied zones.
+
+        Zones of type 'secure_zone' are not added as obstacles — the robot is
+        allowed to drive through them.
+        """
         obstacles = []
         for zone in self.zones:
+            if zone.get('type') == 'secure_zone':
+                continue
             if not self.zone_occupied.get(zone['id'], False):
                 continue
             x = zone['x']
@@ -174,6 +221,36 @@ class PlannerNode(Node):
         if self.latest_enemy_pose is not None:
             obstacles.append(self._build_enemy_obstacle(self.latest_enemy_pose))
         return obstacles
+
+    def _filter_outside_table(self, obstacles):
+        """Remove obstacles whose bounding box does not overlap the table area.
+
+        Uses a margin equal to robot_radius so C-space expansion near the border
+        is never accidentally discarded.
+        """
+        margin = self.robot_radius
+        filtered = []
+        for obs in obstacles:
+            xs = obs.x_list[:-1]  # skip closing duplicate vertex
+            ys = obs.y_list[:-1]
+            if (max(xs) >= -margin and min(xs) <= self.table_width  + margin and
+                    max(ys) >= -margin and min(ys) <= self.table_height + margin):
+                filtered.append(obs)
+        return filtered
+
+    def _get_static_obstacles(self):
+        """Static obstacles: table borders + zones (cached by the planner)."""
+        obstacles = list(self.static_obstacles)
+        obstacles.extend(self._build_zone_obstacles())
+        return self._filter_outside_table(obstacles)
+
+    def _get_dynamic_obstacles(self):
+        """Dynamic obstacles: enemy robot (changes every call)."""
+        if self.latest_enemy_pose is not None:
+            return self._filter_outside_table(
+                [self._build_enemy_obstacle(self.latest_enemy_pose)]
+            )
+        return []
 
     def _is_robot_in_forbidden_area(self):
         """Check if the robot is inside any expanded obstacle polygon (with margin).
@@ -241,22 +318,24 @@ class PlannerNode(Node):
         Returns:
             list[Pose2D] or None: list of waypoints from start to goal, or None if no path found.
         """
-        t_start = time.time()
+        static_obstacles  = self._get_static_obstacles()
+        dynamic_obstacles = self._get_dynamic_obstacles()
 
-        obstacles = self._get_all_obstacles()
-        self.get_logger().debug(f'Computing path from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f}) with {len(obstacles)} obstacles')
+        self.get_logger().debug(f'Computing path from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f}) '
+                                f'with {len(static_obstacles)} static + {len(dynamic_obstacles)} dynamic obstacles')
 
-        rx, ry = self.visibility_planner.planning(
-            start.x, start.y, goal.x, goal.y, obstacles
+        rx, ry, planning_ms = self.visibility_planner.planning(
+            start.x, start.y, goal.x, goal.y, static_obstacles, dynamic_obstacles
         )
 
-        computation_time_ms = (time.time() - t_start) * 1000.0
-
         if not rx or not ry:
-            self.get_logger().warn(f'No path found from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f}) (took {computation_time_ms:.1f}ms)')
+            self.planning_diagnostic.record(planning_ms, success=False)
+            self.get_logger().warn(f'No path found from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f}) '
+                                   f'in {planning_ms:.1f}ms')
             return None
 
-        self.get_logger().info(f'Path found with {len(rx)} waypoints in {computation_time_ms:.1f}ms')
+        self.planning_diagnostic.record(planning_ms, success=True)
+        self.get_logger().info(f'Path found with {len(rx)} waypoints in {planning_ms:.1f}ms')
 
         # rx, ry are from goal to start, reverse them
         rx.reverse()
