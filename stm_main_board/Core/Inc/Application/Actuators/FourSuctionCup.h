@@ -38,9 +38,14 @@ private:
     void setCupsPosition(uint8_t mask, float position);
     void setCupPosition(int cup, float position);
 
-    static constexpr int CUP_SERVO_LOW    = 90;   // ° [0,270] // TODO
-    static constexpr int CUP_SERVO_HIGH   = 180;  // ° [0,270] // TODO
-    static constexpr int CUP_SERVO_RETURN = 250;  // ° [0,270] // TODO
+    static constexpr float CUP_SERVO_MAX_ANGLE = 270.0f;
+
+    static constexpr int CUP_SERVO_LOW    = 220;   // ° [0,270] // TODO
+    static constexpr int CUP_SERVO_HIGH   = 60;  // ° [0,270] // TODO
+    static constexpr int CUP_SERVO_RETURN = 220;  // ° [0,270] // TODO
+
+    // Servos 1 and 3 are mounted inverted — their physical position is mirrored
+    static constexpr bool CUP_INVERTED[4] = {false, true, false, true};
 };
 
 #endif //STM_MAIN_BOARD_4SUCTIONCUP_H

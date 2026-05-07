@@ -24,8 +24,8 @@ void FourSuctionCup::initAllServos()
 
 void FourSuctionCup::lowerCups()
 {
-    setCupsPosition(0x0F, CUP_SERVO_LOW);
     setPumpState(true);
+    setCupsPosition(0x0F, CUP_SERVO_LOW);
 }
 
 void FourSuctionCup::raiseCups()
@@ -77,6 +77,7 @@ void FourSuctionCup::setCupPosition(int cup, float position)
                 return; // Invalid cup number
             }
     }
+    if (CUP_INVERTED[cup]) position = CUP_SERVO_MAX_ANGLE - position;
     LOG_INFO("4cup", "Setting cup %d to position %.1f° (servo ID %d)", cup, position, servoID);
     devices::scs_servos::set_angle_async(servoID, position, 300);
 }

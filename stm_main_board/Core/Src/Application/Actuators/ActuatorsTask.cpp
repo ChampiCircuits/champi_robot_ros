@@ -64,10 +64,13 @@ void initEveryThing()
     // osDelay(3000);
     SCServosApp_Init(); // Reminder: blocking until the servos are found
 
-    left_arm.setMontagePosition();
-    right_arm.setMontagePosition();
+    { // MOUNTING ONLY
+        left_arm.setMontagePosition();
+        right_arm.setMontagePosition();
+        LOG_INFO("act", "Montage position set for both arms. Please mount the arms in the LOW position");
+        while (1) {}
+    }
 
-    osDelay(10000000); // TODO for test
     left_arm.initAllServos();
     right_arm.initAllServos();
 
@@ -180,7 +183,7 @@ void handleManualRequests(){
 
 void ActuatorsTask(void *argument)
 {
-    // initEveryThing();
+    initEveryThing();
 
     LOG_INFO("act", "Starting loop.");
     while (true)
