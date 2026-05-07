@@ -55,6 +55,10 @@ constexpr float MIN_ACTIVE_STEPS_S = 1.0f;
 constexpr float TURN_WHEEL_SPEED_MM_S = 80.0f;
 constexpr float MIN_TURN_RAD = 0.02f;
 
+// Accel/decel ramp profile for DRIVING phase.
+constexpr float ACCEL_MM_S2 = 500.0f;  // linear acceleration [mm/s²]
+constexpr float DECEL_MM_S2 = 800.0f;  // linear deceleration [mm/s²]
+
 } // namespace MotionConfig
 
 #endif // MOTION_CONFIG_H

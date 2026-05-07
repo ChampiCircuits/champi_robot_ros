@@ -45,6 +45,15 @@ float g_drive_speed_mm_s = GLOBAL_SPEED_MM_S;
 float g_cmd_left_mm_s = 0.0f;
 float g_cmd_right_mm_s = 0.0f;
 SegmentPhase g_segment_phase = SegmentPhase::IDLE;
+
+// Accel/decel ramp state (DRIVING phase only).
+enum class DriveRampPhase : uint8_t { ACCEL, CRUISE, DECEL };
+float g_current_drive_speed_mm_s = 0.0f;   // actual commanded speed (ramp output)
+float g_drive_distance_traveled_mm = 0.0f; // integrated distance within current segment
+float g_drive_segment_len_mm = 0.0f;       // length of the current drive segment
+uint32_t g_last_drive_tick_us = 0;         // last tick timestamp for dt computation
+DriveRampPhase g_drive_ramp_phase = DriveRampPhase::ACCEL;
+
 Waypoint g_working_trajectory[TRAJECTORY_POINTS_COUNT];
 bool g_match_timeout_armed = false;
 bool g_match_timeout_triggered = false;
@@ -163,16 +172,29 @@ bool startNextSegment(const uint32_t now_us) {
                 g_cmd_left_mm_s = turn_wheel_speed_mm_s;
                 g_cmd_right_mm_s = -turn_wheel_speed_mm_s;
             }
+            g_drive_segment_len_mm = segment_len_mm;  // stored for DRIVE init after turn
             g_segment_phase = SegmentPhase::TURNING;
         } else {
+            // No turn needed — start DRIVING directly with ramp from zero.
             g_estimated_heading_rad = g_target_heading_rad;
-            g_phase_deadline_us = now_us + g_pending_drive_duration_us;
-            g_cmd_left_mm_s = g_drive_speed_mm_s;
-            g_cmd_right_mm_s = g_drive_speed_mm_s;
+            g_drive_segment_len_mm = segment_len_mm;
+            g_drive_distance_traveled_mm = 0.0f;
+            g_current_drive_speed_mm_s = 0.0f;
+            g_drive_ramp_phase = DriveRampPhase::ACCEL;
+            g_last_drive_tick_us = now_us;
+            g_phase_deadline_us = 0;
+            g_cmd_left_mm_s = 0.0f;
+            g_cmd_right_mm_s = 0.0f;
             g_segment_phase = SegmentPhase::DRIVING;
         }
-        LOG_WARN("Motion", "Starting segment %d -> %d: len=%.1fmm turn=%.1fdeg drive=%.1fs",
-                 g_segment_index, g_segment_index + 1, segment_len_mm, delta_heading*180.0/M_PI, drive_duration_s);
+        {
+            const float d_accel = (g_drive_speed_mm_s * g_drive_speed_mm_s) / (2.0f * ACCEL_MM_S2);
+            const float d_decel = (g_drive_speed_mm_s * g_drive_speed_mm_s) / (2.0f * DECEL_MM_S2);
+            LOG_WARN("Motion", "[seg] %d->%d len=%.1fmm turn=%.1fdeg drive=%.1fs target=%.1fmm/s d_accel=%.1fmm d_decel=%.1fmm",
+                     g_segment_index, g_segment_index + 1, segment_len_mm,
+                     delta_heading * 180.0 / M_PI, drive_duration_s,
+                     g_drive_speed_mm_s, d_accel, d_decel);
+        }
         return true;
     }
     return false;
@@ -205,6 +227,11 @@ void resetRunProgress() {
     g_cmd_left_mm_s = 0.0f;
     g_cmd_right_mm_s = 0.0f;
     g_segment_phase = SegmentPhase::IDLE;
+    g_current_drive_speed_mm_s = 0.0f;
+    g_drive_distance_traveled_mm = 0.0f;
+    g_drive_segment_len_mm = 0.0f;
+    g_last_drive_tick_us = 0;
+    g_drive_ramp_phase = DriveRampPhase::ACCEL;
 
     // Set initial heading from the first waypoint orientation.
     const int points = activeTrajectoryPoints();
@@ -292,17 +319,10 @@ RemainingEstimate estimateCurrentSegmentRemaining(uint32_t now_us) {
     }
 
     if (g_segment_phase == SegmentPhase::DRIVING) {
-        float remaining_ratio = 0.0f;
-        if (g_pending_drive_duration_us > 0 && g_phase_deadline_us != 0 && !timeReachedUs(effective_now_us, g_phase_deadline_us)) {
-            remaining_ratio = static_cast<float>(g_phase_deadline_us - effective_now_us) / static_cast<float>(g_pending_drive_duration_us);
-            if (remaining_ratio < 0.0f) {
-                remaining_ratio = 0.0f;
-            } else if (remaining_ratio > 1.0f) {
-                remaining_ratio = 1.0f;
-            }
-        }
-
-        estimate.distance_mm = current_seg_len_mm * remaining_ratio;
+        // Distance-based estimate: directly uses integrated travel distance.
+        float remaining = g_drive_segment_len_mm - g_drive_distance_traveled_mm;
+        if (remaining < 0.0f) { remaining = 0.0f; }
+        estimate.distance_mm = remaining;
         estimate.angle_rad = 0.0f;
         return estimate;
     }
@@ -351,7 +371,7 @@ void publishTelemetry(uint32_t now_ms, uint32_t now_us, float distance_mm) {
     const int segment_to = (segment_from < max_segment_index) ? (segment_from + 1) : segment_from;
     const float avg_speed_mm_s = (fabsf(g_cmd_left_mm_s) + fabsf(g_cmd_right_mm_s)) / 2.0f;
 
-    // Use pause-frozen time for remaining display
+    // Use pause-frozen time for turn/wait deadline display (DRIVING no longer uses deadline).
     const uint32_t effective_now_us = (g_state == MotionState::PAUSED_OBSTACLE && g_pause_started_us != 0)
                                       ? g_pause_started_us : now_us;
     unsigned long remaining_phase_ms = 0UL;
@@ -359,13 +379,25 @@ void publishTelemetry(uint32_t now_ms, uint32_t now_us, float distance_mm) {
         remaining_phase_ms = static_cast<unsigned long>((g_phase_deadline_us - effective_now_us) / 1000);
     }
 
-    Serial.printf("[motion] state=%s phase=%s team=%s seg=%d->%d spd_mm_s=%.1f seg_rem_mm=%.1f seg_rem_deg=%.1f obstacle=%d t_phase_ms=%lu dist_mm=%.1f\n",
+    const char* ramp_phase_name = "N/A";
+    if (g_segment_phase == SegmentPhase::DRIVING) {
+        switch (g_drive_ramp_phase) {
+            case DriveRampPhase::ACCEL:  ramp_phase_name = "ACCEL";  break;
+            case DriveRampPhase::CRUISE: ramp_phase_name = "CRUISE"; break;
+            case DriveRampPhase::DECEL:  ramp_phase_name = "DECEL";  break;
+        }
+    }
+
+    Serial.printf("[motion] state=%s phase=%s ramp=%s team=%s seg=%d->%d spd_cmd=%.1f ramp_spd=%.1f traveled_mm=%.1f seg_rem_mm=%.1f seg_rem_deg=%.1f obstacle=%d t_phase_ms=%lu us_mm=%.1f\n",
                   state,
                   phase,
+                  ramp_phase_name,
                   g_candidate_team == Team::YELLOW ? "YELLOW" : "BLUE",
                   segment_from,
                   segment_to,
                   avg_speed_mm_s,
+                  g_current_drive_speed_mm_s,
+                  g_drive_distance_traveled_mm,
                   remaining.distance_mm,
                   remaining.angle_rad * 180.0f / static_cast<float>(PI),
                   g_blocked_by_obstacle ? 1 : 0,
@@ -397,6 +429,12 @@ void printStepperDiagnostics() {
     LOG_WARN("Stepper", "steps_per_mm=%.2f", steps_per_mm);
     LOG_WARN("Stepper", "For 80 mm/s: %.0f steps/s, period=%.0f µs", 80.0f * steps_per_mm, 1000000.0f / (80.0f * steps_per_mm * 2.0f));
     LOG_WARN("Stepper", "For 200 mm/s: %.0f steps/s, period=%.0f µs", 200.0f * steps_per_mm, 1000000.0f / (200.0f * steps_per_mm * 2.0f));
+    LOG_WARN("Stepper", "=== Ramp profile ===");
+    LOG_WARN("Stepper", "ACCEL=%.0fmm/s²  DECEL=%.0fmm/s²  target=%.0fmm/s", ACCEL_MM_S2, DECEL_MM_S2, GLOBAL_SPEED_MM_S);
+    const float d_accel_full = (GLOBAL_SPEED_MM_S * GLOBAL_SPEED_MM_S) / (2.0f * ACCEL_MM_S2);
+    const float d_decel_full = (GLOBAL_SPEED_MM_S * GLOBAL_SPEED_MM_S) / (2.0f * DECEL_MM_S2);
+    LOG_WARN("Stepper", "Full ramp: accel_dist=%.1fmm  decel_dist=%.1fmm  min_seg_for_cruise=%.1fmm",
+             d_accel_full, d_decel_full, d_accel_full + d_decel_full);
 }
 
 } // namespace
@@ -559,19 +597,91 @@ void motionTick(uint32_t now_us) {
                 if (g_blocked_by_obstacle && g_segment_phase == SegmentPhase::DRIVING) {
                     stopMotors();
                     g_pause_started_us = now_us;
+                    LOG_WARN("Motion", "[obstacle] Pausing mid-segment: traveled=%.1fmm rem=%.1fmm spd=%.1fmm/s",
+                             g_drive_distance_traveled_mm,
+                             g_drive_segment_len_mm - g_drive_distance_traveled_mm,
+                             g_current_drive_speed_mm_s);
                     g_state = MotionState::PAUSED_OBSTACLE;
                 } else {
+                    // --- Accel/decel ramp for DRIVING phase ---
+                    if (g_segment_phase == SegmentPhase::DRIVING) {
+                        float dt_s = static_cast<float>(now_us - g_last_drive_tick_us) / 1000000.0f;
+                        if (dt_s > 0.05f) { dt_s = 0.05f; }  // cap dt to avoid jump on first tick
+
+                        const float remaining_mm = g_drive_segment_len_mm - g_drive_distance_traveled_mm;
+                        const float d_stop = (g_current_drive_speed_mm_s * g_current_drive_speed_mm_s)
+                                             / (2.0f * DECEL_MM_S2);
+
+                        DriveRampPhase new_ramp_phase;
+                        if (remaining_mm <= d_stop + 1.0f) {
+                            new_ramp_phase = DriveRampPhase::DECEL;
+                        } else if (g_current_drive_speed_mm_s < g_drive_speed_mm_s) {
+                            new_ramp_phase = DriveRampPhase::ACCEL;
+                        } else {
+                            new_ramp_phase = DriveRampPhase::CRUISE;
+                        }
+
+                        if (new_ramp_phase != g_drive_ramp_phase) {
+                            const char* phase_names[] = {"ACCEL", "CRUISE", "DECEL"};
+                            LOG_WARN("Motion", "[ramp] %s -> %s  spd=%.1fmm/s  rem=%.1fmm  d_stop=%.1fmm  traveled=%.1fmm",
+                                     phase_names[static_cast<int>(g_drive_ramp_phase)],
+                                     phase_names[static_cast<int>(new_ramp_phase)],
+                                     g_current_drive_speed_mm_s, remaining_mm, d_stop,
+                                     g_drive_distance_traveled_mm);
+                            g_drive_ramp_phase = new_ramp_phase;
+                        }
+
+                        if (new_ramp_phase == DriveRampPhase::DECEL) {
+                            g_current_drive_speed_mm_s -= DECEL_MM_S2 * dt_s;
+                            if (g_current_drive_speed_mm_s < 0.0f) { g_current_drive_speed_mm_s = 0.0f; }
+                        } else if (new_ramp_phase == DriveRampPhase::ACCEL) {
+                            g_current_drive_speed_mm_s += ACCEL_MM_S2 * dt_s;
+                            if (g_current_drive_speed_mm_s > g_drive_speed_mm_s) {
+                                g_current_drive_speed_mm_s = g_drive_speed_mm_s;
+                            }
+                        }
+                        // CRUISE: no speed change
+
+                        g_drive_distance_traveled_mm += g_current_drive_speed_mm_s * dt_s;
+                        if (g_drive_distance_traveled_mm > g_drive_segment_len_mm) {
+                            g_drive_distance_traveled_mm = g_drive_segment_len_mm;
+                        }
+                        g_last_drive_tick_us = now_us;
+                        g_cmd_left_mm_s = g_current_drive_speed_mm_s;
+                        g_cmd_right_mm_s = g_current_drive_speed_mm_s;
+                    }
+
                     commandWheelSpeeds(g_cmd_left_mm_s, g_cmd_right_mm_s, now_us);
                     stepperControlTick(now_us);
 
-                    if (timeReachedUs(now_us, g_phase_deadline_us)) {
+                    // Phase completion: DRIVING uses distance, TURNING/WAITING use time deadline.
+                    const bool phase_done = (g_segment_phase == SegmentPhase::DRIVING)
+                        ? (g_drive_distance_traveled_mm >= g_drive_segment_len_mm)
+                        : timeReachedUs(now_us, g_phase_deadline_us);
+
+                    if (phase_done) {
                         if (g_segment_phase == SegmentPhase::TURNING) {
                             g_estimated_heading_rad = g_target_heading_rad;
-                            g_phase_deadline_us = now_us + g_pending_drive_duration_us;
-                            g_cmd_left_mm_s = g_drive_speed_mm_s;
-                            g_cmd_right_mm_s = g_drive_speed_mm_s;
+                            // Transition to DRIVE: init ramp from zero.
+                            g_drive_distance_traveled_mm = 0.0f;
+                            g_current_drive_speed_mm_s = 0.0f;
+                            g_drive_ramp_phase = DriveRampPhase::ACCEL;
+                            g_last_drive_tick_us = now_us;
+                            g_phase_deadline_us = 0;
+                            g_cmd_left_mm_s = 0.0f;
+                            g_cmd_right_mm_s = 0.0f;
                             g_segment_phase = SegmentPhase::DRIVING;
+                            {
+                                const float d_accel = (g_drive_speed_mm_s * g_drive_speed_mm_s) / (2.0f * ACCEL_MM_S2);
+                                const float d_decel = (g_drive_speed_mm_s * g_drive_speed_mm_s) / (2.0f * DECEL_MM_S2);
+                                LOG_WARN("Motion", "[ramp] TURN done -> DRIVE seg=%d len=%.1fmm target=%.1fmm/s d_accel=%.1fmm d_decel=%.1fmm",
+                                         g_segment_index, g_drive_segment_len_mm,
+                                         g_drive_speed_mm_s, d_accel, d_decel);
+                            }
                         } else if (g_segment_phase == SegmentPhase::DRIVING) {
+                            LOG_WARN("Motion", "[ramp] Segment %d complete: traveled=%.1fmm seg_len=%.1fmm final_spd=%.1fmm/s",
+                                     g_segment_index, g_drive_distance_traveled_mm,
+                                     g_drive_segment_len_mm, g_current_drive_speed_mm_s);
                             ++g_segment_index;
                             if (!startWaypointWaitIfNeeded(now_us) && !startNextSegment(now_us)) {
                                 stopMotors();
@@ -594,7 +704,15 @@ void motionTick(uint32_t now_us) {
                 stopMotors();
                 if (!g_blocked_by_obstacle) {
                     if (g_pause_started_us != 0) {
-                        g_phase_deadline_us += (now_us - g_pause_started_us);
+                        const uint32_t pause_duration_us = now_us - g_pause_started_us;
+                        LOG_WARN("Motion", "[obstacle] Resuming: paused=%lums traveled=%.1fmm rem=%.1fmm — re-accel from 0",
+                                 (unsigned long)(pause_duration_us / 1000),
+                                 g_drive_distance_traveled_mm,
+                                 g_drive_segment_len_mm - g_drive_distance_traveled_mm);
+                        // Re-accelerate from zero after stop (motors were cut).
+                        g_current_drive_speed_mm_s = 0.0f;
+                        g_drive_ramp_phase = DriveRampPhase::ACCEL;
+                        g_last_drive_tick_us = now_us;  // prevent dt spike
                         g_pause_started_us = 0;
                     }
                     g_state = MotionState::RUNNING;
