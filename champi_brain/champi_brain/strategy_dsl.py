@@ -355,18 +355,20 @@ class StrategyBuilder:
         # We use the group name as the label of the detected element. Same when inserting into world state
         self.move_relative_to(group, Offset(-0.20, 0.0, offset_angle), linear_tolerance=0.001, angular_tolerance=0.05)
 
-        # Taking boxes
-        self.custom_action(actuator_command) # it will also raise it directly after
+        # Taking boxes — embed element_taken so the planner removes the element obstacle
+        self.custom_action(actuator_command, element_taken=group)  # it will also raise it directly after
 
         return self
     
-    def put_elements_sequence(self, target_position: Union[Position, str], which_actuator: str, group: str) -> 'StrategyBuilder':
+    def put_elements_sequence(self, target_position: Union[Position, str], which_actuator: str, group: str,
+                               zone_id: str = None) -> 'StrategyBuilder':
         """Complete sequence for placing elements
         
         Args:
             target_position: Union[Position, str] object where to place elements or named target
             which_actuator: string to specify which actuator to use for placing ("LEFT" OR "RIGHT")
-            group: Group name for these actions            
+            group: Group name for these actions
+            zone_id: Zone id to mark as occupied after placing (e.g. 'garde_manger_2')
         """
         self.set_current_group(group)
 
@@ -381,7 +383,8 @@ class StrategyBuilder:
         
         # On dépose les caisses par l'arrière du robot
         self.move_relative_to(target_position, Offset(-0.3, 0.0, offset_angle), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
-        self.custom_action(actuator_command)
+        # Embed zone_occupied so the planner marks the target zone as occupied after placing
+        self.custom_action(actuator_command, zone_occupied=zone_id)
 
         # Add points
         points = self.points_per_action["PUT_4_BOXES_OUT_PLUS_BONUS"]

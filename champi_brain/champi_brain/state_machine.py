@@ -491,6 +491,12 @@ class StateMachine:
         """Execute actuator action."""
         self.logger.info(f"Executing actuator: {action.action}")
         self.executor.execute_actuator_action(action.action)
+        # Propagate obstacle state changes embedded in this action's metadata
+        if 'element_taken' in action.extra_params:
+            self.executor.set_obstacle_state(action.extra_params['element_taken'], False)
+        zone_id = action.extra_params.get('zone_occupied')
+        if zone_id is not None:
+            self.executor.set_obstacle_state(zone_id, True)
     
     def _cancel_current_action(self) -> None:
         """Cancel the current action."""

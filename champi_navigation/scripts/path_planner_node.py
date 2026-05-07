@@ -16,10 +16,13 @@ from champi_interfaces.msg import CtrlGoal
 import time
 from threading import Lock
 import math
+import json
 import diagnostic_msgs.msg
 import diagnostic_updater
 import yaml
 from ament_index_python.packages import get_package_share_directory
+from std_msgs.msg import String as StringMsg
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
 from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap, ObstaclePolygon
@@ -148,9 +151,21 @@ class PlannerNode(Node):
 
         # Zone obstacles (loaded from world state file)
         self.zones = self._load_zones()
-        # Zone occupancy: all occupied by default (will be updated via topic later)
-        self.zone_occupied = {zone['id']: True for zone in self.zones}
-        self.get_logger().info(f'Loaded {len(self.zones)} zones as obstacles: {[z["id"] for z in self.zones]}')
+        # placement_zones (garde_manger) start free — they become occupied when boxes are deposited.
+        # All other zone types (forbidden_zone, secure_zone) start occupied (secure_zone is skipped anyway).
+        self.zone_occupied = {
+            zone['id']: zone.get('type') != 'placement_zone'
+            for zone in self.zones
+        }
+        self.get_logger().info(f'Loaded {len(self.zones)} zones: {[(z["id"], "occ" if self.zone_occupied[z["id"]] else "free") for z in self.zones]}')
+
+        # Element obstacles: track which element ids have been removed (taken by robot)
+        self._elements_disabled: set = set()
+
+        # Subscribe to brain's obstacle state updates (latched — replayed on connect)
+        _latched_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.create_subscription(StringMsg, '/planner/obstacle_states',
+                                 self._obstacle_states_callback, _latched_qos)
 
         # Visualization
         Canva(self, enable=self.debug)
@@ -168,16 +183,39 @@ class PlannerNode(Node):
         self.get_logger().info(f'World state loaded from {config_path}: {len(zones)} zones, {len(self.elements)} elements')
         return zones
 
+    def _obstacle_states_callback(self, msg: StringMsg):
+        """Receive the brain's full obstacle state dict and update local planner state."""
+        states = json.loads(msg.data)
+        changed = False
+        for entity_id, is_obstacle in states.items():
+            if entity_id in self.zone_occupied:
+                if self.zone_occupied[entity_id] != is_obstacle:
+                    self.zone_occupied[entity_id] = is_obstacle
+                    self.get_logger().info(f'Zone {entity_id} -> {"occupied" if is_obstacle else "free"}')
+                    changed = True
+            elif any(e['id'] == entity_id for e in self.elements):
+                was_disabled = entity_id in self._elements_disabled
+                if not is_obstacle and not was_disabled:
+                    self._elements_disabled.add(entity_id)
+                    self.get_logger().info(f'Element {entity_id} removed from obstacles (taken)')
+                    changed = True
+                elif is_obstacle and was_disabled:
+                    self._elements_disabled.discard(entity_id)
+                    self.get_logger().info(f'Element {entity_id} restored as obstacle')
+                    changed = True
+        if changed:
+            self.visibility_planner.invalidate_cache()
+
     def _build_element_obstacles(self):
         """Build obstacle polygons for all nut_box elements (rotated rectangles)."""
-        # Nut box dimensions: 150 x 100 mm
+        # Nut box dimensions: 150 x 200 mm
         NUT_BOX_W = 0.15  # half-width along local X
         NUT_BOX_H = 0.20  # half-height along local Y
         hw = NUT_BOX_W / 2.0
         hh = NUT_BOX_H / 2.0
         obstacles = []
         for elem in self.elements:
-            if elem.get('type') != 'nut_box':
+            if elem.get('type') != 'nut_box' or elem['id'] in self._elements_disabled:
                 continue
             cx, cy = elem['x'], elem['y']
             theta = math.radians(elem.get('theta_deg', 0.0) + 90.0)  # world frame theta, add 90deg to convert from element's local frame
