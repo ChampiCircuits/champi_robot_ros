@@ -15,6 +15,7 @@ from champi_interfaces.msg import CtrlGoal
 
 import time
 from threading import Lock
+import math
 import diagnostic_msgs.msg
 import diagnostic_updater
 import yaml
@@ -132,6 +133,7 @@ class PlannerNode(Node):
         # Current goal handle
         self.goal_handle_navigate = None
         self.planning = False
+        self._goal_preempted = False
         self.mutex_exec = Lock()
 
         # Visibility planner
@@ -157,12 +159,35 @@ class PlannerNode(Node):
     # ==================================== Obstacle Management ==========================================
 
     def _load_zones(self):
-        """Load zones from the world state YAML file."""
+        """Load zones and elements from the world state YAML file."""
         config_path = get_package_share_directory('champi_brain') + '/config/' + self.world_state_file
         with open(config_path, 'r') as f:
             world_state = yaml.safe_load(f)
         zones = world_state.get('zones', [])
+        self.elements = world_state.get('elements', [])
+        self.get_logger().info(f'World state loaded from {config_path}: {len(zones)} zones, {len(self.elements)} elements')
         return zones
+
+    def _build_element_obstacles(self):
+        """Build obstacle polygons for all nut_box elements (rotated rectangles)."""
+        # Nut box dimensions: 150 x 100 mm
+        NUT_BOX_W = 0.15  # half-width along local X
+        NUT_BOX_H = 0.20  # half-height along local Y
+        hw = NUT_BOX_W / 2.0
+        hh = NUT_BOX_H / 2.0
+        obstacles = []
+        for elem in self.elements:
+            if elem.get('type') != 'nut_box':
+                continue
+            cx, cy = elem['x'], elem['y']
+            theta = math.radians(elem.get('theta_deg', 0.0) + 90.0)  # world frame theta, add 90deg to convert from element's local frame
+            cos_t, sin_t = math.cos(theta), math.sin(theta)
+            # 4 corners in local frame, rotated into world frame
+            corners = [(-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh)]
+            xs = [cx + cos_t * lx - sin_t * ly for lx, ly in corners]
+            ys = [cy + sin_t * lx + cos_t * ly for lx, ly in corners]
+            obstacles.append(ObstaclePolygon(xs, ys))
+        return obstacles
 
     def _build_zone_obstacles(self):
         """Build obstacle polygons for all currently occupied zones.
@@ -215,9 +240,10 @@ class PlannerNode(Node):
         )
 
     def _get_all_obstacles(self):
-        """Get all obstacles: static borders + zones + dynamic enemy."""
+        """Get all obstacles: static borders + zones + elements + dynamic enemy."""
         obstacles = list(self.static_obstacles)
         obstacles.extend(self._build_zone_obstacles())
+        obstacles.extend(self._build_element_obstacles())
         if self.latest_enemy_pose is not None:
             obstacles.append(self._build_enemy_obstacle(self.latest_enemy_pose))
         return obstacles
@@ -239,9 +265,10 @@ class PlannerNode(Node):
         return filtered
 
     def _get_static_obstacles(self):
-        """Static obstacles: table borders + zones (cached by the planner)."""
+        """Static obstacles: table borders + zones + nut_box elements (cached by the planner)."""
         obstacles = list(self.static_obstacles)
         obstacles.extend(self._build_zone_obstacles())
+        obstacles.extend(self._build_element_obstacles())
         return self._filter_outside_table(obstacles)
 
     def _get_dynamic_obstacles(self):
@@ -365,8 +392,8 @@ class PlannerNode(Node):
         self.current_navigate_goal = navigate_goal
 
         if self.planning:
-            self.get_logger().warn(f'[NAV] navigate_callback: Aborting previous goal to accept new one!')
-            self.goal_handle_navigate.abort()
+            self.get_logger().warn(f'[NAV] navigate_callback: Preempting previous goal for new one!')
+            self._goal_preempted = True  # signals execute_callback to exit its loop cleanly
 
         self.planning = True
         self.get_logger().debug(f'[NAV] navigate_callback: Goal ACCEPTED')
@@ -375,11 +402,10 @@ class PlannerNode(Node):
     def cancel_callback(self, goal_handle):
         self.get_logger().debug(f'[NAV] cancel_callback: Cancel requested, currently_planning={self.planning}')
         if self.planning:
-            self.goal_handle_navigate.abort()
-            self.get_logger().info('[NAV] cancel_callback: Goal aborted due to cancel request')
+            self._goal_preempted = True  # signals execute_callback to exit its loop cleanly
+            self.get_logger().info('[NAV] cancel_callback: Cancel accepted, signalling execute_callback to stop')
         else:
-            self.get_logger().warn('[NAV] cancel_callback: No goal to cancel!')
-        self.planning = False
+            self.get_logger().warn('[NAV] cancel_callback: No active goal to cancel!')
         return CancelResponse.ACCEPT
 
     async def execute_callback(self, goal_handle):
@@ -387,10 +413,11 @@ class PlannerNode(Node):
         self.mutex_exec.acquire()
         self.get_logger().debug(f'[NAV] execute_callback: Mutex acquired, goal_active={goal_handle.is_active}')
         self.goal_handle_navigate = goal_handle
+        self._goal_preempted = False  # reset for this execution
 
         # =================================== INITIALIZATION ==========================================
 
-        while rclpy.ok() and self.robot_pose is None and goal_handle.is_active:
+        while rclpy.ok() and self.robot_pose is None and goal_handle.is_active and not self._goal_preempted:
             self.get_logger().info(f'[NAV] execute_callback: Waiting for init messages, robot_pose={self.robot_pose is not None}', throttle_duration_sec=1.)
             feedback_msg = get_feedback_msg(ComputePathResult.INITIALIZING, [], 0)
             goal_handle.publish_feedback(feedback_msg)
@@ -410,7 +437,7 @@ class PlannerNode(Node):
         current_waypoint_idx = 1  # Skip waypoint 0 (always robot's current position)
         self.get_logger().debug(f'[NAV] execute_callback: Initial path computed, waypoints={len(waypoints) if waypoints else 0}')
 
-        while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached:
+        while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached and not self._goal_preempted:
 
             self.exec_time_measurer.start()
             t_loop_start = time.time()
@@ -418,7 +445,7 @@ class PlannerNode(Node):
             # Check if the timeout is reached
             if self.timeout.is_elapsed():
                 self.get_logger().warn(f'[NAV] execute_callback: TIMEOUT reached! Aborting goal.')
-                goal_handle.abort()
+                goal_handle.abort(Navigate.Result(success=False, message='Timeout!'))
                 self.timeout.reset()
                 self.exec_time_measurer.stop()
                 continue
@@ -511,7 +538,6 @@ class PlannerNode(Node):
             sleep_time = max(0, self.loop_period - (time.time() - t_loop_start))
             time.sleep(sleep_time)
 
-        self.planning = False
         self.timeout.reset()
 
         # ============================ FILL ACTION RESULT ====================================
@@ -519,20 +545,41 @@ class PlannerNode(Node):
         self.publish_stop()
         self.publish_path([])
 
-        result = None
-
-        if not goal_handle.is_active:
-            self.get_logger().info('[NAV] execute_callback: RESULT => Goal aborted (goal_handle not active)')
+        if navigate_goal_reached:
+            # Robot reached the goal — succeed (or honor a simultaneous cancel cleanly)
+            result = Navigate.Result(success=True, message='Goal reached!')
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled(result)
+            else:
+                goal_handle.succeed(result)
+            self.get_logger().info(f'[NAV] execute_callback: RESULT => Goal REACHED at ({self.robot_pose.x:.3f}, {self.robot_pose.y:.3f})')
+        elif self._goal_preempted:
+            # Preempted by a new navigate goal or a cancel request
+            result = Navigate.Result(success=False, message='Goal aborted!')
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled(result)
+            elif goal_handle.is_active:
+                goal_handle.abort(result)
+            self.get_logger().info('[NAV] execute_callback: RESULT => Goal preempted (new goal or cancel)')
+        elif not goal_handle.is_active:
+            # Aborted internally (e.g. timeout) — abort() already sent result from within the loop
+            self.get_logger().info('[NAV] execute_callback: RESULT => Goal aborted (timeout or forbidden area)')
             result = Navigate.Result(success=False, message='Goal aborted!')
         elif not rclpy.ok():
-            self.get_logger().info('[NAV] execute_callback: RESULT => Node shutdown')
             result = Navigate.Result(success=False, message='Node shutdown!')
+            goal_handle.abort(result)
+            self.get_logger().info('[NAV] execute_callback: RESULT => Node shutdown')
         else:
-            goal_handle.succeed()
-            self.get_logger().info(f'[NAV] execute_callback: RESULT => Goal REACHED at ({self.robot_pose.x:.3f}, {self.robot_pose.y:.3f})')
-            result = Navigate.Result(success=True, message='Goal reached!')
+            result = Navigate.Result(success=False, message='Unknown error!')
+            goal_handle.abort(result)
+            self.get_logger().error('[NAV] execute_callback: RESULT => Unknown exit state!')
 
-        self.get_logger().debug(f'[NAV] execute_callback: Releasing mutex, planning=False')
+        # Set planning=False last. If a new goal arrived while we were in the result section
+        # (navigate_callback set planning=True again) we must NOT overwrite it.
+        if not self._goal_preempted:
+            self.planning = False
+
+        self.get_logger().debug(f'[NAV] execute_callback: Releasing mutex')
         self.mutex_exec.release()
         return result
 
