@@ -188,6 +188,16 @@ void ActuatorsTask(void *argument)
     LOG_INFO("act", "Starting loop.");
     while (true)
     {
+        // If the blue USER button (B1, PC13, active LOW) is held at startup → enter montage mode forever
+        if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET)
+        {
+            LOG_INFO("act", "USER button pressed  → entering MONTAGE POSITION mode (reset to exit)");
+            // left_arm.setMontagePosition();
+            right_arm.setMontagePosition();
+            LOG_INFO("act", "Montage position set. System halted.");
+            while (1) { osDelay(1000); }
+        }
+
         handleManualRequests(); // TODO
         osDelay(100);
     }
