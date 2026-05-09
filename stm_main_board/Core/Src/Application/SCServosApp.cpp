@@ -14,15 +14,15 @@ namespace devices
     namespace scs_servos {
 
         uint8_t ids_servos[N_SERVOS] = {
-            LEFT_ARM_0_SERVO_ID,
-            LEFT_ARM_1_SERVO_ID,
-            LEFT_ARM_2_SERVO_ID,
-            LEFT_ARM_3_SERVO_ID,
+            // LEFT_ARM_0_SERVO_ID,
+            // LEFT_ARM_1_SERVO_ID,
+            // LEFT_ARM_2_SERVO_ID,
+            // LEFT_ARM_3_SERVO_ID,TODO remettre le bon nombre
 
             RIGHT_ARM_0_SERVO_ID,
             RIGHT_ARM_1_SERVO_ID,
             RIGHT_ARM_2_SERVO_ID,
-            RIGHT_ARM_3_SERVO_ID
+            RIGHT_ARM_3_SERVO_ID 
         };
         SCServos servos;
         bool init_successful = false;
@@ -212,7 +212,7 @@ int SCServosApp_Init()
     // sweep_angle_test(5);
     // osDelay(10000000);
     
-    while (1)
+    // while (1)
     {
         // // ALMOST CLOSED
         // LOG_INFO("scs", "position servo 12: %.1f", read_angle(12));
@@ -231,16 +231,15 @@ int SCServosApp_Init()
         // osDelay(3000);
     }
 
-    osDelay(10000000);
-
+    
     while (test() == -1)
     {
         LOG_ERROR("scs", "Error initializing servos. Retrying.");
         osDelay(1000);
     }
-
+    
     set_enable(true); // TODO move to sysTask
-
+    
     for (const auto id : ids_servos)
     {
         servos.WriteLimitTroque(id, SCSERVOS_TORQUE_LIMIT);

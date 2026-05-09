@@ -39,14 +39,11 @@ class ActuatorCommand(IntEnum):
     THERMOMETER_LOWER_SERVO = 4
     THERMOMETER_RAISE_SERVO = 5
 
-    TAKE_2_BOXES = 6
-    BRING_2_BOXES_ON_TOP = 7
-    PUT_2_LAST_BOXES_ON_THE_GROUND = 8
+    LOWER_LEFT_ARM = 6
+    LET_GO_ELEMENTS_LEFT_ARM = 7
 
-    PREPARE_TOP_PUSHER = 9
-    GRAB_AND_SORT_2_BOXES_FROM_LIFT = 10
-    PUSH_2_BOXES_OUT = 11
-    OPEN_EXIT_RAMP = 12
+    LOWER_RIGHT_ARM = 8
+    LET_GO_ELEMENTS_RIGHT_ARM = 9
 
 """
   RESET_ACTUATORS = SELECT
@@ -54,14 +51,11 @@ class ActuatorCommand(IntEnum):
   THERMOMETER_LOWER_SERVO = L2
   THERMOMETER_RAISE_SERVO = L1
 
-  TAKE_2_BOXES = A
-  BRING_2_BOXES_ON_TOP = A + UP
-  PUT_2_LAST_BOXES_ON_THE_GROUND = A + DOWN
+    LOWER_LEFT_ARM = X + down
+    LET_GO_ELEMENTS_LEFT_ARM = X + up
 
-  PREPARE_TOP_PUSHER = Y
-  GRAB_AND_SORT_2_BOXES_FROM_LIFT = Y + LEFT
-  PUSH_2_BOXES_OUT = X
-  OPEN_EXIT_RAMP = B
+    LOWER_RIGHT_ARM = B + down
+    LET_GO_ELEMENTS_RIGHT_ARM = B + up
 """
 
 class HoloTeleopJoy(Node):
@@ -101,11 +95,12 @@ class HoloTeleopJoy(Node):
         # Helper flags for D-Pad
         up = joy_msg.axes[DPadAxis.UP_DOWN] == 1.0
         down = joy_msg.axes[DPadAxis.UP_DOWN] == -1.0
-        left = joy_msg.axes[DPadAxis.LEFT_RIGHT] == 1.0
 
         for i, (prev, current) in enumerate(zip(self.prev_buttons, joy_msg.buttons)):
             # Detect rising edge (button press)
             if current == 1 and prev == 0:
+                button_name = XboxButton(i).name if i in XboxButton._value2member_map_ else f'button_{i}'
+                self.get_logger().info(f'Button pressed: {button_name}')
                 msg = Int8()
                 action = None
 
@@ -122,36 +117,23 @@ class HoloTeleopJoy(Node):
                     msg.data = int(ActuatorCommand.THERMOMETER_RAISE_SERVO)
                     action = 'THERMOMETER_RAISE_SERVO'
 
-                # A Button combinations (Lift & Clamp)
-                elif i == XboxButton.A:
-                    if up:
-                        msg.data = int(ActuatorCommand.BRING_2_BOXES_ON_TOP)
-                        action = 'BRING_2_BOXES_ON_TOP'
-                    elif down:
-                        msg.data = int(ActuatorCommand.PUT_2_LAST_BOXES_ON_THE_GROUND)
-                        action = 'PUT_2_LAST_BOXES_ON_THE_GROUND'
-                    else:
-                        msg.data = int(ActuatorCommand.TAKE_2_BOXES)
-                        action = 'TAKE_2_BOXES'
-
-                # Y Button combinations (Top Pusher & Sorting)
-                elif i == XboxButton.Y:
-                    if left:
-                        msg.data = int(ActuatorCommand.GRAB_AND_SORT_2_BOXES_FROM_LIFT)
-                        action = 'GRAB_AND_SORT_2_BOXES_FROM_LIFT'
-                    else:
-                        msg.data = int(ActuatorCommand.PREPARE_TOP_PUSHER)
-                        action = 'PREPARE_TOP_PUSHER'
-
-                # PUSH_2_BOXES_OUT = X
+                # X Button combinations (Left Arm)
                 elif i == XboxButton.X:
-                    msg.data = int(ActuatorCommand.PUSH_2_BOXES_OUT)
-                    action = 'PUSH_2_BOXES_OUT'
+                    if down:
+                        msg.data = int(ActuatorCommand.LOWER_LEFT_ARM)
+                        action = 'LOWER_LEFT_ARM'
+                    elif up:
+                        msg.data = int(ActuatorCommand.LET_GO_ELEMENTS_LEFT_ARM)
+                        action = 'LET_GO_ELEMENTS_LEFT_ARM'
 
-                # OPEN_EXIT_RAMP = B
+                # B Button combinations (Right Arm)
                 elif i == XboxButton.B:
-                    msg.data = int(ActuatorCommand.OPEN_EXIT_RAMP)
-                    action = 'OPEN_EXIT_RAMP'
+                    if down:
+                        msg.data = int(ActuatorCommand.LOWER_RIGHT_ARM)
+                        action = 'LOWER_RIGHT_ARM'
+                    elif up:
+                        msg.data = int(ActuatorCommand.LET_GO_ELEMENTS_RIGHT_ARM)
+                        action = 'LET_GO_ELEMENTS_RIGHT_ARM'
 
                 # Publish if an action was identified
                 if action is not None:

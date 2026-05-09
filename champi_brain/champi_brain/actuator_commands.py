@@ -18,10 +18,14 @@ class ActuatorCommand(IntEnum):
     GET_READY                      = 3
     THERMOMETER_LOWER_SERVO        = 4
     THERMOMETER_RAISE_SERVO        = 5
+
     LOWER_LEFT_ARM                 = 6
-    LET_GO_ELEMENTS_LEFT_ARM       = 7
-    LOWER_RIGHT_ARM                = 8
-    LET_GO_ELEMENTS_RIGHT_ARM      = 9
+    GET_READY_LEFT_ARM             = 7
+    LET_GO_ELEMENTS_LEFT_ARM       = 8
+    
+    LOWER_RIGHT_ARM                = 9
+    GET_READY_RIGHT_ARM            = 10
+    LET_GO_ELEMENTS_RIGHT_ARM      = 11
 
     # OTHER COMMON ACTIONS (not sent to STM)
     MOVE                           = 100

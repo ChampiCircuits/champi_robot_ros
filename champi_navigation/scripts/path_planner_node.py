@@ -587,17 +587,17 @@ class PlannerNode(Node):
             # Robot reached the goal — succeed (or honor a simultaneous cancel cleanly)
             result = Navigate.Result(success=True, message='Goal reached!')
             if goal_handle.is_cancel_requested:
-                goal_handle.canceled(result)
+                goal_handle.canceled()
             else:
-                goal_handle.succeed(result)
+                goal_handle.succeed()
             self.get_logger().info(f'[NAV] execute_callback: RESULT => Goal REACHED at ({self.robot_pose.x:.3f}, {self.robot_pose.y:.3f})')
         elif self._goal_preempted:
             # Preempted by a new navigate goal or a cancel request
             result = Navigate.Result(success=False, message='Goal aborted!')
             if goal_handle.is_cancel_requested:
-                goal_handle.canceled(result)
+                goal_handle.canceled()
             elif goal_handle.is_active:
-                goal_handle.abort(result)
+                goal_handle.abort()
             self.get_logger().info('[NAV] execute_callback: RESULT => Goal preempted (new goal or cancel)')
         elif not goal_handle.is_active:
             # Aborted internally (e.g. timeout) — abort() already sent result from within the loop
@@ -605,11 +605,11 @@ class PlannerNode(Node):
             result = Navigate.Result(success=False, message='Goal aborted!')
         elif not rclpy.ok():
             result = Navigate.Result(success=False, message='Node shutdown!')
-            goal_handle.abort(result)
+            goal_handle.abort()
             self.get_logger().info('[NAV] execute_callback: RESULT => Node shutdown')
         else:
             result = Navigate.Result(success=False, message='Unknown error!')
-            goal_handle.abort(result)
+            goal_handle.abort()
             self.get_logger().error('[NAV] execute_callback: RESULT => Unknown exit state!')
 
         # Set planning=False last. If a new goal arrived while we were in the result section

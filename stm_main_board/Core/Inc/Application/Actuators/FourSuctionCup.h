@@ -23,6 +23,7 @@ public:
 
     void lowerCups();
     void raiseCups();
+    void getReadyCups();
     void letGoCups(uint8_t suction_cups_activation_for_request);
     void setPumpState(bool enable);
 
@@ -40,12 +41,13 @@ private:
 
     static constexpr float CUP_SERVO_MAX_ANGLE = 270.0f;
 
-    static constexpr int CUP_SERVO_LOW    = 220;   // ° [0,270] // TODO
-    static constexpr int CUP_SERVO_HIGH   = 60;  // ° [0,270] // TODO
-    static constexpr int CUP_SERVO_RETURN = 220;  // ° [0,270] // TODO
+    static constexpr int CUP_SERVO_LOW    = 220;   // ° [0,270]
+    static constexpr int CUP_SERVO_LOW_GET_READY    = 195;   // ° [0,270]
+    static constexpr int CUP_SERVO_HIGH   = 50;  // ° [0,270]
+    static constexpr int CUP_SERVO_RETURN = CUP_SERVO_HIGH;  // ° [0,270]
 
     // Servos 1 and 3 are mounted inverted — their physical position is mirrored
-    static constexpr bool CUP_INVERTED[4] = {false, true, false, true};
+    static constexpr bool CUP_INVERTED[4] = {true, false, true, false};
 };
 
 #endif //STM_MAIN_BOARD_4SUCTIONCUP_H

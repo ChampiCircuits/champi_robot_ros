@@ -339,10 +339,12 @@ class StrategyBuilder:
 
         if which_actuator == 'LEFT':
             offset_angle = -60.0
-            actuator_command = ActuatorCommand.LOWER_LEFT_ARM
+            lower_actuator_command = ActuatorCommand.LOWER_LEFT_ARM
+            get_ready_actuator_command = ActuatorCommand.GET_READY_LEFT_ARM
         elif which_actuator == 'RIGHT':
             offset_angle = +60.0
-            actuator_command = ActuatorCommand.LOWER_RIGHT_ARM
+            lower_actuator_command = ActuatorCommand.LOWER_RIGHT_ARM
+            get_ready_actuator_command = ActuatorCommand.GET_READY_RIGHT_ARM
         else:
             raise ValueError(f"Invalid actuator specified: {which_actuator}. Must be 'LEFT' or 'RIGHT'.")
 
@@ -353,10 +355,14 @@ class StrategyBuilder:
         self.custom_action(ActuatorCommand.DETECT_NUTBOXES)
         # Move relative to the detected position rather than the theoretical center
         # We use the group name as the label of the detected element. Same when inserting into world state
-        self.move_relative_to(group, Offset(-0.20, 0.0, offset_angle), linear_tolerance=0.001, angular_tolerance=0.05)
+        self.move_relative_to(group, Offset(-0.35, 0.0, offset_angle), linear_tolerance=0.001, angular_tolerance=0.05)
 
+        self.custom_action(get_ready_actuator_command, element_taken=group)  # it will also raise it directly after
+
+        self.move_relative_to(group, Offset(-0.20, 0.0, offset_angle), linear_tolerance=0.001, angular_tolerance=0.05)
+        
         # Taking boxes — embed element_taken so the planner removes the element obstacle
-        self.custom_action(actuator_command, element_taken=group)  # it will also raise it directly after
+        self.custom_action(lower_actuator_command, element_taken=group)  # it will also raise it directly after
 
         return self
     
@@ -382,7 +388,7 @@ class StrategyBuilder:
             raise ValueError(f"Invalid actuator specified: {which_actuator}. Must be 'LEFT' or 'RIGHT'.")
         
         # On dépose les caisses par l'arrière du robot
-        self.move_relative_to(target_position, Offset(-0.3, 0.0, offset_angle), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
+        self.move_relative_to(target_position, Offset(-0.5, 0.0, offset_angle), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
         # Embed zone_occupied so the planner marks the target zone as occupied after placing
         self.custom_action(actuator_command, zone_occupied=zone_id)
 

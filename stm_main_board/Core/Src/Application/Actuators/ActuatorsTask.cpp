@@ -21,18 +21,18 @@ bool stop_all_actuators_requested = false;
 static uint8_t pending_left_mask  = 0;
 static uint8_t pending_right_mask = 0;
 
-uint8_t LEFT_ARM_0_SERVO_ID = 1;
-uint8_t LEFT_ARM_1_SERVO_ID = 2;
-uint8_t LEFT_ARM_2_SERVO_ID = 3;
-uint8_t LEFT_ARM_3_SERVO_ID = 4;
+uint8_t LEFT_ARM_0_SERVO_ID = 0; // TODO
+uint8_t LEFT_ARM_1_SERVO_ID = 0;
+uint8_t LEFT_ARM_2_SERVO_ID = 0;
+uint8_t LEFT_ARM_3_SERVO_ID = 0;
 
-uint8_t RIGHT_ARM_0_SERVO_ID = 5;
-uint8_t RIGHT_ARM_1_SERVO_ID = 6;
-uint8_t RIGHT_ARM_2_SERVO_ID = 7;
-uint8_t RIGHT_ARM_3_SERVO_ID = 8;
+uint8_t RIGHT_ARM_0_SERVO_ID = 14;
+uint8_t RIGHT_ARM_1_SERVO_ID = 8;
+uint8_t RIGHT_ARM_2_SERVO_ID = 18;
+uint8_t RIGHT_ARM_3_SERVO_ID = 9;
 
-FourSuctionCup left_arm(LEFT_ARM_0_SERVO_ID,LEFT_ARM_1_SERVO_ID,LEFT_ARM_2_SERVO_ID,LEFT_ARM_3_SERVO_ID, D2_GPIO_Port, D2_Pin);
-FourSuctionCup right_arm(RIGHT_ARM_0_SERVO_ID,RIGHT_ARM_1_SERVO_ID,RIGHT_ARM_2_SERVO_ID,RIGHT_ARM_3_SERVO_ID, D3_GPIO_Port, D3_Pin);
+FourSuctionCup left_arm(LEFT_ARM_0_SERVO_ID,LEFT_ARM_1_SERVO_ID,LEFT_ARM_2_SERVO_ID,LEFT_ARM_3_SERVO_ID, D0_GPIO_Port, D0_Pin);
+FourSuctionCup right_arm(RIGHT_ARM_0_SERVO_ID,RIGHT_ARM_1_SERVO_ID,RIGHT_ARM_2_SERVO_ID,RIGHT_ARM_3_SERVO_ID, D1_GPIO_Port, D1_Pin);
 
 osThreadId_t ActuatorsTaskHandle;
 const osThreadAttr_t actuatorsTask_attributes = {
@@ -61,17 +61,30 @@ void setServoInContinousRotation(const uint8_t servo_id)
 void initEveryThing()
 {
     LOG_INFO("act", "Beginning actuators initializing...");
+
+    // {// TEST PUMPS
+    //     // left_arm.setPumpState(true);
+    //     right_arm.setPumpState(true);
+    //     LOG_INFO("act", "Pumps should be ON for 3 seconds...");
+    //     osDelay(3000);
+    //     // left_arm.setPumpState(false);
+    //     right_arm.setPumpState(false);
+    //     LOG_INFO("act", "Pumps should be OFF now.");
+    // }
+    
     // osDelay(3000);
     SCServosApp_Init(); // Reminder: blocking until the servos are found
 
+    // while(1){}
+    
     { // MOUNTING ONLY
-        left_arm.setMontagePosition();
-        right_arm.setMontagePosition();
-        LOG_INFO("act", "Montage position set for both arms. Please mount the arms in the LOW position");
-        while (1) {}
+        // left_arm.setMontagePosition();
+        // right_arm.setMontagePosition();
+        // LOG_INFO("act", "Montage position set for both arms. Please mount the arms in the LOW position");
+        // while (1) {}
     }
 
-    left_arm.initAllServos();
+    // left_arm.initAllServos();
     right_arm.initAllServos();
 
     LOG_INFO("act", "Actuators have been initialized !");
@@ -90,29 +103,39 @@ void HandleRequest(const ActuatorCommand cmd,
     case ActuatorCommand::THERMOMETER_LOWER_SERVO:          lowerThermometerServo(); break;
     case ActuatorCommand::THERMOMETER_RAISE_SERVO:          raiseThermometerServo(); break;
 
-    case ActuatorCommand::LOWER_LEFT_ARM:
-        pending_left_mask = left_suction_cups_activation_for_request; // save for LET_GO
-        LOG_INFO("act", "[LEFT ARM] LOWER: saved pending_left_mask=0x%02X (cups: %d%d%d%d)",
-            pending_left_mask,
-            (pending_left_mask >> 3) & 1, (pending_left_mask >> 2) & 1,
-            (pending_left_mask >> 1) & 1, (pending_left_mask >> 0) & 1);
-        LOG_INFO("act", "[LEFT ARM] Lowering ALL 4 cups...");
-        left_arm.lowerCups();
-        LOG_INFO("act", "[LEFT ARM] Raising ALL 4 cups...");
-        left_arm.raiseCups();
-        LOG_INFO("act", "[LEFT ARM] LOWER done.");
-        break;
-    case ActuatorCommand::LET_GO_ELEMENTS_LEFT_ARM:
-        LOG_INFO("act", "[LEFT ARM] LET_GO: applying pending_left_mask=0x%02X (cups to return: %d%d%d%d)",
-            pending_left_mask,
-            (pending_left_mask >> 3) & 1, (pending_left_mask >> 2) & 1,
-            (pending_left_mask >> 1) & 1, (pending_left_mask >> 0) & 1);
-        left_arm.letGoCups(pending_left_mask); // use mask saved at LOWER time
-        LOG_INFO("act", "[LEFT ARM] letGoCups done, resetting pending_left_mask.");
-        pending_left_mask = 0;
-        left_arm.initAllServos();
-        LOG_INFO("act", "[LEFT ARM] LET_GO done.");
-        break;
+    // case ActuatorCommand::LOWER_LEFT_ARM:
+    //     pending_left_mask = left_suction_cups_activation_for_request; // save for LET_GO
+    //     LOG_INFO("act", "[LEFT ARM] LOWER: saved pending_left_mask=0x%02X (cups: %d%d%d%d)",
+    //         pending_left_mask,
+    //         (pending_left_mask >> 3) & 1, (pending_left_mask >> 2) & 1,
+    //         (pending_left_mask >> 1) & 1, (pending_left_mask >> 0) & 1);
+    //     LOG_INFO("act", "[LEFT ARM] Lowering ALL 4 cups...");
+    //     left_arm.lowerCups();
+    //     // osDelay(3000);
+    //     // LOG_INFO("act", "[LEFT ARM] Raising ALL 4 cups...");
+    //     // left_arm.raiseCups();
+    //     LOG_INFO("act", "[LEFT ARM] LOWER done.");
+    //     break;
+    // case ActuatorCommand::LET_GO_ELEMENTS_LEFT_ARM:
+    //     LOG_INFO("act", "[LEFT ARM] LET_GO: applying pending_left_mask=0x%02X (cups to return: %d%d%d%d)",
+    //         pending_left_mask,
+    //         (pending_left_mask >> 3) & 1, (pending_left_mask >> 2) & 1,
+    //         (pending_left_mask >> 1) & 1, (pending_left_mask >> 0) & 1);
+    //     left_arm.letGoCups(pending_left_mask); // use mask saved at LOWER time
+    //     LOG_INFO("act", "[LEFT ARM] letGoCups done, resetting pending_left_mask.");
+    //     pending_left_mask = 0;
+    //     // left_arm.initAllServos();
+    //     LOG_INFO("act", "[LEFT ARM] LET_GO done.");
+    //     break;
+    // case ActuatorCommand::GET_READY_LEFT_ARM:
+    //     LOG_INFO("act", "[LEFT ARM] GET_READY");
+    //     left_arm.getReadyCups();
+    //     LOG_INFO("act", "[LEFT ARM] getReadyCups done, resetting pending_left_mask.");
+    //     pending_left_mask = 0;
+    //     // left_arm.initAllServos();
+    //     LOG_INFO("act", "[LEFT ARM] GET_READY done.");
+    //     break;
+
     case ActuatorCommand::LOWER_RIGHT_ARM:
         pending_right_mask = right_suction_cups_activation_for_request; // save for LET_GO
         LOG_INFO("act", "[RIGHT ARM] LOWER: saved pending_right_mask=0x%02X (cups: %d%d%d%d)",
@@ -121,8 +144,9 @@ void HandleRequest(const ActuatorCommand cmd,
             (pending_right_mask >> 1) & 1, (pending_right_mask >> 0) & 1);
         LOG_INFO("act", "[RIGHT ARM] Lowering ALL 4 cups...");
         right_arm.lowerCups();
-        LOG_INFO("act", "[RIGHT ARM] Raising ALL 4 cups...");
-        right_arm.raiseCups();
+        // osDelay(3000);
+        // LOG_INFO("act", "[RIGHT ARM] Raising ALL 4 cups...");
+        // right_arm.raiseCups();
         LOG_INFO("act", "[RIGHT ARM] LOWER done.");
         break;
     case ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM:
@@ -133,8 +157,17 @@ void HandleRequest(const ActuatorCommand cmd,
         right_arm.letGoCups(pending_right_mask); // use mask saved at LOWER time
         LOG_INFO("act", "[RIGHT ARM] letGoCups done, resetting pending_right_mask.");
         pending_right_mask = 0;
-        right_arm.initAllServos();
+        // right_arm.initAllServos();
         LOG_INFO("act", "[RIGHT ARM] LET_GO done.");
+        break;
+
+    case ActuatorCommand::GET_READY_RIGHT_ARM:
+        LOG_INFO("act", "[RIGHT ARM] GET_READY");
+        right_arm.getReadyCups();
+        LOG_INFO("act", "[RIGHT ARM] getReadyCups done, resetting pending_right_mask.");
+        pending_right_mask = 0;
+        // right_arm.initAllServos();
+        LOG_INFO("act", "[RIGHT ARM] GET_READY done.");
         break;
 
     default:
@@ -164,8 +197,13 @@ void handleManualRequests(){
     {
         xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
         ActuatorState actuator_request = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
+
         uint8_t left_suction_cups_activation_for_request = static_cast<uint8_t>(mod_reg::actuators->left_suction_cups_activation_for_request[i]);
         uint8_t right_suction_cups_activation_for_request = static_cast<uint8_t>(mod_reg::actuators->right_suction_cups_activation_for_request[i]);
+
+        // left_suction_cups_activation_for_request = 0x0F; // TODO test (all 4 cups)
+        // right_suction_cups_activation_for_request = 0x0F; // TODO test (all 4 cups)
+
         xSemaphoreGive(ModbusH.ModBusSphrHandle);
 
         if (actuator_request == ActuatorState::REQUESTED)

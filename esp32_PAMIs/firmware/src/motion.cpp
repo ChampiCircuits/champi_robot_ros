@@ -442,7 +442,7 @@ void printStepperDiagnostics() {
 void motionInit() {
     LOG_INFO("Motion", "Initializing system...");
     pinMode(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP ? INPUT_PULLUP : INPUT);
-    pinMode(TIRETTE_PIN, TIRETTE_PULLUP ? INPUT_PULLUP : INPUT);
+    // pinMode(TIRETTE_PIN, INPUT_PULLDOWN);
     pinMode(US_TRIG_PIN, OUTPUT);
     pinMode(US_ECHO_PIN, INPUT);
     LOG_INFO("Motion", "Initialized pins...");
@@ -482,17 +482,20 @@ void motionInit() {
 
     // TEST TIRETTE
     {
-        // while (true)
-        // {
-        //     bool team = digitalRead(TEAM_SWITCH_PIN);
-        //     bool tirette = digitalRead(TIRETTE_PIN);
-        //     LOG_INFO("tirette", "tirette %d team %d", tirette, team);
-        //     delay(500);
-        // }
+        while (true)
+        {
+            bool team = digitalRead(TEAM_SWITCH_PIN);
+            int tirette = analogRead(TIRETTE_PIN);
+            // LOG_INFO("tirette", "tirette %d team %d", tirette, team);
+            Serial.println("=== TEST TIRETTE ===");
+            Serial.printf("TEAM_SWITCH_PIN=%d (raw=%d)  TIRETTE_PIN=%d (raw=%d)\n", TEAM_SWITCH_PIN, team, TIRETTE_PIN, tirette);
+            Serial.println("===================");
+            delay(500);
+        }
     }
 
     const bool team_raw = readDigitalActive(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP);
-    const bool tirette_raw = readDigitalActive(TIRETTE_PIN, TIRETTE_PULLUP);
+    const bool tirette_raw = analogRead(TIRETTE_PIN);
     g_tirette_input = DebouncedInput{tirette_raw, tirette_raw, millis()};
 
     g_candidate_team = team_raw ? Team::YELLOW : Team::BLUE;
@@ -568,7 +571,7 @@ void motionTick(uint32_t now_us) {
             {
                 const bool team_raw = readDigitalActive(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP);
                 g_candidate_team = team_raw ? Team::YELLOW : Team::BLUE;
-
+                enforceHardMotorStop();
                 stopMotors();
                 if (tirette_start_edge) {
                     buildWorkingTrajectory(g_candidate_team);

@@ -28,7 +28,7 @@ constexpr int ACTUATOR_PIN = 13;    //D13
 
 // Input logic.
 constexpr bool TEAM_SWITCH_PULLUP = true; // TODO put to false
-constexpr bool TIRETTE_PULLUP = true;
+constexpr bool TIRETTE_PULLUP = false;
 constexpr uint32_t TIRETTE_DEBOUNCE_MS = 40;
 
 // Map/team transform.
