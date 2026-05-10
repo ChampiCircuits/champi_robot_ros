@@ -24,12 +24,12 @@ constexpr int RIGHT_STEP_PIN = 21;  //D21
 constexpr int RIGHT_DIR_PIN = 19;   //D19
 constexpr int ENABLE_MOTORS = 23;   //D23
 // actuator (12v DC motor)
-constexpr int ACTUATOR_PIN = 13;    //D13
+constexpr int ACTUATOR_PIN = 22;    //D22
 
 // Input logic.
 constexpr bool TEAM_SWITCH_PULLUP = true; // TODO put to false
-constexpr bool TIRETTE_PULLUP = false;
-constexpr uint32_t TIRETTE_DEBOUNCE_MS = 40;
+// constexpr bool TIRETTE_PULLUP = false;
+// constexpr uint32_t TIRETTE_DEBOUNCE_MS = 40;
 
 // Map/team transform.
 constexpr float MAP_WIDTH_MM = 3000.0f;

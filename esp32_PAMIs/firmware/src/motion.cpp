@@ -67,7 +67,7 @@ int activeTrajectoryPoints() {
     return (kGeneratedTrajectoryPoints < TRAJECTORY_POINTS_COUNT) ? kGeneratedTrajectoryPoints : TRAJECTORY_POINTS_COUNT;
 }
 
-DebouncedInput g_tirette_input{};
+bool g_tirette_input = false;
 
 bool timeReachedUs(uint32_t now_us, uint32_t deadline_us) {
     return static_cast<int32_t>(now_us - deadline_us) >= 0;
@@ -442,7 +442,11 @@ void printStepperDiagnostics() {
 void motionInit() {
     LOG_INFO("Motion", "Initializing system...");
     pinMode(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP ? INPUT_PULLUP : INPUT);
-    // pinMode(TIRETTE_PIN, INPUT_PULLDOWN);
+    // pinMode(TIRETTE_PIN, ANALOG);
+
+    // pinMode(33, OUTPUT);
+    // digitalWrite(33, HIGH); // Pull-up for TIRETTE 
+
     pinMode(US_TRIG_PIN, OUTPUT);
     pinMode(US_ECHO_PIN, INPUT);
     LOG_INFO("Motion", "Initialized pins...");
@@ -450,8 +454,21 @@ void motionInit() {
     LOG_INFO("Motion", "Initialized status LED...");
     stepperControlInit();
     pinMode(ACTUATOR_PIN, ANALOG);
+    analogWrite(ACTUATOR_PIN, 0);
+
     stopMotors();
     LOG_INFO("Motion", "Initialized stepperControl...");
+
+    {
+        // // TEST ACTUATOR
+        // for (int v = 0; v <= 255; v += 5) {
+        //     analogWrite(ACTUATOR_PIN, v);
+        //     delay(100);
+        //     Serial.printf("Actuator test: value=%d\n", v);
+        // }
+        // analogWrite(ACTUATOR_PIN, 0);
+        // while (1) {}
+    }
 
     {
         // TEST US SENSOR
@@ -482,21 +499,24 @@ void motionInit() {
 
     // TEST TIRETTE
     {
-        while (true)
-        {
-            bool team = digitalRead(TEAM_SWITCH_PIN);
-            int tirette = analogRead(TIRETTE_PIN);
-            // LOG_INFO("tirette", "tirette %d team %d", tirette, team);
-            Serial.println("=== TEST TIRETTE ===");
-            Serial.printf("TEAM_SWITCH_PIN=%d (raw=%d)  TIRETTE_PIN=%d (raw=%d)\n", TEAM_SWITCH_PIN, team, TIRETTE_PIN, tirette);
-            Serial.println("===================");
-            delay(500);
-        }
+        // while (true)
+        // {
+        //     bool team = digitalRead(TEAM_SWITCH_PIN);
+        //     int tirette = analogRead(TIRETTE_PIN);
+        //     // LOG_INFO("tirette", "tirette %d team %d", tirette, team);
+        //     Serial.println("=== TEST TIRETTE ===");
+        //     Serial.printf("TTIRETTE_PIN=%d (raw=%d)\n", TIRETTE_PIN, tirette);
+        //     Serial.println("===================");
+        //     delay(500);
+        // }
     }
 
     const bool team_raw = readDigitalActive(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP);
-    const bool tirette_raw = analogRead(TIRETTE_PIN);
-    g_tirette_input = DebouncedInput{tirette_raw, tirette_raw, millis()};
+    int tirette_raw = analogRead(TIRETTE_PIN);
+    // g_tirette_input = DebouncedInput{tirette_raw, tirette_raw, millis()};
+    g_tirette_input = (tirette_raw > 512); 
+    Serial.printf("tirette_raw=%d", tirette_raw);
+    Serial.println();
 
     g_candidate_team = team_raw ? Team::YELLOW : Team::BLUE;
     g_state = MotionState::WAITING_TIRETTE;
@@ -534,7 +554,7 @@ void motionTick(uint32_t now_us) {
     if (g_match_timeout_triggered) {
         enforceHardMotorStop();
         applyLedPolicy();
-        analogWrite(ACTUATOR_PIN, 50);
+        analogWrite(ACTUATOR_PIN, 100);
         return;
     }
 
@@ -551,9 +571,14 @@ void motionTick(uint32_t now_us) {
         g_forward_test_mode_was_active = false;
     }
 
-    const bool tirette_raw = readDigitalActive(TIRETTE_PIN, TIRETTE_PULLUP);
-    const bool tirette_changed = updateDebounced(g_tirette_input, tirette_raw, now_ms, TIRETTE_DEBOUNCE_MS);
-    const bool tirette_start_edge = tirette_changed && g_tirette_input.stable_value;
+    // const bool tirette_raw = readDigitalActive(TIRETTE_PIN, TIRETTE_PULLUP);
+    // const bool tirette_changed = updateDebounced(g_tirette_input, tirette_raw, now_ms, TIRETTE_DEBOUNCE_MS);
+    // const bool tirette_start_edge = tirette_changed && g_tirette_input.stable_value;
+    // const bool tirette_start_edge = false; // TODO
+    int tirette_raw = analogRead(TIRETTE_PIN);
+    const bool tirette_start_edge = (tirette_raw > 512);
+    // Serial.printf("tirette_raw=%d", tirette_raw);
+    // Serial.println();
 
     float distance_mm = -1.0f;
     // FIXME: pulseIn blocks up to 25ms and kills step generation at high speed.
@@ -572,7 +597,6 @@ void motionTick(uint32_t now_us) {
                 const bool team_raw = readDigitalActive(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP);
                 g_candidate_team = team_raw ? Team::YELLOW : Team::BLUE;
                 enforceHardMotorStop();
-                stopMotors();
                 if (tirette_start_edge) {
                     buildWorkingTrajectory(g_candidate_team);
                     resetRunProgress();
@@ -585,7 +609,7 @@ void motionTick(uint32_t now_us) {
             }
         case MotionState::START_DELAY:
             {
-                stopMotors();
+                enforceHardMotorStop();
                 if (timeReachedUs(now_us, g_start_deadline_us)) {
                     if (!startWaypointWaitIfNeeded(now_us) && !startNextSegment(now_us)) {
                         g_state = MotionState::COMPLETED;
@@ -725,7 +749,7 @@ void motionTick(uint32_t now_us) {
         case MotionState::COMPLETED:
             {
                 enforceHardMotorStop();
-                analogWrite(ACTUATOR_PIN, 50);
+                analogWrite(ACTUATOR_PIN, 100);
                 break;
             }
 
