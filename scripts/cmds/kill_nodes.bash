@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Try to kill the launch file process first
+if pkill -TERM -f "champi_bringup" 2>/dev/null; then
+    echo "Sent SIGTERM to champi_bringup, waiting for nodes to die..."
+    sleep 4
+    if pkill -0 -f "champi_bringup" 2>/dev/null; then
+        pkill -KILL -f "champi_bringup" 2>/dev/null
+        echo "Killed champi_bringup (SIGKILL)"
+    else
+        echo "bringup.launch.py exited cleanly."
+    fi
+fi
+
 # Get all running ROS2 nodes dynamically and kill them
 echo "Fetching running ROS2 nodes..."
 node_list=$(ros2 node list 2>/dev/null)
