@@ -88,6 +88,7 @@ class PlannerNode(Node):
             waypoint_tolerance=self.waypoint_tolerance
         )
         updater.add('Loop exec time', self.exec_time_measurer.produce_diagnostics)
+        updater.add('Path planner', self._produce_planning_diagnostics)
 
         # Data retrieved from topics
         self.robot_pose: Pose2D = None
@@ -124,7 +125,6 @@ class PlannerNode(Node):
             waypoint_speed_linear=self.waypoint_speed_linear,
             forbidden_area_wait_time=self.forbidden_area_wait_time,
         )
-        updater.add('Path planner', self.planner.planning_diagnostic.produce_diagnostics)
 
         # Subscribe to brain's obstacle state updates (latched — replayed on connect)
         _latched_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
@@ -307,31 +307,30 @@ class PlannerNode(Node):
         if not self.planning:
             self.draw_viz(None, 0)
 
-    def draw_viz(self, waypoints, current_waypoint_idx):
-        Canva().clear()
 
-        # Draw obstacles
-        obstacles = self.planner.get_all_obstacles()
-        self.get_logger().debug(f'Drawing {len(obstacles)} obstacles')
-        for obs in obstacles:
-            points = list(zip(obs.x_list, obs.y_list))
-            Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.RED), frame_id='odom')
+    def _produce_planning_diagnostics(self, stat: diagnostic_updater.DiagnosticStatusWrapper):
+        metrics = self.planner.planning_metrics
+        
+        if metrics.last_ms is None:
+            stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, "No planning call yet")
+            return stat
 
-        # Draw expanded (C-space) obstacles
-        expanded_obstacles = self.planner.build_expanded_obstacles(obstacles)
-        for obs in expanded_obstacles:
-            points = list(zip(obs.x_list, obs.y_list))
-            Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.ORANGE), frame_id='odom')
+        level = diagnostic_msgs.msg.DiagnosticStatus.OK
+        if metrics.worst_ms > 75.0 or metrics.fail_rate > 0.2:
+            level = diagnostic_msgs.msg.DiagnosticStatus.WARN
 
-        # Draw path
-        if waypoints and current_waypoint_idx < len(waypoints):
-            path_points = [(wp.x, wp.y) for wp in waypoints[current_waypoint_idx:]]
-            if len(path_points) >= 2:
-                Canva().add(items.Polyline(path_points, size=presets.LINE_MEDIUM, color=presets.GREEN), frame_id='odom')
-            # Draw waypoints as spheres
-            Canva().add(items.Spheres(path_points, color=presets.CYAN), frame_id='odom')
-
-        Canva().draw()
+        stat.summary(
+            level,
+            f"last={metrics.last_ms:.1f}ms  avg={metrics.avg_ms:.1f}ms  worst={metrics.worst_ms:.1f}ms",
+        )
+        stat.add("Last planning time (ms)", f"{metrics.last_ms:.2f}")
+        stat.add("Avg planning time (ms)", f"{metrics.avg_ms:.2f}")
+        stat.add("Worst planning time (ms)", f"{metrics.worst_ms:.2f}")
+        stat.add("Total calls", str(metrics.n_calls))
+        stat.add("Failed calls (no path)", str(metrics.n_failed))
+        stat.add("Failure rate", f"{metrics.fail_rate * 100:.1f}%")
+        
+        return stat
 
     # ====================================== Utils ==========================================
 
@@ -351,7 +350,27 @@ class PlannerNode(Node):
         return pose_stamped
 
 
-    # ====================================== Main ==========================================
+    def draw_viz(self, waypoints, current_waypoint_idx):
+            Canva().clear()
+
+            geom = self.planner.get_debug_geometry()
+
+            self.get_logger().debug(f'Drawing {len(geom.obstacles)} obstacles')
+
+            for points in geom.obstacles:
+                Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.RED), frame_id='odom')
+
+            for points in geom.expanded_obstacles:
+                Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.ORANGE), frame_id='odom')
+
+            if waypoints and current_waypoint_idx < len(waypoints):
+                path_points = [(wp.x, wp.y) for wp in waypoints[current_waypoint_idx:]]
+                if len(path_points) >= 2:
+                    Canva().add(items.Polyline(path_points, size=presets.LINE_MEDIUM, color=presets.GREEN), frame_id='odom')
+                # Draw waypoints as spheres
+                Canva().add(items.Spheres(path_points, color=presets.CYAN), frame_id='odom')
+
+            Canva().draw()
 
 
 def main(args=None):
