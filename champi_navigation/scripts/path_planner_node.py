@@ -11,7 +11,6 @@ from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import Pose, PoseStamped, Twist
 
 from champi_interfaces.action import Navigate
-from champi_interfaces.msg import CtrlGoal
 
 import time
 from threading import Lock
@@ -25,6 +24,7 @@ from std_msgs.msg import String as StringMsg
 from rclpy.qos import QoSProfile, DurabilityPolicy
 
 from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
+from champi_navigation.pose_controller_manager import PoseControllerManager
 from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap, ObstaclePolygon
 from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
@@ -106,9 +106,7 @@ class PlannerNode(Node):
         self.latest_enemy_pose: Pose2D = None
 
         # Publisher
-        self.champi_path_pub = self.create_publisher(CtrlGoal, '/ctrl_goal', 10)
         self.path_publisher_viz = self.create_publisher(Path, '/plan_viz', 10)
-        self.cmd_vel_stop_pub = self.create_publisher(Twist, '/emergency/cmd_vel_stop', 10)
 
         # Action Server /navigate
         self.action_server_navigate = ActionServer(self, Navigate, '/navigate',
@@ -126,6 +124,11 @@ class PlannerNode(Node):
         updater.setHardwareID('none')
         self.exec_time_measurer = ExecTimeMeasurer()
         self.planning_diagnostic = PlanningDiagnostic()
+        self.pose_controller_manager = PoseControllerManager(
+            node=self,
+            waypoint_speed_linear=self.waypoint_speed_linear,
+            waypoint_tolerance=self.waypoint_tolerance
+        )
         updater.add('Loop exec time', self.exec_time_measurer.produce_diagnostics)
         updater.add('Timeout', self.timeout.produce_diagnostics)
         updater.add('Path planner', self.planning_diagnostic.produce_diagnostics)
@@ -491,15 +494,13 @@ class PlannerNode(Node):
             # Check if robot is inside a forbidden (expanded obstacle) area
             if self._is_robot_in_forbidden_area():
                 self.get_logger().warn(f'[NAV] execute_callback: Robot is inside FORBIDDEN AREA at ({self.robot_pose.x:.3f}, {self.robot_pose.y:.3f})! Stopping...')
-                self.publish_stop()
+                self.pose_controller_manager.publish_stop()
                 time.sleep(self.forbidden_area_wait_time)
 
                 # Find exit point and navigate to it
                 exit_point = self._find_nearest_exit_point()
                 if exit_point is not None:
-                    ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=True)
-                    ctrl_goal.pose = exit_point.to_ros_pose()
-                    self.champi_path_pub.publish(ctrl_goal)
+                    self.pose_controller_manager.publish_ctrl_goal(exit_point, metadata=self.current_navigate_goal, is_waypoint=True)
                     # Wait until robot exits the forbidden area
                     while rclpy.ok() and goal_handle.is_active and self._is_robot_in_forbidden_area():
                         time.sleep(self.loop_period)
@@ -553,12 +554,9 @@ class PlannerNode(Node):
                     current_waypoint_idx += 1
                     target_wp = waypoints[current_waypoint_idx]
 
-            # Create and publish CtrlGoal
+            # Publish CtrlGoal
             is_last_waypoint = (current_waypoint_idx >= len(waypoints) - 1)
-            is_waypoint = not is_last_waypoint
-            ctrl_goal = self.create_ctrl_goal_from_navigate_goal(self.current_navigate_goal, is_waypoint=is_waypoint)
-            ctrl_goal.pose = target_wp.to_ros_pose()
-            self.champi_path_pub.publish(ctrl_goal)
+            self.pose_controller_manager.publish_ctrl_goal(target_wp, metadata=self.current_navigate_goal, is_waypoint=not is_last_waypoint)
 
             # Publish action feedback
             remaining_path = [self.robot_pose] + waypoints[current_waypoint_idx:]
@@ -580,7 +578,7 @@ class PlannerNode(Node):
 
         # ============================ FILL ACTION RESULT ====================================
 
-        self.publish_stop()
+        self.pose_controller_manager.publish_stop()
         self.publish_path([])
 
         if navigate_goal_reached:
@@ -656,10 +654,6 @@ class PlannerNode(Node):
 
     # ====================================== Utils ==========================================
 
-    def publish_stop(self):
-        ctrl_goal = CtrlGoal()
-        self.champi_path_pub.publish(ctrl_goal)
-
     def publish_path(self, path: list[Pose]):
         path_msg = Path()
         path_msg.header.stamp = self.get_clock().now().to_msg()
@@ -674,29 +668,6 @@ class PlannerNode(Node):
         pose_stamped.header.frame_id = frame_id
         pose_stamped.pose = pose
         return pose_stamped
-
-    def create_ctrl_goal_from_navigate_goal(self, navigate_goal: Navigate.Goal, is_waypoint) -> CtrlGoal:
-        ctrl_goal = CtrlGoal()
-        ctrl_goal.pose = navigate_goal.pose
-
-        if is_waypoint:
-            ctrl_goal.end_speed = self.waypoint_speed_linear
-            ctrl_goal.linear_tolerance = self.waypoint_tolerance
-            ctrl_goal.max_linear_speed = self.waypoint_speed_linear
-        else:
-            ctrl_goal.end_speed = navigate_goal.end_speed
-            ctrl_goal.linear_tolerance = navigate_goal.linear_tolerance
-            ctrl_goal.max_linear_speed = navigate_goal.max_linear_speed
-
-        ctrl_goal.max_angular_speed = navigate_goal.max_angular_speed
-        ctrl_goal.accel_linear = navigate_goal.accel_linear
-        ctrl_goal.accel_angular = navigate_goal.accel_angular
-        ctrl_goal.angular_tolerance = navigate_goal.angular_tolerance
-        ctrl_goal.do_look_at_point = navigate_goal.do_look_at_point
-        ctrl_goal.look_at_point = navigate_goal.look_at_point
-        ctrl_goal.robot_angle_when_looking_at_point = navigate_goal.robot_angle_when_looking_at_point
-
-        return ctrl_goal
 
 
     # ====================================== Main ==========================================
