@@ -8,7 +8,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.executors import ExternalShutdownException
 
 from nav_msgs.msg import Odometry, Path
-from geometry_msgs.msg import Pose, PoseStamped, Twist
+from geometry_msgs.msg import Pose, PoseStamped
 
 from champi_interfaces.action import Navigate
 

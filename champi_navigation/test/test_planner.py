@@ -23,7 +23,7 @@ from champi_navigation.obstacle_manager import ObstacleManager
 from champi_navigation.planner import (
     Planner,
     PlannerStatus,
-    PlanningDiagnostic,
+    PlanningMetrics,
     _ForbiddenAreaPhase,
 )
 from champi_navigation.planning_feedback import ComputePathResult
@@ -113,34 +113,34 @@ def planner() -> Planner:
 
 
 # ---------------------------------------------------------------------------
-# PlanningDiagnostic
+# PlanningMetrics
 # ---------------------------------------------------------------------------
 
 
-class TestPlanningDiagnostic:
+class TestPlanningMetrics:
     def test_initial_state_no_calls(self):
-        diag = PlanningDiagnostic()
-        assert diag._last_ms is None
-        assert diag._n_calls == 0
+        diag = PlanningMetrics()
+        assert diag.last_ms is None
+        assert diag.n_calls == 0
 
     def test_record_success(self):
-        diag = PlanningDiagnostic()
+        diag = PlanningMetrics()
         diag.record(10.0, success=True)
-        assert diag._n_calls == 1
-        assert diag._n_failed == 0
-        assert diag._worst_ms == 10.0
+        assert diag.n_calls == 1
+        assert diag.n_failed == 0
+        assert diag.worst_ms == 10.0
 
     def test_record_failure(self):
-        diag = PlanningDiagnostic()
+        diag = PlanningMetrics()
         diag.record(5.0, success=False)
-        assert diag._n_failed == 1
+        assert diag.n_failed == 1
 
     def test_worst_ms_tracked(self):
-        diag = PlanningDiagnostic()
+        diag = PlanningMetrics()
         diag.record(10.0, success=True)
         diag.record(50.0, success=True)
         diag.record(20.0, success=True)
-        assert diag._worst_ms == 50.0
+        assert diag.worst_ms == 50.0
 
 
 # ---------------------------------------------------------------------------
@@ -444,9 +444,9 @@ class TestEnemyPose:
         assert planner._obstacle_manager._enemy_pose == (1.5, 1.0)
 
     def test_enemy_appears_in_get_all_obstacles(self, planner: Planner):
-        base = len(planner.get_all_obstacles())
+        base = len(planner._obstacle_manager.get_all_obstacles())
         planner.set_enemy_pose(1.5, 1.0)
-        assert len(planner.get_all_obstacles()) == base + 1
+        assert len(planner._obstacle_manager.get_all_obstacles()) == base + 1
 
 
 # ---------------------------------------------------------------------------
@@ -467,18 +467,6 @@ class TestAccessors:
         planner.start(goal)
         planner.step(_pose(0.5, 1.5))
         assert not planner.has_goal
-
-    def test_get_all_obstacles_passthrough(self, planner: Planner):
-        obs = planner.get_all_obstacles()
-        assert isinstance(obs, list)
-        assert len(obs) > 0
-
-    def test_build_expanded_obstacles_passthrough(self, planner: Planner):
-        obs = planner.get_all_obstacles()
-        expanded = planner.build_expanded_obstacles(obs)
-        assert isinstance(expanded, list)
-        assert len(expanded) == len(obs)
-
 
 # ---------------------------------------------------------------------------
 # Dependency injection — custom visibility planner
