@@ -96,7 +96,7 @@ class PlannerNode(Node):
         # Current goal handle
         self.goal_handle_navigate = None
         self.planning = False
-        self._goal_preempted = False
+        self.new_goal_waiting = False
         self.mutex_exec = Lock()
 
         # Visibility planner
@@ -166,7 +166,7 @@ class PlannerNode(Node):
         if self.planning:
             self.get_logger().warn(f'[NAV] navigate_callback: Preempting previous goal for new one!')
             self.planner.cancel()
-            self._goal_preempted = True  # signals execute_callback to exit its loop cleanly
+            self.new_goal_waiting = True  # signals execute_callback to exit its loop cleanly
 
         self.planning = True
         self.get_logger().debug(f'[NAV] navigate_callback: Goal ACCEPTED')
@@ -176,7 +176,7 @@ class PlannerNode(Node):
         self.get_logger().debug(f'[NAV] cancel_callback: Cancel requested, currently_planning={self.planning}')
         if self.planning:
             self.planner.cancel()
-            self._goal_preempted = True  # signals execute_callback to exit its loop cleanly
+            self.new_goal_waiting = True  # signals execute_callback to exit its loop cleanly
             self.get_logger().info('[NAV] cancel_callback: Cancel accepted, signalling execute_callback to stop')
         else:
             self.get_logger().warn('[NAV] cancel_callback: No active goal to cancel!')
@@ -187,7 +187,7 @@ class PlannerNode(Node):
         self.mutex_exec.acquire()
         self.get_logger().debug(f'[NAV] execute_callback: Mutex acquired, goal_active={goal_handle.is_active}')
         self.goal_handle_navigate = goal_handle
-        self._goal_preempted = False  # reset for this execution
+        self.new_goal_waiting = False  # reset for this execution
 
         # =================================== START PLANNER ==========================================
 
@@ -197,7 +197,7 @@ class PlannerNode(Node):
 
         navigate_goal_reached = False
 
-        while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached and not self._goal_preempted:
+        while rclpy.ok() and goal_handle.is_active and not navigate_goal_reached and not self.new_goal_waiting:
 
             self.exec_time_measurer.start()
             t_loop_start = time.time()
@@ -270,7 +270,7 @@ class PlannerNode(Node):
             else:
                 goal_handle.succeed()
             self.get_logger().info(f'[NAV] execute_callback: RESULT => Goal REACHED at ({self.robot_pose.x:.3f}, {self.robot_pose.y:.3f})')
-        elif self._goal_preempted:
+        elif self.new_goal_waiting:
             # Preempted by a new navigate goal or a cancel request
             result = Navigate.Result(success=False, message='Goal aborted!')
             if goal_handle.is_cancel_requested:
@@ -293,7 +293,7 @@ class PlannerNode(Node):
 
         # Set planning=False last. If a new goal arrived while we were in the result section
         # (navigate_callback set planning=True again) we must NOT overwrite it.
-        if not self._goal_preempted:
+        if not self.new_goal_waiting:
             self.planning = False
 
         self.get_logger().debug(f'[NAV] execute_callback: Releasing mutex')
