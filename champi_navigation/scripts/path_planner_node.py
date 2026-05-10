@@ -14,18 +14,17 @@ from champi_interfaces.action import Navigate
 
 import time
 from threading import Lock
-import math
 import json
 import diagnostic_msgs.msg
 import diagnostic_updater
-import yaml
 from ament_index_python.packages import get_package_share_directory
 from std_msgs.msg import String as StringMsg
 from rclpy.qos import QoSProfile, DurabilityPolicy
 
+from champi_navigation.obstacle_manager import ObstacleManager
 from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
 from champi_navigation.pose_controller_manager import PoseControllerManager
-from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap, ObstaclePolygon
+from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap
 from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.utils.timeout import Timeout
 from champi_libraries_py.data_types.geometry import Pose2D
@@ -103,7 +102,6 @@ class PlannerNode(Node):
         # Subscribers
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.enemy_odom_sub = self.create_subscription(Odometry, '/enemy_pose', self.enemy_odom_callback, 10)
-        self.latest_enemy_pose: Pose2D = None
 
         # Publisher
         self.path_publisher_viz = self.create_publisher(Path, '/plan_viz', 10)
@@ -145,25 +143,20 @@ class PlannerNode(Node):
         # Visibility planner
         self.visibility_planner = VisibilityRoadMap(expand_distance=self.robot_radius)
 
-        # Separate planner with smaller expansion for forbidden area detection
-        # This avoids false triggers when the robot is just barely on the C-space boundary
-        self.forbidden_area_checker = VisibilityRoadMap(expand_distance=max(0.0, self.robot_radius - self.forbidden_area_margin))
-
-        # Static obstacles: table borders as 4 thin edge polygons
-        self.static_obstacles = self._build_border_obstacles()
-
-        # Zone obstacles (loaded from world state file)
-        self.zones = self._load_zones()
-        # placement_zones (garde_manger) start free — they become occupied when boxes are deposited.
-        # All other zone types (forbidden_zone, secure_zone) start occupied (secure_zone is skipped anyway).
-        self.zone_occupied = {
-            zone['id']: zone.get('type') != 'placement_zone'
-            for zone in self.zones
-        }
-        self.get_logger().info(f'Loaded {len(self.zones)} zones: {[(z["id"], "occ" if self.zone_occupied[z["id"]] else "free") for z in self.zones]}')
-
-        # Element obstacles: track which element ids have been removed (taken by robot)
-        self._elements_disabled: set = set()
+        # Obstacle manager
+        config_path = get_package_share_directory('champi_brain') + '/config/' + self.world_state_file
+        self.obstacle_manager = ObstacleManager(
+            config_path=config_path,
+            table_width=self.table_width,
+            table_height=self.table_height,
+            robot_radius=self.robot_radius,
+            enemy_robot_radius=self.enemy_robot_radius,
+            forbidden_area_margin=self.forbidden_area_margin,
+        )
+        self.get_logger().info(
+            f'ObstacleManager initialised: {len(self.obstacle_manager._zones)} zones, '
+            f'{len(self.obstacle_manager._elements)} elements'
+        )
 
         # Subscribe to brain's obstacle state updates (latched — replayed on connect)
         _latched_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
@@ -176,207 +169,26 @@ class PlannerNode(Node):
 
     # ==================================== Obstacle Management ==========================================
 
-    def _load_zones(self):
-        """Load zones and elements from the world state YAML file."""
-        config_path = get_package_share_directory('champi_brain') + '/config/' + self.world_state_file
-        with open(config_path, 'r') as f:
-            world_state = yaml.safe_load(f)
-        zones = world_state.get('zones', [])
-        self.elements = world_state.get('elements', [])
-        self.get_logger().info(f'World state loaded from {config_path}: {len(zones)} zones, {len(self.elements)} elements')
-        return zones
-
-    def _obstacle_states_callback(self, msg: StringMsg):
-        """Receive the brain's full obstacle state dict and update local planner state."""
+    def _obstacle_states_callback(self, msg: StringMsg) -> None:
+        """Receive the brain's full obstacle state dict and forward to ObstacleManager."""
         states = json.loads(msg.data)
-        changed = False
-        for entity_id, is_obstacle in states.items():
-            if entity_id in self.zone_occupied:
-                if self.zone_occupied[entity_id] != is_obstacle:
-                    self.zone_occupied[entity_id] = is_obstacle
-                    self.get_logger().info(f'Zone {entity_id} -> {"occupied" if is_obstacle else "free"}')
-                    changed = True
-            elif any(e['id'] == entity_id for e in self.elements):
-                was_disabled = entity_id in self._elements_disabled
-                if not is_obstacle and not was_disabled:
-                    self._elements_disabled.add(entity_id)
-                    self.get_logger().info(f'Element {entity_id} removed from obstacles (taken)')
-                    changed = True
-                elif is_obstacle and was_disabled:
-                    self._elements_disabled.discard(entity_id)
-                    self.get_logger().info(f'Element {entity_id} restored as obstacle')
-                    changed = True
+        changed = self.obstacle_manager.update_states(states)
         if changed:
             self.visibility_planner.invalidate_cache()
+            self.get_logger().info('[NAV] Obstacle states updated, planner cache invalidated')
 
-    def _build_element_obstacles(self):
-        """Build obstacle polygons for all nut_box elements (rotated rectangles)."""
-        # Nut box dimensions: 150 x 200 mm
-        NUT_BOX_W = 0.15  # half-width along local X
-        NUT_BOX_H = 0.20  # half-height along local Y
-        hw = NUT_BOX_W / 2.0
-        hh = NUT_BOX_H / 2.0
-        obstacles = []
-        for elem in self.elements:
-            if elem.get('type') != 'nut_box' or elem['id'] in self._elements_disabled:
-                continue
-            cx, cy = elem['x'], elem['y']
-            theta = math.radians(elem.get('theta_deg', 0.0) + 90.0)  # world frame theta, add 90deg to convert from element's local frame
-            cos_t, sin_t = math.cos(theta), math.sin(theta)
-            # 4 corners in local frame, rotated into world frame
-            corners = [(-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh)]
-            xs = [cx + cos_t * lx - sin_t * ly for lx, ly in corners]
-            ys = [cy + sin_t * lx + cos_t * ly for lx, ly in corners]
-            obstacles.append(ObstaclePolygon(xs, ys))
-        return obstacles
-
-    def _build_zone_obstacles(self):
-        """Build obstacle polygons for all currently occupied zones.
-
-        Zones of type 'secure_zone' are not added as obstacles — the robot is
-        allowed to drive through them.
-        """
-        obstacles = []
-        for zone in self.zones:
-            if zone.get('type') == 'secure_zone':
-                continue
-            if not self.zone_occupied.get(zone['id'], False):
-                continue
-            x = zone['x']
-            y = zone['y']
-            w = zone['width']
-            h = zone['height']
-            # Zone position is bottom-left corner
-            obstacles.append(ObstaclePolygon(
-                [x, x + w, x + w, x],
-                [y, y, y + h, y + h]
-            ))
-        return obstacles
-
-    def _build_border_obstacles(self):
-        """Build border obstacles as 4 thin rectangles along the edges of the table."""
-        w = self.table_width
-        h = self.table_height
-        t = 0.01  # thin wall thickness
-
-        borders = [
-            # Bottom wall
-            ObstaclePolygon([0.0, w, w, 0.0], [0.0, 0.0, -t, -t]),
-            # Top wall
-            ObstaclePolygon([0.0, w, w, 0.0], [h, h, h + t, h + t]),
-            # Left wall
-            ObstaclePolygon([0.0, 0.0, -t, -t], [0.0, h, h, 0.0]),
-            # Right wall
-            ObstaclePolygon([w, w, w + t, w + t], [0.0, h, h, 0.0]),
-        ]
-        return borders
-
-    def _build_enemy_obstacle(self, enemy_pose: Pose2D):
-        """Build a square obstacle around the enemy position."""
-        r = self.enemy_robot_radius
-        cx, cy = enemy_pose.x, enemy_pose.y
-        return ObstaclePolygon(
-            [cx - r, cx + r, cx + r, cx - r],
-            [cy - r, cy - r, cy + r, cy + r]
-        )
-
-    def _get_all_obstacles(self):
-        """Get all obstacles: static borders + zones + elements + dynamic enemy."""
-        obstacles = list(self.static_obstacles)
-        obstacles.extend(self._build_zone_obstacles())
-        obstacles.extend(self._build_element_obstacles())
-        if self.latest_enemy_pose is not None:
-            obstacles.append(self._build_enemy_obstacle(self.latest_enemy_pose))
-        return obstacles
-
-    def _filter_outside_table(self, obstacles):
-        """Remove obstacles whose bounding box does not overlap the table area.
-
-        Uses a margin equal to robot_radius so C-space expansion near the border
-        is never accidentally discarded.
-        """
-        margin = self.robot_radius
-        filtered = []
-        for obs in obstacles:
-            xs = obs.x_list[:-1]  # skip closing duplicate vertex
-            ys = obs.y_list[:-1]
-            if (max(xs) >= -margin and min(xs) <= self.table_width  + margin and
-                    max(ys) >= -margin and min(ys) <= self.table_height + margin):
-                filtered.append(obs)
-        return filtered
-
-    def _get_static_obstacles(self):
-        """Static obstacles: table borders + zones + nut_box elements (cached by the planner)."""
-        obstacles = list(self.static_obstacles)
-        obstacles.extend(self._build_zone_obstacles())
-        obstacles.extend(self._build_element_obstacles())
-        return self._filter_outside_table(obstacles)
-
-    def _get_dynamic_obstacles(self):
-        """Dynamic obstacles: enemy robot (changes every call)."""
-        if self.latest_enemy_pose is not None:
-            return self._filter_outside_table(
-                [self._build_enemy_obstacle(self.latest_enemy_pose)]
-            )
-        return []
-
-    def _is_robot_in_forbidden_area(self):
-        """Check if the robot is inside any expanded obstacle polygon (with margin).
-        
-        Uses a smaller expansion than path planning so the robot must be significantly
-        inside the C-space boundary before triggering the emergency stop.
-        """
+    def _is_robot_in_forbidden_area(self) -> bool:
         if self.robot_pose is None:
             return False
-        obstacles = self._get_all_obstacles()
-        expanded_obstacles = self.forbidden_area_checker.build_expanded_obstacles(obstacles)
-        for obs in expanded_obstacles:
-            if VisibilityRoadMap._point_in_polygon(self.robot_pose.x, self.robot_pose.y, obs):
-                return True
-        return False
+        return self.obstacle_manager.is_point_in_forbidden_area(self.robot_pose.x, self.robot_pose.y)
 
     def _find_nearest_exit_point(self):
-        """Find the nearest point outside all expanded obstacles by projecting onto polygon edges."""
-        obstacles = self._get_all_obstacles()
-        expanded_obstacles = self.forbidden_area_checker.build_expanded_obstacles(obstacles)
-
-        best_point = None
-        best_dist = float('inf')
-
-        for obs in expanded_obstacles:
-            if not VisibilityRoadMap._point_in_polygon(self.robot_pose.x, self.robot_pose.y, obs):
-                continue
-            # Find closest point on polygon boundary and move slightly outside
-            for i in range(len(obs.x_list) - 1):
-                ax, ay = obs.x_list[i], obs.y_list[i]
-                bx, by = obs.x_list[i + 1], obs.y_list[i + 1]
-                # Project robot position onto edge segment
-                dx, dy = bx - ax, by - ay
-                seg_len_sq = dx * dx + dy * dy
-                if seg_len_sq < 1e-9:
-                    continue
-                t = max(0.0, min(1.0, ((self.robot_pose.x - ax) * dx + (self.robot_pose.y - ay) * dy) / seg_len_sq))
-                proj_x = ax + t * dx
-                proj_y = ay + t * dy
-                # Move slightly outward (away from polygon center)
-                nx, ny = -dy, dx  # normal to edge
-                norm = (nx * nx + ny * ny) ** 0.5
-                if norm < 1e-9:
-                    continue
-                nx, ny = nx / norm, ny / norm
-                # Choose direction pointing away from polygon interior
-                cx = sum(obs.x_list[:-1]) / (len(obs.x_list) - 1)
-                cy = sum(obs.y_list[:-1]) / (len(obs.y_list) - 1)
-                if nx * (proj_x - cx) + ny * (proj_y - cy) < 0:
-                    nx, ny = -nx, -ny
-                exit_x = proj_x + nx * 0.03  # 3cm outside
-                exit_y = proj_y + ny * 0.03
-                dist = ((self.robot_pose.x - exit_x) ** 2 + (self.robot_pose.y - exit_y) ** 2) ** 0.5
-                if dist < best_dist:
-                    best_dist = dist
-                    best_point = Pose2D(x=exit_x, y=exit_y, theta=self.robot_pose.theta)
-
-        return best_point
+        """Return exit Pose2D (preserving robot theta) or None."""
+        result = self.obstacle_manager.find_nearest_exit_point(self.robot_pose.x, self.robot_pose.y)
+        if result is None:
+            return None
+        exit_x, exit_y = result
+        return Pose2D(x=exit_x, y=exit_y, theta=self.robot_pose.theta)
 
     # ==================================== Path Planning ==========================================
 
@@ -386,8 +198,8 @@ class PlannerNode(Node):
         Returns:
             list[Pose2D] or None: list of waypoints from start to goal, or None if no path found.
         """
-        static_obstacles  = self._get_static_obstacles()
-        dynamic_obstacles = self._get_dynamic_obstacles()
+        static_obstacles  = self.obstacle_manager.get_static_obstacles()
+        dynamic_obstacles = self.obstacle_manager.get_dynamic_obstacles()
 
         self.get_logger().debug(f'Computing path from ({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f}) '
                                 f'with {len(static_obstacles)} static + {len(dynamic_obstacles)} dynamic obstacles')
@@ -420,8 +232,9 @@ class PlannerNode(Node):
         self.robot_pose = Pose2D(pose=msg.pose.pose)
 
     def enemy_odom_callback(self, msg):
-        self.latest_enemy_pose = Pose2D(pose=msg.pose.pose)
-        self.get_logger().info(f'Enemy pose received: ({self.latest_enemy_pose.x:.2f}, {self.latest_enemy_pose.y:.2f})', throttle_duration_sec=2.)
+        pose = Pose2D(pose=msg.pose.pose)
+        self.obstacle_manager.set_enemy_pose(pose.x, pose.y)
+        self.get_logger().info(f'Enemy pose received: ({pose.x:.2f}, {pose.y:.2f})', throttle_duration_sec=2.)
 
     # ==================================== Action Server Callbacks ==========================================
 
@@ -630,8 +443,8 @@ class PlannerNode(Node):
         Canva().clear()
 
         # Draw obstacles
-        obstacles = self._get_all_obstacles()
-        self.get_logger().debug(f'Drawing {len(obstacles)} obstacles (enemy_pose={self.latest_enemy_pose is not None})')
+        obstacles = self.obstacle_manager.get_all_obstacles()
+        self.get_logger().debug(f'Drawing {len(obstacles)} obstacles')
         for obs in obstacles:
             points = list(zip(obs.x_list, obs.y_list))
             Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.RED), frame_id='odom')

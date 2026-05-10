@@ -1,0 +1,39 @@
+################################################################################
+# Minimal world-state fixture used by test_obstacle_manager.py.
+# Table: 3.0m x 2.0m
+################################################################################
+
+elements:
+  - id: box_1
+    type: nut_box
+    x: 1.5
+    y: 1.0
+    theta_deg: 0.0
+
+  - id: box_2
+    type: nut_box
+    x: 2.0
+    y: 0.5
+    theta_deg: 90.0
+
+zones:
+  - id: forbidden_zone_1
+    type: forbidden_zone
+    x: 1.0
+    y: 0.5
+    width: 0.5
+    height: 0.5
+
+  - id: placement_zone_1
+    type: placement_zone
+    x: 0.1
+    y: 0.1
+    width: 0.2
+    height: 0.2
+
+  - id: secure_zone_1
+    type: secure_zone
+    x: 2.0
+    y: 1.5
+    width: 0.5
+    height: 0.3
