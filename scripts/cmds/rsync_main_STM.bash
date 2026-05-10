@@ -33,7 +33,7 @@ cmake .. \
   -DCMAKE_CXX_FLAGS="-mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb" \
   -DCMAKE_ASM_FLAGS="-mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb"
 
-make -j"$(nproc)"
+make -j"$(nproc)" || { echo "\n❌ Build failed, aborting."; exit 1; }
 cd -
 
 
