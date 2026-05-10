@@ -9,7 +9,6 @@ from champi_interfaces.action import Navigate
 from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.timeout import Timeout
 from champi_navigation.obstacle_manager import ObstacleManager
-from champi_navigation.planning_feedback import ComputePathResult
 from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap
 import champi_navigation.goal_checker as goal_checker
 
@@ -39,7 +38,7 @@ class StepOutput:
     send_stop: bool = False
 
     # Feedback / viz data (only meaningful when status is RUNNING or NO_PATH)
-    path_result: Optional[ComputePathResult] = None
+    path_result: Optional[Navigate.Feedback] = None
     remaining_path: list[Pose2D] = field(default_factory=list)
     max_linear_speed: float = 0.0
 
@@ -226,7 +225,7 @@ class Planner:
         if robot_pose is None:
             return StepOutput(
                 status=PlannerStatus.INITIALIZING,
-                path_result=ComputePathResult.INITIALIZING,
+                path_result=Navigate.Feedback.INTITIALIZING,
             )
 
         # 3. Cancelled
@@ -300,7 +299,7 @@ class Planner:
         if self._waypoints is None or len(self._waypoints) < 2:
             return StepOutput(
                 status=PlannerStatus.NO_PATH,
-                path_result=ComputePathResult.NO_PATH_FOUND,
+                path_result=Navigate.Feedback.NO_PATH_FOUND,
                 max_linear_speed=self._goal.max_linear_speed,
             )
 
@@ -335,9 +334,9 @@ class Planner:
 
         # 13. Normal running tick
         path_result = (
-            ComputePathResult.SUCCESS_STRAIGHT
+            Navigate.Feedback.SUCCESS_STRAIGHT
             if len(self._waypoints) == 2
-            else ComputePathResult.SUCCESS_AVOIDANCE
+            else Navigate.Feedback.SUCCESS_AVOIDANCE
         )
         remaining_path = [robot_pose] + self._waypoints[self._waypoint_idx:]
 

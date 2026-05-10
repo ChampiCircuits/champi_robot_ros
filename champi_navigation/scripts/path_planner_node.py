@@ -70,7 +70,6 @@ class PlannerNode(Node):
         super().__init__('planner_node')
 
         self.config = self._load_parameters()
-        self._print_parameters()
 
         # Subscribers
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
@@ -144,11 +143,6 @@ class PlannerNode(Node):
             world_state_file=self.declare_parameter('world_state_file', 'default.json').value,
         )
 
-    def _print_parameters(self) -> None:
-        self.get_logger().info('Path Planner started with the following parameters:')
-        self.get_logger().info(f'loop_period: {self.config.loop_period}')
-        self.get_logger().info(f'waypoint_tolerance: {self.config.waypoint_tolerance}')
-        self.get_logger().info(f'robot_radius: {self.config.robot_radius}')
 
     def _setup_diagnostics(self) -> None:
         updater = diagnostic_updater.Updater(self)

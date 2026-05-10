@@ -26,7 +26,6 @@ from champi_navigation.planner import (
     PlanningMetrics,
     _ForbiddenAreaPhase,
 )
-from champi_navigation.planning_feedback import ComputePathResult
 from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap
 
 # ---------------------------------------------------------------------------
@@ -174,7 +173,7 @@ class TestInitializing:
         planner.start(_make_goal())
         out = planner.step(None)
         assert out.status == PlannerStatus.INITIALIZING
-        assert out.path_result == ComputePathResult.INITIALIZING
+        assert out.path_result == Navigate.Feedback.INTITIALIZING
 
     def test_no_ctrl_goal_while_initializing(self, planner: Planner):
         planner.start(_make_goal())
@@ -276,8 +275,8 @@ class TestRunning:
         out = planner.step(_pose(0.5, 1.5))
         if out.status == PlannerStatus.RUNNING:
             assert out.path_result in (
-                ComputePathResult.SUCCESS_STRAIGHT,
-                ComputePathResult.SUCCESS_AVOIDANCE,
+                Navigate.Feedback.SUCCESS_STRAIGHT,
+                Navigate.Feedback.SUCCESS_AVOIDANCE,
             )
 
     def test_running_remaining_path_starts_with_robot_pose(self, planner: Planner):
@@ -328,7 +327,7 @@ class TestNoPath:
         assert out.status in (PlannerStatus.NO_PATH, PlannerStatus.RUNNING)
         # If NO_PATH, verify fields
         if out.status == PlannerStatus.NO_PATH:
-            assert out.path_result == ComputePathResult.NO_PATH_FOUND
+            assert out.path_result == Navigate.Feedback.NO_PATH_FOUND
             assert out.ctrl_goal is None
             assert not out.send_stop
 
