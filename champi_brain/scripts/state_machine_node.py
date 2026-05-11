@@ -286,7 +286,7 @@ class StateMachineNode(Node):
         
         # Handle tirette in init state
         if self.tirette_released and self.state_machine.get_state() == StateMachine.STATE_INIT:
-            self.get_logger().warn('🏁 TIRETTE RELEASED - Starting match!')
+            self.get_logger().warn('🏁 TIRETTE RELEASED - Starting match!', throttle_duration_sec=5.)
             self.state_machine.notify_tirette_released()
     
     def _on_odometry(self, msg: Odometry) -> None:
@@ -554,7 +554,7 @@ class StateMachineNode(Node):
         self.action_executor.move_to(x, y, theta_deg, motion)
 
     def _on_auto_placement_completed(self) -> None:
-        time.sleep(2)
+        self.get_logger().info('✅ Auto-placement completed successfully!')
         if self.state_machine:
             self.state_machine.notify_config_chosen()
 

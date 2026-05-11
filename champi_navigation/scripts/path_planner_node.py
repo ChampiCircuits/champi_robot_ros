@@ -483,7 +483,8 @@ class PlannerNode(Node):
             # Check if the timeout is reached
             if self.timeout.is_elapsed():
                 self.get_logger().warn(f'[NAV] execute_callback: TIMEOUT reached! Aborting goal.')
-                goal_handle.abort(Navigate.Result(success=False, message='Timeout!'))
+                goal_handle.abort()
+                return Navigate.Result(success=False, message='Timeout!')
                 self.timeout.reset()
                 self.exec_time_measurer.stop()
                 continue

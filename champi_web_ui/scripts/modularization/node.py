@@ -8,9 +8,22 @@ from champi_interfaces.msg import STMState, CtrlGoal
 from champi_interfaces.srv import SetAutoPlacementEnabled
 from std_msgs.msg import Int8, Empty
 
-from enum import Enum
+from enum import Enum, IntEnum
 from diagnostic_msgs.msg import DiagnosticArray
 from std_msgs.msg import String
+
+
+class ActuatorCommand(IntEnum):
+    RESET_ACTUATORS = 0
+    STOP_ALL_MOTORS = 1
+    ENABLE_ALL_MOTORS = 2
+    GET_READY = 3
+    THERMOMETER_LOWER_SERVO = 4
+    THERMOMETER_RAISE_SERVO = 5
+    LOWER_LEFT_ARM = 6
+    LET_GO_ELEMENTS_LEFT_ARM = 7
+    LOWER_RIGHT_ARM = 8
+    LET_GO_ELEMENTS_RIGHT_ARM = 9
 
 
 class PagesNode(Node):
@@ -112,35 +125,9 @@ class PagesNode(Node):
         self.c += 1
         self.get_logger().info(f"{self.c} inits of the singleton node")
 
-    def send_actuator_action(self, action):
+    def send_actuator_action(self, action: ActuatorCommand):
         msg = Int8()
-
-        if action == 'RESET_ACTUATORS':
-            msg.data = 0
-        elif action == 'STOP_ALL_MOTORS':
-            msg.data = 1
-        elif action == 'ENABLE_ALL_MOTORS':
-            msg.data = 2
-        elif action == 'GET_READY':
-            msg.data = 3
-        elif action == 'THERMOMETER_LOWER_SERVO':
-            msg.data = 4
-        elif action == 'THERMOMETER_RAISE_SERVO':
-            msg.data = 5
-        elif action == 'TAKE_2_BOXES':
-            msg.data = 6
-        elif action == 'BRING_2_BOXES_ON_TOP':
-            msg.data = 7
-        elif action == 'PUT_2_LAST_BOXES_ON_THE_GROUND':
-            msg.data = 8
-        elif action == 'PREPARE_TOP_PUSHER':
-            msg.data = 9
-        elif action == 'GRAB_AND_SORT_2_BOXES_FROM_LIFT':
-            msg.data = 10
-        elif action == 'PUSH_2_BOXES_OUT':
-            msg.data = 11
-        elif action == 'OPEN_EXIT_RAMP':
-            msg.data = 12
+        msg.data = int(action)
         self.actuators_ctrl_pub.publish(msg)
 
     def update(self):

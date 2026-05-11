@@ -67,6 +67,7 @@ class StateMachine:
         self.strategy: List[Action] = []
         self.current_action: Optional[Action] = None
         self.last_dispatched_action: Optional[Action] = None
+        self.current_group: Optional[str] = None
         self.canceled_groups: set[str] = set()
         
         # World state (updated by ROS node)
@@ -249,7 +250,7 @@ class StateMachine:
             return
             
         if not self._config_chosen:
-            self.logger.info("Waiting for user to choose configuration...")
+            self.logger.info("Waiting for user to choose configuration (or auto-placement)...", throttle_duration_sec=1.)
             return
                     
         if not self.strategy_config:

@@ -45,6 +45,11 @@ void FourSuctionCup::getReadyCups()
 
 void FourSuctionCup::letGoCups(uint8_t suction_cups_activation_for_request)
 {
+    // // MSB = cup 0: reverse the 4 bits so bit 0 -> cup 0, bit 1 -> cup 1, etc.
+    // suction_cups_activation_for_request = ((suction_cups_activation_for_request & 0b0001) << 3) |
+    //                                       ((suction_cups_activation_for_request & 0b0010) << 1) |
+    //                                       ((suction_cups_activation_for_request & 0b0100) >> 1) |
+    //                                       ((suction_cups_activation_for_request & 0b1000) >> 3);
     LOG_INFO("4cup", "letGoCups mask=0x%02X: cup0=%s cup1=%s cup2=%s cup3=%s",
         suction_cups_activation_for_request,
         (suction_cups_activation_for_request & 0b0001) ? "RETURN" : "LOW",

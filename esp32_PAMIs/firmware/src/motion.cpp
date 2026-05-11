@@ -660,7 +660,12 @@ void motionTick(uint32_t now_us) {
 
                         if (new_ramp_phase == DriveRampPhase::DECEL) {
                             g_current_drive_speed_mm_s -= DECEL_MM_S2 * dt_s;
-                            if (g_current_drive_speed_mm_s < 0.0f) { g_current_drive_speed_mm_s = 0.0f; }
+                            if (g_current_drive_speed_mm_s < 0.0f) {
+                                g_current_drive_speed_mm_s = 0.0f;
+                                // Snap to segment end: numerical integration stops when speed=0,
+                                // so force completion rather than stalling just short of the target.
+                                g_drive_distance_traveled_mm = g_drive_segment_len_mm;
+                            }
                         } else if (new_ramp_phase == DriveRampPhase::ACCEL) {
                             g_current_drive_speed_mm_s += ACCEL_MM_S2 * dt_s;
                             if (g_current_drive_speed_mm_s > g_drive_speed_mm_s) {

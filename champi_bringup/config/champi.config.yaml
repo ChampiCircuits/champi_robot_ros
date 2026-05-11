@@ -45,13 +45,13 @@ hardware_interface:
         max_deceleration_angular: 20.0 # rad/s^2
 
       otos_config: # You have to restart node AND STM to apply the otos config (feature, not bug :))
-        linear_scalar: 0.99 # [0.872 - 1.127]
-        angular_scalar: 0.993 # [0.872 - 1.127]
+        linear_scalar: 1.02985 # [0.872 - 1.127]
+        angular_scalar: 0.9899 # [0.872 - 1.127]
 
 holo_teleop_joy_node:
   ros__parameters:
-    max_linear_speed: 0.5 # m/s
-    max_angular_speed: 3.0 # rad/s
+    max_linear_speed: 0.1 # m/s
+    max_angular_speed: 1.0 # rad/s
 
 twist_mux:
   ros__parameters:
@@ -89,13 +89,13 @@ enemy_tracker:
   ros__parameters:
     crop_box:
       x_min: 0.1 # m
-      x_max: 2.9 # m
+      x_max: 1.4 # m # TODO 2.9
       y_min: 0.1 # m
       y_max: 1.9 # m
 
 costmap_updater:
   ros__parameters:
-    grid_width: 3.0 # m
+    grid_width: 3.0 # m # TODO NODE TO REMOVE
     grid_height: 2.0 # m
     grid_resolution: 0.05 # m/cell
     robot_radius: 0.18 # m = 0.16 +0.02
@@ -135,7 +135,7 @@ path_planner:
     debug: true
     robot_radius: 0.18 # m
     enemy_robot_radius: 0.22 # m
-    table_width: 3.0 # m (x dimension)
+    table_width: 1.5 # m (x dimension)
     table_height: 2.0 # m (y dimension)
     forbidden_area_wait_time: 1.0 # s. Time to wait when robot enters a forbidden area before exiting
     forbidden_area_margin: 0.05 # m. Margin before triggering forbidden area stop

@@ -18,7 +18,7 @@ namespace devices
             // LEFT_ARM_1_SERVO_ID,
             // LEFT_ARM_2_SERVO_ID,
             // LEFT_ARM_3_SERVO_ID,TODO remettre le bon nombre
-
+            THERMO_SERVO_ID,
             RIGHT_ARM_0_SERVO_ID,
             RIGHT_ARM_1_SERVO_ID,
             RIGHT_ARM_2_SERVO_ID,
@@ -208,9 +208,9 @@ int SCServosApp_Init()
     LOG_INFO("scs", "Initializing servos... (blocking until all servos are found)");
     servos = SCServos(&huart10);
     // find_ids(0, 24);
+    // while (1) {}
     // test_angle(12, 200);
     // sweep_angle_test(5);
-    // osDelay(10000000);
     
     // while (1)
     {

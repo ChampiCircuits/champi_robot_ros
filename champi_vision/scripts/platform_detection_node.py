@@ -129,7 +129,7 @@ class NutBoxesDetectionNode(Node):
             self._publish_info_image(info_image)
             t_pub = time.time() - t_pub_start
             t_total = time.time() - t_start
-            self.get_logger().info(f"⏱️ ArUco: {t_aruco*1000:.1f}ms | Publish: {t_pub*1000:.1f}ms | Total: {t_total*1000:.1f}ms")
+            # self.get_logger().info(f"⏱️ ArUco: {t_aruco*1000:.1f}ms | Publish: {t_pub*1000:.1f}ms | Total: {t_total*1000:.1f}ms")
             return
 
         # Filter for nutbox IDs only
@@ -192,7 +192,7 @@ class NutBoxesDetectionNode(Node):
             self._publish_info_image(info_image)
             t_pub = time.time() - t_pub_start
             t_total = time.time() - t_start
-            self.get_logger().info(f"⏱️ ArUco: {t_aruco*1000:.1f}ms | Publish: {t_pub*1000:.1f}ms | Total: {t_total*1000:.1f}ms")
+            # self.get_logger().info(f"⏱️ ArUco: {t_aruco*1000:.1f}ms | Publish: {t_pub*1000:.1f}ms | Total: {t_total*1000:.1f}ms")
             return
 
         # Sort by pixel x (left to right in image)
@@ -238,10 +238,10 @@ class NutBoxesDetectionNode(Node):
         t_pub = time.time() - t_pub_start
         t_total = time.time() - t_start
 
-        self.get_logger().info(
-            f"✅ {len(detections)} tags | center=({center_x:.3f}, {center_y:.3f})m | "
-            f"colors={[d[4] for d in detections[:4]]} | ⏱️ ArUco: {t_aruco*1000:.1f}ms | Publish: {t_pub*1000:.1f}ms | Total: {t_total*1000:.1f}ms"
-        )
+        # self.get_logger().debug(
+        #     f"✅ {len(detections)} tags | center=({center_x:.3f}, {center_y:.3f})m | "
+        #     f"colors={[d[4] for d in detections[:4]]} | ⏱️ ArUco: {t_aruco*1000:.1f}ms | Publish: {t_pub*1000:.1f}ms | Total: {t_total*1000:.1f}ms"
+        # )
 
     # ================================================================
     # HELPERS

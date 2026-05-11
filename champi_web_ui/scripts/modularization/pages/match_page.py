@@ -23,17 +23,17 @@ auto_placement_checkbox, auto_placement_status_label = None, None
 src = '~/champi_ws/src/champi_robot_ros/champi_web_ui/scripts/modularization/resources/table_2026_with_annotations.drawio.png'
 
 def ready_to_launch_match():
-    enabled = auto_placement_checkbox.value if auto_placement_checkbox is not None else False
-    ros_node.set_auto_placement_enabled(enabled)
     ros_node.ready_to_start_match = True
     on_strategy_selected()
-    if enabled:
-        ui.notify('Auto-placement lancé. Suivre le statut ci-dessous.', color='warning')
-    else:
-        container.clear()
-        with container:
-            ui.image(src).style('width:75%')
-        ui.navigate.to('/in_match')
+    container.clear()
+    with container:
+        ui.image(src).style('width:75%')
+    ui.navigate.to('/in_match')
+
+def trigger_auto_placement():
+    ros_node.set_auto_placement_enabled(True)
+    on_strategy_selected()  # republish strategy so the brain loads it with auto_placement enabled and calls start()
+    ui.notify('Auto-placement lancé. Suivre le statut ci-dessous.', color='warning')
 
 def zone_chosen(args: events.GenericEventArguments):
     id = args.args['element_id']
@@ -137,11 +137,12 @@ def create() -> None:
 
                             with ui.step('Choisir la strategie'):
                                 available_strategies = get_available_strategies()
-                                global radio_strategy_selection, auto_placement_checkbox, auto_placement_status_label
+                                global radio_strategy_selection, auto_placement_status_label
                                 radio_strategy_selection = ui.radio(available_strategies, value='__strat_0_main_2026.py')
-                                auto_placement_checkbox = ui.checkbox('Auto robot placement', value=False)
+                                ui.button('Lancer auto-placement', on_click=trigger_auto_placement)
                                 auto_placement_status_label = ui.label('Statut auto-placement: inactif')
                                 ui.timer(0.2, update_auto_placement_status)
+                                
                                 with ui.stepper_navigation():
                                     btn_next = ui.button('Prêt !! 😬', on_click=ready_to_launch_match)
                                     btn_next.bind_enabled_from(radio_strategy_selection, 'value')
@@ -218,11 +219,11 @@ def update_auto_placement_status():
 
     auto_placement_status_label.text = labels.get(state, f'Statut auto-placement: {state}')
 
-    if state == 'init':
-        container.clear()
-        with container:
-            ui.image(src).style('width:75%')
-        ui.navigate.to('/in_match')
+    # if state == 'init': # change automatically to the match page when auto-placement is done
+    #     container.clear()
+    #     with container:
+    #         ui.image(src).style('width:75%')
+    #     ui.navigate.to('/in_match')
 
 def reset_all():
     ros_node.reset_all()
