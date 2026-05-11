@@ -505,8 +505,3 @@ class ObstaclePolygon:
 
         self.x_list.append(self.x_list[0])
         self.y_list.append(self.y_list[0])
-
-
-
-if __name__ == '__main__':
-    main()
