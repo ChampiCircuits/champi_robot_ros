@@ -151,6 +151,11 @@ def create() -> None:
                             ui.button('Abaisser [B↓]', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.LOWER_RIGHT_ARM)).props('color=orange')
                             ui.button('Lâcher [B↑]', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.LET_GO_ELEMENTS_RIGHT_ARM)).props('color=orange')
 
+                        ui.label('Pompes').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        with ui.row().classes('q-gutter-sm'):
+                            ui.button('ON', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.PUMPS_ON)).props('color=green')
+                            ui.button('OFF', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.PUMPS_OFF)).props('color=red')
+
                         ui.label('Debug').classes('text-subtitle2 text-grey-6 q-mt-sm')
                         with ui.row().classes('q-gutter-sm'):
                             ui.button('GET READY', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.GET_READY)).props('color=green')

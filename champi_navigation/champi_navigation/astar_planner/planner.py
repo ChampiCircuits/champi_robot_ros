@@ -9,7 +9,17 @@ import diagnostic_msgs
 
 
 from champi_navigation.costmap_astar import CostmapAStar
-from champi_navigation.planning_feedback import ComputePathResult
+from champi_interfaces.action import Navigate
+
+_COMPUTE_PATH_RESULT_NAME = {
+    Navigate.Feedback.SUCCESS_STRAIGHT: 'SUCCESS_STRAIGHT',
+    Navigate.Feedback.START_NOT_IN_COSTMAP: 'START_NOT_IN_COSTMAP',
+    Navigate.Feedback.GOAL_NOT_IN_COSTMAP: 'GOAL_NOT_IN_COSTMAP',
+    Navigate.Feedback.GOAL_IN_OCCUPIED_CELL: 'GOAL_IN_OCCUPIED_CELL',
+    Navigate.Feedback.NO_PATH_FOUND: 'NO_PATH_FOUND',
+    Navigate.Feedback.SUCCESS_AVOIDANCE: 'SUCCESS_AVOIDANCE',
+    Navigate.Feedback.INTITIALIZING: 'INTITIALIZING',
+}
 
 from icecream import ic
 import numpy as np
@@ -74,7 +84,7 @@ class PathPlanner:
         self.costmap_path_finder = CostmapAStar(width, height)
 
 
-    def compute_path(self, robot_pose: Pose, goal_pose: Pose, costmap) -> tuple[list[Pose], ComputePathResult]:
+    def compute_path(self, robot_pose: Pose, goal_pose: Pose, costmap) -> tuple[list[Pose], int]:
         """Computes the path from robot_pose to goal_pose, avoiding obstacles in the costmap.
 
         Args:
@@ -83,7 +93,7 @@ class PathPlanner:
             costmap (_type_): Costmap: 2D numpy array, where 0 is free space and 100 is occupied space
 
         Returns:
-            tuple[list[Pose], ComputePathResult]: Path as a list of Pose, and the result of the computation.
+            tuple[list[Pose], int]: Path as a list of Pose, and the result of the computation (Navigate.Feedback byte constant).
             There is 2 success results: SUCCESS_STRAIGHT and SUCCESS_AVOIDANCE. But other results may also
             lead to a valid path: in case of GOAL_IN_OCCUPIED_CELL and NO_PATH_FOUND, a line straight to the goal,
             stopping at the first obstacle, is returned.
@@ -100,19 +110,19 @@ class PathPlanner:
 
         # If start is not in the costmap, return
         if not (0 <= start[0] < costmap.shape[1] and 0 <= start[1] < costmap.shape[0]):
-            self.latest_result = ComputePathResult.START_NOT_IN_COSTMAP
-            return None, ComputePathResult.START_NOT_IN_COSTMAP
+            self.latest_result = Navigate.Feedback.START_NOT_IN_COSTMAP
+            return None, Navigate.Feedback.START_NOT_IN_COSTMAP
         
         # If goal is not in the costmap, return
         if not (0 <= goal[0] < costmap.shape[1] and 0 <= goal[1] < costmap.shape[0]):
-            self.latest_result = ComputePathResult.GOAL_NOT_IN_COSTMAP
-            return None, ComputePathResult.GOAL_NOT_IN_COSTMAP
+            self.latest_result = Navigate.Feedback.GOAL_NOT_IN_COSTMAP
+            return None, Navigate.Feedback.GOAL_NOT_IN_COSTMAP
 
         # If goal is in an occupied cell, no A* will be performed but we can still try to go straight until obstacle
         if costmap[goal[1], goal[0]] != 0:
             path_poses = self.compute_path_until_obstacle(robot_pose, goal_pose, costmap) # Note: returns None if no path found
-            self.latest_result = ComputePathResult.GOAL_IN_OCCUPIED_CELL
-            return path_poses, ComputePathResult.GOAL_IN_OCCUPIED_CELL
+            self.latest_result = Navigate.Feedback.GOAL_IN_OCCUPIED_CELL
+            return path_poses, Navigate.Feedback.GOAL_IN_OCCUPIED_CELL
         
         # Call update_costmap() needed before costmap_path_finder.neighbors() or costmap_path_finder.astar()
         self.costmap_path_finder.update_costmap(costmap)
@@ -133,8 +143,8 @@ class PathPlanner:
         # If line is free, just go straight (no need to pathfind, we save time)
         if is_line_free(start, goal, costmap, check_start=True):
             path_poses = [robot_pose, goal_pose]
-            self.latest_result = ComputePathResult.SUCCESS_STRAIGHT
-            return path_poses, ComputePathResult.SUCCESS_STRAIGHT
+            self.latest_result = Navigate.Feedback.SUCCESS_STRAIGHT
+            return path_poses, Navigate.Feedback.SUCCESS_STRAIGHT
 
         # Compute the path
         path = self.costmap_path_finder.astar(start, goal)
@@ -142,8 +152,8 @@ class PathPlanner:
         # No path found
         if path is None:
             path_poses = self.compute_path_until_obstacle(robot_pose, goal_pose, costmap)
-            self.latest_result = ComputePathResult.NO_PATH_FOUND
-            return path_poses, ComputePathResult.NO_PATH_FOUND
+            self.latest_result = Navigate.Feedback.NO_PATH_FOUND
+            return path_poses, Navigate.Feedback.NO_PATH_FOUND
 
         path = list(path)
 
@@ -170,8 +180,8 @@ class PathPlanner:
         path_poses[0] = robot_pose
         path_poses[-1] = goal_pose
 
-        self.latest_result = ComputePathResult.SUCCESS_AVOIDANCE
-        return path_poses, ComputePathResult.SUCCESS_AVOIDANCE
+        self.latest_result = Navigate.Feedback.SUCCESS_AVOIDANCE
+        return path_poses, Navigate.Feedback.SUCCESS_AVOIDANCE
 
 
     def find_closest_free_cell(self, start_row, start_col, costmap):
@@ -356,12 +366,12 @@ class PathPlanner:
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, 'Initialized, no planning done yet')
             stat.add('Latest ComputePathResult', 'N/A')
 
-        elif self.latest_result == ComputePathResult.SUCCESS_STRAIGHT or self.latest_result == ComputePathResult.SUCCESS_AVOIDANCE:
+        elif self.latest_result == Navigate.Feedback.SUCCESS_STRAIGHT or self.latest_result == Navigate.Feedback.SUCCESS_AVOIDANCE:
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK, "Initialized, planning OK")
-            stat.add('Latest ComputePathResult', self.latest_result.name)
+            stat.add('Latest ComputePathResult', _COMPUTE_PATH_RESULT_NAME.get(self.latest_result, str(self.latest_result)))
         else:
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, "Initialized, planning NOK")
-            stat.add('Latest ComputePathResult', self.latest_result.name)
+            stat.add('Latest ComputePathResult', _COMPUTE_PATH_RESULT_NAME.get(self.latest_result, str(self.latest_result)))
     
         return stat
         

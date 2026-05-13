@@ -8,7 +8,7 @@ namespace Config {
 // GPIO MAPPING
 // switches
 constexpr int TEAM_SWITCH_PIN = 26; //D26
-constexpr int TIRETTE_PIN = 25;     //D25
+constexpr int TIRETTE_PIN = 25;     //D25 --> TODO not INPUT ?
 // ultrasonic sensor
 constexpr int US_TRIG_PIN = 18;  //D18 // inversed in schematic with ECHO
 constexpr int US_ECHO_PIN = 5; //D5
@@ -37,7 +37,7 @@ constexpr float MAP_WIDTH_MM = 3000.0f;
 // Obstacle sensing.
 constexpr float OBSTACLE_STOP_MM = 40.0f;
 constexpr float OBSTACLE_RESUME_MM = 50.0f;
-constexpr uint32_t US_TIMEOUT_US = 25000;
+constexpr uint32_t US_TIMEOUT_US = 5000;
 constexpr uint8_t MAX_US_INVALID_BEFORE_BLOCK = 5;
 
 // Telemetry cadence.

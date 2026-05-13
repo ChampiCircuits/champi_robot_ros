@@ -92,6 +92,7 @@ void ledStatusApply(const MotionState state, const Team latched_team) {
         case MotionState::RUNNING:
             {
                 setLedColor(LedColor::GREEN);
+                break;
             }
         case MotionState::PAUSED_OBSTACLE:
             {

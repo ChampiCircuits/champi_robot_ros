@@ -11,6 +11,10 @@ from std_msgs.msg import Int8, Empty
 from enum import Enum, IntEnum
 from diagnostic_msgs.msg import DiagnosticArray
 from std_msgs.msg import String
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
+import base64
 
 
 class ActuatorCommand(IntEnum):
@@ -21,9 +25,13 @@ class ActuatorCommand(IntEnum):
     THERMOMETER_LOWER_SERVO = 4
     THERMOMETER_RAISE_SERVO = 5
     LOWER_LEFT_ARM = 6
-    LET_GO_ELEMENTS_LEFT_ARM = 7
-    LOWER_RIGHT_ARM = 8
-    LET_GO_ELEMENTS_RIGHT_ARM = 9
+    GET_READY_LEFT_ARM = 7
+    LET_GO_ELEMENTS_LEFT_ARM = 8
+    LOWER_RIGHT_ARM = 9
+    GET_READY_RIGHT_ARM = 10
+    LET_GO_ELEMENTS_RIGHT_ARM = 11
+    PUMPS_ON = 12
+    PUMPS_OFF = 13
 
 
 class PagesNode(Node):
@@ -61,6 +69,14 @@ class PagesNode(Node):
                 self.goal_pose_callback,
                 10)
             self.latest_goal_position: tuple[float, float] | None = None
+
+            self.cv_bridge = CvBridge()
+            self.latest_viz_image_b64 = None
+            self.sub_viz_image = self.create_subscription(
+                Image,
+                '/viz/image_detection',
+                self.viz_image_callback,
+                10)
 
             self.sub_stm_state = self.create_subscription(
                 STMState,
@@ -106,6 +122,11 @@ class PagesNode(Node):
             self.reset_state_machine_pub =  self.create_publisher(
                 Empty,
                 '/reset_state_machine',
+                10
+            )
+            self.match_ready_pub = self.create_publisher(
+                Empty,
+                '/match_ready',
                 10
             )
             self.stop_match_pub = self.create_publisher(
@@ -181,6 +202,14 @@ class PagesNode(Node):
             msg.pose.position.y,
         )
 
+    def viz_image_callback(self, msg: Image):
+        try:
+            cv_img = self.cv_bridge.imgmsg_to_cv2(msg, "bgr8")
+            _, buffer = cv2.imencode('.jpg', cv_img)
+            self.latest_viz_image_b64 = 'data:image/jpeg;base64,' + base64.b64encode(buffer).decode('utf-8')
+        except Exception as e:
+            self.get_logger().error(f"Error decoding image: {e}")
+
     def get_sm_state_description(self) -> str:
         return self.sm_state_descriptions.get(self.latest_sm_state, f'({self.latest_sm_state})')
 
@@ -196,6 +225,9 @@ class PagesNode(Node):
         msg = String()
         msg.data = strategy
         self.strategy_pub.publish(msg)
+        
+    def pub_match_ready(self):
+        self.match_ready_pub.publish(Empty())
 
     def set_auto_placement_enabled(self, enabled: bool) -> bool:
         self.auto_placement_enabled = enabled

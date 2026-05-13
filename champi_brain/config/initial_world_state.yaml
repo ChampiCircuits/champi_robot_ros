@@ -12,12 +12,12 @@
 #################################################################################
 elements:
 
-  - id: caisses_1
-    type: nut_box
-    x: 0.175
-    y: 1.2
-    theta_deg: 90.0
-    mirror_id: caisses_7
+  # - id: caisses_1
+  #   type: nut_box
+  #   x: 0.175
+  #   y: 1.2
+  #   theta_deg: 90.0
+  #   mirror_id: caisses_7
 
   - id: caisses_2
     type: nut_box
@@ -26,12 +26,12 @@ elements:
     theta_deg: 90.0
     mirror_id: caisses_8
 
-  - id: caisses_3
-    type: nut_box
-    x: 1.15
-    y: 0.8
-    theta_deg: 0.0
-    mirror_id: caisses_5
+  # - id: caisses_3
+  #   type: nut_box
+  #   x: 1.15
+  #   y: 0.8
+  #   theta_deg: 0.0
+  #   mirror_id: caisses_5
 
   # - id: caisses_4
   #   type: nut_box

@@ -2,12 +2,14 @@
 
 #include "inputs.h"
 #include "config.h"
+#include "motion.h"
+#include "logging.h"
 
 using namespace Config;
 
 void inputsInit() {
     pinMode(TEAM_SWITCH_PIN, TEAM_SWITCH_PULLUP ? INPUT_PULLUP : INPUT);
-    // TIRETTE_PIN is analog — no explicit pinMode required.
+    pinMode(TIRETTE_PIN, INPUT);
 }
 
 Team inputsReadTeam() {
@@ -17,5 +19,6 @@ Team inputsReadTeam() {
 }
 
 bool inputsTiretteIsActive() {
+    LOG_INFO_THROTTLE("Inputs", 100, "Reading tirette state: %d", analogRead(TIRETTE_PIN));
     return analogRead(TIRETTE_PIN) > 512;
 }

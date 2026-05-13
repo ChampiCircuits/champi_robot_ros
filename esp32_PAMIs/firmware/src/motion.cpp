@@ -263,6 +263,8 @@ void motionInit() {
 }
 
 void motionTick(uint32_t now_us) {
+    //log state
+    // LOG_INFO("Motion", "Tick: state=%d team=%d seg=%d phase=%d", static_cast<int>(g_state), static_cast<int>(g_candidate_team), g_segment_index, static_cast<int>(g_segment_phase));
     const uint32_t now_ms = millis();
 
     if (g_match_timeout_armed && !g_match_timeout_triggered && timeReachedUs(now_us, g_match_timeout_deadline_us)) {
@@ -276,13 +278,15 @@ void motionTick(uint32_t now_us) {
         return;
     }
 
-    bool tirette_active = false;
+    bool tirette_active = true; // TODO test
+    // inputsTiretteIsActive();
     if (g_state == MotionState::WAITING_TIRETTE) {
         tirette_active = inputsTiretteIsActive();
     }
+    tirette_active = true; // TODO test
 
     float distance_mm = -1.0f;
-    // distance_mm = readUltrasonicDistanceMm(); // Temporarily disabled to test starvation
+    distance_mm = readUltrasonicDistanceMm(); // Temporarily disabled to test starvation
     if (distance_mm > 0.0f) {
         if (distance_mm <= OBSTACLE_STOP_MM) {
             g_blocked_by_obstacle = true;
@@ -303,6 +307,9 @@ void motionTick(uint32_t now_us) {
                     g_match_timeout_armed = true;
                     g_match_timeout_deadline_us = now_us + kMatchHardStopUs;
                     g_state = MotionState::START_DELAY;
+                    LOG_WARN("Motion", "Tirette pulled! Starting delay... team=%s start_in=%.1fs",
+                             g_candidate_team == Team::YELLOW ? "YELLOW" : "BLUE",
+                             static_cast<float>(g_start_deadline_us - now_us) / 1000000.0f);
                 }
                 break;
             }

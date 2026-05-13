@@ -82,6 +82,7 @@ class StateMachine:
         # Initialization flags
         self._ros_initialized = False
         self._config_chosen = False
+        self._match_ready_confirmed = False
         self._tirette_released = False
         
         # Callbacks for external events
@@ -120,6 +121,11 @@ class StateMachine:
     def notify_config_chosen(self) -> None:
         """Notify that user has chosen configuration."""
         self._config_chosen = True
+        self._check_init_progress()
+
+    def notify_match_ready_confirmed(self) -> None:
+        """Notify that the user clicked 'Prêt !!'."""
+        self._match_ready_confirmed = True
         self._check_init_progress()
         
     def notify_tirette_released(self) -> None:
@@ -253,6 +259,10 @@ class StateMachine:
             self.logger.info("Waiting for user to choose configuration (or auto-placement)...", throttle_duration_sec=1.)
             return
                     
+        if not self._match_ready_confirmed:
+            self.logger.info("Waiting for user to click 'Prêt !!'...", throttle_duration_sec=1.)
+            return
+
         if not self.strategy_config:
             self.logger.error("Strategy configuration not set!")
             return
@@ -523,6 +533,17 @@ class StateMachine:
     def is_executing(self) -> bool:
         """Check if currently executing an action."""
         return self.state == self.STATE_EXECUTING_ACTION
+        
+    def is_waiting_for_tirette(self) -> bool:
+        """Check if all initialization steps except tirette release are completed."""
+        return (
+            self._ros_initialized and
+            self._config_chosen and
+            self._match_ready_confirmed and
+            self.strategy_config is not None and
+            len(self.world_state_elements) > 0 and
+            not self._tirette_released
+        )
     
     def reset(self) -> None:
         """Reset the state machine."""
@@ -540,6 +561,7 @@ class StateMachine:
         # Reset init flags so the full init sequence is replayed after reset
         self._ros_initialized = False
         self._config_chosen = False
+        self._match_ready_confirmed = False
         self._tirette_released = False
         
         self._transition_to(self.STATE_STOP)

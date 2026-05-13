@@ -24,7 +24,19 @@ src = '~/champi_ws/src/champi_robot_ros/champi_web_ui/scripts/modularization/res
 
 def ready_to_launch_match():
     ros_node.ready_to_start_match = True
-    on_strategy_selected()
+    
+    current_combo = f"{radio_strategy_selection.value}#{color}"
+    published_combo = f"{last_published_strategy}#{last_published_color}"
+    
+    if current_combo != published_combo or not ros_node.auto_placement_enabled:
+        ros_node.set_auto_placement_enabled(False)
+        on_strategy_selected()
+        # Let ros process the strategy first so the state machine is ready
+        ui.timer(0.2, ros_node.pub_match_ready, once=True)
+    else:
+        # Strategy was already loaded and used by auto placement successfully
+        ros_node.pub_match_ready()
+        
     container.clear()
     with container:
         ui.image(src).style('width:75%')
@@ -80,6 +92,16 @@ def create() -> None:
                 with ui.column():
                     ui.button("Reset", on_click=reset_all)
                     # ui.button("Ouvrir bannière", on_click=open_banner)
+                    
+                    ui.label('Vue Caméra: /viz/image_detection').classes('text-h6 mt-4')
+                    viz_image_ui = ui.interactive_image().style('width: 100%; max-width: 400px; border: 1px solid #ccc;')
+                    
+                    def update_viz_image():
+                        if ros_node.latest_viz_image_b64 and viz_image_ui.source != ros_node.latest_viz_image_b64:
+                            viz_image_ui.source = ros_node.latest_viz_image_b64
+                            
+                    ui.timer(0.1, update_viz_image)
+
                 with ui.column():
                     container = ui.column().classes('w-full; items-center')
                     with container:
@@ -195,7 +217,13 @@ def open_banner():
     pass
 
 
+last_published_strategy = None
+last_published_color = None
+
 def on_strategy_selected():
+    global last_published_strategy, last_published_color
+    last_published_strategy = radio_strategy_selection.value
+    last_published_color = color
     # send the chosen strategy to the node
     ros_node.pub_strategy(radio_strategy_selection.value+"#"+color)
 

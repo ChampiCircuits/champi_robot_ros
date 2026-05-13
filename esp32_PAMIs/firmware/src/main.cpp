@@ -10,11 +10,11 @@
 #include "config.h"
 
 // Mettre à false pour revenir au vrai programme du robot.
-const bool TEST_CONTINUOUS_SPEED = true;
+const bool TEST_CONTINUOUS_SPEED = false;
 
 void setup() {
     Serial.begin(115200);
-    sleep(1);
+    delay(1000);
     Serial.println("");
     LOG_WARN("Main", "PAMI Booting...");
     LOG_WARN("Main", "PAMI Booting...");
@@ -22,7 +22,7 @@ void setup() {
 
     inputsInit();
     ledStatusInit();
-    pinMode(Config::ACTUATOR_PIN, ANALOG);
+    pinMode(Config::ACTUATOR_PIN, OUTPUT);
     analogWrite(Config::ACTUATOR_PIN, 0);
 
     motionInit();

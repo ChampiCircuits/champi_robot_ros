@@ -391,6 +391,7 @@ class StrategyBuilder:
         self.move_relative_to(target_position, Offset(-0.4, 0.0, offset_angle), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
         # Embed zone_occupied so the planner marks the target zone as occupied after placing
         self.custom_action(actuator_command, zone_occupied=zone_id)
+        self.move_relative_to(target_position, Offset(-0.45, 0.0, offset_angle), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
 
         # Add points
         points = self.points_per_action["PUT_4_BOXES_OUT_PLUS_BONUS"]

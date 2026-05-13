@@ -28,7 +28,7 @@ from enum import Enum, auto
 # Assuming these imports exist in your workspace
 from champi_navigation.obstacle_manager import ObstacleManager
 from champi_navigation.planner import Planner, PlannerStatus
-from champi_navigation.planning_feedback import ComputePathResult, get_feedback_msg
+from champi_navigation.planning_feedback import get_feedback_msg
 from champi_navigation.pose_controller_manager import PoseControllerManager
 from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap
 from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
@@ -268,6 +268,7 @@ class PlannerNode(Node):
             return ProcessResult(state=ActionState.ABORTED, message='Timeout!')
 
         if output.status == PlannerStatus.IN_FORBIDDEN_AREA:
+            self.get_logger().info(f'[NAV] Robot is in forbidden area at ({self.robot_pose.x:.2f}, {self.robot_pose.y:.2f})', throttle_duration_sec=1.0)
             if output.send_stop:
                 self.pose_controller_manager.publish_stop()
             elif output.ctrl_goal is not None:
@@ -277,12 +278,14 @@ class PlannerNode(Node):
             return ProcessResult(state=ActionState.RUNNING)
 
         if output.status == PlannerStatus.NO_PATH:
+            self.get_logger().info(f'[NAV] No path found from robot=({self.robot_pose.x:.2f}, {self.robot_pose.y:.2f}) to goal=({self.current_navigate_goal.pose.position.x:.2f}, {self.current_navigate_goal.pose.position.y:.2f})!', throttle_duration_sec=1.0)
             return ProcessResult(
                 state=ActionState.RUNNING, 
                 feedback=get_feedback_msg(output.path_result, [], output.max_linear_speed)
             )
 
         if output.status == PlannerStatus.RUNNING:
+            self.get_logger().info(f'[NAV] Executing path... robot=({self.robot_pose.x:.2f}, {self.robot_pose.y:.2f}) -> next WP=({output.ctrl_goal.x:.2f}, {output.ctrl_goal.y:.2f})', throttle_duration_sec=1.0)
             self.pose_controller_manager.publish_ctrl_goal(
                 output.ctrl_goal, metadata=self.current_navigate_goal, is_waypoint=output.is_waypoint
             )
@@ -325,11 +328,15 @@ class PlannerNode(Node):
             elif goal_handle.is_active:
                 goal_handle.abort()
             self.get_logger().info('[NAV] RESULT => Goal preempted (new goal or cancel)')
+        elif final_state == ActionState.ABORTED:
+            if goal_handle.is_active:
+                goal_handle.abort()
+            self.get_logger().error(f'[NAV] RESULT => Aborted ({msg})')
         elif not goal_handle.is_active:
-            self.get_logger().info('[NAV] RESULT => Goal aborted (timeout or internal)')
+            self.get_logger().info('[NAV] RESULT => Goal finished (internal)')
         else:
             goal_handle.abort()
-            self.get_logger().error('[NAV] RESULT => Aborted / Unknown exit state!')
+            self.get_logger().error(f'[NAV] RESULT => Unknown exit state: {final_state}')
 
         return result
 
