@@ -23,7 +23,9 @@ void setup() {
     inputsInit();
     ledStatusInit();
     pinMode(Config::ACTUATOR_PIN, OUTPUT);
+    pinMode(13, OUTPUT);
     analogWrite(Config::ACTUATOR_PIN, 0);
+    analogWrite(13, 0);
 
     motionInit();
 
@@ -50,7 +52,8 @@ void loop() {
         motionTick(micros());
         ledStatusApply(motionGetState(), motionGetTeam());
         if (motionGetState() == MotionState::COMPLETED) {
-            // analogWrite(Config::ACTUATOR_PIN, 100); // TODO: enable actuator properly later
+            analogWrite(Config::ACTUATOR_PIN, 100); // TODO: enable actuator properly later
+            analogWrite(13, 100); // TODO: enable actuator properly later
         }
     }
     

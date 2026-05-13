@@ -278,16 +278,15 @@ void motionTick(uint32_t now_us) {
         return;
     }
 
-    bool tirette_active = true; // TODO test
-    // inputsTiretteIsActive();
+    bool tirette_active = false; // TODO test
+    inputsTiretteIsActive();
     if (g_state == MotionState::WAITING_TIRETTE) {
         tirette_active = inputsTiretteIsActive();
     }
-    tirette_active = true; // TODO test
 
     float distance_mm = -1.0f;
-    distance_mm = readUltrasonicDistanceMm(); // Temporarily disabled to test starvation
-    if (distance_mm > 0.0f) {
+    distance_mm = readUltrasonicDistanceMm();
+    if (distance_mm > 0.1f) {
         if (distance_mm <= OBSTACLE_STOP_MM) {
             g_blocked_by_obstacle = true;
         } else if (distance_mm >= OBSTACLE_RESUME_MM) {
@@ -333,7 +332,10 @@ void motionTick(uint32_t now_us) {
                              stepperControlTraveledMm(),
                              g_drive_segment_len_mm - stepperControlTraveledMm());
                     g_state = MotionState::PAUSED_OBSTACLE;
+                    // disable ENABLE PIN
+                    digitalWrite(ENABLE_MOTORS, HIGH); // Enable hold torque
                 } else {
+                    digitalWrite(ENABLE_MOTORS, LOW); // Disable hold torque
                     // Phase completion: DRIVING/TURNING use stepperControlIsRunning(), WAITING uses time deadline.
                     bool phase_done = false;
                     if (g_segment_phase == SegmentPhase::DRIVING || g_segment_phase == SegmentPhase::TURNING) {
@@ -380,6 +382,7 @@ void motionTick(uint32_t now_us) {
                     stepperControlSetProfile(g_drive_speed_mm_s, ACCEL_MM_S2, DECEL_MM_S2);
                     stepperControlResume();
                     g_state = MotionState::RUNNING;
+                    digitalWrite(ENABLE_MOTORS, LOW); // Disable hold torque
                 }
                 break;
             }
