@@ -5,7 +5,7 @@
 #ifndef SCSERVOSAPP_H
 #define SCSERVOSAPP_H
 
-#define N_SERVOS 5
+#define N_SERVOS 8
 
 
 #include "cmsis_os2.h"

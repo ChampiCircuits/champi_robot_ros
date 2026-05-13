@@ -21,14 +21,16 @@ bool stop_all_actuators_requested = false;
 static uint8_t pending_left_mask  = 0;
 static uint8_t pending_right_mask = 0;
 
-uint8_t LEFT_ARM_0_SERVO_ID = 0; // TODO
-uint8_t LEFT_ARM_1_SERVO_ID = 0;
-uint8_t LEFT_ARM_2_SERVO_ID = 0;
-uint8_t LEFT_ARM_3_SERVO_ID = 0;
+// CUPS are from right to left, from the point of view of the robot. So cup0 is the rightmost, cup3 the leftmost.
+uint8_t LEFT_ARM_0_SERVO_ID = 5;
+uint8_t LEFT_ARM_1_SERVO_ID = 18;
+uint8_t LEFT_ARM_2_SERVO_ID = 13;
+uint8_t LEFT_ARM_3_SERVO_ID = 17;
 
-uint8_t RIGHT_ARM_0_SERVO_ID = 14;
-uint8_t RIGHT_ARM_1_SERVO_ID = 8;
-uint8_t RIGHT_ARM_2_SERVO_ID = 18;
+
+uint8_t RIGHT_ARM_0_SERVO_ID = 8;
+uint8_t RIGHT_ARM_1_SERVO_ID = 14;
+uint8_t RIGHT_ARM_2_SERVO_ID = 6;
 uint8_t RIGHT_ARM_3_SERVO_ID = 9;
 
 FourSuctionCup left_arm(LEFT_ARM_0_SERVO_ID,LEFT_ARM_1_SERVO_ID,LEFT_ARM_2_SERVO_ID,LEFT_ARM_3_SERVO_ID, D0_GPIO_Port, D0_Pin);
@@ -84,7 +86,7 @@ void initEveryThing()
         // while (1) {}
     }
 
-    // left_arm.initAllServos();
+    left_arm.initAllServos();
     right_arm.initAllServos();
     raiseThermometerServo();
 
@@ -108,10 +110,10 @@ void HandleRequest(const ActuatorCommand cmd,
 
     case ActuatorCommand::LOWER_RIGHT_ARM:
         pending_right_mask = right_suction_cups_activation_for_request; // save for LET_GO
-        LOG_INFO("act", "[RIGHT ARM] LOWER: saved pending_right_mask=0x%02X (cups: %d%d%d%d)",
+        LOG_INFO("act", "[RIGHT ARM] LOWER: saved pending_right_mask=0x%02X (cups from right to left: %d%d%d%d)",
             pending_right_mask,
-            (pending_right_mask >> 3) & 1, (pending_right_mask >> 2) & 1,
-            (pending_right_mask >> 1) & 1, (pending_right_mask >> 0) & 1);
+            (pending_right_mask >> 0) & 1, (pending_right_mask >> 1) & 1,
+            (pending_right_mask >> 2) & 1, (pending_right_mask >> 3) & 1);
         LOG_INFO("act", "[RIGHT ARM] Lowering ALL 4 cups...");
         right_arm.lowerCups();
         // osDelay(3000);
@@ -120,14 +122,14 @@ void HandleRequest(const ActuatorCommand cmd,
         LOG_INFO("act", "[RIGHT ARM] LOWER done.");
         break;
     case ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM:
-        LOG_INFO("act", "[RIGHT ARM] LET_GO: applying pending_right_mask=0x%02X (cups to return: %d%d%d%d)",
+        LOG_INFO("act", "[RIGHT ARM] LET_GO: applying pending_right_mask=0x%02X (cups from right to left to return: %d%d%d%d)",
             pending_right_mask,
-            (pending_right_mask >> 3) & 1, (pending_right_mask >> 2) & 1,
-            (pending_right_mask >> 1) & 1, (pending_right_mask >> 0) & 1);
+            (pending_right_mask >> 0) & 1, (pending_right_mask >> 1) & 1,
+            (pending_right_mask >> 2) & 1, (pending_right_mask >> 3) & 1);
         right_arm.letGoCups(pending_right_mask); // use mask saved at LOWER time
         LOG_INFO("act", "[RIGHT ARM] letGoCups done, resetting pending_right_mask.");
         pending_right_mask = 0;
-        LOG_INFO("act", "[RIGHT ARM] LET_GO done. Now putting back all cups to HIGH position...");
+        LOG_INFO("act", "[RIGHT ARM] LET_GO done. Now putting back all cups to RETURN position...");
         osDelay(3000);
         right_arm.initAllServos();
         break;
@@ -139,6 +141,18 @@ void HandleRequest(const ActuatorCommand cmd,
         pending_right_mask = 0;
         // right_arm.initAllServos();
         LOG_INFO("act", "[RIGHT ARM] GET_READY done.");
+        break;
+
+    case ActuatorCommand::PUMPS_ON:
+        LOG_INFO("act", "[PUMPS] Turning ON left and right pumps");
+        left_arm.setPumpState(true);
+        right_arm.setPumpState(true);
+        break;
+
+    case ActuatorCommand::PUMPS_OFF:
+        LOG_INFO("act", "[PUMPS] Turning OFF left and right pumps");
+        left_arm.setPumpState(false);
+        right_arm.setPumpState(false);
         break;
 
     default:
@@ -201,8 +215,8 @@ void ActuatorsTask(void *argument)
         if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET)
         {
             LOG_INFO("act", "USER button pressed  → entering MONTAGE POSITION mode (reset to exit)");
-            // left_arm.setMontagePosition();
             right_arm.setMontagePosition();
+            left_arm.setMontagePosition();
             LOG_INFO("act", "Montage position set. System halted.");
             while (1) { osDelay(1000); }
         }

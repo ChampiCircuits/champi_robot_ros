@@ -25,6 +25,9 @@ enum class ActuatorCommand : int
   GET_READY_RIGHT_ARM,
   LET_GO_ELEMENTS_RIGHT_ARM,
 
+  PUMPS_ON,
+  PUMPS_OFF,
+
   ACTUATORS_COUNT // only to count the number of available commands
 };
 

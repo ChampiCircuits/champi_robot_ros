@@ -44,10 +44,10 @@ private:
     static constexpr int CUP_SERVO_LOW    = 220;   // ° [0,270]
     static constexpr int CUP_SERVO_LOW_GET_READY    = 195;   // ° [0,270]
     static constexpr int CUP_SERVO_HIGH   = 90;  // ° [0,270]
-    static constexpr int CUP_SERVO_RETURN = 50;  // ° [0,270]
+    static constexpr int CUP_SERVO_RETURN = 40;  // ° [0,270]
 
-    // Servos 1 and 3 are mounted inverted — their physical position is mirrored
-    static constexpr bool CUP_INVERTED[4] = {true, false, true, false};
+    // 
+    static constexpr bool CUP_INVERTED[4] = { true, false, true, false };
 };
 
 #endif //STM_MAIN_BOARD_4SUCTIONCUP_H

@@ -16,19 +16,19 @@ void FourSuctionCup::setMontagePosition()
 void FourSuctionCup::initAllServos()
 {
     // set all in high cups position
-    setCupPosition(0, CUP_SERVO_HIGH);
-    setCupPosition(1, CUP_SERVO_HIGH);
-    setCupPosition(2, CUP_SERVO_HIGH);
-    setCupPosition(3, CUP_SERVO_HIGH);
+    setCupPosition(0, CUP_SERVO_RETURN);
+    setCupPosition(1, CUP_SERVO_RETURN);
+    setCupPosition(2, CUP_SERVO_RETURN);
+    setCupPosition(3, CUP_SERVO_RETURN);
 }
 
 void FourSuctionCup::lowerCups()
 {
     setPumpState(true);
     setCupsPosition(0x0F, CUP_SERVO_LOW);
-    osDelay(3000);
-    setCupsPosition(0x0F, CUP_SERVO_HIGH);
-    osDelay(3000);
+    osDelay(2000);
+    setCupsPosition(0x0F, CUP_SERVO_RETURN);
+    osDelay(2000);
 }
 
 void FourSuctionCup::raiseCups()
@@ -45,12 +45,8 @@ void FourSuctionCup::getReadyCups()
 
 void FourSuctionCup::letGoCups(uint8_t suction_cups_activation_for_request)
 {
-    // // MSB = cup 0: reverse the 4 bits so bit 0 -> cup 0, bit 1 -> cup 1, etc.
-    // suction_cups_activation_for_request = ((suction_cups_activation_for_request & 0b0001) << 3) |
-    //                                       ((suction_cups_activation_for_request & 0b0010) << 1) |
-    //                                       ((suction_cups_activation_for_request & 0b0100) >> 1) |
-    //                                       ((suction_cups_activation_for_request & 0b1000) >> 3);
-    LOG_INFO("4cup", "letGoCups mask=0x%02X: cup0=%s cup1=%s cup2=%s cup3=%s",
+
+    LOG_INFO("4cup", "letGoCups (right to left) mask=0x%02X: cup0=%s cup1=%s cup2=%s cup3=%s",
         suction_cups_activation_for_request,
         (suction_cups_activation_for_request & 0b0001) ? "RETURN" : "LOW",
         (suction_cups_activation_for_request & 0b0010) ? "RETURN" : "LOW",
@@ -61,7 +57,7 @@ void FourSuctionCup::letGoCups(uint8_t suction_cups_activation_for_request)
     setCupPosition(1, (suction_cups_activation_for_request & 0b0010) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
     setCupPosition(2, (suction_cups_activation_for_request & 0b0100) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
     setCupPosition(3, (suction_cups_activation_for_request & 0b1000) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
-    osDelay(5000);
+    osDelay(2000);
     setPumpState(false);
 }
 
