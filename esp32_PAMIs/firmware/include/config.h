@@ -35,7 +35,7 @@ constexpr bool TEAM_SWITCH_PULLUP = true; // TODO put to false
 constexpr float MAP_WIDTH_MM = 3000.0f;
 
 // Obstacle sensing.
-constexpr float OBSTACLE_STOP_MM = 40.0f;
+constexpr float OBSTACLE_STOP_MM = 80.0f;
 constexpr float OBSTACLE_RESUME_MM = 50.0f;
 constexpr uint32_t US_TIMEOUT_US = 5000;
 constexpr uint8_t MAX_US_INVALID_BEFORE_BLOCK = 5;
