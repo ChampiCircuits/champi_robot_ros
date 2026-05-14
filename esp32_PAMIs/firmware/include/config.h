@@ -45,7 +45,7 @@ constexpr uint32_t TELEMETRY_PERIOD_MS = 200;
 
 // Drivetrain geometry and motor setup.
 constexpr float WHEEL_DIAMETER_MM = 72.0f;
-constexpr float ENTRAXE_MM = 122.0f; // plus c'est haut plus il va tourner
+constexpr float ENTRAXE_MM = 155.0f; // plus c'est haut plus il va tourner
 // constexpr float ENTRAXE_MM = 133.5f;
 constexpr float MOTOR_STEPS_PER_REV = 200.0f; // 1 step = 1.8° --> steps_per_rev = 360/1.8 = 200
 constexpr float MICROSTEPS = 16.0f;

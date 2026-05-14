@@ -24,6 +24,7 @@ enum class ActuatorCommand : int
   LOWER_RIGHT_ARM,
   GET_READY_RIGHT_ARM,
   LET_GO_ELEMENTS_RIGHT_ARM,
+  STORE_PENDING_MASK,
 
   PUMPS_ON,
   PUMPS_OFF,
@@ -56,6 +57,7 @@ inline const char* to_c_str(const ActuatorCommand command)
   case ActuatorCommand::LOWER_RIGHT_ARM:                return "LOWER_RIGHT_ARM";
   case ActuatorCommand::GET_READY_RIGHT_ARM:           return "GET_READY_RIGHT_ARM";
   case ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM:      return "LET_GO_ELEMENTS_RIGHT_ARM";
+  case ActuatorCommand::STORE_PENDING_MASK:           return "STORE_PENDING_MASK";
   default:
     return "UNKNOWN_COMMAND";
   }

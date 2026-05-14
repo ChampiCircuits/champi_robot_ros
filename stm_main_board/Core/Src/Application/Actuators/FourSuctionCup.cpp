@@ -57,7 +57,7 @@ void FourSuctionCup::letGoCups(uint8_t suction_cups_activation_for_request)
     setCupPosition(1, (suction_cups_activation_for_request & 0b0010) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
     setCupPosition(2, (suction_cups_activation_for_request & 0b0100) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
     setCupPosition(3, (suction_cups_activation_for_request & 0b1000) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
-    osDelay(2000);
+    osDelay(5000);
     setPumpState(false);
 }
 
@@ -91,7 +91,8 @@ void FourSuctionCup::setCupPosition(int cup, float position)
     }
     auto positionStr = (position == CUP_SERVO_LOW) ? "LOW" : (position == CUP_SERVO_HIGH) ? "HIGH" : (position == CUP_SERVO_RETURN) ? "RETURN" : (position == CUP_SERVO_LOW_GET_READY) ? "LOW_GET_READY" : "UNKNOWN";
     if (CUP_INVERTED[cup]) position = CUP_SERVO_MAX_ANGLE - position;
-    devices::scs_servos::set_angle_async(servoID, position, 300);
+    devices::scs_servos::set_angle_async(servoID, position, 2000);
+    osDelay(100);
 
     LOG_INFO("4cup", "Setting cup %d to position %s (servo angle %.0f, servo ID %d)", cup, positionStr, position, servoID);
 }

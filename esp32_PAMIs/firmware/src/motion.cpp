@@ -53,7 +53,7 @@ void buildWorkingTrajectory(Team team) {
     const int points = activeTrajectoryPoints();
     for (int i = 0; i < points; ++i) {
         Waypoint wp = EXPERIMENT_TRAJECTORY[i];
-        if (team == Team::YELLOW) {
+        if (team == Team::BLUE) {
             wp.x = MAP_WIDTH_MM - wp.x;
             float mirrored_heading = 180.0f - wp.headingDeg;
             while (mirrored_heading < 0.0f) {

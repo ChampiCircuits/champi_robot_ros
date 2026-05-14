@@ -408,12 +408,15 @@ class StateMachineNode(Node):
         # Ignore "no detection" sentinel
         if msg.pose.position.z == -1.0:
             return
+        
 
         current_action = self.state_machine.current_action
         if current_action is None or current_action.action != ActuatorCommand.DETECT_NUTBOXES:
             return
         
         self.get_logger().info(f'📦 Nutbox pose received: ({msg.pose.position.x:.2f}, {msg.pose.position.y:.2f}) in base_link frame')
+        self.get_logger().warn(f'colors = {msg.colors}')
+
 
         # Cancel timeout — we have a valid detection
         self.action_executor.cancel_detect_nutboxes_timeout()

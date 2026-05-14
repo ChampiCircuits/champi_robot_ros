@@ -49,22 +49,21 @@ void HardwareInterfaceNode::nutboxes_detection_callback(const champi_interfaces:
         }
     }
 
-    RCLCPP_INFO(this->get_logger(),
-        "📦 Nutboxes detection: team_color=%d, mask=0b%d%d%d%d (cup3|cup2|cup1|cup0)",
-        static_cast<int>(team_color),
-        (mask >> 3) & 1, (mask >> 2) & 1, (mask >> 1) & 1, (mask >> 0) & 1);
+    // RCLCPP_INFO(this->get_logger(),
+    //     "📦 Nutboxes detection: team_color=%d, mask=0b%d%d%d%d (cup3|cup2|cup1|cup0)",
+    //     static_cast<int>(team_color),
+    //     (mask >> 3) & 1, (mask >> 2) & 1, (mask >> 1) & 1, (mask >> 0) & 1);
 
-    // Store mask for all arm-related commands so it's ready whenever the STM receives one
-    const size_t lower_left   = static_cast<size_t>(ActuatorCommand::LOWER_LEFT_ARM);
-    const size_t let_go_left  = static_cast<size_t>(ActuatorCommand::LET_GO_ELEMENTS_LEFT_ARM);
-    const size_t lower_right  = static_cast<size_t>(ActuatorCommand::LOWER_RIGHT_ARM);
-    const size_t let_go_right = static_cast<size_t>(ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM);
-
+    // Store mask as individual cup activation flags
     std::lock_guard<std::mutex> lock(modbus_mutex_);
-    mod_reg::actuators->left_suction_cups_activation_for_request[lower_left]   = mask;
-    mod_reg::actuators->left_suction_cups_activation_for_request[let_go_left]  = mask;
-    mod_reg::actuators->right_suction_cups_activation_for_request[lower_right]  = mask;
-    mod_reg::actuators->right_suction_cups_activation_for_request[let_go_right] = mask;
+    mod_reg::actuators->left_suction_cup_0_activation = (mask >> 0) & 1;
+    mod_reg::actuators->left_suction_cup_1_activation = (mask >> 1) & 1;
+    mod_reg::actuators->left_suction_cup_2_activation = (mask >> 2) & 1;
+    mod_reg::actuators->left_suction_cup_3_activation = (mask >> 3) & 1;
+    mod_reg::actuators->right_suction_cup_0_activation = (mask >> 0) & 1;
+    mod_reg::actuators->right_suction_cup_1_activation = (mask >> 1) & 1;
+    mod_reg::actuators->right_suction_cup_2_activation = (mask >> 2) & 1;
+    mod_reg::actuators->right_suction_cup_3_activation = (mask >> 3) & 1;
 
     this->write(mod_reg::reg_actuators);
 }

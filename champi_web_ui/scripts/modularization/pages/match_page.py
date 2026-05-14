@@ -110,7 +110,7 @@ def create() -> None:
                         with stepper:
                             with ui.step('Positionner le robot sur la table'):
                                 with ui.stepper_navigation():
-                                    ui.label('TODO noter la position')
+                                    ui.label('Montrer un tag au robot')
                                     ui.button('Robot placé ✓', on_click=stepper.next)
 
                             # with ui.step('Choisir la position de départ'):

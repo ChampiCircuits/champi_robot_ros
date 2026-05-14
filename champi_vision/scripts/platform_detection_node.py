@@ -198,10 +198,20 @@ class NutBoxesDetectionNode(Node):
         # Sort by pixel x (left to right in image)
         detections.sort(key=lambda d: d[7])
 
-        # Compute center of the group in base_link
-        positions = np.array([(d[0], d[1]) for d in detections])
-        center_x = float(np.mean(positions[:, 0]))
-        center_y = float(np.mean(positions[:, 1]))
+        # # Compute center of the group in base_link
+        # positions = np.array([(d[0], d[1]) for d in detections])
+        # center_x = float(np.mean(positions[:, 0]))
+        # center_y = float(np.mean(positions[:, 1]))
+
+        # Instead, we get the leftmost position and we align the leftmost cup with it
+        # Each box is 5cm wide, so we add 0.05m for each subsequent box to get the center of the group
+        leftmost_x = detections[0][0]
+        leftmost_y = detections[0][1]
+        center_x = leftmost_x
+        center_y = leftmost_y - 0.075
+        # self.get_logger().info(f"##### Detected {len(detections)} tags | Center=({center_x:.3f}, {center_y:.3f})m | Colors={[d[4] for d in detections[:4]]}")
+        # log leftmost
+        # self.get_logger().info(f"Leftmost tag at ({leftmost_x:.3f}, {leftmost_y:.3f})m")
 
         # Fill colors (up to 4, sorted left-to-right)
         colors = [NutBoxesDetection.COLOR_UNKNOWN] * 4

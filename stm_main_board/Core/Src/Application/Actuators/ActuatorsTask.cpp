@@ -108,12 +108,15 @@ void HandleRequest(const ActuatorCommand cmd,
 
 // TODO faire pareil pour le LEFT
 
-    case ActuatorCommand::LOWER_RIGHT_ARM:
+    case ActuatorCommand::STORE_PENDING_MASK:
         pending_right_mask = right_suction_cups_activation_for_request; // save for LET_GO
-        LOG_INFO("act", "[RIGHT ARM] LOWER: saved pending_right_mask=0x%02X (cups from right to left: %d%d%d%d)",
+        LOG_INFO("act", "[RIGHT ARM] STORE: saved pending_right_mask=0x%02X (cups from right to left: %d%d%d%d)",
             pending_right_mask,
             (pending_right_mask >> 0) & 1, (pending_right_mask >> 1) & 1,
             (pending_right_mask >> 2) & 1, (pending_right_mask >> 3) & 1);
+        break;
+    case ActuatorCommand::LOWER_RIGHT_ARM:
+        
         LOG_INFO("act", "[RIGHT ARM] Lowering ALL 4 cups...");
         right_arm.lowerCups();
         // osDelay(3000);
@@ -137,8 +140,7 @@ void HandleRequest(const ActuatorCommand cmd,
     case ActuatorCommand::GET_READY_RIGHT_ARM:
         LOG_INFO("act", "[RIGHT ARM] GET_READY");
         right_arm.getReadyCups();
-        LOG_INFO("act", "[RIGHT ARM] getReadyCups done, resetting pending_right_mask.");
-        pending_right_mask = 0;
+        LOG_INFO("act", "[RIGHT ARM] getReadyCups done.");
         // right_arm.initAllServos();
         LOG_INFO("act", "[RIGHT ARM] GET_READY done.");
         break;
@@ -183,11 +185,19 @@ void handleManualRequests(){
         xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);
         ActuatorState actuator_request = static_cast<ActuatorState>(mod_reg::actuators->requests[i]);
 
-        uint8_t left_suction_cups_activation_for_request = static_cast<uint8_t>(mod_reg::actuators->left_suction_cups_activation_for_request[i]);
-        uint8_t right_suction_cups_activation_for_request = static_cast<uint8_t>(mod_reg::actuators->right_suction_cups_activation_for_request[i]);
+        uint8_t left_suction_cups_activation_for_request =
+            (mod_reg::actuators->left_suction_cup_0_activation & 1) |
+            ((mod_reg::actuators->left_suction_cup_1_activation & 1) << 1) |
+            ((mod_reg::actuators->left_suction_cup_2_activation & 1) << 2) |
+            ((mod_reg::actuators->left_suction_cup_3_activation & 1) << 3);
+        uint8_t right_suction_cups_activation_for_request =
+            (mod_reg::actuators->right_suction_cup_0_activation & 1) |
+            ((mod_reg::actuators->right_suction_cup_1_activation & 1) << 1) |
+            ((mod_reg::actuators->right_suction_cup_2_activation & 1) << 2) |
+            ((mod_reg::actuators->right_suction_cup_3_activation & 1) << 3);
 
-        // left_suction_cups_activation_for_request = 0x0F; // TODO test (all 4 cups)
-        // right_suction_cups_activation_for_request = 0x0F; // TODO test (all 4 cups)
+        right_suction_cups_activation_for_request = 0; // TODO FOR NOW
+        left_suction_cups_activation_for_request = 0;
 
         xSemaphoreGive(ModbusH.ModBusSphrHandle);
 

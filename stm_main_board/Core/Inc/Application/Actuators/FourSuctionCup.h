@@ -44,7 +44,7 @@ private:
     static constexpr int CUP_SERVO_LOW    = 220;   // ° [0,270]
     static constexpr int CUP_SERVO_LOW_GET_READY = 185;   // ° [0,270]
     static constexpr int CUP_SERVO_HIGH   = 90;  // ° [0,270]
-    static constexpr int CUP_SERVO_RETURN = 90;  // ° [0,270]
+    static constexpr int CUP_SERVO_RETURN = 40;  // ° [0,270]
 
     static constexpr bool CUP_INVERTED[4] = { true, false, true, false };
 };

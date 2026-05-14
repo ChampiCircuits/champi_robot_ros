@@ -27,6 +27,8 @@ class ActuatorCommand(IntEnum):
     GET_READY_RIGHT_ARM            = 10
     LET_GO_ELEMENTS_RIGHT_ARM      = 11
 
+    STORE_PENDING_MASK             = 12
+
     # OTHER COMMON ACTIONS (not sent to STM)
     MOVE                           = 100
     DETECT_NUTBOXES                = 101
