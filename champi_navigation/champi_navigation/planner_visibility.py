@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Optional
+from typing import List, Optional
 
 
 from champi_interfaces.action import Navigate
+from champi_libraries_py.marker_helper import items, presets
+from champi_libraries_py.marker_helper.canva import Canva
 from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.timeout import Timeout
 from champi_navigation.obstacle_manager import ObstacleManager
@@ -92,7 +94,7 @@ class PlanningMetrics:
 # ---------------------------------------------------------------------------
 
 
-class Planner:
+class PlannerVisibility:
     """Step-based path-planning state machine, free of ROS2 runtime dependencies.
 
     Usage::
@@ -351,15 +353,32 @@ class Planner:
             waypoint_idx=self._waypoint_idx,
         )
 
-    def get_debug_geometry(self) -> PlannerDebugGeometry:
-        """Returns ready-to-draw coordinate lists for visualization."""
-        raw_obstacles = self._obstacle_manager.get_all_obstacles()
-        expanded_obstacles = self._visibility_planner.build_expanded_obstacles(raw_obstacles)
-        
-        return PlannerDebugGeometry(
-            obstacles=[list(zip(obs.x_list, obs.y_list)) for obs in raw_obstacles],
-            expanded_obstacles=[list(zip(obs.x_list, obs.y_list)) for obs in expanded_obstacles]
-        )
+
     @property
     def has_goal(self) -> bool:
         return self._goal is not None
+    
+
+
+    def draw_viz(self, waypoints: Optional[List[Pose2D]], current_waypoint_idx: int) -> None:
+        Canva().clear()
+        
+        raw_obstacles = self._obstacle_manager.get_all_obstacles()
+        expanded_obstacles = self._visibility_planner.build_expanded_obstacles(raw_obstacles)
+
+        obstacles=[list(zip(obs.x_list, obs.y_list)) for obs in raw_obstacles]
+        expanded_obstacles=[list(zip(obs.x_list, obs.y_list)) for obs in expanded_obstacles]
+        
+        for points in obstacles:
+            Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.RED), frame_id='odom')
+
+        for points in expanded_obstacles:
+            Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.ORANGE), frame_id='odom')
+
+        if waypoints and current_waypoint_idx < len(waypoints):
+            path_points = [(wp.x, wp.y) for wp in waypoints[current_waypoint_idx:]]
+            if len(path_points) >= 2:
+                Canva().add(items.Polyline(path_points, size=presets.LINE_MEDIUM, color=presets.GREEN), frame_id='odom')
+            Canva().add(items.Spheres(path_points, color=presets.CYAN), frame_id='odom')
+
+        Canva().draw()

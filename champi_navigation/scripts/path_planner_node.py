@@ -27,7 +27,8 @@ from enum import Enum, auto
 
 # Assuming these imports exist in your workspace
 from champi_navigation.obstacle_manager import ObstacleManager
-from champi_navigation.planner import Planner, PlannerStatus
+# from champi_navigation.planner_visibility import PlannerVisibility, PlannerStatus
+from champi_navigation.planner_straight import PlannerStraight, PlannerStatus
 from champi_navigation.planning_feedback import get_feedback_msg
 from champi_navigation.pose_controller_manager import PoseControllerManager
 from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap
@@ -35,6 +36,12 @@ from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.angles import get_yaw
 from champi_libraries_py.marker_helper.canva import Canva, items, presets
+
+_INITIALIZING_FEEDBACK_RESULT = getattr(
+    Navigate.Feedback,
+    'INITIALIZING',
+    getattr(Navigate.Feedback, 'INTITIALIZING')
+)
 
 
 class ActionState(Enum):
@@ -55,6 +62,8 @@ class PlannerConfig:
     loop_period: float
     waypoint_tolerance: float
     waypoint_speed_linear: float
+    enemy_front_max_ahead_distance_m: float
+    enemy_front_max_lateral_offset_m: float
     debug: bool
     robot_radius: float
     enemy_robot_radius: float
@@ -105,15 +114,21 @@ class PlannerNode(Node):
         self.mutex_exec = Lock()  # Protects the execution loop
 
         # Core Components
-        self.visibility_planner = VisibilityRoadMap(expand_distance=self.config.robot_radius)
-        self.obstacle_manager = self._setup_obstacle_manager()
+        # self.visibility_planner = VisibilityRoadMap(expand_distance=self.config.robot_radius)
+        # self.obstacle_manager = self._setup_obstacle_manager()
         
-        self.planner = Planner(
-            obstacle_manager=self.obstacle_manager,
-            visibility_planner=self.visibility_planner,
+        # self.planner = PlannerVisibility(
+        #     obstacle_manager=self.obstacle_manager,
+        #     visibility_planner=self.visibility_planner,
+        #     waypoint_tolerance=self.config.waypoint_tolerance,
+        #     waypoint_speed_linear=self.config.waypoint_speed_linear,
+        #     forbidden_area_wait_time=self.config.forbidden_area_wait_time,
+        # )
+
+        self.planner = PlannerStraight(
             waypoint_tolerance=self.config.waypoint_tolerance,
-            waypoint_speed_linear=self.config.waypoint_speed_linear,
-            forbidden_area_wait_time=self.config.forbidden_area_wait_time,
+            enemy_front_max_ahead_distance_m=self.config.enemy_front_max_ahead_distance_m,
+            enemy_front_max_lateral_offset_m=self.config.enemy_front_max_lateral_offset_m,
         )
 
         self.pose_controller_manager = PoseControllerManager(
@@ -133,6 +148,8 @@ class PlannerNode(Node):
             loop_period=self.declare_parameter('planner_loop_period', 0.1).value,
             waypoint_tolerance=self.declare_parameter('waypoint_tolerance', 0.05).value,
             waypoint_speed_linear=self.declare_parameter('waypoint_speed_linear', 0.5).value,
+            enemy_front_max_ahead_distance_m=self.declare_parameter('enemy_front_max_ahead_distance_m', 0.6).value,
+            enemy_front_max_lateral_offset_m=self.declare_parameter('enemy_front_max_lateral_offset_m', 0.25).value,
             debug=self.declare_parameter('debug', False).value,
             robot_radius=self.declare_parameter('robot_radius', 0.2).value,
             enemy_robot_radius=self.declare_parameter('enemy_robot_radius', 0.2).value,
@@ -258,7 +275,7 @@ class PlannerNode(Node):
             self.get_logger().info('[NAV] Waiting for robot pose', throttle_duration_sec=1.0)
             return ProcessResult(
                 state=ActionState.RUNNING, 
-                feedback=get_feedback_msg(ComputePathResult.INITIALIZING, [], 0)
+                feedback=get_feedback_msg(_INITIALIZING_FEEDBACK_RESULT, [], 0)
             )
 
         if output.status == PlannerStatus.TIMED_OUT:
@@ -285,12 +302,16 @@ class PlannerNode(Node):
             )
 
         if output.status == PlannerStatus.RUNNING:
-            self.get_logger().info(f'[NAV] Executing path... robot=({self.robot_pose.x:.2f}, {self.robot_pose.y:.2f}) -> next WP=({output.ctrl_goal.x:.2f}, {output.ctrl_goal.y:.2f})', throttle_duration_sec=1.0)
-            self.pose_controller_manager.publish_ctrl_goal(
-                output.ctrl_goal, metadata=self.current_navigate_goal, is_waypoint=output.is_waypoint
-            )
+            if output.send_stop:
+                self.get_logger().info('[NAV] Enemy detected: waiting before backward step', throttle_duration_sec=1.0)
+                self.pose_controller_manager.publish_stop()
+            elif output.ctrl_goal is not None:
+                self.get_logger().info(f'[NAV] Executing path... robot=({self.robot_pose.x:.2f}, {self.robot_pose.y:.2f}) -> next WP=({output.ctrl_goal.x:.2f}, {output.ctrl_goal.y:.2f})', throttle_duration_sec=1.0)
+                self.pose_controller_manager.publish_ctrl_goal(
+                    output.ctrl_goal, metadata=self.current_navigate_goal, is_waypoint=output.is_waypoint
+                )
             self.publish_path([p.to_ros_pose() for p in output.remaining_path])
-            self.draw_viz(output.waypoints, output.waypoint_idx)
+            self.planner.draw_viz(output.waypoints, output.waypoint_idx)
             
             return ProcessResult(
                 state=ActionState.RUNNING, 
@@ -347,7 +368,7 @@ class PlannerNode(Node):
             is_planning = self.planning
             
         if not is_planning:
-            self.draw_viz(None, 0)
+            self.planner.draw_viz(None, 0)
 
     def _produce_planning_diagnostics(self, stat: diagnostic_updater.DiagnosticStatusWrapper) -> diagnostic_updater.DiagnosticStatusWrapper:
         metrics = self.planner.planning_metrics
@@ -382,23 +403,7 @@ class PlannerNode(Node):
         pose_stamped.pose = pose
         return pose_stamped
 
-    def draw_viz(self, waypoints: Optional[List[Pose2D]], current_waypoint_idx: int) -> None:
-        Canva().clear()
-        geom = self.planner.get_debug_geometry()
-        
-        for points in geom.obstacles:
-            Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.RED), frame_id='odom')
 
-        for points in geom.expanded_obstacles:
-            Canva().add(items.Polyline(points, size=presets.LINE_THIN, color=presets.ORANGE), frame_id='odom')
-
-        if waypoints and current_waypoint_idx < len(waypoints):
-            path_points = [(wp.x, wp.y) for wp in waypoints[current_waypoint_idx:]]
-            if len(path_points) >= 2:
-                Canva().add(items.Polyline(path_points, size=presets.LINE_MEDIUM, color=presets.GREEN), frame_id='odom')
-            Canva().add(items.Spheres(path_points, color=presets.CYAN), frame_id='odom')
-
-        Canva().draw()
 
 
 def main(args: Optional[List[str]] = None) -> None:

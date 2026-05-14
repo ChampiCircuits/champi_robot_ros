@@ -1,6 +1,7 @@
 from rclpy.node import Node
 
 from champi_interfaces.msg import CtrlGoal
+from geometry_msgs.msg import Point
 from geometry_msgs.msg import Twist
 from champi_interfaces.action import Navigate
 
@@ -26,6 +27,9 @@ class PoseControllerManager:
             ctrl_goal.end_speed = self.waypoint_speed_linear
             ctrl_goal.linear_tolerance = self.waypoint_tolerance
             ctrl_goal.max_linear_speed = self.waypoint_speed_linear
+            ctrl_goal.do_look_at_point = False
+            ctrl_goal.look_at_point = Point()
+            ctrl_goal.robot_angle_when_looking_at_point = 0.0
         else:
             ctrl_goal.end_speed = navigate_goal.end_speed
             ctrl_goal.linear_tolerance = navigate_goal.linear_tolerance
@@ -35,9 +39,10 @@ class PoseControllerManager:
         ctrl_goal.accel_linear = navigate_goal.accel_linear
         ctrl_goal.accel_angular = navigate_goal.accel_angular
         ctrl_goal.angular_tolerance = navigate_goal.angular_tolerance
-        ctrl_goal.do_look_at_point = navigate_goal.do_look_at_point
-        ctrl_goal.look_at_point = navigate_goal.look_at_point
-        ctrl_goal.robot_angle_when_looking_at_point = navigate_goal.robot_angle_when_looking_at_point
+        if not is_waypoint:
+            ctrl_goal.do_look_at_point = navigate_goal.do_look_at_point
+            ctrl_goal.look_at_point = navigate_goal.look_at_point
+            ctrl_goal.robot_angle_when_looking_at_point = navigate_goal.robot_angle_when_looking_at_point
 
         return ctrl_goal
     
