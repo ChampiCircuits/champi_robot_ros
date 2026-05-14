@@ -26,7 +26,7 @@ void FourSuctionCup::lowerCups()
 {
     setPumpState(true);
     setCupsPosition(0x0F, CUP_SERVO_LOW);
-    osDelay(2000);
+    osDelay(1000);
     setCupsPosition(0x0F, CUP_SERVO_RETURN);
     osDelay(2000);
 }
@@ -34,13 +34,13 @@ void FourSuctionCup::lowerCups()
 void FourSuctionCup::raiseCups()
 {
     setCupsPosition(0x0F, CUP_SERVO_HIGH);
-    osDelay(3000);
+    osDelay(1000);
 }
 
 void FourSuctionCup::getReadyCups()
 {
     setCupsPosition(0x0F, CUP_SERVO_LOW_GET_READY);
-    osDelay(3000);
+    osDelay(1000);
 }
 
 void FourSuctionCup::letGoCups(uint8_t suction_cups_activation_for_request)
@@ -57,7 +57,7 @@ void FourSuctionCup::letGoCups(uint8_t suction_cups_activation_for_request)
     setCupPosition(1, (suction_cups_activation_for_request & 0b0010) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
     setCupPosition(2, (suction_cups_activation_for_request & 0b0100) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
     setCupPosition(3, (suction_cups_activation_for_request & 0b1000) ? CUP_SERVO_RETURN : CUP_SERVO_LOW);
-    osDelay(5000);
+    osDelay(3000);
     setPumpState(false);
 }
 

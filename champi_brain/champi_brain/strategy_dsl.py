@@ -316,9 +316,9 @@ class StrategyBuilder:
         # world_frame=True  → x/y offsets are absolute (not rotated by target theta)
         # theta_world_frame=True → robot always faces 180° (left) regardless of team color,
         #                          because the servo arm is physically on one fixed side of the robot
-        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.2, 30.0, world_frame=True, theta_world_frame=True), use_collision_avoidance=True)
+        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.17, 30.0, world_frame=True, theta_world_frame=True), use_collision_avoidance=True)
         self.custom_action(ActuatorCommand.THERMOMETER_LOWER_SERVO)
-        self.move_relative_to(thermometer_target_position, Offset(0.05, 0.2, 30.0, world_frame=True, theta_world_frame=True), linear_tolerance=0.0025, speed=0.1)
+        self.move_relative_to(thermometer_target_position, Offset(0.05, 0.15, 30.0, world_frame=True, theta_world_frame=True), linear_tolerance=0.0025, speed=0.1)
         self.custom_action(ActuatorCommand.THERMOMETER_RAISE_SERVO)
 
         points = self.points_per_action["THERMOMETER"]
@@ -361,7 +361,7 @@ class StrategyBuilder:
 
         self.custom_action(get_ready_actuator_command, element_taken=group)  # it will also raise it directly after
 
-        self.move_relative_to(group, Offset(-0.20, 0.0, offset_angle), linear_tolerance=0.001, angular_tolerance=0.05)
+        self.move_relative_to(group, Offset(-0.225, 0.0, offset_angle), linear_tolerance=0.001, angular_tolerance=0.05)
         
         # Taking boxes — embed element_taken so the planner removes the element obstacle
         self.custom_action(lower_actuator_command, element_taken=group)  # it will also raise it directly after
@@ -408,6 +408,7 @@ class StrategyBuilder:
             # self.move_to(self.home_pose, group="come_home")
         points = self.points_per_action["COME_HOME"]
         self.add_points(points, f"come_home finished. {points} points for coming home", group="come_home")
+        self.custom_action(ActuatorCommand.PUMPS_OFF)
         return self
     
     def get_actions_by_group(self, group: str) -> List[Action]:

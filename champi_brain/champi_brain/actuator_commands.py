@@ -28,6 +28,8 @@ class ActuatorCommand(IntEnum):
     LET_GO_ELEMENTS_RIGHT_ARM      = 11
 
     STORE_PENDING_MASK             = 12
+    PUMPS_ON = 13
+    PUMPS_OFF = 14
 
     # OTHER COMMON ACTIONS (not sent to STM)
     MOVE                           = 100

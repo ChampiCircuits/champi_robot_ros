@@ -34,10 +34,14 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .take_elements_sequence(Position(0.175, 1.2, 180.0), which_actuator='RIGHT', group="caisses_1") # OK
         .put_elements_sequence(Position(1.25, 1.45, 90.0), which_actuator='RIGHT', group="caisses_1", zone_id="garde_manger_4")
 
+        # on ravance un peu pour pas se prendre les caisses 3 en tournant
+        .move_to(Position(1.25, 1.25, 90.0))
+
         .take_elements_sequence(Position(1.15, 0.8, -90.0), which_actuator='RIGHT', group="caisses_3")
-        .put_elements_sequence(Position(0.8, 0.8, 90.0), which_actuator='RIGHT', group="caisses_3", zone_id="garde_manger_3")
+        .put_elements_sequence(Position(1.5, 0.8, 90.0), which_actuator='RIGHT', group="caisses_3", zone_id="garde_manger_6")
 
         .take_elements_sequence(Position(1.1, 0.175, -90.0), which_actuator='RIGHT', group="caisses_4")
+
 
         .move_to(Position(0.8, 1.0, 160.0), group="see_tag_before_thermo")
         .move_thermometer("move_thermometer")
