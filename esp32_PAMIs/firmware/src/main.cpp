@@ -13,6 +13,10 @@
 const bool TEST_CONTINUOUS_SPEED = false;
 
 void setup() {
+    pinMode(Config::ACTUATOR_PIN, OUTPUT);
+    pinMode(13, OUTPUT);
+    analogWrite(Config::ACTUATOR_PIN, 0);
+    analogWrite(13, 0);
     Serial.begin(115200);
     delay(1000);
     Serial.println("");
@@ -22,11 +26,6 @@ void setup() {
 
     inputsInit();
     ledStatusInit();
-    pinMode(Config::ACTUATOR_PIN, OUTPUT);
-    pinMode(13, OUTPUT);
-    analogWrite(Config::ACTUATOR_PIN, 0);
-    analogWrite(13, 0);
-
     motionInit();
 
     if (TEST_CONTINUOUS_SPEED) {

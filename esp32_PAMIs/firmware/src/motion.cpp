@@ -8,6 +8,9 @@
 #include "stepper_control.h"
 #include "logging.h"
 
+
+const float GLOBAL_SPEED_MM_S_OVERWRITE = 700;
+
 namespace {
 
 using namespace Config;
@@ -231,7 +234,7 @@ void printStepperDiagnostics() {
 
     LOG_WARN("Stepper", "=== Diagnostics ===");
     LOG_WARN("Stepper", "steps_per_mm=%.2f", steps_per_mm);
-    LOG_WARN("Stepper", "ACCEL=%.0fmm/s²  DECEL=%.0fmm/s²  target=%.0fmm/s", ACCEL_MM_S2, DECEL_MM_S2, GLOBAL_SPEED_MM_S);
+    LOG_WARN("Stepper", "ACCEL=%.0fmm/s²  DECEL=%.0fmm/s²  target=%.0fmm/s", ACCEL_MM_S2, DECEL_MM_S2, GLOBAL_SPEED_MM_S_OVERWRITE);
 }
 
 } // namespace
@@ -298,7 +301,9 @@ void motionTick(uint32_t now_us) {
         case MotionState::WAITING_TIRETTE:
             {
                 g_candidate_team = inputsReadTeam();
-                stepperControlDisable(); 
+                // stepperControlDisable(); 
+                digitalWrite(ENABLE_MOTORS, LOW); // Enable hold torque
+
                 if (tirette_active) {
                     buildWorkingTrajectory(g_candidate_team);
                     resetRunProgress();

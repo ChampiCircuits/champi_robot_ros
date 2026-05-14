@@ -7,6 +7,7 @@ const ConfigPanel = ({
     onCompileFlash,
     canCompile,
     isSaving,
+    isFlashing,
 }) => {
     return (
         <div style={{ padding: '20px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box', backgroundColor: '#fafafa' }}>
@@ -35,10 +36,10 @@ const ConfigPanel = ({
 
                 <button 
                     onClick={onCompileFlash}
-                    disabled={!canCompile}
-                    style={{ width: '100%', padding: '15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: canCompile ? '#007bff' : '#8aa0bf', color: '#fff', border: 'none', borderRadius: '4px', cursor: canCompile ? 'pointer' : 'not-allowed' }}
+                    disabled={!canCompile || isFlashing}
+                    style={{ width: '100%', padding: '15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: canCompile && !isFlashing ? '#007bff' : '#8aa0bf', color: '#fff', border: 'none', borderRadius: '4px', cursor: canCompile && !isFlashing ? 'pointer' : 'not-allowed' }}
                 >
-                    {canCompile ? `🚀 Compiler & Flasher ${selectedLabel}` : '🚫 Pas de flash pour le gros robot'}
+                    {!canCompile ? '🚫 Pas de flash pour le gros robot' : isFlashing ? '⏳ Compilation en cours...' : `🚀 Compiler & Flasher ${selectedLabel}`}
                 </button>
             </div>
         </div>
