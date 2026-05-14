@@ -16,8 +16,8 @@ extern uint8_t RIGHT_ARM_3_SERVO_ID;
 
 // THERMOMETER SERVO
 static constexpr int THERMO_SERVO_ID = 7;                     // TODO
-static constexpr int THERMO_SERVO_OPEN   = 40;    // ° [0,270] // TODO
-static constexpr int THERMO_SERVO_CLOSED = 180;  // ° [0,270] // TODO
+static constexpr int THERMO_SERVO_OPEN   = 150;    // ° [0,270] // TODO
+static constexpr int THERMO_SERVO_CLOSED = 40;  // ° [0,270] // TODO
 
 void ActuatorsTaskStart();
 
