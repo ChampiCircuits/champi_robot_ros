@@ -240,6 +240,9 @@ class ObstacleManager:
                 [self._build_enemy_obstacle(*self._enemy_pose)]
             )
         return []
+    
+    def get_borders_obstacles(self) -> list[ObstaclePolygon]:
+        return self._border_obstacles
 
     def get_all_obstacles(self) -> list[ObstaclePolygon]:
         """All obstacles without table-area filtering.
