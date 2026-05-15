@@ -43,7 +43,7 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .take_elements_sequence(Position(1.1, 0.175, -90.0), which_actuator='RIGHT', group="caisses_4")
 
 
-        .move_to(Position(0.8, 1.0, 160.0), group="see_tag_before_thermo")
+        .move_to(Position(0.9, 0.6, 180.0), group="see_tag_before_thermo")
         .move_thermometer("move_thermometer")
 
         .put_elements_sequence(Position(0.7, 0.1, -90.0), which_actuator='RIGHT', group="caisses_4", zone_id="garde_manger_2")
@@ -54,9 +54,9 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
 
         ######################### COME HOME ##########################################
         # movement before coming home to keep some distance from the table elements
-        .move_to(Position(0.9, 1.3, 90.0), group="come_home", use_collision_avoidance=True)
-        .move_to(Position(0.25, 1.3, 90.0), group="come_home", use_collision_avoidance=True)
-        .move_to(Position(0.25, 1.8, 0.0), group="come_home", use_collision_avoidance=True)
+        .move_to(Position(0.9, 1.3, 90.0), group="come_home")
+        .move_to(Position(0.25, 1.3, 90.0), group="come_home")
+        .move_to(Position(0.25, 1.8, 0.0), group="come_home")
         # .come_home() # done automatically at the end by the planner
     )
     
