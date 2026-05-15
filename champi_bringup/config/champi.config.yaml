@@ -134,7 +134,7 @@ path_planner:
     waypoint_speed_linear: 0.5 # m/s
     debug: true
     robot_radius: 0.01 # m = 0.22 (robot radius) + 0.04 (safety margin) # TODO 0.26
-    enemy_robot_radius: 0.32 # m
+    enemy_robot_radius: 0.4 # m
     table_width: 3.0 # m (x dimension)
     table_height: 2.0 # m (y dimension)
     forbidden_area_wait_time: 1.0 # s. Time to wait when robot enters a forbidden area before exiting
