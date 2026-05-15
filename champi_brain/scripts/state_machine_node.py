@@ -267,7 +267,8 @@ class StateMachineNode(Node):
         if self.sim_mode and self.use_default_strategy_and_color_in_sim:
             self.get_logger().warn(f'🎮 SIM MODE: Will auto-load strategy: {self.default_strategy_file}')
             self._pending_auto_load = True
-
+            self.state_machine.notify_match_ready_confirmed()
+            
         self.get_logger().warn('State Machine ready started!\n')
 
 
