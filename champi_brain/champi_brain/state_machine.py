@@ -300,7 +300,7 @@ class StateMachine:
             end_speed=0.0,
             accel_linear=0.5,
             accel_angular=6.0,
-            use_collision_avoidance=False
+            use_collision_avoidance=True
         )
         
         self.logger.info(f"Coming home to ({x:.2f}, {y:.2f}, {theta_deg:.1f}°)")

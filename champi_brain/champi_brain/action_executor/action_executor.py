@@ -163,11 +163,13 @@ class ActionExecutor():
         goal.linear_tolerance = motion_params.linear_tolerance
         goal.angular_tolerance = motion_params.angular_tolerance
 
+        goal.use_collision_avoidance = motion_params.use_collision_avoidance
+
         # Look-at-point (disabled by default)
         goal.do_look_at_point = False
         
         # Timeout
-        goal.timeout = 20.0
+        goal.timeout = 10.0
         
         return goal
 
