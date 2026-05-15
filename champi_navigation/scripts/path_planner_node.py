@@ -27,15 +27,17 @@ from enum import Enum, auto
 
 # Assuming these imports exist in your workspace
 from champi_navigation.obstacle_manager import ObstacleManager
-# from champi_navigation.planner_visibility import PlannerVisibility, PlannerStatus
-from champi_navigation.planner_straight import PlannerStraight, PlannerStatus
+from champi_navigation.planner_visibility import PlannerVisibility
+from champi_navigation.planner_straight import PlannerStraight
 from champi_navigation.planning_feedback import get_feedback_msg
 from champi_navigation.pose_controller_manager import PoseControllerManager
 from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap
 from champi_libraries_py.utils.diagnostics import ExecTimeMeasurer
 from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.angles import get_yaw
-from champi_libraries_py.marker_helper.canva import Canva, items, presets
+from champi_libraries_py.marker_helper.canva import Canva
+from champi_navigation.planner_status import PlannerStatus
+
 
 _INITIALIZING_FEEDBACK_RESULT = getattr(
     Navigate.Feedback,
@@ -114,22 +116,24 @@ class PlannerNode(Node):
         self.mutex_exec = Lock()  # Protects the execution loop
 
         # Core Components
-        # self.visibility_planner = VisibilityRoadMap(expand_distance=self.config.robot_radius)
-        # self.obstacle_manager = self._setup_obstacle_manager()
+        self.visibility_planner = VisibilityRoadMap(expand_distance=self.config.robot_radius)
+        self.obstacle_manager = self._setup_obstacle_manager()
         
-        # self.planner = PlannerVisibility(
-        #     obstacle_manager=self.obstacle_manager,
-        #     visibility_planner=self.visibility_planner,
-        #     waypoint_tolerance=self.config.waypoint_tolerance,
-        #     waypoint_speed_linear=self.config.waypoint_speed_linear,
-        #     forbidden_area_wait_time=self.config.forbidden_area_wait_time,
-        # )
+        self.planner_avoidance = PlannerVisibility(
+            obstacle_manager=self.obstacle_manager,
+            visibility_planner=self.visibility_planner,
+            waypoint_tolerance=self.config.waypoint_tolerance,
+            waypoint_speed_linear=self.config.waypoint_speed_linear,
+            forbidden_area_wait_time=self.config.forbidden_area_wait_time,
+        )
 
-        self.planner = PlannerStraight(
+        self.planner_straight = PlannerStraight(
             waypoint_tolerance=self.config.waypoint_tolerance,
             enemy_front_max_ahead_distance_m=self.config.enemy_front_max_ahead_distance_m,
             enemy_front_max_lateral_offset_m=self.config.enemy_front_max_lateral_offset_m,
         )
+
+        self.active_planner = self.planner_straight
 
         self.pose_controller_manager = PoseControllerManager(
             node=self,
@@ -186,7 +190,9 @@ class PlannerNode(Node):
 
     def _obstacle_states_callback(self, msg: StringMsg) -> None:
         states = json.loads(msg.data)
-        if self.planner.update_obstacle_states(states):
+        changed = self.planner_avoidance.update_obstacle_states(states)
+        changed = self.planner_straight.update_obstacle_states(states) or changed
+        if changed:
             self.get_logger().info('[NAV] Obstacle states updated, planner cache invalidated')
 
     def odom_callback(self, msg: Odometry) -> None:
@@ -194,7 +200,8 @@ class PlannerNode(Node):
 
     def enemy_odom_callback(self, msg: Odometry) -> None:
         pose = Pose2D(pose=msg.pose.pose)
-        self.planner.set_enemy_pose(pose.x, pose.y)
+        self.planner_avoidance.set_enemy_pose(pose.x, pose.y)
+        self.planner_straight.set_enemy_pose(pose.x, pose.y)
         self.get_logger().info(f'Enemy pose received: ({pose.x:.2f}, {pose.y:.2f})', throttle_duration_sec=2.0)
 
     # ==================================== Action Server ==========================================
@@ -211,17 +218,23 @@ class PlannerNode(Node):
             self.current_navigate_goal = navigate_goal
             if self.planning:
                 self.get_logger().warn('[NAV] Preempting previous goal for new one!')
-                self.planner.cancel()
+                self.active_planner.cancel()
                 self.new_goal_waiting = True
 
             self.planning = True
+            if navigate_goal.use_collision_avoidance:
+                self.active_planner = self.planner_avoidance
+                self.get_logger().info('[NAV] Collision avoidance ENABLED for this goal')
+            else:
+                self.active_planner = self.planner_straight
+                self.get_logger().info('[NAV] Collision avoidance DISABLED for this goal')
             
         return GoalResponse.ACCEPT
 
     def cancel_callback(self, goal_handle: ServerGoalHandle) -> CancelResponse:
         with self.state_lock:
             if self.planning:
-                self.planner.cancel()
+                self.active_planner.cancel()
                 self.new_goal_waiting = True
                 self.get_logger().info('[NAV] Cancel accepted, signalling execute_callback to stop')
             else:
@@ -233,7 +246,7 @@ class PlannerNode(Node):
             with self.state_lock:
                 self.new_goal_waiting = False
             
-            self.planner.start(self.current_navigate_goal)
+            self.active_planner.start(self.current_navigate_goal)
             action_state = ActionState.RUNNING
 
             while rclpy.ok() and goal_handle.is_active and action_state == ActionState.RUNNING:
@@ -244,7 +257,7 @@ class PlannerNode(Node):
                 t_loop_start = time.time()
                 self.exec_time_measurer.start()
 
-                output = self.planner.step(self.robot_pose)
+                output = self.active_planner.step(self.robot_pose)
                 
                 # Retrieve pure state directive without passing goal_handle
                 process_result = self._process_planner_output(output)
@@ -311,7 +324,7 @@ class PlannerNode(Node):
                     output.ctrl_goal, metadata=self.current_navigate_goal, is_waypoint=output.is_waypoint
                 )
             self.publish_path([p.to_ros_pose() for p in output.remaining_path])
-            self.planner.draw_viz(output.waypoints, output.waypoint_idx)
+            self.active_planner.draw_viz(output.waypoints, output.waypoint_idx)
             
             return ProcessResult(
                 state=ActionState.RUNNING, 
@@ -368,10 +381,10 @@ class PlannerNode(Node):
             is_planning = self.planning
             
         if not is_planning:
-            self.planner.draw_viz(None, 0)
+            self.active_planner.draw_viz(None, 0)
 
     def _produce_planning_diagnostics(self, stat: diagnostic_updater.DiagnosticStatusWrapper) -> diagnostic_updater.DiagnosticStatusWrapper:
-        metrics = self.planner.planning_metrics
+        metrics = self.active_planner.planning_metrics
         if metrics.last_ms is None:
             stat.summary(diagnostic_msgs.msg.DiagnosticStatus.WARN, "No planning call yet")
             return stat

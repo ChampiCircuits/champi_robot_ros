@@ -9,18 +9,7 @@ from champi_interfaces.action import Navigate
 from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.timeout import Timeout
 import champi_navigation.goal_checker as goal_checker
-
-
-class PlannerStatus(Enum):
-    IDLE = auto()
-    INITIALIZING = auto()
-    RUNNING = auto()
-    NO_PATH = auto()
-    IN_FORBIDDEN_AREA = auto()
-    GOAL_REACHED = auto()
-    TIMED_OUT = auto()
-    CANCELLED = auto()
-
+from champi_navigation.planner_status import PlannerStatus
 
 @dataclass
 class StepOutput:

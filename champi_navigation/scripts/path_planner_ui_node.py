@@ -127,6 +127,8 @@ class PathPlannerUINode(Node):
 
         goal.timeout = 100. # seconds
 
+        # goal.use_collision_avoidance = True
+
         return goal
     
 

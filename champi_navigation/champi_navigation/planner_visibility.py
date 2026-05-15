@@ -12,18 +12,11 @@ from champi_libraries_py.data_types.geometry import Pose2D
 from champi_libraries_py.utils.timeout import Timeout
 from champi_navigation.obstacle_manager import ObstacleManager
 from champi_navigation.visibility_planner.visibility_road_map import VisibilityRoadMap
+from champi_navigation.planner_status import PlannerStatus
 import champi_navigation.goal_checker as goal_checker
 
 
-class PlannerStatus(Enum):
-    IDLE = auto()
-    INITIALIZING = auto()
-    RUNNING = auto()
-    NO_PATH = auto()
-    IN_FORBIDDEN_AREA = auto()
-    GOAL_REACHED = auto()
-    TIMED_OUT = auto()
-    CANCELLED = auto()
+
 
 
 @dataclass
@@ -238,8 +231,8 @@ class PlannerVisibility:
         if self._nav_timeout.is_elapsed():
             return StepOutput(status=PlannerStatus.TIMED_OUT, send_stop=True)
 
-        # 5-8. Forbidden-area state machine
-        if self._forbidden_phase == _ForbiddenAreaPhase.WAITING:
+        # 5-8. Forbidden-area state machine (only when collision avoidance is active)
+        if self._goal.use_collision_avoidance and self._forbidden_phase == _ForbiddenAreaPhase.WAITING:
             if not self._forbidden_wait_timeout.is_elapsed():
                 # Still waiting; keep robot stopped
                 return StepOutput(status=PlannerStatus.IN_FORBIDDEN_AREA, send_stop=True)
@@ -257,7 +250,7 @@ class PlannerVisibility:
                 is_waypoint=True,
             )
 
-        if self._forbidden_phase == _ForbiddenAreaPhase.EXITING:
+        if self._goal.use_collision_avoidance and self._forbidden_phase == _ForbiddenAreaPhase.EXITING:
             if self._obstacle_manager.is_point_in_forbidden_area(robot_pose.x, robot_pose.y):
                 # Robot still inside — keep sending exit ctrl goal
                 return StepOutput(
