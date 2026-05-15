@@ -7,7 +7,7 @@ source ~/champi_ws/src/champi_robot_ros/setup/env/env_common.sh
 alias bringup_restart='sudo systemctl restart champi.service'
 alias bringup_status='systemctl status champi.service'
 alias bringup_stop='sudo systemctl stop champi.service'
-alias bringup_attach='journalctl -u champi.service --since "$(systemctl show -p ActiveEnterTimestamp --value champi.service)" -r'
+alias bringup_follow='journalctl -u champi.service --since "$(systemctl show -p ActiveEnterTimestamp --value champi.service)" -f'
 alias bringup_direct_start='sudo systemctl stop champi.service &&  ~/champi_ws/src/champi_robot_ros/setup/robot/tmux/champi_launch.bash'
 alias champystem='sudo systemctl start champystem.service'
 alias champystop='sudo systemctl stop champystem.service'
