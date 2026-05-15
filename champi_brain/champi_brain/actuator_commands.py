@@ -16,6 +16,7 @@ class ActuatorCommand(IntEnum):
     STOP_ALL_MOTORS                = 1
     ENABLE_ALL_MOTORS              = 2
     GET_READY                      = 3
+
     THERMOMETER_LOWER_SERVO        = 4
     THERMOMETER_RAISE_SERVO        = 5
 
@@ -28,6 +29,7 @@ class ActuatorCommand(IntEnum):
     LET_GO_ELEMENTS_RIGHT_ARM      = 11
 
     STORE_PENDING_MASK             = 12
+    
     PUMPS_ON = 13
     PUMPS_OFF = 14
 

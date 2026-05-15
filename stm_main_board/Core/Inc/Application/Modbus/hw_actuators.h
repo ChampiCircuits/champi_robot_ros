@@ -24,6 +24,7 @@ enum class ActuatorCommand : int
   LOWER_RIGHT_ARM,
   GET_READY_RIGHT_ARM,
   LET_GO_ELEMENTS_RIGHT_ARM,
+  
   STORE_PENDING_MASK,
 
   PUMPS_ON,

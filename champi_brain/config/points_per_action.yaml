@@ -4,4 +4,4 @@
 points_per_action:
   THERMOMETER: 10
   PUT_4_BOXES_OUT_PLUS_BONUS: 17 # 4x3 dans un garde-manger + 5 de bonus de majorité
-  COME_HOME: 10
+  COME_HOME: 0
