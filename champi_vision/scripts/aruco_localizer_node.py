@@ -9,7 +9,6 @@ from rclpy.executors import ExternalShutdownException
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from nav_msgs.msg import Odometry
-from robot_localization.srv import SetPose
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 
 from cv_bridge import CvBridge
@@ -25,6 +24,9 @@ import champi_vision.bird_view as bv
 from champi_vision.aruco_localizer import ArucoDetector, Visualizer
 
 from icecream import ic
+
+from champi_libraries_py.utils.diagnostics import create_topic_freq_diagnostic
+import diagnostic_updater
 
 
 
@@ -78,6 +80,12 @@ class ArucoLocalizerNode(Node):
 
         self.aruco_detector = ArucoDetector()
         self.visualizer = Visualizer()
+
+        # Diagnostic
+        updater = diagnostic_updater.Updater(self)
+        updater.setHardwareID('none')
+
+        self.diagnostic_image_viz_publisher = create_topic_freq_diagnostic('image viz pub frequency', updater, 10)
 
 
     def init_bird_view(self):
@@ -266,6 +274,7 @@ class ArucoLocalizerNode(Node):
         if self.enable_topic_viz:
             image_msg = self.cv_bridge.cv2_to_imgmsg(img_viz, encoding='rgb8')
             self.publisher_viz.publish(image_msg)
+            self.diagnostic_image_viz_publisher.tick()
 
 
 

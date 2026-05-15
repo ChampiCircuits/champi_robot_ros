@@ -4,11 +4,16 @@ After=basic.target
 
 [Service]
 User=champi
-Type=forking
-Environment=TMUX_TMPDIR=/tmp
-ExecStart=/bin/bash -c "/home/champi/champi_ws/src/champi_robot_ros/setup/robot/tmux/champi_launch_tmux.bash"
-ExecStop=/usr/bin/tmux kill-session -t champi_session
-RemainAfterExit=true
+Type=simple
+# To get python logs real-time
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/bin/bash /home/champi/champi_ws/src/champi_robot_ros/setup/robot/tmux/champi_launch.bash
+Restart=on-failure
+
+# Tell systemd to send Ctrl+C (SIGINT) instead of standard SIGTERM
+KillSignal=SIGINT
+# Force kill (SIGKILL) any processes that don't exit within 5 seconds
+TimeoutStopSec=5
 
 [Install]
 WantedBy=multi-user.target
