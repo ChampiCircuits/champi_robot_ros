@@ -3,7 +3,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 from launch.actions import DeclareLaunchArgument, GroupAction
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, OrSubstitution
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition, UnlessCondition
@@ -19,6 +19,12 @@ def generate_launch_description():
     sim_arg = DeclareLaunchArgument(
         'sim',
         description='Launch simulation (true|false)',
+    )
+
+    actuators_test_arg = DeclareLaunchArgument(
+        'actuators_test',
+        default_value='False',
+        description='Test actuators mode: simulated base, real actuators (true|false)',
     )
 
     # Get configuration file
@@ -74,6 +80,7 @@ def generate_launch_description():
             get_package_share_directory('champi_hw_interface'),
             '/launch/hardware_interface.launch.py'
         ]),
+        launch_arguments={'disable_base_control': LaunchConfiguration('actuators_test')}.items(),
         condition=UnlessCondition(LaunchConfiguration('sim'))
     )
 
@@ -83,11 +90,15 @@ def generate_launch_description():
         name='hardware_interface_simu',
         output='screen',
         parameters=[config_file_path],
-        condition=IfCondition(LaunchConfiguration('sim'))
+        condition=IfCondition(OrSubstitution(
+            LaunchConfiguration('sim'),
+            LaunchConfiguration('actuators_test')
+        ))
     )
 
     return LaunchDescription([
         sim_arg,
+        actuators_test_arg,
         static_tf_map_odom,
         description_broadcaster,
         hardware_interface_launch,

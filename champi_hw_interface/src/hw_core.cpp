@@ -27,6 +27,12 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     this->baud_rate_ = this->get_parameter("baud_rate").as_int();
     this->slave_id_ = this->get_parameter("slave_id").as_int();
 
+    this->declare_parameter<bool>("disable_base_control", false);
+    this->disable_base_control_ = this->get_parameter("disable_base_control").as_bool();
+    if (this->disable_base_control_) {
+        RCLCPP_WARN(this->get_logger(), "⚠️  Base control DISABLED - actuators test mode");
+    }
+
     stm_config_.is_set = false;
 
     stm_config_.holo_drive_config.wheel_radius = this->declare_parameter<double>("stm_config.holo_drive_config.wheel_radius");
@@ -242,23 +248,26 @@ void HardwareInterfaceNode::loop() {
 
     if (mod_reg::state->safe_check_counter != latest_safe_check_counter_value) {
         latest_safe_check_counter_value = mod_reg::state->safe_check_counter;
-        auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
-        pub_odom_otos_->publish(odom_otos);
+        
+        if (!disable_base_control_) {
+            auto odom_otos = make_odom_otos(mod_reg::state->otos_pose, dt);
+            pub_odom_otos_->publish(odom_otos);
 
-        geometry_msgs::msg::TransformStamped transform_stamped;
+            geometry_msgs::msg::TransformStamped transform_stamped;
 
-        // Write
-        mod_reg::cmd->is_read = false;
-        mod_reg::cmd->cmd_vel.x = -latest_twist_.linear.x;
-        mod_reg::cmd->cmd_vel.y = latest_twist_.linear.y;
-        mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
+            // Write
+            mod_reg::cmd->is_read = false;
+            mod_reg::cmd->cmd_vel.x = -latest_twist_.linear.x;
+            mod_reg::cmd->cmd_vel.y = latest_twist_.linear.y;
+            mod_reg::cmd->cmd_vel.theta = latest_twist_.angular.z;
 
-        // RCLCPP_INFO(this->get_logger(), "New cmd_vel to send: x: %.2f, y: %.2f, theta: %.2f",
-        //              mod_reg::cmd->cmd_vel.x,
-        //              mod_reg::cmd->cmd_vel.y,
-        //              mod_reg::cmd->cmd_vel.theta);
+            // RCLCPP_INFO(this->get_logger(), "New cmd_vel to send: x: %.2f, y: %.2f, theta: %.2f",
+            //              mod_reg::cmd->cmd_vel.x,
+            //              mod_reg::cmd->cmd_vel.y,
+            //              mod_reg::cmd->cmd_vel.theta);
 
-        write(mod_reg::reg_cmd);
+            write(mod_reg::reg_cmd);
+        }
     }
     else {
         RCLCPP_DEBUG(this->get_logger(), "Safe check counter is still the same: %d",

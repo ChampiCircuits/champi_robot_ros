@@ -67,12 +67,21 @@ def generate_launch_description():
         description='Launch state machine (true|false)',
     )
 
+    actuators_test_arg = DeclareLaunchArgument(
+        'actuators_test',
+        default_value='False',
+        description='Test actuators mode: simulated base, real actuators (true|false)',
+    )
+
     base_launch = IncludeLaunchDescription(
         launch_description_source=PythonLaunchDescriptionSource([
             get_package_share_directory('champi_bringup'),
             '/launch/base.launch.py'
         ]),
-        launch_arguments={'sim': LaunchConfiguration('sim')}.items(),
+        launch_arguments={
+            'sim': LaunchConfiguration('sim'),
+            'actuators_test': LaunchConfiguration('actuators_test')
+        }.items(),
         condition=IfCondition(LaunchConfiguration('base'))
     )
 
@@ -135,6 +144,7 @@ def generate_launch_description():
         act_arg,
         brain_arg,
         sensors_arg,
+        actuators_test_arg,
 
         base_launch,
         nav_launch,
