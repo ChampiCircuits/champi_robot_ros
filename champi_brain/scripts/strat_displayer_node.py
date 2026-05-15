@@ -34,7 +34,10 @@ class StrategyPublisher(Node):
         self.markers_publisher = self.create_publisher(MarkerArray, '/strategy_markers', 10)
 
         self.get_logger().info('>> Loading strategy...')
-        strategy_path = get_package_share_directory('champi_brain') + '/strategies/' + strategy_file
+        if os.path.isabs(strategy_file):
+            strategy_path = strategy_file
+        else:
+            strategy_path = get_package_share_directory('champi_brain') + '/strategies/' + strategy_file
         world_state_path = get_package_share_directory('champi_brain') + '/config/' + initial_world_state_file
 
         self.actions, self.init_pose, self.home_pose, self.wait_to_come_home_pose, _, _ = load_strategy(
@@ -64,35 +67,31 @@ class StrategyPublisher(Node):
     
     def get_action_color(self, action_type):
         """Return color based on action type"""
+        name = action_type.name
         # Check by category first
-        if action_type == 'move':
+        if name == 'MOVE':
             return ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)  # Red
-        elif action_type == 'moveForPlatform':
-            return ColorRGBA(r=0.0, g=0.8, b=0.8, a=1.0)  # Cyan
-        elif action_type == 'detectNutBoxes':
+        elif name == 'detectNutBoxes':
             return ColorRGBA(r=0.0, g=0.5, b=1.0, a=1.0)  # Blue
-        elif 'TAKE' in action_type:
+        elif 'TAKE' in name:
             return ColorRGBA(r=1.0, g=0.5, b=0.0, a=1.0)  # Orange for all TAKE actions
-        elif 'PUT' in action_type:
+        elif 'PUT' in name:
             return ColorRGBA(r=0.5, g=0.0, b=1.0, a=1.0)  # Purple for all PUT actions
-        elif action_type == 'GET_READY':
+        elif name == 'GET_READY':
             return ColorRGBA(r=1.0, g=1.0, b=0.0, a=1.0)  # Yellow
-        elif action_type == 'add_points':
+        elif name == 'ADD_POINTS':
             return ColorRGBA(r=1.0, g=0.84, b=0.0, a=1.0)  # Gold
         else:
             return ColorRGBA(r=0.7, g=0.7, b=0.7, a=1.0)  # Gray default
     
     def get_action_marker_type(self, action_type):
         """Return marker type based on action"""
-        if action_type == 'move':
+        name = action_type.name
+        if name == 'MOVE':
             return Marker.ARROW
-        elif action_type == 'moveForPlatform':
-            return Marker.ARROW
-        elif action_type == 'detectNutBoxes':
-            return Marker.SPHERE
-        elif 'TAKE' in action_type:
+        elif 'TAKE' in name:
             return Marker.CUBE
-        elif 'PUT' in action_type:
+        elif 'PUT' in name:
             return Marker.CYLINDER
         else:
             return Marker.SPHERE
@@ -248,7 +247,7 @@ class StrategyPublisher(Node):
         
         for i, action in enumerate(self.actions):
             action_type = action.action
-            if action_type == 'add_points' or action_type == 'GET_READY':
+            if action_type.name in ('ADD_POINTS', 'GET_READY'):
                 continue
             
             # Determine if action has target/offset
@@ -291,7 +290,7 @@ class StrategyPublisher(Node):
             marker = Marker()
             marker.header.frame_id = "odom"
             marker.header.stamp = self.get_clock().now().to_msg()
-            marker.ns = "strategy_actions" if 'action' in action_type else "strategy_moves"
+            marker.ns = "strategy_moves" if action_type.name == 'MOVE' else "strategy_actions"
             marker.id = marker_id
             marker.type = self.get_action_marker_type(action_type)
             marker.action = Marker.ADD
@@ -315,7 +314,7 @@ class StrategyPublisher(Node):
             marker.pose.orientation.w = cos(angle_rad / 2)
             
             # Size
-            if 'move' in action_type:
+            if action_type.name == 'MOVE':
                 marker.scale.x = 0.05  # Arrow length
                 marker.scale.y = 0.015  # Arrow width
                 marker.scale.z = 0.015  # Arrow height
@@ -334,7 +333,7 @@ class StrategyPublisher(Node):
             text_marker = Marker()
             text_marker.header.frame_id = "odom"
             text_marker.header.stamp = self.get_clock().now().to_msg()
-            text_marker.ns = "strategy_labels_move" if 'move' in action_type else "strategy_labels_action"
+            text_marker.ns = "strategy_labels_move" if action_type.name == 'MOVE' else "strategy_labels_action"
             text_marker.id = marker_id
             text_marker.type = Marker.TEXT_VIEW_FACING
             text_marker.action = Marker.ADD
@@ -349,7 +348,7 @@ class StrategyPublisher(Node):
             text_marker.color = ColorRGBA(r=1.0, g=1.0, b=1.0, a=1.0)
             
             # Create label text with sequential numbering
-            label = f"{action_count}:{action_type}"
+            label = f"{action_count}:{action_type.name}"
             text_marker.text = label
             
             marker_array.markers.append(text_marker)
@@ -369,14 +368,15 @@ class StrategyPublisher(Node):
         self.get_logger().info('Published strategy markers.')
 
 
-def main(args=None):
-    rclpy.init(args=args)
-
-    if len(sys.argv) < 2:
-        print("Usage: ros2 run champi_brain strategy_publisher_node.py <strategy_file.py>")
+def main():
+    if len(sys.argv) < 2 or sys.argv[1].startswith('--'):
+        print("Usage: ros2 run champi_brain strat_displayer_node.py <strategy_file.py>")
         return
 
     strategy_file = sys.argv[1]
+    # Remove the positional strategy file arg so rclpy processes --ros-args / --params-file correctly
+    rclpy.init(args=sys.argv[0:1] + sys.argv[2:])
+
     node = StrategyPublisher(strategy_file)
 
     try:
