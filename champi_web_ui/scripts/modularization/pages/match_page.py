@@ -94,13 +94,25 @@ def create() -> None:
                     # ui.button("Ouvrir bannière", on_click=open_banner)
                     
                     ui.label('Vue Caméra: /viz/image_detection').classes('text-h6 mt-4')
-                    viz_image_ui = ui.interactive_image().style('width: 100%; max-width: 400px; border: 1px solid #ccc;')
+                    viz_image_ui = ui.interactive_image().style('width: 100%; max-width: 200px; border: 1px solid #ccc;')
                     
                     def update_viz_image():
                         if ros_node.latest_viz_image_b64 and viz_image_ui.source != ros_node.latest_viz_image_b64:
                             viz_image_ui.source = ros_node.latest_viz_image_b64
                             
                     ui.timer(0.1, update_viz_image)
+
+                    # display last odom time, and tirette and e_stop status as labels here also
+
+                    global last_odom_time_label
+                    last_odom_time_label = ui.label('Dernier msg otos: ??')
+                    ui.timer(1.0, update_label_odom)
+
+
+                    global tirette_label, e_stop_label
+                    tirette_label = ui.label('La tirette est: ??')
+                    e_stop_label = ui.label('Le BAU est: ??')
+                    ui.timer(1.0, update_label_tirette_bau)
 
                 with ui.column():
                     container = ui.column().classes('w-full; items-center')
@@ -130,20 +142,8 @@ def create() -> None:
                                 #     ui.button('Retour', on_click=stepper.previous).props('flat')
 
 
-                            with ui.step('Check rapide des nodes'):
-                                global last_odom_time_label
-                                last_odom_time_label = ui.label('Dernier msg otos: ??')
-                                ui.timer(1.0, update_label_odom)
-
-                                with ui.stepper_navigation():
-                                    ui.button('Suivant', on_click=stepper.next)
-                                    ui.button('Retour', on_click=stepper.previous).props('flat')
-
                             with ui.step('Vérification tirette/BAU'):
-                                global tirette_label, e_stop_label
-                                tirette_label = ui.label('La tirette est: ??')
-                                e_stop_label = ui.label('Le BAU est: ??')
-                                ui.timer(1.0, update_label_tirette_bau)
+                                ui.label('Vérifier que la tirette est enfoncée et que le BAU est relâché')
                                 with ui.stepper_navigation():
                                     ui.button('Suivant', on_click=stepper.next)
                                     ui.button('Retour', on_click=stepper.previous).props('flat')
