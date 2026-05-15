@@ -267,8 +267,7 @@ class StateMachineNode(Node):
         if self.sim_mode and self.use_default_strategy_and_color_in_sim:
             self.get_logger().warn(f'🎮 SIM MODE: Will auto-load strategy: {self.default_strategy_file}')
             self._pending_auto_load = True
-            self.state_machine.notify_match_ready_confirmed()
-            
+
         self.get_logger().warn('State Machine ready started!\n')
 
 
@@ -409,15 +408,12 @@ class StateMachineNode(Node):
         # Ignore "no detection" sentinel
         if msg.pose.position.z == -1.0:
             return
-        
 
         current_action = self.state_machine.current_action
         if current_action is None or current_action.action != ActuatorCommand.DETECT_NUTBOXES:
             return
         
         self.get_logger().info(f'📦 Nutbox pose received: ({msg.pose.position.x:.2f}, {msg.pose.position.y:.2f}) in base_link frame')
-        self.get_logger().warn(f'colors = {msg.colors}')
-
 
         # Cancel timeout — we have a valid detection
         self.action_executor.cancel_detect_nutboxes_timeout()
@@ -527,7 +523,7 @@ class StateMachineNode(Node):
             self.state_pub.publish(msg)
             return
         
-        # Auto-release tirette in sim mode
+        # Auto-release tirette in sim mode (skip "Prêt !!" UI step)
         if self.sim_mode and self.state_machine.get_state() == StateMachine.STATE_INIT:
             if not self.tirette_released:
                 delay = 2.0  # seconds
@@ -535,6 +531,7 @@ class StateMachineNode(Node):
                 self.get_clock().sleep_for(Duration(seconds=delay))
                 self.get_logger().warn('🎮 Simulation mode: Tirette released !')
                 self.tirette_released = True
+                self.state_machine.notify_match_ready_confirmed()
                 self.state_machine.notify_tirette_released()
         
         # Call state machine update
