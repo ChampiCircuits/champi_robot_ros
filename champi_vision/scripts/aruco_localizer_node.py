@@ -28,6 +28,8 @@ from icecream import ic
 from champi_libraries_py.utils.diagnostics import create_topic_freq_diagnostic
 import diagnostic_updater
 
+CAMERA_TOPIC_BASE = '/camera/camera/color/'
+
 
 
 class ArucoLocalizerNode(Node):
@@ -61,14 +63,14 @@ class ArucoLocalizerNode(Node):
         self.camera_info = None
         self.subscription_cam_info = self.create_subscription(
             CameraInfo,
-            '/camera/camera/color/camera_info',
+            CAMERA_TOPIC_BASE + 'camera_info',
             self.callback_cam_info,
             10)
 
         # handle image
         self.image_subscriber = self.create_subscription(
             Image,
-            '/camera/camera/color/image_raw',
+            CAMERA_TOPIC_BASE + 'image_raw',
             self.image_callback,
             10)
 
@@ -85,7 +87,8 @@ class ArucoLocalizerNode(Node):
         updater = diagnostic_updater.Updater(self)
         updater.setHardwareID('none')
 
-        self.diagnostic_image_viz_publisher = create_topic_freq_diagnostic('image viz pub frequency', updater, 10)
+        self.diagnostic_freq_camera_subscriber = create_topic_freq_diagnostic("Subscriber " + CAMERA_TOPIC_BASE + 'image_raw', updater, 10)
+        self.diagnostic_freq_image_viz_publisher = create_topic_freq_diagnostic("Publisher /viz/image_detection", updater, 30)
 
 
     def init_bird_view(self):
@@ -238,6 +241,8 @@ class ArucoLocalizerNode(Node):
                 "Ensure the camera driver publishes with synchronized ROS time.",
                 throttle_duration_sec=1.0
             )
+        
+        self.diagnostic_freq_camera_subscriber.tick()
 
     def is_blurry(self, image, threshold=1000.0):
         """
@@ -274,7 +279,7 @@ class ArucoLocalizerNode(Node):
         if self.enable_topic_viz:
             image_msg = self.cv_bridge.cv2_to_imgmsg(img_viz, encoding='rgb8')
             self.publisher_viz.publish(image_msg)
-            self.diagnostic_image_viz_publisher.tick()
+            self.diagnostic_freq_image_viz_publisher.tick()
 
 
 
