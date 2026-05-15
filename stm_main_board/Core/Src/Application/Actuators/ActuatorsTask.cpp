@@ -23,13 +23,13 @@ static uint8_t pending_right_mask = 0;
 
 // CUPS are from right to left, from the point of view of the robot. So cup0 is the rightmost, cup3 the leftmost.
 uint8_t LEFT_ARM_0_SERVO_ID = 5;
-uint8_t LEFT_ARM_1_SERVO_ID = 18;
+uint8_t LEFT_ARM_1_SERVO_ID = -1; // TODO REMOVED
 uint8_t LEFT_ARM_2_SERVO_ID = 13;
 uint8_t LEFT_ARM_3_SERVO_ID = 17;
 
 
 uint8_t RIGHT_ARM_0_SERVO_ID = 8;
-uint8_t RIGHT_ARM_1_SERVO_ID = 14;
+uint8_t RIGHT_ARM_1_SERVO_ID = 18;
 uint8_t RIGHT_ARM_2_SERVO_ID = 6;
 uint8_t RIGHT_ARM_3_SERVO_ID = 9;
 
