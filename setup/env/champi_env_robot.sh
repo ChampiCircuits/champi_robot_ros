@@ -4,10 +4,11 @@
 
 source ~/champi_ws/src/champi_robot_ros/setup/env/env_common.sh
 
-alias chapi='~/champi_ws/src/champi_robot_ros/setup/robot/tmux/champi_start.bash'
-alias chapo='~/champi_ws/src/champi_robot_ros/setup/robot/tmux/champi_stop.bash'
-alias attach='~/champi_ws/src/champi_robot_ros/setup/robot/tmux/champi_attach.bash'
-alias launch='~/champi_ws/src/champi_robot_ros/setup/robot/tmux/champi_launch.bash'
+alias bringup_restart='sudo systemctl restart champi.service'
+alias bringup_status='systemctl status champi.service'
+alias bringup_stop='sudo systemctl stop champi.service'
+alias bringup_attach='journalctl -u champi.service --since "$(systemctl show -p ActiveEnterTimestamp --value champi.service)" -r'
+alias bringup_direct_start='sudo systemctl stop champi.service &&  ~/champi_ws/src/champi_robot_ros/setup/robot/tmux/champi_launch.bash'
 alias champystem='sudo systemctl start champystem.service'
 alias champystop='sudo systemctl stop champystem.service'
 alias serial_monitor0='pio device monitor -p /dev/ttyACM0 -b 115200 -f direct'
