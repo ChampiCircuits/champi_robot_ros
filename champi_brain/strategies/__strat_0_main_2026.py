@@ -10,7 +10,7 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         # Configuration of poses
         .set_init_pose(0.4, 1.8, 0.0) # nid jaune
         .set_home_pose(0.25, 1.8, 0.0) # nid jaune
-        .set_wait_to_come_home_pose(0.25, 1.4, 90.0)  # position in front of yellow home zone
+        .set_wait_to_come_home_pose(0.25, 1.4, 0.0)  # position in front of yellow home zone # TODO not used
         
         # Create groups
         .create_group("caisses_1")
@@ -24,14 +24,15 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .create_group("move_thermometer")
         .create_group("sortie_grenier")
         .create_group("come_home")
+        .create_group("on_the_side_for_pamis")
 
         ## The whole strategy is always given for YELLOW team
         ## Position() coordinates are automatically transformed for BLUE team via central symmetry
         ## Elements IDs (when used) are automatically transformed via mirror_id mapping
 
         # premier mouvement pour éviter le grenier
-        .move_to(Position(0.4, 1.4, 0.0), group="sortie_grenier") # plus besoin
-        .move_to(Position(0.5, 1.3, 0.0), group="sortie_grenier") # plus besoin
+        .move_to(Position(0.4, 1.4, 0.0), group="sortie_grenier")
+        .move_to(Position(0.5, 1.3, 0.0), group="sortie_grenier")
 
         .take_elements_sequence(Position(0.175, 1.2, 180.0), which_actuator='RIGHT', group="caisses_1") # OK
         .put_elements_sequence(Position(1.25, 1.45, 90.0), which_actuator='RIGHT', group="caisses_1", zone_id="garde_manger_4")
@@ -51,14 +52,14 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .put_elements_sequence(Position(0.7, 0.1, -90.0), which_actuator='RIGHT', group="caisses_4", zone_id="garde_manger_2")
 
         .take_elements_sequence(Position(0.175, 0.4, 180.0), which_actuator='RIGHT', group="caisses_2")
-        .put_elements_sequence(Position(0.1, 0.8, 180.0), which_actuator='RIGHT', group="caisses_2", zone_id="garde_manger_1") # OK
+        .put_elements_sequence(Position(0.1, 0.8, 180.0), which_actuator='RIGHT', group="caisses_2", zone_id="garde_manger_1")
 
 
         ######################### COME HOME ##########################################
         # movement before coming home to keep some distance from the table elements
-        .move_to(Position(0.9, 1.3, 90.0), group="come_home")
+        .move_to(Position(0.9, 1.3, 90.0), group="on_the_side_for_pamis")
         .move_to(Position(0.25, 1.3, 90.0), group="come_home")
-        .move_to(Position(0.25, 1.8, 0.0), group="come_home")
+        .move_to(Position(0.25, 1.8, 0.0), group="come_home")  # TODO DEBOGUER LE COME_HOME
         # .come_home() # done automatically at the end by the planner
     )
     

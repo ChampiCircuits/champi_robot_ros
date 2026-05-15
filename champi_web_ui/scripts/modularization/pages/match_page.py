@@ -90,10 +90,9 @@ def create() -> None:
 
             with ui.grid(columns=2).style('width: 100%;padding-top:150px'):
                 with ui.column():
-                    ui.button("Reset", on_click=reset_all)
+                    ui.button("Reset in-match page", on_click=reset_all)
                     # ui.button("Ouvrir bannière", on_click=open_banner)
                     
-                    ui.label('Vue Caméra: /viz/image_detection').classes('text-h6 mt-4')
                     viz_image_ui = ui.interactive_image().style('width: 100%; max-width: 200px; border: 1px solid #ccc;')
                     
                     def update_viz_image():
@@ -101,13 +100,6 @@ def create() -> None:
                             viz_image_ui.source = ros_node.latest_viz_image_b64
                             
                     ui.timer(0.1, update_viz_image)
-
-                    # display last odom time, and tirette and e_stop status as labels here also
-
-                    global last_odom_time_label
-                    last_odom_time_label = ui.label('Dernier msg otos: ??')
-                    ui.timer(1.0, update_label_odom)
-
 
                     global tirette_label, e_stop_label
                     tirette_label = ui.label('La tirette est: ??')
@@ -122,7 +114,7 @@ def create() -> None:
                         with stepper:
                             with ui.step('Positionner le robot sur la table'):
                                 with ui.stepper_navigation():
-                                    ui.label('Montrer un tag au robot')
+                                    ui.label('TODO noter la position')
                                     ui.button('Robot placé ✓', on_click=stepper.next)
 
                             # with ui.step('Choisir la position de départ'):
@@ -142,8 +134,16 @@ def create() -> None:
                                 #     ui.button('Retour', on_click=stepper.previous).props('flat')
 
 
+                            with ui.step('Check rapide des nodes'):
+                                global last_odom_time_label
+                                last_odom_time_label = ui.label('Dernier msg otos: ??')
+                                ui.timer(1.0, update_label_odom)
+
+                                with ui.stepper_navigation():
+                                    ui.button('Suivant', on_click=stepper.next)
+                                    ui.button('Retour', on_click=stepper.previous).props('flat')
+
                             with ui.step('Vérification tirette/BAU'):
-                                ui.label('Vérifier que la tirette est enfoncée et que le BAU est relâché')
                                 with ui.stepper_navigation():
                                     ui.button('Suivant', on_click=stepper.next)
                                     ui.button('Retour', on_click=stepper.previous).props('flat')
