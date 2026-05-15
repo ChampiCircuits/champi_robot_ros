@@ -127,6 +127,11 @@ pose_controller:
     default_motion_angular_tolerance: 0.05 # rad = ~3 degrees
 
 
+collision_detector:
+  ros__parameters:
+    vector_tolerance: 0.3
+    time_threshold: 0.5
+
 path_planner:
   ros__parameters:
     planner_loop_period: 0.05
