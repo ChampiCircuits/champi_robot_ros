@@ -350,7 +350,7 @@ class StrategyBuilder:
 
         # Approach movement
         self.move_relative_to(elements_center, Offset(-0.35, 0.0, 0.0), use_collision_avoidance=True)
-        self.wait(1.0)  # wait a bit to stabilize before detection
+        self.wait(0.5)  # wait a bit to stabilize before detection
 
         # NutBoxes detection — after this action, "<group>" is available in world state as the position of detected nut boxes
         self.custom_action(ActuatorCommand.DETECT_NUTBOXES)

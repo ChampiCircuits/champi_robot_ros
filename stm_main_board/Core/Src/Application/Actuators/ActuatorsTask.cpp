@@ -133,7 +133,7 @@ void HandleRequest(const ActuatorCommand cmd,
         LOG_INFO("act", "[RIGHT ARM] letGoCups done, resetting pending_right_mask.");
         pending_right_mask = 0;
         LOG_INFO("act", "[RIGHT ARM] LET_GO done. Now putting back all cups to RETURN position...");
-        osDelay(3000);
+        osDelay(1500);
         right_arm.initAllServos();
         break;
 
