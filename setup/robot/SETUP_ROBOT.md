@@ -172,3 +172,18 @@ and reboot
 sudo systemctl disable ufw
 sudo apt remove ufw
 ```
+
+
+
+
+
+sudo touch /etc/cloud/cloud-init.disabled
+
+sudo rm /etc/netplan/50-cloud-init.yaml
+
+
+
+# Quick fix for champi AP
+sudo addr add 172.0.0.1/24 dev wlp1s0
+sudo systemctl restart hostapd.service
+sudo systemctl restart isc-dhcp-server
