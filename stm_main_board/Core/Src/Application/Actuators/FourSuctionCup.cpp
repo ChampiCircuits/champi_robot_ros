@@ -63,8 +63,10 @@ void FourSuctionCup::letGoCups(uint8_t suction_cups_activation_for_request)
 
 void FourSuctionCup::setPumpState(bool enable)
 {
+    LOG_INFO("4cup", "Turning %s pump (GPIO %s pin %d)", enable ? "ON" : "OFF", PUMP_0_GPIO_Port, PUMP_0_GPIO_Pin);
     // write the GPIO to control the pump relay
-    HAL_GPIO_WritePin(PUMP_0_GPIO_Port, PUMP_0_GPIO_Pin, enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(D0_GPIO_Port, D0_Pin, enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(D1_GPIO_Port, D1_Pin, enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 void FourSuctionCup::setCupsPosition(uint8_t mask, float position)
