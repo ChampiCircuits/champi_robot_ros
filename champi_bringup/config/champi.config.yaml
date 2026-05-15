@@ -133,7 +133,7 @@ path_planner:
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
     waypoint_speed_linear: 0.5 # m/s
     debug: true
-    robot_radius: 0.01 # m = 0.22 (robot radius) + 0.04 (safety margin) # TODO 0.26
+    robot_radius: 0.28 # m = 0.22 (robot radius) + 0.04 (safety margin) # TODO 0.26
     enemy_robot_radius: 0.4 # m
     table_width: 3.0 # m (x dimension)
     table_height: 2.0 # m (y dimension)
@@ -159,7 +159,7 @@ path_planner:
     default_sim_color: 'YELLOW'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
 
     # Match timing parameters
-    match_total_time: 100.0                           # seconds - Total match duration
+    match_total_time: 12.0                           # seconds - Total match duration
     return_home_safety_margin: 2.0                    # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left
     simulate_actuators_delays: true                   # If false, actuators commands will be applied instantly (no delay simulation)
 

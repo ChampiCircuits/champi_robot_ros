@@ -316,7 +316,7 @@ class StrategyBuilder:
         # world_frame=True  → x/y offsets are absolute (not rotated by target theta)
         # theta_world_frame=True → robot always faces 180° (left) regardless of team color,
         #                          because the servo arm is physically on one fixed side of the robot
-        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.25, 30.0, world_frame=True, theta_world_frame=True), use_collision_avoidance=True)
+        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.25, 30.0, world_frame=True, theta_world_frame=True))
         self.custom_action(ActuatorCommand.THERMOMETER_LOWER_SERVO)
         self.move_relative_to(thermometer_target_position, Offset(0.05, 0.25, 30.0, world_frame=True, theta_world_frame=True), linear_tolerance=0.0025, speed=0.1)
         self.custom_action(ActuatorCommand.THERMOMETER_RAISE_SERVO)
@@ -349,7 +349,7 @@ class StrategyBuilder:
             raise ValueError(f"Invalid actuator specified: {which_actuator}. Must be 'LEFT' or 'RIGHT'.")
 
         # Approach movement
-        self.move_relative_to(elements_center, Offset(-0.35, 0.0, 0.0), use_collision_avoidance=True)
+        self.move_relative_to(elements_center, Offset(-0.35, 0.0, 0.0))
         self.wait(0.5)  # wait a bit to stabilize before detection
 
         # NutBoxes detection — after this action, "<group>" is available in world state as the position of detected nut boxes
@@ -389,10 +389,10 @@ class StrategyBuilder:
         else:
             raise ValueError(f"Invalid actuator specified: {which_actuator}. Must be 'LEFT' or 'RIGHT'.")
         
-        self.move_relative_to(target_position, Offset(-0.3, 0.0, offset_angle), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
+        self.move_relative_to(target_position, Offset(-0.3, 0.0, offset_angle), linear_tolerance=0.001, angular_tolerance=0.05)
         # Embed zone_occupied so the planner marks the target zone as occupied after placing
         self.custom_action(actuator_command, zone_occupied=zone_id)
-        self.move_relative_to(target_position, Offset(-0.4, 0.0, offset_angle), use_collision_avoidance=False, linear_tolerance=0.001, angular_tolerance=0.05)
+        self.move_relative_to(target_position, Offset(-0.4, 0.0, offset_angle), linear_tolerance=0.001, angular_tolerance=0.05)
 
         # Add points
         points = self.points_per_action["PUT_4_BOXES_OUT_PLUS_BONUS"]
@@ -403,9 +403,9 @@ class StrategyBuilder:
     def come_home(self) -> 'StrategyBuilder':
         """Return home
         """
-        # if self.home_pose:
+        if self.home_pose:
             # self.move_relative_to(self.home_pose, Offset(0, 0.4, 0.0), group="come_home") # to avoid the grenier
-            # self.move_to(self.home_pose, group="come_home")
+            self.move_to(self.home_pose, group="come_home", use_collision_avoidance=True)
         points = self.points_per_action["COME_HOME"]
         self.add_points(points, f"come_home finished. {points} points for coming home", group="come_home")
         self.custom_action(ActuatorCommand.PUMPS_OFF)
