@@ -94,7 +94,6 @@ private:
 
     char latest_safe_check_counter_value{-1};
 
-    bool disable_base_control_{false};
     geometry_msgs::msg::Twist latest_twist_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscriber_twist_;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscriber_strategy;

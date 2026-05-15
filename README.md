@@ -73,12 +73,6 @@ rviz2 -d ~/champi_ws/src/champi_robot_ros/champi_bringup/config/rviz/config.rviz
  ros2 launch champi_bringup bringup.launch.py sim:=true nav:=true brain:=true sensors:=false
 ```
 
-## Launching in semi simu
-
-```shell
-ros2 launch champi_bringup bringup.launch.py sim:=false actuators_test:=true act:=true base:=true sensors:=false
-```
-
 ## Launching on the robot
 
 When booting, the mini-PC will automatically launch the `champystem.service` systemd service that launches the ROS2 nodes. So you don't have to do anything to launch the code on the robot.

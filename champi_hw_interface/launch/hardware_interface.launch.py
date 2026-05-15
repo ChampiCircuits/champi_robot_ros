@@ -8,12 +8,6 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
 
-    disable_base_control_arg = DeclareLaunchArgument(
-        'disable_base_control',
-        default_value='False',
-        description='Disable base control (for actuators test mode)',
-    )
-
     config_file_path = os.path.join(get_package_share_directory('champi_bringup'), 'config', 'champi.config.yaml')
 
     hardware_interface_node = Node(
@@ -24,11 +18,9 @@ def generate_launch_description():
         respawn=True,
         parameters=[
             config_file_path,
-            {'disable_base_control': LaunchConfiguration('disable_base_control')}
         ]
     )
 
     return LaunchDescription([
-        disable_base_control_arg,
         hardware_interface_node
     ])
