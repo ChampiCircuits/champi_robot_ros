@@ -144,7 +144,7 @@ path_planner:
     table_height: 2.0 # m (y dimension)
     forbidden_area_wait_time: 1.0 # s. Time to wait when robot enters a forbidden area before exiting
     forbidden_area_margin: 0.05 # m. Margin before triggering forbidden area stop
-    world_state_file: 'initial_world_state.yaml'  # World state file for zone obstacles
+    world_state_file: 'initial_world_state_planner.yaml'  # World state file for zone obstacles
 
 # Champi Brain nodes
 /champi_brain/**:
@@ -164,7 +164,7 @@ path_planner:
     default_sim_color: 'YELLOW'                       # Default team color for simulation: 'YELLOW' or 'BLUE'
 
     # Match timing parameters
-    match_total_time: 20.0                           # seconds - Total match duration
+    match_total_time: 100.0                           # seconds - Total match duration
     return_home_safety_margin: 2.0                    # seconds - Safety margin for returning home --> means that the robot should be at home with this much time left
     simulate_actuators_delays: true                   # If false, actuators commands will be applied instantly (no delay simulation)
 
