@@ -30,7 +30,7 @@ HardwareInterfaceNode::HardwareInterfaceNode() : Node("modbus_sender_node")
     stm_config_.is_set = false;
 
     stm_config_.holo_drive_config.wheel_radius = this->declare_parameter<double>("stm_config.holo_drive_config.wheel_radius");
-    stm_config_.holo_drive_config.base_radius = this->decl are_parameter<double>("stm_config.holo_drive_config.base_radius");
+    stm_config_.holo_drive_config.base_radius = this->declare_parameter<double>("stm_config.holo_drive_config.base_radius");
     stm_config_.holo_drive_config.max_accel_wheel = this->declare_parameter<double>("stm_config.holo_drive_config.max_accel_wheel");
     stm_config_.holo_drive_config.max_accel_linear = this->declare_parameter<double>("stm_config.holo_drive_config.max_acceleration_linear");
     stm_config_.holo_drive_config.max_decel_linear = this->declare_parameter<double>("stm_config.holo_drive_config.max_deceleration_linear");
