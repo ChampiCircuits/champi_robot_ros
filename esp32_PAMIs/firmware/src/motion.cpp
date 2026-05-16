@@ -32,8 +32,10 @@ Waypoint g_working_trajectory[TRAJECTORY_POINTS_COUNT];
 bool g_match_timeout_armed = false;
 bool g_match_timeout_triggered = false;
 uint32_t g_match_timeout_deadline_us = 0;
+uint32_t g_sensor_enable_deadline_us = 0;
 
-constexpr uint32_t kMatchHardStopUs = 100000000UL; // 100 s after pull-cord start.
+const uint32_t kMatchHardStopUs = 100000000UL; // 100 s after pull-cord start.
+const uint32_t kSensorEnableDelayUs = 5000000UL; // 5 s sensor disable after pull-cord start.
 
 constexpr int kGeneratedTrajectoryPoints = static_cast<int>(sizeof(EXPERIMENT_TRAJECTORY) / sizeof(EXPERIMENT_TRAJECTORY[0]));
 
@@ -246,6 +248,7 @@ void motionInit() {
     g_match_timeout_armed = false;
     g_match_timeout_triggered = false;
     g_match_timeout_deadline_us = 0;
+    g_sensor_enable_deadline_us = 0;
     resetRunProgress();
     g_start_deadline_us = 0;
     g_last_telemetry_ms = 0;
@@ -284,11 +287,15 @@ void motionTick(uint32_t now_us) {
 
     float distance_mm = -1.0f;
     distance_mm = readUltrasonicDistanceMm();
-    if (distance_mm > 0.1f) {
-        if (distance_mm <= OBSTACLE_STOP_MM) {
-            g_blocked_by_obstacle = true;
-        } else if (distance_mm >= OBSTACLE_RESUME_MM) {
-            g_blocked_by_obstacle = false;
+    
+    // Only process sensor data after the initial 5 second delay
+    if (timeReachedUs(now_us, g_sensor_enable_deadline_us)) {
+        if (distance_mm > 0.1f) {
+            if (distance_mm <= OBSTACLE_STOP_MM) {
+                g_blocked_by_obstacle = true;
+            } else if (distance_mm >= OBSTACLE_RESUME_MM) {
+                g_blocked_by_obstacle = false;
+            }
         }
     }
 
@@ -305,6 +312,7 @@ void motionTick(uint32_t now_us) {
                     g_start_deadline_us = now_us + static_cast<uint32_t>(DELAY_AFTER_PULL_CORD_S * 1000000.0f);
                     g_match_timeout_armed = true;
                     g_match_timeout_deadline_us = now_us + kMatchHardStopUs;
+                    g_sensor_enable_deadline_us = now_us + kSensorEnableDelayUs;
                     g_state = MotionState::START_DELAY;
                     LOG_WARN("Motion", "Tirette pulled! Starting delay... team=%s start_in=%.1fs",
                              g_candidate_team == Team::YELLOW ? "YELLOW" : "BLUE",
