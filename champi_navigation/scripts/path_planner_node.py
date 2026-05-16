@@ -85,7 +85,7 @@ class PlannerNode(Node):
         # Subscribers
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.enemy_odom_sub = self.create_subscription(Odometry, '/enemy_pose', self.enemy_odom_callback, 10)
-        self.collision_detector_sub = self.create_subscription(Bool, '/collision_detected', self.collision_detector_callback, 10)
+        # self.collision_detector_sub = self.create_subscription(Bool, '/collision_detected', self.collision_detector_callback, 10)
         
         _latched_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.create_subscription(StringMsg, '/planner/obstacle_states', self._obstacle_states_callback, _latched_qos)
