@@ -68,6 +68,7 @@ class ObstacleManager:
             self._checker = VisibilityRoadMap(expand_distance=expand)
 
         self._zones, self._elements = self._load_config(config_path)
+        self._elements = [] # TODO FIX: not used. and was crashing state_machine when element was not defined in world_state.yaml 
         self._element_ids: set[str] = {e["id"] for e in self._elements}
 
         # placement_zones start free (not an obstacle); all other zone types start occupied.

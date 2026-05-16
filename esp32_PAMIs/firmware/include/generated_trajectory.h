@@ -15,9 +15,8 @@ struct Waypoint {
 };
 
 const Waypoint EXPERIMENT_TRAJECTORY[] = {
-    {25.00, 1900.00, 3.00, 0.0},
-    {275.00, 1900.00, 0.00, 0.0},
-    {75.00, 850.00, 0.00, 0.0},
+    {500.00, 0.00, 0.00, 0.0},
+    {500.00, 500.00, 0.00, 0.0},
 };
 
 #endif // GENERATED_TRAJECTORY_H

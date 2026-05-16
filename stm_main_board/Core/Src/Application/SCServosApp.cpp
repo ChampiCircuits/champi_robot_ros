@@ -18,8 +18,8 @@ namespace devices
             // LEFT_ARM_1_SERVO_ID,
             // LEFT_ARM_2_SERVO_ID,
             // LEFT_ARM_3_SERVO_ID,
-            // THERMO_SERVO_ID,
-            RIGHT_ARM_0_SERVO_ID,
+            THERMO_SERVO_ID,
+            // RIGHT_ARM_0_SERVO_ID,
             RIGHT_ARM_1_SERVO_ID,
             RIGHT_ARM_2_SERVO_ID,
             RIGHT_ARM_3_SERVO_ID 

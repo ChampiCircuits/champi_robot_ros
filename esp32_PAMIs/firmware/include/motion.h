@@ -17,10 +17,18 @@ enum class Team : uint8_t {
     YELLOW,
 };
 
+enum class SegmentPhase : uint8_t {
+    IDLE = 0,
+    TURNING,
+    DRIVING,
+    WAITING_POINT,
+};
+
 void motionInit();
 void motionTick(uint32_t now_us);
 MotionState motionGetState();
 Team motionGetTeam();
+SegmentPhase motionGetSegmentPhase();
 
 #endif // MOTION_H
 

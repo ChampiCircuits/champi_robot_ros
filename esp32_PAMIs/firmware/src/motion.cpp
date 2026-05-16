@@ -15,13 +15,6 @@ namespace {
 
 using namespace Config;
 
-enum class SegmentPhase : uint8_t {
-    IDLE = 0,
-    TURNING,
-    DRIVING,
-    WAITING_POINT,
-};
-
 MotionState g_state = MotionState::WAITING_TIRETTE;
 Team g_candidate_team = Team::BLUE;
 bool g_blocked_by_obstacle = false;
@@ -274,6 +267,8 @@ void motionTick(uint32_t now_us) {
         g_match_timeout_triggered = true;
         g_state = MotionState::COMPLETED;
         LOG_WARN("Motion", "Hard stop timeout reached (100s after pull-cord). Motors disabled permanently.");
+        analogWrite(Config::ACTUATOR_PIN, 100); // TODO: enable actuator properly later
+        analogWrite(13, 100); // TODO: enable actuator properly later
     }
 
     if (g_match_timeout_triggered) {
@@ -319,7 +314,7 @@ void motionTick(uint32_t now_us) {
             }
         case MotionState::START_DELAY:
             {
-                stepperControlDisable();
+                // stepperControlDisable();
                 if (timeReachedUs(now_us, g_start_deadline_us)) {
                     if (!startWaypointWaitIfNeeded(now_us) && !startNextSegment(now_us)) {
                         g_state = MotionState::COMPLETED;
@@ -411,4 +406,9 @@ MotionState motionGetState() {
 
 Team motionGetTeam() {
     return g_candidate_team;
+}
+
+SegmentPhase motionGetSegmentPhase()
+{
+    return g_segment_phase;
 }

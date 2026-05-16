@@ -310,15 +310,15 @@ class StrategyBuilder:
         # thermometer initial position is on the rightmost of its slider.
         # we have to move it in the center of the slider
         # thermometer_initial_position = Position(1.2, 0.0, 0.0) # for Yellow team
-        thermometer_initial_position = Position(1.4, 0.0, 0.0) # for Yellow team # TODO ca c'est la bonne pose, mais la table est trop petite là
-        thermometer_target_position = Position(0.68, 0.0, 0.0)  # for Yellow team
+        thermometer_initial_position = Position(1.4, 0.0, 0.0) # for Yellow team
+        thermometer_target_position = Position(0.68+0.07, 0.0, 0.0)  # for Yellow team
 
         # world_frame=True  → x/y offsets are absolute (not rotated by target theta)
         # theta_world_frame=True → robot always faces 180° (left) regardless of team color,
         #                          because the servo arm is physically on one fixed side of the robot
-        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.25, 30.0, world_frame=True, theta_world_frame=True))
+        self.move_relative_to(thermometer_initial_position, Offset(0.05, 0.18, 30.0, world_frame=True, theta_world_frame=True))
         self.custom_action(ActuatorCommand.THERMOMETER_LOWER_SERVO)
-        self.move_relative_to(thermometer_target_position, Offset(0.05, 0.25, 30.0, world_frame=True, theta_world_frame=True), linear_tolerance=0.0025, speed=0.1)
+        self.move_relative_to(thermometer_target_position, Offset(0.05, 0.16, 30.0, world_frame=True, theta_world_frame=True), linear_tolerance=0.0025, speed=0.1)
         self.custom_action(ActuatorCommand.THERMOMETER_RAISE_SERVO)
 
         points = self.points_per_action["THERMOMETER"]

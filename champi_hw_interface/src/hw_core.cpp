@@ -377,7 +377,7 @@ void HardwareInterfaceNode::check_for_actuators_state() const // TODO mettre a 5
         }
     }
 
-    RCLCPP_INFO(this->get_logger(), "Actuators requests %s", states_string.c_str());
+    // RCLCPP_INFO(this->get_logger(), "Actuators requests %s", states_string.c_str());
 }
 
 void HardwareInterfaceNode::read_stm_state()

@@ -15,7 +15,7 @@ enum class LedColor : uint8_t {
 };
 
 void ledStatusInit();
-void ledStatusApply(MotionState state, Team latched_team);
+void ledStatusApply(MotionState state, Team latched_team, SegmentPhase g_segment_phase);
 void setLedColor(LedColor color);
 
 #endif // LED_STATUS_H

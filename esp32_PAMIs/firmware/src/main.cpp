@@ -49,7 +49,7 @@ void loop() {
         g_last_loop_ms = now_ms;
         
         motionTick(micros());
-        ledStatusApply(motionGetState(), motionGetTeam());
+        ledStatusApply(motionGetState(), motionGetTeam(), motionGetSegmentPhase());
         if (motionGetState() == MotionState::COMPLETED) {
             analogWrite(Config::ACTUATOR_PIN, 100); // TODO: enable actuator properly later
             analogWrite(13, 100); // TODO: enable actuator properly later
