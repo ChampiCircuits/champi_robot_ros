@@ -52,6 +52,6 @@ def generate_launch_description():
         pose_controller_node,
         # costmap_updater_node,
         a_star_path_planner_node,
-        path_planner_ui_node,
-        collision_detector_node
+        path_planner_ui_node
+        # collision_detector_node
     ])

@@ -37,7 +37,7 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
         .take_elements_sequence(Position(0.175, 1.2, 180.0), which_actuator='RIGHT', group="caisses_1") # OK
         .put_elements_sequence(Position(1.25, 1.45, 90.0), which_actuator='RIGHT', group="caisses_1", zone_id="garde_manger_4")
         # on ravance un peu pour pas se prendre les caisses 3 en tournant
-        .move_to(Position(1.25, 1.2, 90.0))
+        .move_to(Position(1.25, 1.2-0.03, 90.0))
 
         # pousser caisses_1 dans garde_manger_1
         # .move_to(Position(0.3, 1.4, 90.0), group="pousse_caisses_1")
@@ -54,6 +54,7 @@ def create_main_strategy(points_per_action: dict) -> StrategyBuilder:
 
         .move_to(Position(0.9, 0.6, 180.0), group="see_tag_before_thermo")
         .move_thermometer("move_thermometer")
+        .move_to(Position(0.9, 0.5, 180.0), group="after_thermo")
 
         .put_elements_sequence(Position(0.7, 0.1, -90.0), which_actuator='RIGHT', group="caisses_4", zone_id="garde_manger_2")
 
