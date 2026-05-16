@@ -9,7 +9,7 @@ from rclpy.executors import MultiThreadedExecutor, ExternalShutdownException
 
 from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import Pose, PoseStamped
-from std_msgs.msg import String as StringMsg
+from std_msgs.msg import Bool, String as StringMsg
 import diagnostic_msgs.msg
 import diagnostic_updater
 from rclpy.qos import QoSProfile, DurabilityPolicy
@@ -85,6 +85,7 @@ class PlannerNode(Node):
         # Subscribers
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.enemy_odom_sub = self.create_subscription(Odometry, '/enemy_pose', self.enemy_odom_callback, 10)
+        self.collision_detector_sub = self.create_subscription(Bool, '/collision_detected', self.collision_detector_callback, 10)
         
         _latched_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.create_subscription(StringMsg, '/planner/obstacle_states', self._obstacle_states_callback, _latched_qos)
@@ -140,6 +141,8 @@ class PlannerNode(Node):
             waypoint_speed_linear=self.config.waypoint_speed_linear,
             waypoint_tolerance=self.config.waypoint_tolerance
         )
+
+        self.collision_detected: bool = False
 
         # Visualization
         Canva(self, enable=self.config.debug)
@@ -204,6 +207,9 @@ class PlannerNode(Node):
         self.planner_straight.set_enemy_pose(pose.x, pose.y)
         self.get_logger().info(f'Enemy pose received: ({pose.x:.2f}, {pose.y:.2f})', throttle_duration_sec=2.0)
 
+    def collision_detector_callback(self, msg: Bool) -> None:
+        self.collision_detected = msg.data
+
     # ==================================== Action Server ==========================================
 
     def navigate_callback(self, navigate_goal: Navigate.Goal) -> GoalResponse:
@@ -249,7 +255,7 @@ class PlannerNode(Node):
             self.active_planner.start(self.current_navigate_goal)
             action_state = ActionState.RUNNING
 
-            while rclpy.ok() and goal_handle.is_active and action_state == ActionState.RUNNING:
+            while rclpy.ok() and goal_handle.is_active and action_state == ActionState.RUNNING and not self.collision_detected:
                 with self.state_lock:
                     if self.new_goal_waiting:
                         break
@@ -277,7 +283,7 @@ class PlannerNode(Node):
             with self.state_lock:
                 if not self.new_goal_waiting:
                     self.planning = False
-                
+
             return result
 
     # ==================================== Execution Logic ==========================================
@@ -351,8 +357,9 @@ class PlannerNode(Node):
             self.get_logger().info('[NAV] RESULT => Goal REACHED')
             return result
 
-        result = Navigate.Result(success=False, message=msg or 'Goal aborted!')
-        
+        if self.collision_detected:
+            result = Navigate.Result(success=False, message='Aborted due to collision detected!')
+
         with self.state_lock:
             was_preempted = self.new_goal_waiting
 
@@ -372,7 +379,7 @@ class PlannerNode(Node):
             goal_handle.abort()
             self.get_logger().error(f'[NAV] RESULT => Unknown exit state: {final_state}')
 
-        return result
+        return Navigate.Result(success=False, message=msg or 'Goal aborted!')
 
     # ====================================== Visualization & Diagnostics ==========================================
 

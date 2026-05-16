@@ -45,6 +45,7 @@ install(PROGRAMS
         scripts/pose_controller_node.py
         scripts/loc_node.py
         scripts/path_planner_ui_node.py
+        scripts/collision_detector_node.py
  # scripts/gui_node.py
   DESTINATION lib/${PROJECT_NAME}
 )

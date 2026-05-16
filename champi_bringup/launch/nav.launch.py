@@ -40,10 +40,18 @@ def generate_launch_description():
         output='screen',
     )
 
+    collision_detector_node = Node(
+        package='champi_navigation',
+        executable='collision_detector_node.py',
+        name='collision_detector',
+        output='screen',
+        parameters=[config_file_path]
+    )
+
     return LaunchDescription([
         pose_controller_node,
         # costmap_updater_node,
         a_star_path_planner_node,
-        path_planner_ui_node
-
+        path_planner_ui_node,
+        collision_detector_node
     ])
