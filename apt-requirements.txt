@@ -13,3 +13,4 @@ openocd
 nodejs
 npm
 sshpass
+ninja-build

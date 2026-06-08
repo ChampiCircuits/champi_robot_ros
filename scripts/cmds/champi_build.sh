@@ -8,7 +8,8 @@
 
 # Call the colcon build command
 cd ~/champi_ws
-colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=1 $@
+#colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=1 $@
+colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja $@
 
 # Copy the compile_commands.json from the build directory to the path champi_robot_ros/compile_commands.json
 cp  ~/champi_ws/build/compile_commands.json  ~/champi_ws/src/champi_robot_ros/compile_commands.json

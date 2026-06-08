@@ -21,7 +21,7 @@ def generate_launch_description():
     webots = WebotsLauncher(
         world=world_path,
         mode=mode,
-        ros2_supervisor=False
+        ros2_supervisor=True
     )
 
     # This action will kill all nodes once the Webots simulation has exited
@@ -42,14 +42,14 @@ def generate_launch_description():
             {'robot_description': robot_description_path,
              'use_sim_time': False,
              'set_robot_state_publisher': False,
-             'publish_tf': False},
+             'publish_tf': True},
         ],
         respawn=True
     )
 
     return LaunchDescription([
         webots,
-        #webots._supervisor, # Provides additional topics to interact with webots ; not strictly needed, let's uncomment only if we need because I'm scared it's gonna bring problems
+        webots._supervisor, # Provides additional topics to interact with webots ; not strictly needed, let's uncomment only if we need because I'm scared it's gonna bring problems
         kill_nodes,
         watchtower_controller,
     ])
