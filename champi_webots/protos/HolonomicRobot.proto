@@ -1,0 +1,142 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+# template language: javascript
+
+EXTERNPROTO "ArucoTag.proto"
+EXTERNPROTO "Nexus14145OmniWheel.proto"
+EXTERNPROTO "RPLidarA2M8.proto"
+
+PROTO HolonomicRobot [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString name "HolonomicRobot"
+  field SFString {"yellow", "blue"} color "blue"
+  field SFInt32 {1, 2, 3, 4, 5, 6, 7, 8, 9, 10} aruco_id 1
+  field SFString {"GamepadHolonomic", "AutonomousHolonomic", "<none>"} controller "<none>"
+
+  hiddenField SFColor yellow_color 0.969 0.71 0
+  hiddenField SFColor blue_color 0 0.357 0.549
+]
+
+{
+%< var color_vec = fields.color.value == "yellow" ? fields.yellow_color.value : fields.blue_color.value; >%
+
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    controller IS controller
+    supervisor TRUE
+
+    children [
+      DEF body Group {
+        children [
+          Transform {
+            translation 0 0 0.006
+            rotation 0 0 0 0
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.666 0.666 0.666
+                  roughness 1
+                  metalness 0
+                }
+                geometry Cylinder {
+                  radius 0.150
+                  height 0.006
+                }
+              }
+            ]
+          }
+          Transform {
+            translation 0 0 0.1795
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor %<= color_vec.r >% %<= color_vec.g >% %<= color_vec.b >%
+                  roughness 1
+                  metalness 0
+                }
+                geometry Box {
+                  size 0.1 0.28 0.341
+                }
+              }
+            ]
+          }
+        ]
+      }
+
+      Transform {
+        rotation 0 0 1 0.785398163398
+        children [
+          Nexus14145OmniWheel {
+            translation 0.13 0 0.030
+            name "frontleft-omni"
+          }
+        ]
+      }
+
+      Transform {
+        rotation 0 0 1 -0.785398163398
+        children [
+          Nexus14145OmniWheel {
+            translation 0.13 0 0.030
+            name "frontright-omni"
+          }
+        ]
+      }
+
+      Transform {
+        rotation 0 0 1 2.35619449019
+        children [
+          Nexus14145OmniWheel {
+            translation 0.13 0 0.030
+            name "backleft-omni"
+          }
+        ]
+      }
+
+      Transform {
+        rotation 0 0 1 -2.35619449019
+        children [
+          Nexus14145OmniWheel {
+            translation 0.13 0 0.030
+            name "backright-omni"
+          }
+        ]
+      }
+
+      RPLidarA2M8 {
+        translation 0 0 0.35
+      }
+
+      ArucoTag {
+        translation 0 0 0.43
+        id %<= fields.aruco_id.value >%
+        color IS color
+      }
+
+      Camera {
+        translation 0.1 0 0.2
+        rotation 0 1 0 0.5
+        width 600
+        height 400
+        fieldOfView 1.8
+        name "camera"
+      }
+
+      Gyro {
+        name "gyro"
+      }
+    ]
+    boundingObject USE body
+    physics Physics {
+      density -1
+      mass 10
+      centerOfMass 0 0 0.035
+    }
+    controller IS controller
+    name IS name
+  }
+}

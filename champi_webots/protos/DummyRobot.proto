@@ -1,0 +1,73 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+# template language: javascript
+
+EXTERNPROTO "ArucoTag.proto"
+
+PROTO DummyRobot [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString name "DummyRobot"
+  field SFString {"yellow", "blue"} color "blue"
+  field SFInt32 {1, 2, 3, 4, 5, 6, 7, 8, 9, 10} aruco_id 1
+  field SFString controller "DummyRobot"
+
+  hiddenField SFColor yellow_color 0.969 0.71 0
+  hiddenField SFColor blue_color 0 0.357 0.549
+]
+
+{
+%< var color_vec = fields.color.value == "yellow" ? fields.yellow_color.value : fields.blue_color.value; >%
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    controller IS controller
+    supervisor TRUE
+
+    children [
+      Transform {
+        translation 0 0 0.175
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor %<= color_vec.r >% %<= color_vec.g >% %<= color_vec.b >%
+              roughness 1
+              metalness 0
+            }
+            geometry Box {
+              size 0.15 0.2 0.35
+            }
+          }
+        ]
+      }
+      Transform {
+        translation 0 0 0.39
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0 0 0
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height 0.1
+              radius 0.035
+            }
+          }
+        ]
+      }
+
+      Transform {
+        translation 0 0 0.44
+        children [
+          ArucoTag {
+            id %<= fields.aruco_id.value >%
+            color IS color
+          }
+        ]
+      }
+    ]
+  }
+}

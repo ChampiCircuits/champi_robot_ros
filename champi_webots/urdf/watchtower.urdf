@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<robot name="watchtower">
+    <webots>
+        <device reference="watchtower_camera" type="Camera">
+            <ros>
+                <!-- If `False`, disable the device. By default the device will be enabled. -->
+                <enabled>True</enabled>
+
+                <!-- Set the main topic name of the device. By default it will be `/robotName/referenceName`. -->
+                <!-- If a device publishes several topics, the secondary topics names are relative to the main topic name. -->
+                <!-- Example: if the main topic name is `my_robot/camera`, the secondary topic for the `camera_info` messages -->
+                <!-- will be `my_robot/camera/camera_info`. -->
+                <topicName>/watchtower/camera</topicName>
+                <!-- Set the update rate in Hz of the topic. By default the topic will be published at each simulation step. -->
+                <updateRate>10</updateRate>
+                <!-- If `True`, the device topics will constantly publish, which can slow down the simulation. -->
+                <!-- By default the topics are publishing only if there is at least one subscriber for the corresponding topic. -->
+                <alwaysOn>True</alwaysOn>
+                <!-- Set the frame ID for message headers. By default the frame ID is `referenceName`. -->
+                <frameName>watchtower_camera_frame</frameName>
+            </ros>
+        </device>
+    </webots>
+
+</robot>

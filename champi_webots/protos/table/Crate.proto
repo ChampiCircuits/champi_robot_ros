@@ -1,0 +1,69 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+PROTO Crate [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString name "Crate"
+]
+
+{
+  Solid {
+    translation IS translation
+    rotation IS rotation
+    children [
+      DEF CrateShape Shape {
+
+        appearance PBRAppearance {
+          baseColorMap  ImageTexture {
+            url ["../textures/crate.png"]
+          }
+
+        roughness 1
+        metalness 0
+        }
+
+        geometry IndexedFaceSet {
+          coord Coordinate {
+            point [
+              -0.025 -0.075 -0.015,  0.025 -0.075 -0.015, 0.025 -0.075 0.015,  -0.025 -0.075 0.015,
+              -0.025  0.075 -0.015,  0.025  0.075 -0.015, 0.025  0.075 0.015,  -0.025  0.075 0.015
+            ]
+          }
+          coordIndex [
+            0, 1, 2, 3, -1,  # avant
+            1, 5, 6, 2, -1,  # droite
+            5, 4, 7, 6, -1,  # arriere
+            4, 0, 3, 7, -1,  # gauche
+            3, 2, 6, 7, -1,  # haut
+            4, 5, 1, 0, -1   # bas
+          ]
+          texCoord TextureCoordinate {
+            point [
+              0.5 0, 0 0, 0 0.75, 0.5 0.75, # jaune: haut          0, 1, 2, 3, -1
+              1 0.75, 0.5 0.75, 0.5 0, 1 0, # bleu: bas          4, 5, 6, 7, -1
+              0 0.75, 0 1, 1 1, 1 0.75      # blanc: autres faces 8, 9, 10 ,11, -1
+            ]
+          }
+          texCoordIndex [
+            8, 9, 10 ,11, -1
+            8, 9, 10 ,11, -1
+            8, 9, 10 ,11, -1
+            8, 9, 10 ,11, -1
+            0, 1, 2, 3, -1
+            4, 5, 6, 7, -1
+          ]
+        }
+      }
+    ]
+    name IS name
+    boundingObject Box {
+      size 0.05 0.15 0.030
+    }
+    physics Physics {
+      density -1
+      mass 0.3
+    }
+  }
+}

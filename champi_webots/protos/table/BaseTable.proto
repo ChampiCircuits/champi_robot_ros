@@ -1,0 +1,82 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+# template language: javascript
+
+PROTO BaseTable [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString name "BaseTable"
+  field SFBool grid_playmat FALSE
+]
+
+{
+%< let playmat_texture = fields.grid_playmat.value ? '"../textures/playmat_grid.jpg"' : '"../textures/playmat_2026.jpg"'; >%
+
+  Solid {
+    translation IS translation
+    rotation IS rotation
+    children [
+      DEF BaseTable Group {
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColorMap ImageTexture {
+                url [
+                  %<= playmat_texture >%
+                ]
+              }
+              roughness 1
+              metalness 0
+            }
+            geometry Plane {
+              size 3 2
+            }
+          }
+          Transform {
+            translation 1.511 0 0.035
+            children [
+              DEF SmallWall Shape {
+                appearance DEF WallAppearance PBRAppearance {
+                  baseColor 0.666 0.666 0.666
+                  roughness 1
+                  metalness 0
+                }
+                geometry Box {
+                  size 0.022 2.044 0.07
+                }
+
+              }
+            ]
+          }
+          Transform {
+            translation -1.511 0 0.035
+            children [
+              USE SmallWall
+            ]
+          }
+          Transform {
+            translation 0 1.011 0.035
+            children [
+              DEF BigWall Shape {
+                appearance USE WallAppearance
+                geometry Box {
+                  size 3 0.022 0.07
+                }
+
+              }
+            ]
+          }
+          Transform {
+            translation 0 -1.011 0.035
+            children [
+              USE BigWall
+            ]
+          }
+        ]
+      }
+    ]
+    name IS name
+    boundingObject USE BaseTable
+  }
+}

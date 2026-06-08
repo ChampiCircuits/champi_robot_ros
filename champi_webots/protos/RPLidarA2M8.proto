@@ -1,0 +1,49 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+# slamtec RPLIDAR A2M8
+
+PROTO RPLidarA2M8 [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString name "RPLidarA2M8"
+]
+
+{
+  Transform {
+    translation IS translation
+    rotation IS rotation
+    children [
+      Lidar {
+        translation 0.0 0.0 0.031
+        name IS name
+        horizontalResolution 400
+        numberOfLayers 1
+        minRange 0.2
+        maxRange 12.0
+        noise 0.000833
+        resolution 0.01
+        minFrequency 5
+        maxFrequency 15
+        defaultFrequency 10
+        type "rotating"
+      }
+      Transform {
+        translation 0.0 0.0 0.04
+        children [
+          Shape {
+            appearance PBRAppearance {
+                baseColor 0 0 0
+                roughness 1
+                metalness 0
+            }
+            geometry Cylinder {
+                height 0.08
+                radius 0.038
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

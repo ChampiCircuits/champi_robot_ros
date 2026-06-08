@@ -1,0 +1,30 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+
+PROTO FixedBeacon [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString name "FixedBeacon"
+]
+
+{
+  Solid {
+    translation IS translation
+    rotation IS rotation
+    children [
+      Shape {
+        appearance PBRAppearance {
+          baseColor 1 1 1
+          roughness 1
+          metalness 0
+        }
+        geometry Cylinder {
+          height 1
+          radius 0.05
+        }
+      }
+    ]
+    name IS name
+  }
+}

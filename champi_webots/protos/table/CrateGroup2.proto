@@ -1,0 +1,38 @@
+#VRML_SIM R2023b utf8
+# license: Creative Commons Attribution 4.0 International License.
+# license url: https://creativecommons.org/licenses/by/4.0/legalcode
+# template language: javascript
+
+EXTERNPROTO "Crate.proto"
+
+PROTO CrateGroup2 [
+  field SFVec3f translation 0 0 0
+  field SFRotation rotation 0 0 1 0
+  field SFString name "CrateGroup2"
+  field SFInt32 {0,1} colors 0
+]
+
+{
+%< const rots = [
+    [0, 3.1415926535],
+    [3.1415926535, 0],
+  ];
+  >%
+
+  Transform {
+    translation IS translation
+    rotation IS rotation
+    children [
+      Crate {
+        translation -0.0251 0 0.015
+        rotation 1 0 0 %<=rots[fields.colors.value][0]>%
+        name %<= '"' + fields.name.value + '#Crate1"' >%
+      }
+      Crate {
+        translation 0.0251 0 0.015
+        rotation 1 0 0 %<=rots[fields.colors.value][1]>%
+        name %<= '"' + fields.name.value + '#Crate2"' >%
+      }
+    ]
+  }
+}
