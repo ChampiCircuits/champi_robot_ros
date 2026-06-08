@@ -7,6 +7,7 @@ This allows the state machine to be independent of ROS implementation.
 from math import radians, sin, cos
 from geometry_msgs.msg import Pose
 from typing import Protocol, Optional, Dict
+import rclpy
 from rclpy.action import ActionClient
 from champi_brain.strategy_dsl import MotionParams
 from champi_interfaces.action import Navigate
@@ -57,7 +58,7 @@ class ActionExecutor():
         self.on_goal_failed = lambda msg: None  # Called when goal fails
 
         # Wait timer
-        self._wait_timer = None
+        self._wait_timer: Optional[rclpy.timer.Timer] = None
 
     def move_to(self, x: float, y: float, theta_deg: float, motion_params: MotionParams) -> None:
         """
@@ -120,8 +121,9 @@ class ActionExecutor():
 
     def _on_wait_done(self) -> None:
         """Called when wait duration has elapsed."""
-        self._wait_timer.destroy()
-        self._wait_timer = None
+        if self._wait_timer is not None:
+            self._wait_timer.destroy()
+            self._wait_timer = None
         self.logger.info('Wait done.')
         self.on_goal_reached()
 

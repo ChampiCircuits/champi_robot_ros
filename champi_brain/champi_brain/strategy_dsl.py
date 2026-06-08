@@ -369,7 +369,7 @@ class StrategyBuilder:
         return self
     
     def put_elements_sequence(self, target_position: Union[Position, str], which_actuator: str, group: str,
-                               zone_id: str = None) -> 'StrategyBuilder':
+                               zone_id: Optional[str] = None) -> 'StrategyBuilder':
         """Complete sequence for placing elements
         
         Args:

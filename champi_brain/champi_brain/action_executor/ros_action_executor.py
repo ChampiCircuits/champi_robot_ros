@@ -4,7 +4,8 @@ ROS Action Executor - ROS2 implementation of ActionExecutor interface.
 Communicates with ROS topics and action servers to control the robot.
 """
 
-from rclpy.node import Node
+import rclpy
+from rclpy.node import Node, Optional
 from champi_brain.action_executor.action_executor import ActionExecutor
 from std_msgs.msg import Int8
 
@@ -29,6 +30,7 @@ class ROSActionExecutor(ActionExecutor):
         """
 
         super().__init__(node)
+        self._detect_nutboxes_timeout_timer: Optional[rclpy.timer.Timer] = None
     
     _DETECT_NUTBOXES_TIMEOUT_S = 3.0
 

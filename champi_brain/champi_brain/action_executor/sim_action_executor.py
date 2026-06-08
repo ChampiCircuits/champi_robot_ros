@@ -4,7 +4,8 @@ SIM Action Executor - Simulation implementation of ActionExecutor interface.
 Simulates robot actions without real hardware.
 """
 
-from rclpy.node import Node
+import rclpy
+from rclpy.node import Node, Optional
 from champi_brain.action_executor.action_executor import ActionExecutor
 from std_msgs.msg import Int8, Int8MultiArray
 from geometry_msgs.msg import PoseStamped
@@ -29,8 +30,9 @@ class SIMActionExecutor(ActionExecutor):
         super().__init__(node)
         self.simulate_actuators_delays = simulate_actuators_delays
         self.time_per_action: dict = {}
-        self._actuator_timer = None
+        self._actuator_timer: Optional[rclpy.timer.Timer] = None
         self.actuators_finished_pub = node.create_publisher(Int8MultiArray, '/actuators_finished', 10)
+        self._sim_nutbox_timer: Optional[rclpy.timer.Timer] = None
     
     def execute_actuator_action(self, actuator_command: ActuatorCommand) -> None:
         """

@@ -32,9 +32,8 @@ from champi_brain.motion_config import configure_motion_defaults
 from champi_brain.actuator_commands import ActuatorCommand
 from champi_brain.strategy_dsl import MotionParams
 from champi_brain.auto_placement_controller import AutoPlacementController
-from champi_libraries_py.marker_helper.canva import *
+from champi_libraries_py.marker_helper import items, presets
 from champi_libraries_py.marker_helper.canva import Canva
-
 
 
 class StateMachineNode(Node):
@@ -470,7 +469,7 @@ class StateMachineNode(Node):
         if self.state_machine:
             self.state_machine.notify_action_completed()
     
-    def _on_action_failed(self, error_msg: str) -> None:
+    def _on_action_failed(self, error_msg: str = "") -> None:
         """Called when action executor fails."""
         self.get_logger().error(f'❌ Action failed: {error_msg}')
 
