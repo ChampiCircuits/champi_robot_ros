@@ -73,7 +73,7 @@ class EnemyTracker(Node):
         for i in range(len(self.scan_msg.ranges)):
             angle = self.scan_msg.angle_min + i * self.scan_msg.angle_increment
 
-            if self.scan_msg.ranges[i] > 4.0 or self.scan_msg.ranges[i] < 0.1:
+            if self.scan_msg.ranges[i] > 4.0 or self.scan_msg.ranges[i] < 0.15:
                 continue
 
             x = self.scan_msg.ranges[i] * cos(angle)

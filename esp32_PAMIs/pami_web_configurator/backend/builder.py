@@ -6,7 +6,7 @@ def build_and_flash():
     
     try:
         # Popen to run platformio inside the firmware path
-        result = subprocess.run(["python3", "-m", "platformio", "run", "--target", "upload"], cwd=firmware_dir, capture_output=True, text=True)
+        result = subprocess.run(["pio", "run", "--target", "upload"], cwd=firmware_dir, capture_output=True, text=True)
         return result.returncode == 0, result.stdout + result.stderr
     except Exception as e:
         return False, str(e)

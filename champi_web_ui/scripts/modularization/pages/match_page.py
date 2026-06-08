@@ -23,17 +23,29 @@ auto_placement_checkbox, auto_placement_status_label = None, None
 src = '~/champi_ws/src/champi_robot_ros/champi_web_ui/scripts/modularization/resources/table_2026_with_annotations.drawio.png'
 
 def ready_to_launch_match():
-    enabled = auto_placement_checkbox.value if auto_placement_checkbox is not None else False
-    ros_node.set_auto_placement_enabled(enabled)
     ros_node.ready_to_start_match = True
-    on_strategy_selected()
-    if enabled:
-        ui.notify('Auto-placement lancé. Suivre le statut ci-dessous.', color='warning')
+    
+    current_combo = f"{radio_strategy_selection.value}#{color}"
+    published_combo = f"{last_published_strategy}#{last_published_color}"
+    
+    if current_combo != published_combo or not ros_node.auto_placement_enabled:
+        ros_node.set_auto_placement_enabled(False)
+        on_strategy_selected()
+        # Let ros process the strategy first so the state machine is ready
+        ui.timer(0.2, ros_node.pub_match_ready, once=True)
     else:
-        container.clear()
-        with container:
-            ui.image(src).style('width:75%')
-        ui.navigate.to('/in_match')
+        # Strategy was already loaded and used by auto placement successfully
+        ros_node.pub_match_ready()
+        
+    container.clear()
+    with container:
+        ui.image(src).style('width:75%')
+    ui.navigate.to('/in_match')
+
+def trigger_auto_placement():
+    ros_node.set_auto_placement_enabled(True)
+    on_strategy_selected()  # republish strategy so the brain loads it with auto_placement enabled and calls start()
+    ui.notify('Auto-placement lancé. Suivre le statut ci-dessous.', color='warning')
 
 def zone_chosen(args: events.GenericEventArguments):
     id = args.args['element_id']
@@ -78,8 +90,22 @@ def create() -> None:
 
             with ui.grid(columns=2).style('width: 100%;padding-top:150px'):
                 with ui.column():
-                    ui.button("Reset", on_click=reset_all)
+                    ui.button("Reset in-match page", on_click=reset_all)
                     # ui.button("Ouvrir bannière", on_click=open_banner)
+                    
+                    viz_image_ui = ui.interactive_image().style('width: 100%; max-width: 200px; border: 1px solid #ccc;')
+                    
+                    def update_viz_image():
+                        if ros_node.latest_viz_image_b64 and viz_image_ui.source != ros_node.latest_viz_image_b64:
+                            viz_image_ui.source = ros_node.latest_viz_image_b64
+                            
+                    ui.timer(0.1, update_viz_image)
+
+                    global tirette_label, e_stop_label
+                    tirette_label = ui.label('La tirette est: ??')
+                    e_stop_label = ui.label('Le BAU est: ??')
+                    ui.timer(1.0, update_label_tirette_bau)
+
                 with ui.column():
                     container = ui.column().classes('w-full; items-center')
                     with container:
@@ -118,10 +144,6 @@ def create() -> None:
                                     ui.button('Retour', on_click=stepper.previous).props('flat')
 
                             with ui.step('Vérification tirette/BAU'):
-                                global tirette_label, e_stop_label
-                                tirette_label = ui.label('La tirette est: ??')
-                                e_stop_label = ui.label('Le BAU est: ??')
-                                ui.timer(1.0, update_label_tirette_bau)
                                 with ui.stepper_navigation():
                                     ui.button('Suivant', on_click=stepper.next)
                                     ui.button('Retour', on_click=stepper.previous).props('flat')
@@ -137,11 +159,12 @@ def create() -> None:
 
                             with ui.step('Choisir la strategie'):
                                 available_strategies = get_available_strategies()
-                                global radio_strategy_selection, auto_placement_checkbox, auto_placement_status_label
+                                global radio_strategy_selection, auto_placement_status_label
                                 radio_strategy_selection = ui.radio(available_strategies, value='__strat_0_main_2026.py')
-                                auto_placement_checkbox = ui.checkbox('Auto robot placement', value=False)
+                                ui.button('Lancer auto-placement', on_click=trigger_auto_placement)
                                 auto_placement_status_label = ui.label('Statut auto-placement: inactif')
                                 ui.timer(0.2, update_auto_placement_status)
+                                
                                 with ui.stepper_navigation():
                                     btn_next = ui.button('Prêt !! 😬', on_click=ready_to_launch_match)
                                     btn_next.bind_enabled_from(radio_strategy_selection, 'value')
@@ -194,7 +217,13 @@ def open_banner():
     pass
 
 
+last_published_strategy = None
+last_published_color = None
+
 def on_strategy_selected():
+    global last_published_strategy, last_published_color
+    last_published_strategy = radio_strategy_selection.value
+    last_published_color = color
     # send the chosen strategy to the node
     ros_node.pub_strategy(radio_strategy_selection.value+"#"+color)
 
@@ -218,11 +247,11 @@ def update_auto_placement_status():
 
     auto_placement_status_label.text = labels.get(state, f'Statut auto-placement: {state}')
 
-    if state == 'init':
-        container.clear()
-        with container:
-            ui.image(src).style('width:75%')
-        ui.navigate.to('/in_match')
+    # if state == 'init': # change automatically to the match page when auto-placement is done
+    #     container.clear()
+    #     with container:
+    #         ui.image(src).style('width:75%')
+    #     ui.navigate.to('/in_match')
 
 def reset_all():
     ros_node.reset_all()

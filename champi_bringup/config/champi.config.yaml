@@ -45,13 +45,13 @@ hardware_interface:
         max_deceleration_angular: 20.0 # rad/s^2
 
       otos_config: # You have to restart node AND STM to apply the otos config (feature, not bug :))
-        linear_scalar: 0.99 # [0.872 - 1.127]
-        angular_scalar: 0.993 # [0.872 - 1.127]
+        linear_scalar: 1.02985 # [0.872 - 1.127]
+        angular_scalar: 0.9899 # [0.872 - 1.127]
 
 holo_teleop_joy_node:
   ros__parameters:
-    max_linear_speed: 0.5 # m/s
-    max_angular_speed: 3.0 # rad/s
+    max_linear_speed: 0.1 # m/s
+    max_angular_speed: 1.0 # rad/s
 
 twist_mux:
   ros__parameters:
@@ -89,16 +89,16 @@ enemy_tracker:
   ros__parameters:
     crop_box:
       x_min: 0.1 # m
-      x_max: 2.9 # m
+      x_max: 2.9 # m # TODO 2.9
       y_min: 0.1 # m
       y_max: 1.9 # m
 
 costmap_updater:
   ros__parameters:
-    grid_width: 3.0 # m
+    grid_width: 3.0 # m # TODO NODE TO REMOVE
     grid_height: 2.0 # m
     grid_resolution: 0.05 # m/cell
-    robot_radius: 0.18 # m = 0.16 +0.02
+    robot_radius: 0.22 # m
     enemy_robot_radius: 0.22 # m = 0.2 + margin
     enemy_pos_prediction_time: 0.0 # s. 0.0 means disabled
 
@@ -122,20 +122,29 @@ pose_controller:
     default_motion_end_speed: 0.0 # m/s # TODO a bit duplicated with pose_controller
     default_motion_accel_linear: 0.5 # m/s²
     default_motion_accel_angular: 6.0 # rad/s²
-    default_motion_use_collision_avoidance: true
+    default_motion_use_collision_avoidance: false
     default_motion_linear_tolerance: 0.005 # m = 5mm
     default_motion_angular_tolerance: 0.05 # rad = ~3 degrees
 
+
+collision_detector:
+  ros__parameters:
+    vector_tolerance: 0.3
+    time_threshold: 0.5
 
 path_planner:
   ros__parameters:
     planner_loop_period: 0.05
     waypoint_tolerance: 0.03 # m. Waypoint tolerance should be higher because the robot doesn't stop at waypoints thus is less precise
-    waypoint_speed_linear: 0.1 # m/s
+    waypoint_speed_linear: 0.5 # m/s
     debug: true
-    enemy_detect_dist: 0.45 # 0.18+0.22= 0.4 m
-    enemy_detect_angle: 60. # degrees from x+ axis
-    backoff_distance: 0.1 # m. Distance to back off from the enemy robot when it is too close after the timeout
+    robot_radius: 0.3 # m = 0.22 (robot radius) + 0.04 (safety margin) # TODO 0.26
+    enemy_robot_radius: 0.38 # m
+    table_width: 3.0 # m (x dimension)
+    table_height: 2.0 # m (y dimension)
+    forbidden_area_wait_time: 1.0 # s. Time to wait when robot enters a forbidden area before exiting
+    forbidden_area_margin: 0.05 # m. Margin before triggering forbidden area stop
+    world_state_file: 'initial_world_state_planner.yaml'  # World state file for zone obstacles
 
 # Champi Brain nodes
 /champi_brain/**:

@@ -17,7 +17,7 @@ struct Rgb8 {
     uint8_t b;
 };
 
-constexpr Rgb8 COLOR_OFF{0, 0, 0};
+constexpr Rgb8 COLOR_OFF{10, 10, 10};
 constexpr Rgb8 COLOR_BLUE{0, 0, 255};
 constexpr Rgb8 COLOR_YELLOW{255, 120, 0};
 constexpr Rgb8 COLOR_ORANGE{255, 30, 0};
@@ -68,7 +68,20 @@ void ledStatusInit() {
     setLedColor(LedColor::OFF);
 }
 
-void ledStatusApply(const MotionState state, const Team latched_team) {
+void ledStatusApply(const MotionState state, const Team latched_team, SegmentPhase g_segment_phase) {
+    if (g_segment_phase == SegmentPhase::WAITING_POINT)
+    {
+    if ((millis() / 1000u) % 2u == 0u) {
+        if (latched_team == Team::YELLOW) {
+            setLedColor(LedColor::YELLOW);
+        } else {
+            setLedColor(LedColor::BLUE);
+        }
+        } else {
+        setLedColor(LedColor::OFF);
+        }
+        return;   
+    }
     switch (state) {
         case MotionState::WAITING_TIRETTE:
             // color of team when waiting for start
@@ -92,6 +105,7 @@ void ledStatusApply(const MotionState state, const Team latched_team) {
         case MotionState::RUNNING:
             {
                 setLedColor(LedColor::GREEN);
+                break;
             }
         case MotionState::PAUSED_OBSTACLE:
             {

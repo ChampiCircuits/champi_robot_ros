@@ -53,13 +53,13 @@ void HoloDriveTask(void *argument) {
   holoDrive.set_config(mod_reg::config->holo_drive_config);
 
   LOG_INFO("holo", "Config is :");
-  LOG_INFO("holo", "wheel_radius=%f", mod_reg::config->holo_drive_config.wheel_radius);
-  LOG_INFO("holo", "base_radius=%f", mod_reg::config->holo_drive_config.base_radius);
-  LOG_INFO("holo", "max_accel_angular=%f", mod_reg::config->holo_drive_config.max_accel_angular);
-  LOG_INFO("holo", "max_accel_linear=%f", mod_reg::config->holo_drive_config.max_accel_linear);
-  LOG_INFO("holo", "max_accel_wheel=%f", mod_reg::config->holo_drive_config.max_accel_wheel);
-  LOG_INFO("holo", "max_decel_angular=%f", mod_reg::config->holo_drive_config.max_decel_angular);
-  LOG_INFO("holo", "max_decel_linear=%f", mod_reg::config->holo_drive_config.max_decel_linear);
+  LOG_INFO("holo", "\twheel_radius=%f", mod_reg::config->holo_drive_config.wheel_radius);
+  LOG_INFO("holo", "\tbase_radius=%f", mod_reg::config->holo_drive_config.base_radius);
+  LOG_INFO("holo", "\tmax_accel_angular=%f", mod_reg::config->holo_drive_config.max_accel_angular);
+  LOG_INFO("holo", "\tmax_accel_linear=%f", mod_reg::config->holo_drive_config.max_accel_linear);
+  LOG_INFO("holo", "\tmax_accel_wheel=%f", mod_reg::config->holo_drive_config.max_accel_wheel);
+  LOG_INFO("holo", "\tmax_decel_angular=%f", mod_reg::config->holo_drive_config.max_decel_angular);
+  LOG_INFO("holo", "\tmax_decel_linear=%f", mod_reg::config->holo_drive_config.max_decel_linear);
   LOG_INFO("holo", "Config received. Starting loop !");
 
   uint32_t start = osKernelGetTickCount();
@@ -85,7 +85,7 @@ void HoloDriveTask(void *argument) {
       Vector3 cmd = mod_reg::cmd->cmd_vel;
       holoDrive.set_config(mod_reg::config->holo_drive_config); // Update config, Not ideal to do it all the time but it works :)
       holoDrive.set_cmd_vel(cmd);
-      LOG_INFO_THROTTLE("holo", 10, "received cmd vel : x: %.2f, y: %.2f, theta: %.2f", cmd.x, cmd.y, cmd.theta);
+      // LOG_INFO_THROTTLE("holo", 10, "received cmd vel : x: %.2f, y: %.2f, theta: %.2f", cmd.x, cmd.y, cmd.theta);
 
       mod_reg::cmd->is_read = true;
       xSemaphoreGive(ModbusH.ModBusSphrHandle);

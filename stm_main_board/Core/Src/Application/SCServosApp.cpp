@@ -14,15 +14,15 @@ namespace devices
     namespace scs_servos {
 
         uint8_t ids_servos[N_SERVOS] = {
-            LEFT_ARM_0_SERVO_ID,
-            LEFT_ARM_1_SERVO_ID,
-            LEFT_ARM_2_SERVO_ID,
-            LEFT_ARM_3_SERVO_ID,
-
-            RIGHT_ARM_0_SERVO_ID,
+            // LEFT_ARM_0_SERVO_ID,
+            // LEFT_ARM_1_SERVO_ID,
+            // LEFT_ARM_2_SERVO_ID,
+            // LEFT_ARM_3_SERVO_ID,
+            THERMO_SERVO_ID,
+            // RIGHT_ARM_0_SERVO_ID,
             RIGHT_ARM_1_SERVO_ID,
             RIGHT_ARM_2_SERVO_ID,
-            RIGHT_ARM_3_SERVO_ID
+            RIGHT_ARM_3_SERVO_ID 
         };
         SCServos servos;
         bool init_successful = false;
@@ -208,39 +208,16 @@ int SCServosApp_Init()
     LOG_INFO("scs", "Initializing servos... (blocking until all servos are found)");
     servos = SCServos(&huart10);
     // find_ids(0, 24);
-    // test_angle(12, 200);
-    // sweep_angle_test(5);
-    // osDelay(10000000);
+    // while (1) {}
     
-    while (1)
-    {
-        // // ALMOST CLOSED
-        // LOG_INFO("scs", "position servo 12: %.1f", read_angle(12));
-        // set_angle_async(12, BoxesSorter::TRAPDOOR_L_SERVO_ALMOST_CLOSED, 250); //L
-        // set_angle(5, BoxesSorter::TRAPDOOR_R_SERVO_ALMOST_CLOSED, 250); //R
-        // osDelay(3000);
-        // // CLOSE
-        // LOG_INFO("scs", "position servo 12: %.1f", read_angle(12));
-        // set_angle_async(12, BoxesSorter::TRAPDOOR_L_SERVO_CLOSED, 250); //L
-        // set_angle(5, BoxesSorter::TRAPDOOR_R_SERVO_CLOSED, 250); //R
-        // osDelay(3000);
-        // // OPEN
-        // LOG_INFO("scs", "position servo 12: %.1f", read_angle(12));
-        // set_angle_async(12, BoxesSorter::TRAPDOOR_L_SERVO_OPEN, 250); //L
-        // set_angle(5, BoxesSorter::TRAPDOOR_R_SERVO_OPEN, 250); //R
-        // osDelay(3000);
-    }
-
-    osDelay(10000000);
-
     while (test() == -1)
     {
         LOG_ERROR("scs", "Error initializing servos. Retrying.");
         osDelay(1000);
     }
-
+    
     set_enable(true); // TODO move to sysTask
-
+    
     for (const auto id : ids_servos)
     {
         servos.WriteLimitTroque(id, SCSERVOS_TORQUE_LIMIT);
@@ -248,6 +225,33 @@ int SCServosApp_Init()
     }
     init_successful = true;
     LOG_INFO("scs", "Initializing servos OK !");
+
+    {
+        // int a =50;
+        // // test all servos one by one
+        // set_angle(RIGHT_ARM_0_SERVO_ID, a, 300); // 
+        // osDelay(1000);
+        // set_angle(RIGHT_ARM_1_SERVO_ID, a, 300); // 
+        // osDelay(1000);
+        // set_angle(RIGHT_ARM_2_SERVO_ID, a, 300); // 
+        // osDelay(1000);
+        // set_angle(RIGHT_ARM_3_SERVO_ID, a, 300); // 
+        // // while (1) {}
+
+        // // test all servos one by one
+        // set_angle(LEFT_ARM_0_SERVO_ID, a, 300); // 
+        // osDelay(1000);
+        // set_angle(LEFT_ARM_1_SERVO_ID, a, 300); // 
+        // osDelay(1000);
+        // set_angle(LEFT_ARM_2_SERVO_ID, a, 300); // 
+        // osDelay(1000);
+        // set_angle(LEFT_ARM_3_SERVO_ID, a, 300); // 
+        // while (1) {}
+    }
+
+
+    // test_angle(12, 200);
+    // sweep_angle_test(5);
 
     return 0;
 }

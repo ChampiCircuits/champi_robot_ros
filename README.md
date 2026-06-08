@@ -70,7 +70,7 @@ Open Rviz2 and load the config file `champi_ws/src/champi_robot_ros/champi_bring
 rviz2 -d ~/champi_ws/src/champi_robot_ros/champi_bringup/config/rviz/config.rviz
 ```
 ```shell
- ros2 launch champi_bringup bringup.launch.py sim:=true nav:=true brain:=true
+ ros2 launch champi_bringup bringup.launch.py sim:=true nav:=true brain:=true sensors:=false
 ```
 
 ## Launching on the robot

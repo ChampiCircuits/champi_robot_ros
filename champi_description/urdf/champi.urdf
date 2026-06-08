@@ -38,10 +38,8 @@
   <joint name="base_to_camera" type="fixed">
     <parent link="base_link"/>
     <child link="camera_link"/>
-    <origin xyz="0.089 0.023 0.314" rpy="-0.020 0.795 -0.017"/>
+    <origin xyz="0.082 0.012 0.320" rpy="0.006 0.802 -0.030"/>
     <!-- xyz = roll pitch yaw -->
   </joint>
-
-</robot>
 
 </robot>

@@ -60,7 +60,10 @@ function App() {
   const [angularSpeedDegS, setAngularSpeedDegS] = useState(70); // in deg/s
   const [delayAfterPullCordS, setDelayAfterPullCordS] = useState(3); // in seconds
   const [isSaving, setIsSaving] = useState(false);
+  const [isFlashing, setIsFlashing] = useState(false);
+  const [logs, setLogs] = useState([]);
   const tableCanvasRef = useRef(null);
+  const logsContainerRef = useRef(null);
   const [tableControlsState, setTableControlsState] = useState({
     canUndo: false,
     canRedo: false,
@@ -69,6 +72,17 @@ function App() {
   });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [selectedWaypointIndex, setSelectedWaypointIndex] = useState(null);
+
+  const addLog = (type, text) => {
+    const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setLogs(prev => [...prev, { type, text, time }]);
+  };
+
+  useEffect(() => {
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   useEffect(() => {
     fetch(`${API_URL}/config`)
@@ -89,6 +103,7 @@ function App() {
 
   const handleSaveConfig = () => {
     setIsSaving(true);
+    addLog('info', 'Sauvegarde de la configuration...');
     fetch(`${API_URL}/config`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -96,28 +111,35 @@ function App() {
     })
     .then(res => res.json())
     .then(() => {
-        alert("Configuration sauvegardée avec succès !");
+        addLog('success', 'Configuration sauvegardée avec succès !');
         setIsSaving(false);
     })
     .catch(err => {
-        alert("Erreur de sauvegarde");
+        addLog('error', `Erreur de sauvegarde: ${err.message}`);
         setIsSaving(false);
-        console.error(err);
     });
   };
 
   const handleCompileFlash = (pamiId) => {
-    alert(`Lancement de la compilation pour le PAMI ${pamiId}...\nMerci de patienter (ne fermez pas la page).`);
+    setIsFlashing(true);
+    addLog('info', `[PAMI ${pamiId}] Génération du code C++...`);
+    addLog('info', `[PAMI ${pamiId}] Lancement de la compilation PlatformIO (patience)...`);
     fetch(`${API_URL}/flash/${pamiId}`, { method: "POST" })
       .then(async res => {
           const data = await res.json();
           if (!res.ok) throw new Error(data.detail || "Erreur de flash");
           return data;
       })
-      .then(() => alert(`PAMI ${pamiId} flashé avec succès !`))
+      .then(data => {
+          addLog('success', `[PAMI ${pamiId}] Flashé avec succès !`);
+          if (data.logs) {
+            data.logs.split('\n').filter(l => l.trim()).forEach(line => addLog('info', line));
+          }
+          setIsFlashing(false);
+      })
       .catch(err => {
-          console.error(err);
-          alert(`Erreur:\n${err.message}`);
+          err.message.split('\n').filter(l => l.trim()).forEach(line => addLog('error', line));
+          setIsFlashing(false);
       });
   };
 
@@ -388,7 +410,39 @@ function App() {
             canCompile={!isBigRobotSelected}
             selectedLabel={selectedLabel}
             isSaving={isSaving}
+            isFlashing={isFlashing}
           />
+        </div>
+        <div style={{ width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <strong style={{ fontSize: '14px' }}>Logs</strong>
+            <button onClick={() => setLogs([])} style={{ fontSize: '12px', padding: '2px 8px' }}>Effacer</button>
+          </div>
+          <div
+            ref={logsContainerRef}
+            style={{
+              backgroundColor: '#1e1e1e',
+              color: '#ccc',
+              fontFamily: 'monospace',
+              fontSize: '12px',
+              padding: '10px',
+              borderRadius: '4px',
+              height: '200px',
+              overflowY: 'auto',
+              border: '1px solid #444',
+            }}
+          >
+            {logs.length === 0 ? (
+              <span style={{ color: '#666' }}>Aucun log pour le moment...</span>
+            ) : (
+              logs.map((log, i) => (
+                <div key={i} style={{ color: log.type === 'success' ? '#4caf50' : log.type === 'error' ? '#f44336' : '#ccc', marginBottom: '2px' }}>
+                  <span style={{ color: '#888', marginRight: '8px' }}>[{log.time}]</span>
+                  {log.text}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

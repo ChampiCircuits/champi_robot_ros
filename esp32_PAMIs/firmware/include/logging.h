@@ -3,9 +3,9 @@
 
 #include <Arduino.h>
 
-#ifndef FIRMWARE_ENABLE_LOGS
-#define FIRMWARE_ENABLE_LOGS 0
-#endif
+#define FIRMWARE_ENABLE_LOGS 1
+// #ifndef FIRMWARE_ENABLE_LOGS
+// #endif
 
 #if FIRMWARE_ENABLE_LOGS
 

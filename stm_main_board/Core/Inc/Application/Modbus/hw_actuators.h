@@ -18,10 +18,17 @@ enum class ActuatorCommand : int
   THERMOMETER_RAISE_SERVO,
 
   LOWER_LEFT_ARM,
+  GET_READY_LEFT_ARM,
   LET_GO_ELEMENTS_LEFT_ARM,
 
   LOWER_RIGHT_ARM,
+  GET_READY_RIGHT_ARM,
   LET_GO_ELEMENTS_RIGHT_ARM,
+  
+  STORE_PENDING_MASK,
+
+  PUMPS_ON,
+  PUMPS_OFF,
 
   ACTUATORS_COUNT // only to count the number of available commands
 };
@@ -46,9 +53,12 @@ inline const char* to_c_str(const ActuatorCommand command)
   case ActuatorCommand::THERMOMETER_LOWER_SERVO:        return "THERMOMETER_LOWER_SERVO";
   case ActuatorCommand::THERMOMETER_RAISE_SERVO:        return "THERMOMETER_RAISE_SERVO";
   case ActuatorCommand::LOWER_LEFT_ARM:                 return "LOWER_LEFT_ARM";
+  case ActuatorCommand::GET_READY_LEFT_ARM:            return "GET_READY_LEFT_ARM";
   case ActuatorCommand::LET_GO_ELEMENTS_LEFT_ARM:       return "LET_GO_ELEMENTS_LEFT_ARM";
   case ActuatorCommand::LOWER_RIGHT_ARM:                return "LOWER_RIGHT_ARM";
+  case ActuatorCommand::GET_READY_RIGHT_ARM:           return "GET_READY_RIGHT_ARM";
   case ActuatorCommand::LET_GO_ELEMENTS_RIGHT_ARM:      return "LET_GO_ELEMENTS_RIGHT_ARM";
+  case ActuatorCommand::STORE_PENDING_MASK:           return "STORE_PENDING_MASK";
   default:
     return "UNKNOWN_COMMAND";
   }

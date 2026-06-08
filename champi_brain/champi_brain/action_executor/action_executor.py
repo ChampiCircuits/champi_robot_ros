@@ -6,14 +6,16 @@ This allows the state machine to be independent of ROS implementation.
 
 from math import radians, sin, cos
 from geometry_msgs.msg import Pose
-from typing import Protocol, Optional
+from typing import Protocol, Optional, Dict
 from rclpy.action import ActionClient
 from champi_brain.strategy_dsl import MotionParams
 from champi_interfaces.action import Navigate
-from std_msgs.msg import Int8, Bool
+from std_msgs.msg import Int8, Bool, String
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, DurabilityPolicy
 from champi_brain.actuator_commands import ActuatorCommand, actuator_name_to_id
 from abc import abstractmethod
+import json
 
 class ActionExecutor():
     """
@@ -37,7 +39,12 @@ class ActionExecutor():
         
         # Publishers
         self.actuator_pub = node.create_publisher(Int8, '/ctrl/actuators', 10)
-        
+
+        # Latched full obstacle-state dict: entity_id -> is_obstacle (bool)
+        _latched_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.obstacle_states_pub = node.create_publisher(String, '/planner/obstacle_states', _latched_qos)
+        self.obstacle_states: Dict[str, bool] = {}
+
         # Wait for action server
         self.logger.info('Waiting for /navigate action server...')
         self.navigate_client.wait_for_server()
@@ -92,6 +99,14 @@ class ActionExecutor():
     def cancel_detect_nutboxes_timeout(self) -> None:
         """Cancel the nutbox detection timeout timer if active. No-op by default."""
         pass
+
+    def set_obstacle_state(self, entity_id: str, is_obstacle: bool) -> None:
+        """Update one entity's obstacle state and publish the full state dict to the planner."""
+        self.obstacle_states[entity_id] = is_obstacle
+        msg = String()
+        msg.data = json.dumps(self.obstacle_states)
+        self.obstacle_states_pub.publish(msg)
+        self.logger.info(f'Obstacle state: {entity_id} -> {"obstacle" if is_obstacle else "free"}, full={self.obstacle_states}')
 
     def wait(self, duration: float) -> None:
         """
@@ -148,11 +163,13 @@ class ActionExecutor():
         goal.linear_tolerance = motion_params.linear_tolerance
         goal.angular_tolerance = motion_params.angular_tolerance
 
+        goal.use_collision_avoidance = motion_params.use_collision_avoidance
+
         # Look-at-point (disabled by default)
         goal.do_look_at_point = False
         
         # Timeout
-        goal.timeout = 20.0
+        goal.timeout = 10.0
         
         return goal
 

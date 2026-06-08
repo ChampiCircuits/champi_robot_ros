@@ -31,6 +31,9 @@ if(BUILD_TESTING)
   # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(test_obstacle_manager test/test_obstacle_manager.py)
+  ament_add_pytest_test(test_planner test/test_planner.py)
 endif()
 
 # Install Python modules
@@ -41,8 +44,8 @@ install(PROGRAMS
         scripts/path_planner_node.py
         scripts/pose_controller_node.py
         scripts/loc_node.py
-        scripts/costmap_updater_node.py
         scripts/path_planner_ui_node.py
+        scripts/collision_detector_node.py
  # scripts/gui_node.py
   DESTINATION lib/${PROJECT_NAME}
 )

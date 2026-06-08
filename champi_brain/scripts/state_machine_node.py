@@ -158,6 +158,13 @@ class StateMachineNode(Node):
             10
         )
         
+        # Match ready signal
+        self.create_subscription(
+            Empty, '/match_ready',
+            self._on_match_ready,
+            10
+        )
+
         # Reset command
         self.create_subscription(
             Empty, '/reset_state_machine',
@@ -286,7 +293,8 @@ class StateMachineNode(Node):
         
         # Handle tirette in init state
         if self.tirette_released and self.state_machine.get_state() == StateMachine.STATE_INIT:
-            self.get_logger().warn('🏁 TIRETTE RELEASED - Starting match!')
+            if self.state_machine.is_waiting_for_tirette():
+                self.get_logger().warn('🏁 TIRETTE RELEASED - Starting match!', throttle_duration_sec=5.)
             self.state_machine.notify_tirette_released()
     
     def _on_odometry(self, msg: Odometry) -> None:
@@ -331,6 +339,12 @@ class StateMachineNode(Node):
         
         self._load_strategy(strategy_file, color)
     
+    def _on_match_ready(self, msg: Empty) -> None:
+        """Handle match ready signal from web UI."""
+        self.get_logger().info('✅ Match ready confirmed from UI')
+        if self.state_machine:
+            self.state_machine.notify_match_ready_confirmed()
+
     def _on_reset_request(self, msg: Empty) -> None:
         """Handle reset request."""
         self.get_logger().warn('🔄 Reset requested')
@@ -509,7 +523,7 @@ class StateMachineNode(Node):
             self.state_pub.publish(msg)
             return
         
-        # Auto-release tirette in sim mode
+        # Auto-release tirette in sim mode (skip "Prêt !!" UI step)
         if self.sim_mode and self.state_machine.get_state() == StateMachine.STATE_INIT:
             if not self.tirette_released:
                 delay = 2.0  # seconds
@@ -517,6 +531,7 @@ class StateMachineNode(Node):
                 self.get_clock().sleep_for(Duration(seconds=delay))
                 self.get_logger().warn('🎮 Simulation mode: Tirette released !')
                 self.tirette_released = True
+                self.state_machine.notify_match_ready_confirmed()
                 self.state_machine.notify_tirette_released()
         
         # Call state machine update
@@ -549,12 +564,16 @@ class StateMachineNode(Node):
         return self.state_machine.get_state()
 
     def _request_auto_placement_move(self, init_pose: tuple[float, float, float]) -> None:
+        if not self.sim_mode:
+            self.action_executor.execute_actuator_action(ActuatorCommand.ENABLE_ALL_MOTORS)
+            time.sleep(0.5)
+
         x, y, theta_deg = init_pose
-        motion = MotionParams(use_collision_avoidance=False, speed=0.1, max_angular_speed=0.1, linear_tolerance=0.01, angular_tolerance=0.01, accel_linear=0.1, accel_angular=0.1)
+        motion = MotionParams(use_collision_avoidance=False, speed=0.2, max_angular_speed=0.5, linear_tolerance=0.01, angular_tolerance=0.01, accel_linear=0.3, accel_angular=0.3)
         self.action_executor.move_to(x, y, theta_deg, motion)
 
     def _on_auto_placement_completed(self) -> None:
-        time.sleep(2)
+        self.get_logger().info('✅ Auto-placement completed successfully!')
         if self.state_machine:
             self.state_machine.notify_config_chosen()
 

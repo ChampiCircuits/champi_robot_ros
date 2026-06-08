@@ -81,11 +81,7 @@ class AutoPlacementController:
         self.logger.warn("Auto-placement started: waiting for robot to be still")
 
     def update(self, linear_velocity: float, angular_velocity: float) -> None:
-        if not self.in_progress:
-            return
-
-        if self._started_at is not None and (time.monotonic() - self._started_at) > self.total_timeout_s:
-            self._fail("global timeout reached")
+        if not self.in_progress or self.status == self.STATUS_FAILED:
             return
 
         if self.status == self.STATUS_WAITING_STILL:

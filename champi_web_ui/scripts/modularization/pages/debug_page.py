@@ -6,7 +6,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, Twist
 from math import acos, sin, cos, pi
 
-from node import init_ros_node
+from node import init_ros_node, ActuatorCommand
 from utils import real_to_px, px_to_real, id_to_coords
 
 
@@ -129,38 +129,38 @@ def create() -> None:
                     with ui.card():
                         ui.label('Contrôle').classes('text-subtitle2 text-grey-6 q-mt-sm')
                         with ui.row().classes('q-gutter-sm'):
-                            ui.button('RESET [SELECT]', on_click=lambda: ros_node.send_actuator_action('RESET_ACTUATORS')).props('color=orange')
+                            ui.button('RESET [SELECT]', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.RESET_ACTUATORS)).props('color=orange')
                             def tirette_publish():
                                 e = Empty()
                                 tirette_pub.publish(e)
                             ui.button('Tirette', on_click=tirette_publish)
 
+                        # USING ACTIONS AVAILABLE FROM holo_teleop_joy_node.py
                         ui.label('Thermomètre').classes('text-subtitle2 text-grey-6 q-mt-sm')
                         with ui.row().classes('q-gutter-sm'):
-                            ui.button('Relever [L1]', on_click=lambda: ros_node.send_actuator_action('THERMOMETER_RAISE_SERVO')).props('color=blue')
-                            ui.button('Abaisser [L2]', on_click=lambda: ros_node.send_actuator_action('THERMOMETER_LOWER_SERVO')).props('color=blue')
+                            ui.button('Relever [L1]', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.THERMOMETER_RAISE_SERVO)).props('color=blue')
+                            ui.button('Abaisser [L2]', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.THERMOMETER_LOWER_SERVO)).props('color=blue')
 
-                        ui.label('Ascenseur + Pince').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        ui.label('Bras gauche').classes('text-subtitle2 text-grey-6 q-mt-sm')
                         with ui.row().classes('q-gutter-sm'):
-                            ui.button('Prendre 2 boîtes [A]', on_click=lambda: ros_node.send_actuator_action('TAKE_2_BOXES')).props('color=green')
-                            ui.button('Monter 2 boîtes [A↑]', on_click=lambda: ros_node.send_actuator_action('BRING_2_BOXES_ON_TOP')).props('color=green')
-                            ui.button('Poser les 2 dernières boîtes devant [A↓]', on_click=lambda: ros_node.send_actuator_action('PUT_2_LAST_BOXES_ON_THE_GROUND')).props('color=green')
+                            ui.button('Abaisser [X↓]', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.LOWER_LEFT_ARM)).props('color=green')
+                            ui.button('Lâcher [X↑]', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.LET_GO_ELEMENTS_LEFT_ARM)).props('color=green')
 
-                        ui.label('Tri + pushers').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        ui.label('Bras droit').classes('text-subtitle2 text-grey-6 q-mt-sm')
                         with ui.row().classes('q-gutter-sm'):
-                            ui.button('Préparer le pusher [Y]', on_click=lambda: ros_node.send_actuator_action('PREPARE_TOP_PUSHER')).props('color=purple')
-                            ui.button('Prendre & Trier 2 boîtes de l ascenseur [Y←]', on_click=lambda: ros_node.send_actuator_action('GRAB_AND_SORT_2_BOXES_FROM_LIFT')).props('color=purple')
-                            ui.button('Sortir 2 boîtes[X]', on_click=lambda: ros_node.send_actuator_action('PUSH_2_BOXES_OUT')).props('color=purple')
+                            ui.button('Abaisser [B↓]', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.LOWER_RIGHT_ARM)).props('color=orange')
+                            ui.button('Lâcher [B↑]', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.LET_GO_ELEMENTS_RIGHT_ARM)).props('color=orange')
 
-                        ui.label('Rampe').classes('text-subtitle2 text-grey-6 q-mt-sm')
+                        ui.label('Pompes').classes('text-subtitle2 text-grey-6 q-mt-sm')
                         with ui.row().classes('q-gutter-sm'):
-                            ui.button('Ouvrir [B]', on_click=lambda: ros_node.send_actuator_action('OPEN_EXIT_RAMP')).props('color=orange')
+                            ui.button('ON', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.PUMPS_ON)).props('color=green')
+                            ui.button('OFF', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.PUMPS_OFF)).props('color=red')
 
                         ui.label('Debug').classes('text-subtitle2 text-grey-6 q-mt-sm')
                         with ui.row().classes('q-gutter-sm'):
-                            ui.button('GET READY', on_click=lambda: ros_node.send_actuator_action('GET_READY')).props('color=green')
-                            ui.button('STOP MOTEURS', on_click=lambda: ros_node.send_actuator_action('STOP_ALL_MOTORS')).props('color=red')
-                            ui.button('ACTIVER MOTEURS', on_click=lambda: ros_node.send_actuator_action('ENABLE_ALL_MOTORS')).props('color=blue')
+                            ui.button('GET READY', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.GET_READY)).props('color=green')
+                            ui.button('STOP MOTEURS', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.STOP_ALL_MOTORS)).props('color=red')
+                            ui.button('ACTIVER MOTEURS', on_click=lambda: ros_node.send_actuator_action(ActuatorCommand.ENABLE_ALL_MOTORS)).props('color=blue')
 
 
 #################################################

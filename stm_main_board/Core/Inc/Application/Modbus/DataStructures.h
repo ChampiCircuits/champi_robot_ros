@@ -9,9 +9,9 @@ namespace com_types {
 
 enum class TeamColor : uint8_t
 {
-  UNKNOWN,
   YELLOW,
-  BLUE
+  BLUE,
+  UNKNOWN
 };
 
 struct __attribute__((packed)) Vector3 {
@@ -68,8 +68,16 @@ struct __attribute__((packed)) Actuators
   // list of actuators commands.
   double dummy; // to not be multiple of 32
   uint8_t requests[static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT)];
-  uint8_t left_suction_cups_activation_for_request[static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT)]; // 4 bools, 1 for each suction cup. numbers are cups from left to right
-  uint8_t right_suction_cups_activation_for_request[static_cast<size_t>(ActuatorCommand::ACTUATORS_COUNT)]; // 4 bools, 1 for each suction cup. numbers are cups from left to right
+  // 4 bools, 1 for each suction cup. numbers are cups from right to left (from the point of view of the robot)
+  uint8_t left_suction_cup_0_activation;
+  uint8_t left_suction_cup_1_activation;
+  uint8_t left_suction_cup_2_activation;
+  uint8_t left_suction_cup_3_activation;
+  // 4 bools, 1 for each suction cup. numbers are cups from right to left (from the point of view of the robot)
+  uint8_t right_suction_cup_0_activation;
+  uint8_t right_suction_cup_1_activation;
+  uint8_t right_suction_cup_2_activation;
+  uint8_t right_suction_cup_3_activation;
 };
 
 }

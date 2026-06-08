@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source /opt/ros/jazzy/setup.bash
-source /home/champi/champi_ws/install/setup.bash
+source ~/champi_ws/install/setup.bash
 
 echo "Attente avant le démarrage complet du pc & des nodes..."
 sleep 15

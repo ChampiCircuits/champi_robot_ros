@@ -8,9 +8,36 @@ from champi_interfaces.msg import STMState, CtrlGoal
 from champi_interfaces.srv import SetAutoPlacementEnabled
 from std_msgs.msg import Int8, Empty
 
-from enum import Enum
+from enum import Enum, IntEnum
 from diagnostic_msgs.msg import DiagnosticArray
 from std_msgs.msg import String
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
+import base64
+
+
+class ActuatorCommand(IntEnum):
+    RESET_ACTUATORS                = 0
+    STOP_ALL_MOTORS                = 1
+    ENABLE_ALL_MOTORS              = 2
+    GET_READY                      = 3
+
+    THERMOMETER_LOWER_SERVO        = 4
+    THERMOMETER_RAISE_SERVO        = 5
+
+    LOWER_LEFT_ARM                 = 6
+    GET_READY_LEFT_ARM             = 7
+    LET_GO_ELEMENTS_LEFT_ARM       = 8
+    
+    LOWER_RIGHT_ARM                = 9
+    GET_READY_RIGHT_ARM            = 10
+    LET_GO_ELEMENTS_RIGHT_ARM      = 11
+
+    STORE_PENDING_MASK             = 12
+    
+    PUMPS_ON = 13
+    PUMPS_OFF = 14
 
 
 class PagesNode(Node):
@@ -48,6 +75,14 @@ class PagesNode(Node):
                 self.goal_pose_callback,
                 10)
             self.latest_goal_position: tuple[float, float] | None = None
+
+            self.cv_bridge = CvBridge()
+            self.latest_viz_image_b64 = None
+            self.sub_viz_image = self.create_subscription(
+                Image,
+                '/viz/image_detection',
+                self.viz_image_callback,
+                10)
 
             self.sub_stm_state = self.create_subscription(
                 STMState,
@@ -95,6 +130,11 @@ class PagesNode(Node):
                 '/reset_state_machine',
                 10
             )
+            self.match_ready_pub = self.create_publisher(
+                Empty,
+                '/match_ready',
+                10
+            )
             self.stop_match_pub = self.create_publisher(
                 Empty,
                 '/stop_match',
@@ -112,35 +152,9 @@ class PagesNode(Node):
         self.c += 1
         self.get_logger().info(f"{self.c} inits of the singleton node")
 
-    def send_actuator_action(self, action):
+    def send_actuator_action(self, action: ActuatorCommand):
         msg = Int8()
-
-        if action == 'RESET_ACTUATORS':
-            msg.data = 0
-        elif action == 'STOP_ALL_MOTORS':
-            msg.data = 1
-        elif action == 'ENABLE_ALL_MOTORS':
-            msg.data = 2
-        elif action == 'GET_READY':
-            msg.data = 3
-        elif action == 'THERMOMETER_LOWER_SERVO':
-            msg.data = 4
-        elif action == 'THERMOMETER_RAISE_SERVO':
-            msg.data = 5
-        elif action == 'TAKE_2_BOXES':
-            msg.data = 6
-        elif action == 'BRING_2_BOXES_ON_TOP':
-            msg.data = 7
-        elif action == 'PUT_2_LAST_BOXES_ON_THE_GROUND':
-            msg.data = 8
-        elif action == 'PREPARE_TOP_PUSHER':
-            msg.data = 9
-        elif action == 'GRAB_AND_SORT_2_BOXES_FROM_LIFT':
-            msg.data = 10
-        elif action == 'PUSH_2_BOXES_OUT':
-            msg.data = 11
-        elif action == 'OPEN_EXIT_RAMP':
-            msg.data = 12
+        msg.data = int(action)
         self.actuators_ctrl_pub.publish(msg)
 
     def update(self):
@@ -194,6 +208,14 @@ class PagesNode(Node):
             msg.pose.position.y,
         )
 
+    def viz_image_callback(self, msg: Image):
+        try:
+            cv_img = self.cv_bridge.imgmsg_to_cv2(msg, "bgr8")
+            _, buffer = cv2.imencode('.jpg', cv_img)
+            self.latest_viz_image_b64 = 'data:image/jpeg;base64,' + base64.b64encode(buffer).decode('utf-8')
+        except Exception as e:
+            self.get_logger().error(f"Error decoding image: {e}")
+
     def get_sm_state_description(self) -> str:
         return self.sm_state_descriptions.get(self.latest_sm_state, f'({self.latest_sm_state})')
 
@@ -209,6 +231,9 @@ class PagesNode(Node):
         msg = String()
         msg.data = strategy
         self.strategy_pub.publish(msg)
+        
+    def pub_match_ready(self):
+        self.match_ready_pub.publish(Empty())
 
     def set_auto_placement_enabled(self, enabled: bool) -> bool:
         self.auto_placement_enabled = enabled

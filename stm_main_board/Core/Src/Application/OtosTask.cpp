@@ -31,9 +31,9 @@ void OtosTask(void *argument) {
 
   while (!myOtos.isConnected()) {
     LOG_WARN("otos", "Connecting failed. Retrying");
-
     osDelay(1000);
   }
+  LOG_INFO("otos", "Connected to Otos!");
 
   led_otos::setOrange();
 
@@ -42,14 +42,19 @@ void OtosTask(void *argument) {
     LOG_WARN("otos", "Self-test failed. Resetting");
     HAL_NVIC_SystemReset(); // Reset STM
   }
+  LOG_INFO("otos", "Self-test passed!");
 
   led_otos::setBlue();
 
   // We wait for the config to be set by the master
   while (!mod_reg::config->is_set) {
-    LOG_WARN_THROTTLE("otos", 100, "Waiting for config...");
+    LOG_WARN_THROTTLE("otos", 1, "Waiting for config...");
     osDelay(100);
   }
+  LOG_INFO("otos", "Config is :");
+  LOG_INFO("otos", "\tlinear_scalar=%f", mod_reg::config->otos_config.linear_scalar);
+  LOG_INFO("otos", "\tangular_scalar=%f", mod_reg::config->otos_config.angular_scalar);
+  LOG_INFO("otos", "Config received. Starting loop !");
 
   led_otos::setOrange();
 
@@ -84,7 +89,7 @@ void OtosTask(void *argument) {
     Pose2D otosPose = myOtos.getPosition();
 
 
-    // LOG_DEBUG_THROTTLE("otos", 100, "reading: \t%f, \t%f, \t%f", otosPose.x,
+    // LOG_INFO_THROTTLE("otos", 100, "reading: \t%f, \t%f, \t%f", otosPose.x,
     //                    otosPose.y, otosPose.h);
 
     xSemaphoreTake((QueueHandle_t)ModbusH.ModBusSphrHandle, portMAX_DELAY);

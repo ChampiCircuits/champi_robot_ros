@@ -8,6 +8,25 @@ LOCAL_PATH="$HOME/champi_ws/src/champi_robot_ros"
 IP_ETH="10.0.0.1"
 IP_WIFI="172.0.0.1"
 
+# Handle optional relative path argument
+REL_PATH="${1:-}"
+if [ -n "$REL_PATH" ]; then
+    # Strip leading and trailing slashes for clean path concatenation
+    REL_PATH="${REL_PATH#/}"
+    REL_PATH="${REL_PATH%/}"
+    
+    # Append trailing slash only if the local target is a directory
+    if [ -d "$LOCAL_PATH/$REL_PATH" ]; then
+        SYNC_LOCAL="$LOCAL_PATH/$REL_PATH/"
+    else
+        SYNC_LOCAL="$LOCAL_PATH/$REL_PATH"
+    fi
+    SYNC_DEST="$DEST_PATH/$REL_PATH"
+else
+    SYNC_LOCAL="$LOCAL_PATH/"
+    SYNC_DEST="$DEST_PATH"
+fi
+
 # Exclude patterns (edit this list!)
 EXCLUDES=(
     ".git"
@@ -43,8 +62,11 @@ else
 fi
 
 echo "🔄 Syncing to robot at $ROBOT_IP..."
-echo "📂 Local: $LOCAL_PATH"
-echo "📁 Remote: $USER@$ROBOT_IP:$DEST_PATH"
+echo "📂 Local: $SYNC_LOCAL"
+echo "📁 Remote: $USER@$ROBOT_IP:$SYNC_DEST"
+if [ -n "$REL_PATH" ]; then
+    echo "🎯 Subset: $REL_PATH"
+fi
 echo "🚫 Excludes: ${EXCLUDES[*]}"
 
 # Run rsync with excludes
@@ -52,9 +74,16 @@ if ! command -v sshpass &> /dev/null; then
     echo "⚠️  sshpass not found. Install it with: sudo apt install sshpass"
     exit 1
 fi
+
+# Ensure the destination directory exists on the remote host before syncing
+if [ -n "$REL_PATH" ]; then
+    REMOTE_DIR=$(dirname "$SYNC_DEST")
+    sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no "$USER@$ROBOT_IP" "mkdir -p '$REMOTE_DIR'"
+fi
+
 sshpass -p "$SSH_PASS" rsync -avz --delete --copy-links \
     -e "ssh -o StrictHostKeyChecking=no" \
-    "${EXCLUDE_ARGS[@]}" "$LOCAL_PATH/" "$USER@$ROBOT_IP:$DEST_PATH"
+    "${EXCLUDE_ARGS[@]}" "$SYNC_LOCAL" "$USER@$ROBOT_IP:$SYNC_DEST"
 
 if [ $? -eq 0 ]; then
     echo "✅ Sync completed successfully!"

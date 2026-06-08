@@ -15,11 +15,13 @@
   <depend>tf_transformations</depend>
   <depend>twist_mux</depend>
   <depend>champi_interfaces</depend>
+  <exec_depend>champi_brain</exec_depend>
 
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>pytest</test_depend>
   <export>
     <build_type>ament_cmake</build_type>
   </export>

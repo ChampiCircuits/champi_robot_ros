@@ -136,7 +136,9 @@ ip saddr 172.0.0.0/24 ip daddr != 172.0.0.0/24 masquerade
 }
 
 Then run
+```
 sudo nft flush ruleset
+```
 to make ros multi-pc work again.
 
 
@@ -147,19 +149,39 @@ sudo systemctl edit isc-dhcp-server
 
 Paste
 
+```
+[Unit]
+After=network-online.target
+Wants=network-online.target
+
 [Service]
 Restart=on-failure
 RestartSec=5
-
+```
 then
 
+```
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo systemctl restart isc-dhcp-server
 
 and reboot
+```
 
-
-
+```
 sudo systemctl disable ufw
 sudo apt remove ufw
+```
+
+
+
+
+
+sudo touch /etc/cloud/cloud-init.disabled
+
+sudo rm /etc/netplan/50-cloud-init.yaml
+
+
+
+# Quick fix for champi AP
+sudo ip addr add 172.0.0.1/24 dev wlp1s0 && sudo systemctl restart hostapd && sudo systemctl restart isc-dhcp-server
